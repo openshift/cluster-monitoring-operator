@@ -15,6 +15,7 @@
     },
     data: {},
   },
+
   // This CA bundle is injected by the service-ca-operator.
   SCOCaBundleCM(cfgNamespace, cfgName):: {
     apiVersion: 'v1',
@@ -28,6 +29,7 @@
     },
     data: {},
   },
+
   SCOCaBundleVolume(volName):: {
     name: volName,
     configmap: {

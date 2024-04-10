@@ -586,7 +586,7 @@ func setupStartupProbe(a *monv1.Alertmanager) {
 	)
 }
 
-func (f *Factory) AlertmanagerMain(trustedCABundleCM *v1.ConfigMap) (*monv1.Alertmanager, error) {
+func (f *Factory) AlertmanagerMain() (*monv1.Alertmanager, error) {
 	a, err := f.NewAlertmanager(f.assets.MustNewAssetSlice(AlertmanagerMain))
 	if err != nil {
 		return nil, err
@@ -649,18 +649,6 @@ func (f *Factory) AlertmanagerMain(trustedCABundleCM *v1.ConfigMap) (*monv1.Aler
 	if len(f.config.ClusterMonitoringConfiguration.AlertmanagerMainConfig.TopologySpreadConstraints) > 0 {
 		a.Spec.TopologySpreadConstraints =
 			f.config.ClusterMonitoringConfiguration.AlertmanagerMainConfig.TopologySpreadConstraints
-	}
-
-	if trustedCABundleCM != nil {
-		volumeName := "alertmanager-trusted-ca-bundle"
-		a.Spec.VolumeMounts = append(a.Spec.VolumeMounts, trustedCABundleVolumeMount(volumeName))
-
-		volume := trustedCABundleVolume(trustedCABundleCM.Name, volumeName)
-		volume.VolumeSource.ConfigMap.Items = append(volume.VolumeSource.ConfigMap.Items, v1.KeyToPath{
-			Key:  TrustedCABundleKey,
-			Path: "tls-ca-bundle.pem",
-		})
-		a.Spec.Volumes = append(a.Spec.Volumes, volume)
 	}
 
 	for i, c := range a.Spec.Containers {

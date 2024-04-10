@@ -16,7 +16,6 @@ function(params)
     trustedCaBundle: generateCertInjection.trustedCNOCaBundleCM(cfg.namespace, 'alertmanager-trusted-ca-bundle'),
 
     // OpenShift route to access the Alertmanager UI.
-
     route: {
       apiVersion: 'v1',
       kind: 'Route',
@@ -410,6 +409,22 @@ function(params)
             configMap: {
               name: 'metrics-client-ca',
             },
+          },
+          {
+            name: $.trustedCaBundle.metadata.name,
+            configMap: {
+              name: $.trustedCaBundle.metadata.name,
+              items: [{
+                key: 'ca-bundle.crt',
+                path: 'tls-ca-bundle.pem',
+              }],
+            },
+          },
+        ],
+        volumeMounts+: [
+          {
+            name: $.trustedCaBundle.metadata.name,
+            mountPath: '/etc/pki/ca-trust/extracted/pem/',
           },
         ],
       },

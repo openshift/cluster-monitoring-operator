@@ -185,17 +185,12 @@ func (t *AlertmanagerTask) create(ctx context.Context) error {
 			return fmt.Errorf("initializing Alertmanager CA bundle ConfigMap failed: %w", err)
 		}
 
-		cbs := &caBundleSyncer{
-			client:  t.client,
-			factory: t.factory,
-			prefix:  "alertmanager",
-		}
-		trustedCA, err = cbs.syncTrustedCABundle(ctx, trustedCA)
+		err = t.client.CreateOrUpdateConfigMap(ctx, trustedCA)
 		if err != nil {
-			return fmt.Errorf("syncing Alertmanager trusted CA bundle ConfigMap failed: %w", err)
+			return fmt.Errorf("reconciling Alertmanager trusted CA bundle ConfigMap failed: %w", err)
 		}
 
-		a, err := t.factory.AlertmanagerMain(trustedCA)
+		a, err := t.factory.AlertmanagerMain()
 		if err != nil {
 			return fmt.Errorf("initializing Alertmanager object failed: %w", err)
 		}
@@ -237,6 +232,12 @@ func (t *AlertmanagerTask) create(ctx context.Context) error {
 	})
 	if err != nil {
 		return fmt.Errorf("deleting Alertmanager proxy Secret failed: %w", err)
+	}
+
+	// TODO(simonpasquier): remove this step after OCP 4.16 is released.
+	err = t.client.DeleteHashedConfigMap(ctx, "openshift-monitoring", "alertmanager-trusted-ca-bundle", "")
+	if err != nil {
+		return fmt.Errorf("deleting all hashed Alertmanager trusted CA bundle ConfigMap failed: %w", err)
 	}
 
 	return nil
@@ -356,7 +357,7 @@ func (t *AlertmanagerTask) destroy(ctx context.Context) error {
 			return fmt.Errorf("deleting Alertmanager trusted CA bundle failed: %w", err)
 		}
 
-		a, err := t.factory.AlertmanagerMain(trustedCA)
+		a, err := t.factory.AlertmanagerMain()
 		if err != nil {
 			return fmt.Errorf("initializing Alertmanager object failed: %w", err)
 		}
