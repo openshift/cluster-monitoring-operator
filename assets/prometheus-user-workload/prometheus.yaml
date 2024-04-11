@@ -165,7 +165,8 @@ spec:
       name: secret-grpc-tls
   - name: prometheus
     terminationMessagePolicy: FallbackToLogsOnError
-  enableFeatures: []
+  enableFeatures:
+  - extra-scrape-metrics
   enforcedNamespaceLabel: namespace
   externalLabels: {}
   ignoreNamespaceSelectors: true
