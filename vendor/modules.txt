@@ -304,7 +304,7 @@ github.com/munnerz/goautoneg
 # github.com/mwitkow/go-conntrack v0.0.0-20190716064945-2f068394615f
 ## explicit
 github.com/mwitkow/go-conntrack
-# github.com/openshift/api v0.0.0-20240320105957-b09bc66e1760
+# github.com/openshift/api v0.0.0-20240320105957-b09bc66e1760 => github.com/slashpai/api v1.0.0
 ## explicit; go 1.21
 github.com/openshift/api
 github.com/openshift/api/annotations
@@ -1540,3 +1540,4 @@ sigs.k8s.io/structured-merge-diff/v4/value
 ## explicit; go 1.12
 sigs.k8s.io/yaml
 sigs.k8s.io/yaml/goyaml.v2
+# github.com/openshift/api => github.com/slashpai/api v1.0.0

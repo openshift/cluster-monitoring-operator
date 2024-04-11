@@ -52,6 +52,42 @@ FeatureGateMyFeatureName = newFeatureGate("MyFeatureName").
 			mustRegister()
 ```
 
+### defining tests
+Tests are logically associated with FeatureGates.
+When adding any FeatureGated functionality a new test file is required.
+The test files are located in `<group>/<version>/tests/<crd-name>/FeatureGate.yaml`:
+```
+route/
+  v1/
+    tests/
+      routes.route.openshift.io/
+        AAA_ungated.yaml
+        ExternalRouteCertificate.yaml
+```
+Here's an `AAA_ungated.yaml` example:
+```yaml
+apiVersion: apiextensions.k8s.io/v1 # Hack because controller-gen complains if we don't have this.
+name: Route
+crdName: routes.route.openshift.io
+tests:
+```
+
+Here's an `ExternalRouteCertificate.yaml` example:
+```yaml
+apiVersion: apiextensions.k8s.io/v1 # Hack because controller-gen complains if we don't have this.
+name: Route
+crdName: routes.route.openshift.io
+featureGate: ExternalRouteCertificate
+tests:
+```
+
+The integration tests use the crdName and featureGate to determine which tests apply to which manifests and automatically
+react to changes when the FeatureGates are enabled/disabled on various FeatureSets and ClusterProfiles.
+
+[`gen-minimal-test.sh`](tests/hack/gen-minimal-test.sh) can still function to stub out files if you don't want to
+copy/paste an existing one.
+
+
 ## defining new APIs
 
 When defining a new API, please follow [the OpenShift API
@@ -81,7 +117,6 @@ When copying, it matters which `// +foo` markers are two comments blocks up and 
 // +kubebuilder:printcolumn:name=Column Name,JSONPath=.status.something,type=string,description=how users should interpret this.
 // +kubebuilder:metadata:annotations=key=value
 // +kubebuilder:metadata:labels=key=value
-// +kubebuilder:metadata:annotations=include.release.openshift.io/single-node-developer=true
 // +kubebuilder:validation:XValidation:rule=
 type MyAPI struct {
 	metav1.TypeMeta `json:",inline"`
@@ -172,6 +207,18 @@ Does this mean feature-freeze teams can use the no-FF process to merge code?
 No, signing a team up to be a no-FF team includes some basic education on the process and includes ensuring the associated QE+Docs
 participants are aware the team is moving to that model.  If you'd like to sign your team up, please speak with Gina Hargan who will
 be happy to help on-board your team.
+
+## vendoring generated manifests into other repositories
+If your repository relies on vendoring and copying CRD manifests (good job!), you'll need have an import line that
+depends on the package that contains the CRD manifests.
+For example, adding
+```go
+import (
+	_ "github.com/openshift/api/operatoringress/v1/zz_generated.crd-manifests"
+)
+```
+to any .go file will work, but some commonly chosen files are `tools/tools.go` or `pkg/dependencymagnet/doc.go`.
+Once added, a `go mod vendor` will pick up the package containing the manifests for you to copy.
 
 ## generating CRD schemas
 
