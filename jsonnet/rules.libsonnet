@@ -73,6 +73,22 @@ function(params) {
           record: 'cluster:container_cpu_usage:ratio',
         },
         {
+          expr: |||
+            sum by(namespace,pod, interface) (irate(container_network_receive_bytes_total{pod!=""}[5m]))
+            +
+            on(namespace,pod, interface) group_left(network_name) topk by(namespace,pod, interface) (1, pod_network_name_info)
+          |||,
+          record: 'pod_interface_network:container_network_receive_bytes:irate5m',
+        },
+        {
+          expr: |||
+            sum by(namespace,pod, interface) (irate(container_network_transmit_bytes_total{pod!=""}[5m]))
+            +
+            on(namespace,pod, interface) group_left(network_name) topk by(namespace,pod, interface) (1, pod_network_name_info)
+          |||,
+          record: 'pod_interface_network:container_network_transmit_bytes_total:irate5m',
+        },
+        {
           expr: 'max without(%s) (kube_node_labels and on(node) kube_node_role{role="master"})' % droppedKsmLabels,
           labels: {
             label_node_role_kubernetes_io: 'master',
