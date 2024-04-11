@@ -474,6 +474,7 @@ local includeRunbooks = {
   AlertmanagerClusterFailedToSendAlerts: openShiftRunbookCMO('AlertmanagerClusterFailedToSendAlerts.md'),
   ClusterOperatorDegraded: openShiftRunbookCMO('ClusterOperatorDegraded.md'),
   ClusterOperatorDown: openShiftRunbookCMO('ClusterOperatorDown.md'),
+  KubeAggregatedAPIErrors: openShiftRunbookCMO('KubeAggregatedAPIErrors.md'),
   KubeAPIDown: openShiftRunbookCMO('KubeAPIDown.md'),
   KubeDeploymentReplicasMismatch: openShiftRunbookCMO('KubeDeploymentReplicasMismatch.md'),
   KubeJobFailed: openShiftRunbookCMO('KubeJobFailed.md'),
