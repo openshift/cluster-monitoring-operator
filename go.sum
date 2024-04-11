@@ -390,8 +390,6 @@ github.com/opencontainers/go-digest v1.0.0 h1:apOUWs51W5PlhuyGyz9FCeeBIOUDA/6nW8
 github.com/opencontainers/go-digest v1.0.0/go.mod h1:0JzlMkj0TRzQZfJkVvzbP0HBR3IKzErnv2BNG4W4MAM=
 github.com/opencontainers/image-spec v1.0.2 h1:9yCKha/T5XdGtO0q9Q9a6T5NUCsTn/DrBg0D7ufOcFM=
 github.com/opencontainers/image-spec v1.0.2/go.mod h1:BtxoFyWECRxE4U/7sNtV5W15zMzWCbyJoFRP3s7yZA0=
-github.com/openshift/api v0.0.0-20240320105957-b09bc66e1760 h1:UzSlJWW6VKseRrpUO05xh2AyGyZ+OSbuCJjst5STVdM=
-github.com/openshift/api v0.0.0-20240320105957-b09bc66e1760/go.mod h1:CxgbWAlvu2iQB0UmKTtRu1YfepRg1/vJ64n2DlIEVz4=
 github.com/openshift/client-go v0.0.0-20231218140158-47f6d749b9d9 h1:kjgW3luAkf9NWu+8u+jqNNbexDG+CY82/INw8hGbG14=
 github.com/openshift/client-go v0.0.0-20231218140158-47f6d749b9d9/go.mod h1:kKmxYRXTMutfF7XzGppFdbLhNGX1brXkRsZx5ID8c7U=
 github.com/openshift/library-go v0.0.0-20240216151214-738f3fa4ccf8 h1:dKtHGYiOwl0DKZEWBW4MFWFS6IYW02AVD1WSuUAVwEo=
@@ -452,6 +450,8 @@ github.com/sirupsen/logrus v1.4.2/go.mod h1:tLMulIdttU9McNUspp0xgXVQah82FyeX6Mwd
 github.com/sirupsen/logrus v1.6.0/go.mod h1:7uNnSEd1DgxDLC74fIahvMZmmYsHGZGEOFrfsX/uA88=
 github.com/sirupsen/logrus v1.9.0 h1:trlNQbNUG3OdDrDil03MCb1H2o9nJ1x4/5LYw7byDE0=
 github.com/sirupsen/logrus v1.9.0/go.mod h1:naHLuLoDiP4jHNo9R0sCBMtWGeIprob74mVsIT4qYEQ=
+github.com/slashpai/api v1.0.0 h1:Q+BD/dIsCc3KfSnS9J0CURBcMfy7N7DmGlzs7VkD2dM=
+github.com/slashpai/api v1.0.0/go.mod h1:CxgbWAlvu2iQB0UmKTtRu1YfepRg1/vJ64n2DlIEVz4=
 github.com/soheilhy/cmux v0.1.5 h1:jjzc5WVemNEDTLwv9tlmemhC73tI08BNOIGwBOo10Js=
 github.com/soheilhy/cmux v0.1.5/go.mod h1:T7TcVDs9LWfQgPlPsdngu6I6QIoyIFZDDC6sNE1GqG0=
 github.com/spf13/cobra v1.7.0 h1:hyqWnYt1ZQShIddO5kBpj3vu05/++x6tJ6dg8EC572I=
