@@ -401,6 +401,7 @@ spec:
     - alert: KubeAggregatedAPIErrors
       annotations:
         description: Kubernetes aggregated API {{ $labels.name }}/{{ $labels.namespace }} has reported errors. It has appeared unavailable {{ $value | humanize }} times averaged over the past 10m.
+        runbook_url: https://github.com/openshift/runbooks/blob/master/alerts/cluster-monitoring-operator/KubeAggregatedAPIErrors.md
         summary: Kubernetes aggregated API has reported errors.
       expr: |
         sum by(name, namespace, cluster)(increase(aggregator_unavailable_apiservice_total{job="apiserver"}[10m])) > 4
