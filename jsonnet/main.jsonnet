@@ -75,7 +75,6 @@ local commonConfig = {
     thanos: 'quay.io/thanos/thanos:v' + $.versions.thanos,
     kubeRbacProxy: 'quay.io/brancz/kube-rbac-proxy:v' + $.versions.kubeRbacProxy,
     monitoringPlugin: 'quay.io/openshift/origin-monitoring-plugin:' + $.versions.monitoringPlugin,
-    openshiftOauthProxy: 'quay.io/openshift/oauth-proxy:latest',
   },
   // Labels applied to every object
   commonLabels: {

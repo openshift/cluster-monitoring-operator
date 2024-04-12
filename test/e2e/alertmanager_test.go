@@ -482,8 +482,8 @@ func TestAlertmanagerDataReplication(t *testing.T) {
 	}
 }
 
-// The Alertmanager API should be protected by the OAuth proxy.
-func TestAlertmanagerOAuthProxy(t *testing.T) {
+// The Alertmanager API should be protected by authentication/authorization.
+func TestAlertmanagerAPI(t *testing.T) {
 	err := framework.Poll(5*time.Second, 5*time.Minute, func() error {
 		body, err := f.AlertmanagerClient.GetAlertmanagerAlerts(
 			"filter", `alertname="Watchdog"`,

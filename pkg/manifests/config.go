@@ -134,7 +134,6 @@ type Images struct {
 	PrometheusConfigReloader           string
 	Prometheus                         string
 	Alertmanager                       string
-	OauthProxy                         string
 	NodeExporter                       string
 	KubeStateMetrics                   string
 	OpenShiftStateMetrics              string
@@ -327,7 +326,6 @@ func (c *Config) SetImages(images map[string]string) {
 	c.Images.PrometheusConfigReloader = images["prometheus-config-reloader"]
 	c.Images.Prometheus = images["prometheus"]
 	c.Images.Alertmanager = images["alertmanager"]
-	c.Images.OauthProxy = images["oauth-proxy"]
 	c.Images.NodeExporter = images["node-exporter"]
 	c.Images.KubeStateMetrics = images["kube-state-metrics"]
 	c.Images.KubeRbacProxy = images["kube-rbac-proxy"]
