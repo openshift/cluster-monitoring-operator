@@ -33,6 +33,8 @@ import (
 	routev1 "github.com/openshift/client-go/route/clientset/versioned/typed/route/v1"
 	"github.com/openshift/cluster-monitoring-operator/pkg/client"
 	"github.com/openshift/cluster-monitoring-operator/pkg/manifests"
+	authenticationv1 "k8s.io/api/authentication/v1"
+	"k8s.io/utils/ptr"
 
 	"github.com/openshift/library-go/pkg/operator/events"
 	"github.com/prometheus-operator/prometheus-operator/pkg/apis/monitoring/v1beta1"
@@ -306,26 +308,35 @@ func (f *Framework) CreateServiceAccount(namespace, serviceAccount string) (Clea
 }
 
 func (f *Framework) GetServiceAccountToken(namespace, name string) (string, error) {
-	ctx := context.Background()
-	var token string
-	err := Poll(5*time.Second, time.Minute, func() error {
-		secrets, err := f.KubeClient.CoreV1().Secrets(namespace).List(ctx, metav1.ListOptions{})
+	var (
+		ctx             = context.Background()
+		token           string
+		tokenExpiration = time.Duration(time.Hour * 12)
+		expirationTime  = metav1.NewTime(time.Now().Add(tokenExpiration))
+	)
+	err := Poll(time.Second, time.Minute, func() error {
+		tokenReq, err := f.KubeClient.CoreV1().ServiceAccounts(namespace).CreateToken(
+			ctx,
+			name,
+			&authenticationv1.TokenRequest{
+				Spec: authenticationv1.TokenRequestSpec{
+					ExpirationSeconds: ptr.To(int64((tokenExpiration + time.Minute) / time.Second)),
+				},
+			},
+			metav1.CreateOptions{},
+		)
 		if err != nil {
 			return err
 		}
-		for _, secret := range secrets.Items {
-			// we have to skip the token secret that contains the openshift.io/create-dockercfg-secrets annotation
-			// as this is the token to talk to the internal registry.
-			if _, dockerToken := secret.Annotations["openshift.io/create-dockercfg-secrets"]; dockerToken {
-				continue
-			}
-			if strings.Contains(secret.Name, fmt.Sprintf("%s-token-", name)) {
-				token = string(secret.Data["token"])
-				return nil
-			}
+
+		if tokenReq.Status.ExpirationTimestamp.Before(&expirationTime) {
+			return fmt.Errorf("expiration too short: %v < %v", tokenReq.Status.ExpirationTimestamp, expirationTime)
 		}
-		return fmt.Errorf("cannot find token for %s/%s service account", namespace, name)
+
+		token = tokenReq.Status.Token
+		return nil
 	})
+
 	return token, err
 }
 
