@@ -94,6 +94,11 @@ func (t *ClusterMonitoringOperatorTask) Run(ctx context.Context) error {
 		return fmt.Errorf("reconciling UserWorkloadAlertmanagerApiWriter Role failed: %w", err)
 	}
 
+	amrr, err := t.factory.ClusterMonitoringAlertManagerViewRole()
+	if err != nil {
+		return fmt.Errorf("initializing AlertmanagerRead Role failed: %w", err)
+	}
+
 	amwr, err := t.factory.ClusterMonitoringAlertManagerEditRole()
 	if err != nil {
 		return fmt.Errorf("initializing AlertmanagerWrite Role failed: %w", err)
@@ -101,11 +106,17 @@ func (t *ClusterMonitoringOperatorTask) Run(ctx context.Context) error {
 
 	if t.config.ClusterMonitoringConfiguration.AlertmanagerMainConfig.IsEnabled() {
 		if err = t.client.CreateOrUpdateRole(ctx, amwr); err != nil {
-			return fmt.Errorf("reconciling Alertmanager Role failed: %w", err)
+			return fmt.Errorf("reconciling AlertmanagerWrite Role failed: %w", err)
+		}
+		if err = t.client.CreateOrUpdateRole(ctx, amrr); err != nil {
+			return fmt.Errorf("reconciling AlertmanagerRead Role failed: %w", err)
 		}
 	} else {
 		if err = t.client.DeleteRole(ctx, amwr); err != nil {
-			return fmt.Errorf("deleting Alertmanager Role failed: %w", err)
+			return fmt.Errorf("deleting AlertmanagerWrite Role failed: %w", err)
+		}
+		if err = t.client.DeleteRole(ctx, amrr); err != nil {
+			return fmt.Errorf("deleting AlertmanagerRead Role failed: %w", err)
 		}
 	}
 

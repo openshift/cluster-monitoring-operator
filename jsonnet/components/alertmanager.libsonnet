@@ -80,7 +80,7 @@ function(params)
             * Port %d provides access to the `/metrics` endpoint only. This port is for internal use, and no other usage is guaranteed.
           ||| % [
             $.service.spec.ports[0].port,
-            requiredRoles(['monitoring-alertmanager-edit'], 'openshift-monitoring'),
+            requiredRoles([['monitoring-alertmanager-view', 'for read-only operations'], 'monitoring-alertmanager-edit'], 'openshift-monitoring'),
             $.service.spec.ports[1].port,
             requiredClusterRoles(['monitoring-rules-edit', 'monitoring-edit'], false, ''),
             $.service.spec.ports[2].port,

@@ -409,6 +409,25 @@ function(params) {
     ],
   },
 
+  // This role enables read access to the platform Alertmanager API
+  // through kube-rbac-proxy.
+  monitoringAlertmanagerViewRole: {
+    apiVersion: 'rbac.authorization.k8s.io/v1',
+    kind: 'Role',
+    metadata: {
+      name: 'monitoring-alertmanager-view',
+      namespace: cfg.namespace,
+    },
+    rules: [
+      {
+        apiGroups: ['monitoring.coreos.com'],
+        resources: ['alertmanagers/api'],
+        resourceNames: ['main'],
+        verbs: ['get', 'list'],
+      },
+    ],
+  },
+
   // This role provides read access to the user-workload Alertmanager API.
   // We use a fake subresource 'api' to map to the /api/* endpoints of the
   // Alertmanager API.
