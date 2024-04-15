@@ -64,6 +64,9 @@ func createAlertmanager(t *testing.T) {
 			Labels: map[string]string{
 				framework.E2eTestLabelName: framework.E2eTestLabelValue,
 			},
+			Annotations: map[string]string{
+				"operator.prometheus.io/controller-id": "openshift-user-workload-monitoring/prometheus-operator",
+			},
 		},
 		Spec: monitoringv1.AlertmanagerSpec{
 			Replicas: &replicas,
