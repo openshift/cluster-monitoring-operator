@@ -40,7 +40,7 @@ func (f Framework) MakePrometheusWithWebTLSRemoteReceive(name, tlsSecretName str
 		ObjectMeta: metav1.ObjectMeta{
 			Name:        name,
 			Namespace:   f.Ns,
-			Annotations: map[string]string{},
+			Annotations: map[string]string{"operator.prometheus.io/controller-id": "openshift-monitoring/prometheus-operator"},
 			Labels: map[string]string{
 				E2eTestLabelName: E2eTestLabelValue,
 			},

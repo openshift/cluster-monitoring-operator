@@ -240,6 +240,11 @@ function(params)
     },
 
     alertmanager+: {
+      metadata+: {
+        annotations+: {
+          'operator.prometheus.io/controller-id': 'openshift-monitoring/prometheus-operator',
+        },
+      },
       spec+: {
         securityContext: {
           fsGroup: 65534,

@@ -291,6 +291,11 @@ function(params)
     },
 
     prometheus+: {
+      metadata+: {
+        annotations+: {
+          'operator.prometheus.io/controller-id': 'openshift-user-workload-monitoring/prometheus-operator',
+        },
+      },
       spec+: {
         // Enable experimental additional scrape metrics feature
         enableFeatures+: ['extra-scrape-metrics'],
