@@ -95,12 +95,23 @@ func (t *KubeStateMetricsTask) Run(ctx context.Context) error {
 		return fmt.Errorf("reconciling kube-state-metrics Deployment failed: %w", err)
 	}
 
-	prometheusK8sTokenSecret, err := t.client.GetTokenSecret(ctx, dep.Namespace, "prometheus-k8s")
+	serverTLS, err := t.client.GetSecret(ctx, dep.Namespace, "kube-state-metrics-tls")
 	if err != nil {
-		return fmt.Errorf("getting prometheus-k8s-token Secret failed: %w", err)
+		return fmt.Errorf("getting kube-state-metrics-tls Secret failed: %w", err)
+
 	}
 
-	dep, err = t.factory.KubeStateMetricsDenylistBoundsCheck(dep, svc, prometheusK8sTokenSecret)
+	clientTLS, err := t.client.GetSecret(ctx, dep.Namespace, "metrics-client-certs")
+	if err != nil {
+		return fmt.Errorf("getting metrics-client-certs Secret failed: %w", err)
+	}
+
+	rootCAs, err := t.client.GetConfigmap(ctx, dep.Namespace, "metrics-client-ca")
+	if err != nil {
+		return fmt.Errorf("getting metrics-client-ca ConfigMap failed: %w", err)
+	}
+
+	dep, err = t.factory.KubeStateMetricsDenylistBoundsCheck(dep, svc, rootCAs, clientTLS, serverTLS)
 	if err != nil {
 		return fmt.Errorf("verifying kube-state-metrics deny-list bounds failed: %w", err)
 	}
