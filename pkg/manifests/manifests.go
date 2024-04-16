@@ -1290,7 +1290,7 @@ func (f *Factory) PrometheusK8sTelemetrySecret() (*v1.Secret, error) {
 	return s, nil
 }
 
-func (f *Factory) PrometheusK8s(grpcTLS *v1.Secret, trustedCABundleCM *v1.ConfigMap, telemetrySecret *v1.Secret) (*monv1.Prometheus, error) {
+func (f *Factory) PrometheusK8s(grpcTLS *v1.Secret, telemetrySecret *v1.Secret) (*monv1.Prometheus, error) {
 	p, err := f.NewPrometheusK8s()
 	if err != nil {
 		return nil, err
@@ -1448,28 +1448,6 @@ func (f *Factory) PrometheusK8s(grpcTLS *v1.Secret, trustedCABundleCM *v1.Config
 			},
 		},
 	})
-
-	if trustedCABundleCM != nil {
-		volumeName := "prometheus-trusted-ca-bundle"
-		volume := trustedCABundleVolume(trustedCABundleCM.Name, volumeName)
-		volume.VolumeSource.ConfigMap.Items = append(volume.VolumeSource.ConfigMap.Items, v1.KeyToPath{
-			Key:  TrustedCABundleKey,
-			Path: "tls-ca-bundle.pem",
-		})
-		p.Spec.Volumes = append(p.Spec.Volumes, volume)
-
-		// We only need the trusted CA bundle in Prometheus, because users
-		// might want to remotely write to an endpoint whose certificate is
-		// trusted by the CA bundle.
-		for i, container := range p.Spec.Containers {
-			if container.Name == "prometheus" {
-				p.Spec.Containers[i].VolumeMounts = append(
-					p.Spec.Containers[i].VolumeMounts,
-					trustedCABundleVolumeMount(volumeName),
-				)
-			}
-		}
-	}
 
 	if f.config.ClusterMonitoringConfiguration.PrometheusK8sConfig.AlertmanagerConfigs != nil {
 		p.Spec.AdditionalAlertManagerConfigs = &v1.SecretKeySelector{

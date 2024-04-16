@@ -367,14 +367,9 @@ func (t *PrometheusTask) create(ctx context.Context) error {
 			return fmt.Errorf("initializing Prometheus CA bundle ConfigMap failed: %w", err)
 		}
 
-		cbs := &caBundleSyncer{
-			client:  t.client,
-			factory: t.factory,
-			prefix:  "prometheus",
-		}
-		trustedCA, err = cbs.syncTrustedCABundle(ctx, trustedCA)
+		err = t.client.CreateOrUpdateConfigMap(ctx, trustedCA)
 		if err != nil {
-			return fmt.Errorf("syncing Prometheus trusted CA bundle ConfigMap failed: %w", err)
+			return fmt.Errorf("reconciling Prometheus trusted CA bundle ConfigMap failed: %w", err)
 		}
 
 		secret, err := t.factory.PrometheusK8sAdditionalAlertManagerConfigsSecret()
@@ -388,7 +383,7 @@ func (t *PrometheusTask) create(ctx context.Context) error {
 		}
 
 		klog.V(4).Info("initializing Prometheus object")
-		p, err := t.factory.PrometheusK8s(s, trustedCA, telemetrySecret)
+		p, err := t.factory.PrometheusK8s(s, telemetrySecret)
 		if err != nil {
 			return fmt.Errorf("initializing Prometheus object failed: %w", err)
 		}
@@ -429,6 +424,12 @@ func (t *PrometheusTask) create(ctx context.Context) error {
 	})
 	if err != nil {
 		return fmt.Errorf("deleting Prometheus proxy Secret failed: %w", err)
+	}
+
+	// TODO(simonpasquier): remove this step after OCP 4.16 is released.
+	err = t.client.DeleteHashedConfigMap(ctx, "openshift-monitoring", "prometheus-trusted-ca-bundle", "")
+	if err != nil {
+		return fmt.Errorf("deleting all hashed Prometheus trusted CA bundle ConfigMap failed: %w", err)
 	}
 
 	return nil
