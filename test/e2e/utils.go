@@ -16,6 +16,9 @@ package e2e
 
 import (
 	"fmt"
+	apierrors "k8s.io/apimachinery/pkg/api/errors"
+	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	"testing"
 	"time"
 
 	"github.com/Jeffail/gabs"
@@ -25,6 +28,8 @@ import (
 	"k8s.io/apimachinery/pkg/util/sets"
 	"k8s.io/apiserver/pkg/authentication/user"
 )
+
+const operatorNamespace = "openshift-monitoring"
 
 func getActiveTarget(body []byte, jobName string) error {
 	j, err := gabs.ParseJSON([]byte(body))
@@ -156,4 +161,26 @@ func getSecurityContextRestrictedProfile() *v1.SecurityContext {
 			Type: v1.SeccompProfileTypeRuntimeDefault,
 		},
 	}
+}
+
+func getOrCreateCMOConfig(t *testing.T) (*v1.ConfigMap, error) {
+	t.Helper()
+
+	cfg, err := f.KubeClient.CoreV1().ConfigMaps(operatorNamespace).Get(ctx, "cluster-monitoring-config", metav1.GetOptions{})
+	if err != nil {
+		if apierrors.IsNotFound(err) {
+			cfg, err = f.KubeClient.CoreV1().ConfigMaps(operatorNamespace).Create(ctx, &v1.ConfigMap{
+				ObjectMeta: metav1.ObjectMeta{
+					Name:      "cluster-monitoring-config",
+					Namespace: operatorNamespace,
+				},
+			}, metav1.CreateOptions{})
+			if err != nil {
+				return nil, err
+			}
+		} else {
+			return nil, err
+		}
+	}
+	return cfg, nil
 }

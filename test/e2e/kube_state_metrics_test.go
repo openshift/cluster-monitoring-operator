@@ -16,6 +16,7 @@ package e2e
 
 import (
 	"errors"
+	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"regexp"
 	"testing"
 	"time"
@@ -63,5 +64,96 @@ func TestKSMMetricsSuppression(t *testing.T) {
 	if err != nil {
 		t.Errorf("failed to query Prometheus: %v", err)
 	}
+
+}
+
+func TestKSMDenylistBoundsCheck(t *testing.T) {
+
+	// Get the current CMO config.
+	cfg, err := getOrCreateCMOConfig(t)
+	if err != nil {
+		t.Errorf("failed to get cluster-monitoring-config configmap: %v", err)
+	}
+	cfgCopy := cfg.DeepCopy()
+
+	// Update CMO config to include a valid deny-list.
+	validMetricExpression := "^kube_.+_annotations$"
+	cfg.Data = map[string]string{
+		"config.yaml": `
+kubeStateMetrics:
+  metricDenylist:
+    - ` + validMetricExpression,
+	}
+	_, err = f.KubeClient.CoreV1().ConfigMaps(operatorNamespace).Update(ctx, cfg, metav1.UpdateOptions{})
+	if err != nil {
+		t.Errorf("failed to update cluster-monitoring-config configmap: %v", err)
+	}
+
+	// Check KSM deployment for the updated deny-list.
+	if err = expectDenylist(t, true, validMetricExpression); err != nil {
+		t.Errorf("failed to check kube-state-metrics deployment: %v", err)
+	}
+
+	// Update CMO config to include an invalid deny-list.
+	invalidMetricExpression := "foo"
+	cfg, err = getOrCreateCMOConfig(t)
+	if err != nil {
+		t.Errorf("failed to get cluster-monitoring-config configmap: %v", err)
+	}
+	cfg.Data = map[string]string{
+		"config.yaml": `
+kubeStateMetrics:
+  metricDenylist:
+    - ` + invalidMetricExpression,
+	}
+	_, err = f.KubeClient.CoreV1().ConfigMaps(operatorNamespace).Update(ctx, cfg, metav1.UpdateOptions{})
+	if err != nil {
+		t.Errorf("failed to update cluster-monitoring-config configmap: %v", err)
+	}
+
+	// Check KSM deployment for the default deny-list.
+	if err = expectDenylist(t, false, invalidMetricExpression); err != nil {
+		t.Errorf("failed to check kube-state-metrics deployment: %v", err)
+	}
+
+	// Revert CMO config to the original state.
+	cfg, err = getOrCreateCMOConfig(t)
+	if err != nil {
+		t.Errorf("failed to get cluster-monitoring-config configmap: %v", err)
+	}
+	cfg.Data = cfgCopy.Data
+	_, err = f.KubeClient.CoreV1().ConfigMaps(operatorNamespace).Update(ctx, cfg, metav1.UpdateOptions{})
+	if err != nil {
+		t.Errorf("failed to update cluster-monitoring-config configmap: %v", err)
+	}
+}
+
+func expectDenylist(t *testing.T, expectDenylist bool, exp string) error {
+	t.Helper()
+
+	return framework.Poll(5*time.Second, time.Minute, func() error {
+		d, err := f.KubeClient.AppsV1().Deployments(operatorNamespace).Get(ctx, "kube-state-metrics", metav1.GetOptions{})
+		if err != nil {
+			return err
+		}
+
+		for _, c := range d.Spec.Template.Spec.Containers {
+			if c.Name == "kube-state-metrics" {
+				for _, a := range c.Args {
+					if a == "--metric-denylist="+exp {
+						if !expectDenylist {
+							return errors.New("deny-list should not have been found in kube-state-metrics deployment")
+						}
+						return nil
+					}
+				}
+			}
+		}
+
+		if expectDenylist {
+			return errors.New("denylist not found in kube-state-metrics deployment")
+		}
+		return nil
+	})
 
 }
