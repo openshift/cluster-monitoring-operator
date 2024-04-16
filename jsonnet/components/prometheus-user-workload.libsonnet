@@ -54,8 +54,8 @@ function(params)
     // cluster-monitoring-operator, that when reconciling this service the
     // cluster IP needs to be retained.
     //
-    // The ports are overridden, as due to the port binding of the oauth proxy
-    // the serving port is 9091 instead of the 9090 default.
+    // The ports are overridden because the kube-rbac-proxy container listens
+    // on port 9091 while Prometheus listens on localhost:9090.
     service+: {
       metadata+: {
         annotations: {

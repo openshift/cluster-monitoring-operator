@@ -26,7 +26,7 @@ import (
 )
 
 func TestConfigParsing(t *testing.T) {
-	f, err := os.Open("../../examples/config/config.yaml")
+	f, err := os.Open("testdata/cluster-monitoring-configmap.yaml")
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -41,7 +41,7 @@ func TestConfigParsing(t *testing.T) {
 }
 
 func TestNewUserConfigFromStringParsing(t *testing.T) {
-	c, err := os.ReadFile("../../examples/user-workload/configmap.yaml")
+	c, err := os.ReadFile("testdata/user-workload-configmap.yaml")
 	if err != nil {
 		t.Fatal(err)
 	}

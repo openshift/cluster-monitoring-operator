@@ -907,16 +907,19 @@ func expectContainerArg(arg string, containerName string) framework.PodAssertion
 func expectVolumeMountsInContainer(containerName, mountName string) framework.PodAssertion {
 	return func(pod v1.Pod) error {
 		for _, container := range pod.Spec.Containers {
-			if container.Name == containerName {
-				for _, mount := range container.VolumeMounts {
-					if mount.Name == mountName {
-						return nil
-					}
-				}
-				return fmt.Errorf("expected volume mount %s not found in container %s", mountName, containerName)
+			if container.Name != containerName {
+				continue
 			}
+
+			for _, mount := range container.VolumeMounts {
+				if mount.Name == mountName {
+					return nil
+				}
+			}
+			return fmt.Errorf("expected volume mount %q not found in container %q", mountName, containerName)
 		}
-		return nil
+
+		return fmt.Errorf("container %q not found in pod %s/%s", containerName, pod.ObjectMeta.Namespace, pod.ObjectMeta.Name)
 	}
 }
 
