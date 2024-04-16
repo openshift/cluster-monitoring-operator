@@ -22,12 +22,12 @@ import (
 	"io"
 	"net/http"
 	"reflect"
+	"slices"
 	"testing"
 	"time"
 
 	monitoringv1 "github.com/prometheus-operator/prometheus-operator/pkg/apis/monitoring/v1"
 	monitoringv1beta1 "github.com/prometheus-operator/prometheus-operator/pkg/apis/monitoring/v1beta1"
-	"k8s.io/utils/strings/slices"
 
 	"github.com/Jeffail/gabs/v2"
 	statusv1 "github.com/openshift/api/config/v1"
@@ -38,46 +38,6 @@ import (
 	"k8s.io/apimachinery/pkg/util/intstr"
 	"k8s.io/apimachinery/pkg/util/wait"
 )
-
-func TestAlertmanagerTrustedCA(t *testing.T) {
-	var (
-		newCM   *v1.ConfigMap
-		lastErr error
-	)
-
-	cm := f.MustGetConfigMap(t, "alertmanager-trusted-ca-bundle", f.Ns)
-	newCM, err := f.ManifestsFactory.HashTrustedCA(cm, "alertmanager")
-	if err != nil {
-		t.Fatal(fmt.Errorf("no trusted CA bundle data available: %w", err))
-	}
-
-	// Wait for the new hashed trusted CA bundle ConfigMap to be created
-	f.AssertConfigmapExists(newCM.Name, f.Ns)(t)
-
-	// Get Alertmanager StatefulSet and make sure it has a volume mounted.
-	err = wait.Poll(time.Second, 5*time.Minute, func() (bool, error) {
-		ss := f.MustGetStatefulSet(t, "alertmanager-main", f.Ns)
-
-		if len(ss.Spec.Template.Spec.Containers[0].VolumeMounts) == 0 {
-			return false, errors.New("Could not find any VolumeMounts, expected at least 1")
-		}
-
-		for _, mount := range ss.Spec.Template.Spec.Containers[0].VolumeMounts {
-			if mount.Name == "alertmanager-trusted-ca-bundle" {
-				return true, nil
-			}
-		}
-
-		lastErr = fmt.Errorf("no volume %s mounted", newCM.Name)
-		return false, nil
-	})
-	if err != nil {
-		if err == wait.ErrWaitTimeout && lastErr != nil {
-			err = lastErr
-		}
-		t.Fatal(err)
-	}
-}
 
 // TestAlertmanagerTenancyAPI ensures that the Alertmanager API exposed on the
 // tenancy port enforces the namespace value.

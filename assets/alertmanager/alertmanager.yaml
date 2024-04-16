@@ -145,10 +145,19 @@ spec:
     runAsUser: 65534
   serviceAccountName: alertmanager-main
   version: 0.26.0
+  volumeMounts:
+  - mountPath: /etc/pki/ca-trust/extracted/pem/
+    name: alertmanager-trusted-ca-bundle
   volumes:
   - configMap:
       name: metrics-client-ca
     name: metrics-client-ca
+  - configMap:
+      items:
+      - key: ca-bundle.crt
+        path: tls-ca-bundle.pem
+      name: alertmanager-trusted-ca-bundle
+    name: alertmanager-trusted-ca-bundle
   web:
     httpConfig:
       headers:

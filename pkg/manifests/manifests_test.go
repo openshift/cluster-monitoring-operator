@@ -20,6 +20,7 @@ import (
 	"fmt"
 	"net/url"
 	"reflect"
+	"slices"
 	"sort"
 	"strings"
 	"testing"
@@ -33,7 +34,6 @@ import (
 	policyv1 "k8s.io/api/policy/v1"
 	"k8s.io/apimachinery/pkg/api/resource"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
-	"k8s.io/utils/strings/slices"
 )
 
 type fakeInfrastructureReader struct {
@@ -251,7 +251,7 @@ func TestUnconfiguredManifests(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	_, err = f.AlertmanagerMain(nil)
+	_, err = f.AlertmanagerMain()
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -3041,9 +3041,7 @@ func TestAlertmanagerMainStartupProbe(t *testing.T) {
 				t.Fatal(err)
 			}
 			f := NewFactory("openshift-monitoring", "openshift-user-workload-monitoring", c, tc.infrastructure, &fakeProxyReader{}, NewAssets(assetsPath), &APIServerConfig{}, &configv1.Console{})
-			a, err := f.AlertmanagerMain(
-				&v1.ConfigMap{ObjectMeta: metav1.ObjectMeta{Name: "foo"}},
-			)
+			a, err := f.AlertmanagerMain()
 			if err != nil {
 				t.Fatal(err)
 			}
@@ -3115,9 +3113,7 @@ ingress:
 	})
 
 	f := NewFactory("openshift-monitoring", "openshift-user-workload-monitoring", c, defaultInfrastructureReader(), &fakeProxyReader{}, NewAssets(assetsPath), &APIServerConfig{}, &configv1.Console{Status: configv1.ConsoleStatus{ConsoleURL: "https://console-openshift-console.apps.foo.devcluster.openshift.com"}})
-	a, err := f.AlertmanagerMain(
-		&v1.ConfigMap{ObjectMeta: metav1.ObjectMeta{Name: "foo"}},
-	)
+	a, err := f.AlertmanagerMain()
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -3241,6 +3237,17 @@ ingress:
 		}
 	}
 
+	if !slices.ContainsFunc(a.Spec.Volumes, func(v v1.Volume) bool {
+		return v.Name == "alertmanager-trusted-ca-bundle"
+	}) {
+		t.Fatalf("expected to find volume with name 'alertmanager-trusted-ca-bundle' but got none: %#v", a.Spec.Volumes)
+	}
+
+	if !slices.ContainsFunc(a.Spec.VolumeMounts, func(v v1.VolumeMount) bool {
+		return v.Name == "alertmanager-trusted-ca-bundle"
+	}) {
+		t.Fatalf("expected to find volume mount with name 'alertmanager-trusted-ca-bundle' but got none: %#v", a.Spec.VolumeMounts)
+	}
 }
 
 func TestAlertManagerUserWorkloadConfiguration(t *testing.T) {
@@ -4360,9 +4367,7 @@ func TestNonHighlyAvailableInfrastructure(t *testing.T) {
 		{
 			name: "Alertmanager",
 			getSpec: func(f *Factory) (spec, error) {
-				a, err := f.AlertmanagerMain(
-					&v1.ConfigMap{ObjectMeta: metav1.ObjectMeta{Name: "foo"}},
-				)
+				a, err := f.AlertmanagerMain()
 				if err != nil {
 					return spec{}, err
 				}
