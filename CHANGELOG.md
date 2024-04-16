@@ -46,7 +46,7 @@
 - [#1652](https://github.com/openshift/cluster-monitoring-operator/pull/1652) Double scrape interval for all CMO controlled ServiceMonitors on single node deployments
 - [#1567](https://github.com/openshift/cluster-monitoring-operator/pull/1567) Enable validating webhook for AlertmanagerConfig custom resources
 - [#1557](https://github.com/openshift/cluster-monitoring-operator/pull/1557) Removing grafana from monitoring stack
-- [#1578](https://github.com/openshift/cluster-monitoring-operator/pull/1578) Add temporary cluster id label to remote write relabel configs.
+- [#1578](https://github.com/openshift/cluster-monitoring-operator/pull/1578) Add temporary cluster id label to remotely write relabel configs.
 - [#1350](https://github.com/openshift/cluster-monitoring-operator/pull/1350) Support label scrape limits in user-workload monitoring
 - [#1601](https://github.com/openshift/cluster-monitoring-operator/pull/1601) Expose the /federate endpoint of UWM Prometheus as a service
 - [#1617](https://github.com/openshift/cluster-monitoring-operator/pull/1617) Add Oauth2 setting to PrometheusK8s remoteWrite config

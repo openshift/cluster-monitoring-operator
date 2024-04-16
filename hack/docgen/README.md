@@ -25,7 +25,7 @@ External links are also dynamically generated to match the current version of Ku
 
 #### Required fields
 
-Some data types require that some fields are present when specified while others can be omitted. If a field can be omitted it should have the tag `omitempty` in its JSON, this will make it so it's omitted from the `Required` section.
+Some data types require that some fields are present when specified while others can be omitted. If a field can be omitted it should have the tag `omitempty` in its JSON, this will make it, so it's omitted from the `Required` section.
 
 #### Ignoring fields from the doc
 

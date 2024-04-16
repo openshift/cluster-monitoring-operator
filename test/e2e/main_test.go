@@ -133,7 +133,7 @@ func TestTargetsUp(t *testing.T) {
 
 	// Delete the client TLS certificate used by Prometheus to scrape endpoints.
 	// CMO should recreate it and the new certificate should still be trusted
-	// by the endpoints. If a endpoint remains down, it's probably because it
+	// by the endpoints. If an endpoint remains down, it's probably because it
 	// doesn't use the cluster CA bundle.
 	// See https://issues.redhat.com/browse/OCPBUGS-4521.
 	metricsClientCertSecret, err := f.ManifestsFactory.MetricsClientCerts()

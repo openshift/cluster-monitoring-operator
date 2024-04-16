@@ -76,7 +76,7 @@ func trimmedVersion(rawVersion string) string {
 }
 
 func updateVersionFile(fileP string, components Components) error {
-	keys := []string{}
+	var keys []string
 	for component := range components.Repos {
 		keys = append(keys, component)
 	}
@@ -136,7 +136,7 @@ func updateDepsVersionsFile(fileP string, components Components) error {
 			break
 		}
 		versions[OCPVersionHeader] = releaseBranch(releaseVersion)
-		row := []string{}
+		var row []string
 		for _, h := range header {
 			version := versionNotFound
 			if v, found := versions[h]; found {
@@ -218,7 +218,9 @@ func fetchVersion(path string) (string, error) {
 	if err != nil {
 		return "", err
 	}
-	defer resp.Body.Close()
+	defer func(Body io.ReadCloser) {
+		_ = Body.Close()
+	}(resp.Body)
 
 	if resp.StatusCode != http.StatusOK {
 		return "", fmt.Errorf("non 200 response")

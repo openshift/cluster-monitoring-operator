@@ -779,11 +779,11 @@ func TestPrometheusOperatorConfiguration(t *testing.T) {
 	}
 
 	if d.Spec.Template.Spec.TopologySpreadConstraints[0].MaxSkew != 1 {
-		t.Fatal("k8s-prometheus-operator topology spread contraints MaxSkew not configured correctly")
+		t.Fatal("k8s-prometheus-operator topology spread constraints MaxSkew not configured correctly")
 	}
 
 	if d.Spec.Template.Spec.TopologySpreadConstraints[0].WhenUnsatisfiable != "DoNotSchedule" {
-		t.Fatal("k8s-prometheus-operator topology spread contraints WhenUnsatisfiable not configured correctly")
+		t.Fatal("k8s-prometheus-operator topology spread constraints WhenUnsatisfiable not configured correctly")
 	}
 
 	prometheusReloaderFound := false
@@ -1693,11 +1693,11 @@ ingress:
 	}
 
 	if p.Spec.TopologySpreadConstraints[0].MaxSkew != 1 {
-		t.Fatal("Prometheus topology spread contraints MaxSkew not configured correctly")
+		t.Fatal("Prometheus topology spread constraints MaxSkew not configured correctly")
 	}
 
 	if p.Spec.TopologySpreadConstraints[0].WhenUnsatisfiable != "DoNotSchedule" {
-		t.Fatal("Prometheus topology spread contraints WhenUnsatisfiable not configured correctly")
+		t.Fatal("Prometheus topology spread constraints WhenUnsatisfiable not configured correctly")
 	}
 
 	if p.Spec.ExternalLabels["datacenter"] != "eu-west" {
@@ -1761,11 +1761,11 @@ func TestPrometheusUserWorkloadConfiguration(t *testing.T) {
 	}
 
 	if p.Spec.TopologySpreadConstraints[0].MaxSkew != 1 {
-		t.Fatal("Prometheus UWM spread contraints MaxSkew not configured correctly")
+		t.Fatal("Prometheus UWM spread constraints MaxSkew not configured correctly")
 	}
 
 	if p.Spec.TopologySpreadConstraints[0].WhenUnsatisfiable != "DoNotSchedule" {
-		t.Fatal("Prometheus UWM spread contraints WhenUnsatisfiable not configured correctly")
+		t.Fatal("Prometheus UWM spread constraints WhenUnsatisfiable not configured correctly")
 	}
 
 	if !reflect.DeepEqual(*f.config.UserWorkloadConfiguration.Prometheus.Resources, p.Spec.Resources) {
@@ -2567,7 +2567,7 @@ func TestThanosRulerAdditionalAlertManagerConfigsSecret(t *testing.T) {
 			}
 
 			if s.Namespace != "openshift-user-workload-monitoring" {
-				t.Fatalf("invalid secret namepace, got %s, want %s", s.Namespace, "openshift-user-workload-monitoring")
+				t.Fatalf("invalid secret namespace, got %s, want %s", s.Namespace, "openshift-user-workload-monitoring")
 			}
 
 			if !reflect.DeepEqual(s.StringData["alertmanagers.yaml"], tt.expected) {
@@ -2737,11 +2737,11 @@ k8sPrometheusAdapter:
 	}
 
 	if d.Spec.Template.Spec.TopologySpreadConstraints[0].MaxSkew != 1 {
-		t.Fatal("k8s-prometheus-adapter topology spread contraints MaxSkew not configured correctly")
+		t.Fatal("k8s-prometheus-adapter topology spread constraints MaxSkew not configured correctly")
 	}
 
 	if d.Spec.Template.Spec.TopologySpreadConstraints[0].WhenUnsatisfiable != "DoNotSchedule" {
-		t.Fatal("k8s-prometheus-adapter topology spread contraints WhenUnsatisfiable not configured correctly")
+		t.Fatal("k8s-prometheus-adapter topology spread constraints WhenUnsatisfiable not configured correctly")
 	}
 
 	for _, container := range d.Spec.Template.Spec.Containers {
@@ -3154,11 +3154,11 @@ ingress:
 	}
 
 	if a.Spec.TopologySpreadConstraints[0].MaxSkew != 1 {
-		t.Fatal("Alertmanager main topology spread contraints MaxSkew not configured correctly")
+		t.Fatal("Alertmanager main topology spread constraints MaxSkew not configured correctly")
 	}
 
 	if a.Spec.TopologySpreadConstraints[0].WhenUnsatisfiable != "DoNotSchedule" {
-		t.Fatal("Alertmanager main topology spread contraints WhenUnsatisfiable not configured correctly")
+		t.Fatal("Alertmanager main topology spread constraints WhenUnsatisfiable not configured correctly")
 	}
 
 	expectedExternalURL := "https://console-openshift-console.apps.foo.devcluster.openshift.com/monitoring"
@@ -3289,11 +3289,11 @@ func TestAlertManagerUserWorkloadConfiguration(t *testing.T) {
 	}
 
 	if a.Spec.TopologySpreadConstraints[0].MaxSkew != 1 {
-		t.Fatal("Alertmanager UWM spread contraints MaxSkew not configured correctly")
+		t.Fatal("Alertmanager UWM spread constraints MaxSkew not configured correctly")
 	}
 
 	if a.Spec.TopologySpreadConstraints[0].WhenUnsatisfiable != "DoNotSchedule" {
-		t.Fatal("Alertmanager UWM spread contraints WhenUnsatisfiable not configured correctly")
+		t.Fatal("Alertmanager UWM spread constraints WhenUnsatisfiable not configured correctly")
 	}
 
 	expectedExternalURL := "https://console-openshift-console.apps.foo.devcluster.openshift.com/monitoring"
@@ -3607,7 +3607,7 @@ nodeExporter:
 
 func TestNodeExporterSystemdUnits(t *testing.T) {
 
-	testName := "enable systemd collector with invalid units parttern"
+	testName := "enable systemd collector with invalid units pattern"
 	config := `
 nodeExporter:
   collectors:
@@ -3629,8 +3629,8 @@ nodeExporter:
 
 		f := NewFactory("openshift-monitoring", "openshift-user-workload-monitoring", c, defaultInfrastructureReader(), &fakeProxyReader{}, NewAssets(assetsPath), &APIServerConfig{}, &configv1.Console{})
 		_, err = f.NodeExporterDaemonSet()
-		if err == nil || !strings.Contains(err.Error(), "systemd unit pattern valiation error:") {
-			t.Fatalf(`expected error "systemd unit pattern valiation error:.*", got %v`, err)
+		if err == nil || !strings.Contains(err.Error(), "systemd unit pattern validation error:") {
+			t.Fatalf(`expected error "systemd unit pattern validation error:.*", got %v`, err)
 		}
 	})
 }
@@ -3769,11 +3769,11 @@ func TestKubeStateMetrics(t *testing.T) {
 	}
 
 	if d.Spec.Template.Spec.TopologySpreadConstraints[0].MaxSkew != 1 {
-		t.Fatal("kube-state-metrics topology spread contraints MaxSkew not configured correctly")
+		t.Fatal("kube-state-metrics topology spread constraints MaxSkew not configured correctly")
 	}
 
 	if d.Spec.Template.Spec.TopologySpreadConstraints[0].WhenUnsatisfiable != "DoNotSchedule" {
-		t.Fatal("kube-state-metrics topology spread contraints WhenUnsatisfiable not configured correctly")
+		t.Fatal("kube-state-metrics topology spread constraints WhenUnsatisfiable not configured correctly")
 	}
 
 	d2, err := f.KubeStateMetricsDeployment()
@@ -3855,11 +3855,11 @@ func TestOpenShiftStateMetrics(t *testing.T) {
 	}
 
 	if d.Spec.Template.Spec.TopologySpreadConstraints[0].MaxSkew != 1 {
-		t.Fatal("openShiftStateMetrics topology spread contraints MaxSkew not configured correctly")
+		t.Fatal("openShiftStateMetrics topology spread constraints MaxSkew not configured correctly")
 	}
 
 	if d.Spec.Template.Spec.TopologySpreadConstraints[0].WhenUnsatisfiable != "DoNotSchedule" {
-		t.Fatal("openShiftStateMetrics topology spread contraints WhenUnsatisfiable not configured correctly")
+		t.Fatal("openShiftStateMetrics topology spread constraints WhenUnsatisfiable not configured correctly")
 	}
 
 	d2, err := f.OpenShiftStateMetricsDeployment()
@@ -4007,7 +4007,7 @@ func TestThanosQuerierConfiguration(t *testing.T) {
 	} {
 		t.Run(tc.name, func(t *testing.T) {
 			if reflect.DeepEqual(tc.got, tc.want) {
-				t.Errorf("thanos-querier topology spread contraints WhenUnsatisfiable not configured correctly: want %+v, got %+v", tc.want, tc.got)
+				t.Errorf("thanos-querier topology spread constraints WhenUnsatisfiable not configured correctly: want %+v, got %+v", tc.want, tc.got)
 			}
 		})
 	}
@@ -4174,11 +4174,11 @@ func TestTelemeterConfiguration(t *testing.T) {
 	}
 
 	if d.Spec.Template.Spec.TopologySpreadConstraints[0].MaxSkew != 1 {
-		t.Fatal("Telemeter topology spread contraints MaxSkew not configured correctly")
+		t.Fatal("Telemeter topology spread constraints MaxSkew not configured correctly")
 	}
 
 	if d.Spec.Template.Spec.TopologySpreadConstraints[0].WhenUnsatisfiable != "DoNotSchedule" {
-		t.Fatal("Telemeter topology spread contraints WhenUnsatisfiable not configured correctly")
+		t.Fatal("Telemeter topology spread constraints WhenUnsatisfiable not configured correctly")
 	}
 }
 
@@ -4295,11 +4295,11 @@ func TestThanosRulerConfiguration(t *testing.T) {
 	}
 
 	if tr.Spec.TopologySpreadConstraints[0].MaxSkew != 1 {
-		t.Fatal("Thanos ruler topology spread contraints MaxSkew not configured correctly")
+		t.Fatal("Thanos ruler topology spread constraints MaxSkew not configured correctly")
 	}
 
 	if tr.Spec.TopologySpreadConstraints[0].WhenUnsatisfiable != "DoNotSchedule" {
-		t.Fatal("Thanos ruler topology spread contraints WhenUnsatisfiable not configured correctly")
+		t.Fatal("Thanos ruler topology spread constraints WhenUnsatisfiable not configured correctly")
 	}
 
 	if !reflect.DeepEqual(tr.Spec.Resources, *f.config.UserWorkloadConfiguration.ThanosRuler.Resources) {
@@ -4785,11 +4785,11 @@ func TestPrometheusOperatorUserWorkloadConfiguration(t *testing.T) {
 	}
 
 	if d.Spec.Template.Spec.TopologySpreadConstraints[0].MaxSkew != 1 {
-		t.Fatal("prometheus-operator UWM spread contraints MaxSkew not configured correctly")
+		t.Fatal("prometheus-operator UWM spread constraints MaxSkew not configured correctly")
 	}
 
 	if d.Spec.Template.Spec.TopologySpreadConstraints[0].WhenUnsatisfiable != "DoNotSchedule" {
-		t.Fatal("prometheus-operator UWM spread contraints WhenUnsatisfiable not configured correctly")
+		t.Fatal("prometheus-operator UWM spread constraints WhenUnsatisfiable not configured correctly")
 	}
 }
 

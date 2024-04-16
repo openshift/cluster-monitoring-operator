@@ -42,7 +42,7 @@ const (
 func TestAlertRelabelConfig(t *testing.T) {
 	initialRelabelConfig := prometheusRelabelConfig(t)
 
-	// By default we drop prometheus_replica label + add openshift_io_alert_source = 2
+	// By default, we drop prometheus_replica label + add openshift_io_alert_source = 2
 	require.Len(t, initialRelabelConfig, 2)
 
 	ctx := context.Background()
@@ -105,7 +105,7 @@ func prometheusRelabelConfig(t *testing.T) []*relabel.Config {
 	return prometheusConfig.AlertingConfig.AlertRelabelConfigs
 }
 
-// validateCurrentRelabelConfig ensures that Prometheus config is using the expected relabel config
+// validateCurrentRelabelConfig ensures that Prometheus config is using the expected relabel-config
 func validateCurrentRelabelConfig(t *testing.T, expectedRelabelConfig []*relabel.Config) {
 	err := framework.Poll(time.Second, 1*time.Minute, func() error {
 		currentRelabelConfig := prometheusRelabelConfig(t)
