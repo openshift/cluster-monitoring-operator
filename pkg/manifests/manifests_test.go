@@ -211,7 +211,7 @@ func TestUnconfiguredManifests(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	_, err = f.ThanosQuerierDeployment(&v1.Secret{ObjectMeta: metav1.ObjectMeta{Name: "foo"}}, true, nil)
+	_, err = f.ThanosQuerierDeployment(&v1.Secret{ObjectMeta: metav1.ObjectMeta{Name: "foo"}}, true)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -3956,7 +3956,6 @@ func TestThanosQuerierConfiguration(t *testing.T) {
 	d, err := f.ThanosQuerierDeployment(
 		&v1.Secret{ObjectMeta: metav1.ObjectMeta{Name: "foo"}},
 		false,
-		&v1.ConfigMap{ObjectMeta: metav1.ObjectMeta{Name: "foo"}},
 	)
 	if err != nil {
 		t.Fatal(err)
@@ -4380,7 +4379,6 @@ func TestNonHighlyAvailableInfrastructure(t *testing.T) {
 				q, err := f.ThanosQuerierDeployment(
 					&v1.Secret{ObjectMeta: metav1.ObjectMeta{Name: "foo"}},
 					true,
-					&v1.ConfigMap{ObjectMeta: metav1.ObjectMeta{Name: "foo"}},
 				)
 				if err != nil {
 					return spec{}, err
