@@ -25,7 +25,6 @@ import (
 	"errors"
 	"fmt"
 	"hash/fnv"
-	"k8s.io/apimachinery/pkg/util/wait"
 	"net"
 	"net/http"
 	"net/url"
@@ -51,6 +50,7 @@ import (
 	rbacv1 "k8s.io/api/rbac/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/util/sets"
+	"k8s.io/apimachinery/pkg/util/wait"
 	auditv1 "k8s.io/apiserver/pkg/apis/audit/v1"
 	apiregistrationv1 "k8s.io/kube-aggregator/pkg/apis/apiregistration/v1"
 	"k8s.io/utils/ptr"
@@ -823,13 +823,13 @@ func (f *Factory) KubeStateMetricsDenylistBoundsCheck(deployment *appsv1.Deploym
 		if err != nil {
 			return false, fmt.Errorf("cannot fetch kube-state-metrics /metrics endpoint: %w", err)
 		}
+		defer resp.Body.Close()
 
 		return resp.StatusCode == http.StatusOK, nil
 	})
 	if err != nil {
 		return nil, fmt.Errorf("cannot fetch kube-state-metrics /metrics endpoint: %w", err)
 	}
-	defer resp.Body.Close()
 
 	// Prep the current deny-list regex.
 	denylist := f.config.ClusterMonitoringConfiguration.KubeStateMetricsConfig.MetricDenylist

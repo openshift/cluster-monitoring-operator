@@ -98,7 +98,6 @@ func (t *KubeStateMetricsTask) Run(ctx context.Context) error {
 	serverTLS, err := t.client.GetSecret(ctx, dep.Namespace, "kube-state-metrics-tls")
 	if err != nil {
 		return fmt.Errorf("getting kube-state-metrics-tls Secret failed: %w", err)
-
 	}
 
 	clientTLS, err := t.client.GetSecret(ctx, dep.Namespace, "metrics-client-certs")
