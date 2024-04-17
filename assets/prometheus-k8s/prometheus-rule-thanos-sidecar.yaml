@@ -7,7 +7,7 @@ metadata:
     app.kubernetes.io/managed-by: cluster-monitoring-operator
     app.kubernetes.io/name: prometheus
     app.kubernetes.io/part-of: openshift-monitoring
-    app.kubernetes.io/version: 2.51.1
+    app.kubernetes.io/version: 2.51.2
     prometheus: k8s
     role: alert-rules
   name: prometheus-k8s-thanos-sidecar-rules
