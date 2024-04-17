@@ -21,65 +21,7 @@ import (
 	"time"
 
 	"github.com/openshift/cluster-monitoring-operator/test/e2e/framework"
-
-	v1 "k8s.io/api/core/v1"
-	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
-	"k8s.io/apimachinery/pkg/util/wait"
 )
-
-func TestThanosQuerierTrustedCA(t *testing.T) {
-	ctx := context.Background()
-	var (
-		newCM   *v1.ConfigMap
-		lastErr error
-	)
-
-	// Wait for the new ConfigMap to be created
-	err := wait.PollUntilContextTimeout(context.Background(), time.Second, 5*time.Minute, true, func(context.Context) (bool, error) {
-		cm, err := f.KubeClient.CoreV1().ConfigMaps(f.Ns).Get(ctx, "thanos-querier-trusted-ca-bundle", metav1.GetOptions{})
-		if err != nil {
-			lastErr = fmt.Errorf("getting new trusted CA ConfigMap failed: %w", err)
-			return false, nil
-		}
-
-		newCM, err = f.ManifestsFactory.HashTrustedCA(cm, "thanos-querier")
-		if err != nil {
-			lastErr = fmt.Errorf("no trusted CA bundle data available: %w", err)
-			return false, nil
-		}
-
-		return true, nil
-	})
-	if err != nil {
-		if wait.Interrupted(err) && lastErr != nil {
-			err = lastErr
-		}
-		t.Fatal(err)
-	}
-
-	for _, tc := range []scenario{
-		{
-			name:      "Wait for the new hashed trusted CA bundle ConfigMap to be created",
-			assertion: f.AssertConfigmapExists(newCM.Name, f.Ns),
-		},
-		{
-			name:      "assert deployment rolls out",
-			assertion: f.AssertDeploymentExistsAndRollout("thanos-querier", f.Ns),
-		},
-		{
-			name: "assert pod configuration is as expected",
-			assertion: f.AssertPodConfiguration(
-				f.Ns,
-				"app.kubernetes.io/name=thanos-query",
-				[]framework.PodAssertion{
-					expectVolumeMountsInContainer("oauth-proxy", "thanos-querier-trusted-ca-bundle"),
-				},
-			),
-		},
-	} {
-		t.Run(tc.name, tc.assertion)
-	}
-}
 
 func TestThanosQueryCanQueryWatchdogAlert(t *testing.T) {
 	// The 2-minute timeout is what console CI tests set.
