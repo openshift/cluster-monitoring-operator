@@ -174,6 +174,9 @@ func getOrCreateCMOConfig(t *testing.T) (*v1.ConfigMap, error) {
 					Name:      "cluster-monitoring-config",
 					Namespace: operatorNamespace,
 				},
+				Data: map[string]string{
+					"config.yaml": "",
+				},
 			}, metav1.CreateOptions{})
 			if err != nil {
 				return nil, err

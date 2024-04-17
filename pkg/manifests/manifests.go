@@ -25,6 +25,7 @@ import (
 	"errors"
 	"fmt"
 	"hash/fnv"
+	"io"
 	"net"
 	"net/http"
 	"net/url"
@@ -783,7 +784,7 @@ func (f *Factory) KubeStateMetricsDenylistBoundsCheck(deployment *appsv1.Deploym
 	}
 
 	// Query the endpoint.
-	var resp *http.Response
+	var responseData []byte
 	err := wait.PollUntilContextTimeout(context.Background(), time.Second, 5*time.Second, true, func(ctx context.Context) (bool, error) {
 		u := &url.URL{
 			Scheme: "https",
@@ -819,11 +820,15 @@ func (f *Factory) KubeStateMetricsDenylistBoundsCheck(deployment *appsv1.Deploym
 		client := &http.Client{
 			Transport: &http.Transport{TLSClientConfig: tlsConfig},
 		}
-		resp, err = client.Get(u.String())
+		resp, err := client.Get(u.String())
 		if err != nil {
 			return false, fmt.Errorf("cannot fetch kube-state-metrics /metrics endpoint: %w", err)
 		}
 		defer resp.Body.Close()
+		responseData, err = io.ReadAll(resp.Body)
+		if err != nil {
+			return false, fmt.Errorf("cannot read kube-state-metrics /metrics response: %w", err)
+		}
 
 		return resp.StatusCode == http.StatusOK, nil
 	})
@@ -836,7 +841,7 @@ func (f *Factory) KubeStateMetricsDenylistBoundsCheck(deployment *appsv1.Deploym
 	denylistRegex := strings.Join(denylist, "|")
 
 	// Parse the response.
-	scanner := bufio.NewScanner(resp.Body)
+	scanner := bufio.NewScanner(strings.NewReader(string(responseData)))
 	for scanner.Scan() {
 		line := scanner.Text()
 
