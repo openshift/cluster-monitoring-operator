@@ -16,7 +16,6 @@ package manifests
 
 import (
 	"crypto/md5"
-	"crypto/sha256"
 	"crypto/tls"
 	"encoding/base64"
 	"encoding/json"
@@ -2754,8 +2753,9 @@ func (f *Factory) TelemeterClientDeployment(proxyCABundleCM *v1.ConfigMap, s *v1
 
 	// Set annotation on deployment to trigger redeployments
 	if s != nil {
-		hash := sha256.New()
-		d.Spec.Template.Annotations["telemeter-token-hash"] = string(hash.Sum(s.Data["token"]))
+		h := fnv.New64()
+		h.Write(s.Data["token"])
+		d.Spec.Template.Annotations["telemeter-token-hash"] = strconv.FormatUint(h.Sum64(), 32)
 	}
 
 	for i, container := range d.Spec.Template.Spec.Containers {
