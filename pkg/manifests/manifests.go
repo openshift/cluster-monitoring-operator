@@ -846,11 +846,12 @@ func (f *Factory) KubeStateMetricsDenylistBoundsCheck(deployment *appsv1.Deploym
 		line := scanner.Text()
 
 		// A metric that is denied by default will never be in the served `/metrics` payload.
-		if matched, _ := regexp.MatchString(denylistRegex, line); matched {
-			if strings.HasPrefix(line, "#") {
-				line = strings.Split(line, " ")[2]
-			}
-			return nil, fmt.Errorf("cannot deny a metric enabled by default: %s", line)
+		if !strings.HasPrefix(line, "# TYPE") {
+			continue
+		}
+		metric := strings.Split(line, " ")[2]
+		if matched, _ := regexp.MatchString(denylistRegex, metric); matched {
+			return nil, fmt.Errorf("cannot deny a metric enabled by default: %s", metric)
 		}
 	}
 

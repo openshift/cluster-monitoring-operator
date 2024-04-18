@@ -777,6 +777,12 @@ func (o *Operator) sync(ctx context.Context, key string) error {
 				newTaskSpec("ConfigurationSharing", tasks.NewConfigSharingTask(o.client, factory, config)),
 			},
 		),
+		// Peripheral tasks are volatile and run after critical tasks to ensure a stable stack rollout.
+		tasks.NewTaskGroup(
+			[]*tasks.TaskSpec{
+				newTaskSpec("Peripherals", tasks.NewPeripheralsTask(o.client, factory)),
+			},
+		),
 	)
 	klog.Info("Updating ClusterOperator status to InProgress.")
 	err = o.client.StatusReporter().SetRollOutInProgress(ctx)

@@ -75,7 +75,7 @@ func TestKSMDenylistBoundsCheck(t *testing.T) {
 		t.Errorf("failed to get cluster-monitoring-config configmap: %v", err)
 	}
 	cfgCopy := cfg.DeepCopy()
-	invalidMetricExpression := "kube_lease_owner"
+	invalidMetricExpression := "^kube_lease_owner$"
 	cfg.Data = map[string]string{
 		"config.yaml": `
 kubeStateMetrics:
@@ -120,7 +120,7 @@ kubeStateMetrics:
 	if err != nil {
 		t.Errorf("failed to get cluster-monitoring-config configmap: %v", err)
 	}
-	validDefaultMetricExpression := "kube_replicaset_metadata_generation"
+	validDefaultMetricExpression := "^kube_replicaset_metadata_generation$"
 	cfg.Data = map[string]string{
 		"config.yaml": `
 kubeStateMetrics:
