@@ -19,20 +19,22 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
+	"github.com/go-openapi/strfmt"
+	"github.com/google/uuid"
 	"io"
+	"k8s.io/utils/ptr"
 	"net/http"
 	"reflect"
 	"slices"
 	"testing"
 	"time"
 
-	monitoringv1 "github.com/prometheus-operator/prometheus-operator/pkg/apis/monitoring/v1"
-	monitoringv1beta1 "github.com/prometheus-operator/prometheus-operator/pkg/apis/monitoring/v1beta1"
-
 	"github.com/Jeffail/gabs/v2"
 	statusv1 "github.com/openshift/api/config/v1"
 	"github.com/openshift/cluster-monitoring-operator/test/e2e/framework"
-
+	monitoringv1 "github.com/prometheus-operator/prometheus-operator/pkg/apis/monitoring/v1"
+	monitoringv1beta1 "github.com/prometheus-operator/prometheus-operator/pkg/apis/monitoring/v1beta1"
+	amapimodels "github.com/prometheus/alertmanager/api/v2/models"
 	v1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/util/intstr"
@@ -472,6 +474,188 @@ func TestAlertmanagerAPI(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
+
+	// Check read and write access to the Alertmanager API.
+	testAlertmanagerAPIAccess(t)
+}
+
+func testAlertmanagerAPIAccess(t *testing.T) {
+	ctx := context.Background()
+	const (
+		monitoringNamespace = "openshift-monitoring"
+		testNamespace       = "alertmanager-api-e2e-test"
+	)
+	namespaceObj := &v1.Namespace{
+		ObjectMeta: metav1.ObjectMeta{
+			Name: testNamespace,
+			Labels: map[string]string{
+				framework.E2eTestLabelName: framework.E2eTestLabelValue,
+			},
+		},
+	}
+	namespaceObj, err := f.KubeClient.CoreV1().Namespaces().Create(ctx, namespaceObj, metav1.CreateOptions{})
+	if err != nil {
+		t.Fatal(err)
+	}
+	t.Cleanup(func() {
+		foreground := metav1.DeletePropagationForeground
+		if err = f.KubeClient.CoreV1().Namespaces().Delete(ctx, testNamespace, metav1.DeleteOptions{PropagationPolicy: &foreground}); err != nil {
+			t.Logf("err deleting namespace %s: %v", testNamespace, err)
+		}
+	})
+
+	// Check access to the Alertmanager API based on the reader and writer roles.
+	const (
+		sa = testNamespace + "-sa"
+	)
+	saCleanup, err := f.CreateServiceAccount(testNamespace, sa)
+	if err != nil {
+		t.Fatal(err)
+	}
+	defer func() {
+		err = saCleanup()
+		if err != nil {
+			t.Logf("failed to cleanup service account %s: %v", sa, err)
+		}
+	}()
+	var client *framework.PrometheusClient
+	err = framework.Poll(5*time.Second, time.Minute, func() error {
+		token, err := f.GetServiceAccountToken(testNamespace, sa)
+		if err != nil {
+			return err
+		}
+		client, err = framework.NewPrometheusClientFromRoute(
+			ctx,
+			f.OpenShiftRouteClient,
+			monitoringNamespace,
+			"alertmanager-main",
+			token,
+		)
+		if err != nil {
+			return err
+		}
+		return nil
+	})
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	const (
+		getURI    = "/api/v2/silences"
+		postURI   = getURI
+		deleteURI = "/api/v2/silence/" // /{silenceID}
+	)
+	postableSilence := amapimodels.PostableSilence{
+		ID: "", // Empty ID to create a new silence.
+		Silence: amapimodels.Silence{
+			Matchers: []*amapimodels.Matcher{
+				{
+					Name:    ptr.To("t"),
+					Value:   ptr.To("tt"),
+					IsRegex: ptr.To(false),
+				},
+			},
+			StartsAt:  ptr.To(strfmt.DateTime(time.Now().Add(time.Hour))),
+			EndsAt:    ptr.To(strfmt.DateTime(time.Now().Add(time.Hour * 2))),
+			CreatedBy: ptr.To("johndoe"),
+			Comment:   ptr.To("lorem ipsum"),
+		},
+	}
+	postPayload, err := json.Marshal(postableSilence)
+	if err != nil {
+		t.Fatal(err)
+	}
+	testcases := []struct {
+		description       string
+		allowedMethods    map[string][2]string
+		disallowedMethods map[string][2]string
+		role              string
+	}{
+		{
+			description:       "read access to the Alertmanager API",
+			allowedMethods:    map[string][2]string{http.MethodGet: {getURI}},
+			disallowedMethods: map[string][2]string{http.MethodPost: {postURI, string(postPayload)}, http.MethodDelete: {deleteURI}},
+			role:              "monitoring-alertmanager-view",
+		},
+		{
+			description:       "write access to the Alertmanager API",
+			allowedMethods:    map[string][2]string{http.MethodGet: {getURI}, http.MethodPost: {postURI, string(postPayload)}, http.MethodDelete: {deleteURI}},
+			disallowedMethods: map[string][2]string{},
+			role:              "monitoring-alertmanager-edit",
+		},
+	}
+	for _, testcase := range testcases {
+		rbCleanup, err := f.CreateRoleBindingFromRoleOtherNamespace(testNamespace, sa, testcase.role, monitoringNamespace)
+		if err != nil {
+			t.Fatal(err)
+		}
+		t.Cleanup(func() {
+			err = rbCleanup()
+			if err != nil {
+				t.Logf("failed to cleanup role binding %s: %v", sa, err)
+			}
+		})
+
+		// Verify valid access to the Alertmanager API.
+		if err := checkAlertmanagerAPIVerbs(t, client, testcase.description, testcase.allowedMethods, true); err != nil {
+			t.Fatal(err)
+		}
+
+		// Verify invalid access to the Alertmanager API.
+		if err := checkAlertmanagerAPIVerbs(t, client, testcase.description, testcase.disallowedMethods, false); err != nil {
+			t.Fatal(err)
+		}
+	}
+}
+
+func checkAlertmanagerAPIVerbs(_ *testing.T, client *framework.PrometheusClient, desc string, methods map[string][2]string, allowed bool) error {
+	var sid string
+	return framework.Poll(5*time.Second, time.Minute, func() error {
+		for method, v := range methods {
+			if method == http.MethodDelete {
+				if !allowed {
+					// Assign a random UUID to the silence ID when doing a DELETE if it's not allowed. This is because
+					// DELETE will fail if the silence ID is not set, and POST will fail to get us one if we're not
+					// allowed to do so.
+					sid = uuid.New().String()
+				}
+				if sid == "" {
+					return fmt.Errorf("no silence ID to delete")
+				}
+				v[0] += sid
+			}
+			r, err := client.Do(method, v[0], []byte(v[1]))
+			if err != nil {
+				return fmt.Errorf("failed to do %s: %v", method, err)
+			}
+			body, err := io.ReadAll(r.Body)
+			if err != nil {
+				return fmt.Errorf("failed to read response body: %v", err)
+			}
+			if allowed && method == http.MethodPost {
+				type silenceResponse struct {
+					ID string `json:"silenceID"`
+				}
+				var silence silenceResponse
+				if err := json.Unmarshal(body, &silence); err != nil {
+					return fmt.Errorf("failed to unmarshal response body: %v", err)
+				}
+				sid = silence.ID
+			}
+			body = []byte(framework.ClampMax(body))
+			_ = r.Body.Close()
+			if allowed {
+				if r.StatusCode != http.StatusOK {
+					return fmt.Errorf("expected (%s) %s, got %d: %s", method, desc, r.StatusCode, body)
+				}
+			} else {
+				if r.StatusCode == http.StatusOK {
+					return fmt.Errorf("did not expect (%s) %s, got %d: %s", method, desc, r.StatusCode, body)
+				}
+			}
+		}
+		return nil
+	})
 }
 
 // Users should be able to disable Alertmanager through the cluster-monitoring-config
