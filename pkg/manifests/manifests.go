@@ -277,7 +277,6 @@ var (
 	ThanosQuerierClusterRole            = "thanos-querier/cluster-role.yaml"
 	ThanosQuerierClusterRoleBinding     = "thanos-querier/cluster-role-binding.yaml"
 	ThanosQuerierGrpcTLSSecret          = "thanos-querier/grpc-tls-secret.yaml"
-	ThanosQuerierTrustedCABundle        = "thanos-querier/trusted-ca-bundle.yaml"
 
 	ThanosRulerCustomResource                                = "thanos-ruler/thanos-ruler.yaml"
 	ThanosRulerService                                       = "thanos-ruler/service.yaml"
@@ -2991,7 +2990,7 @@ func (f *Factory) ThanosQuerierPodDisruptionBudget() (*policyv1.PodDisruptionBud
 	return f.NewPodDisruptionBudget(f.assets.MustNewAssetSlice(ThanosQuerierPodDisruptionBudget))
 }
 
-func (f *Factory) ThanosQuerierDeployment(grpcTLS *v1.Secret, enableUserWorkloadMonitoring bool, trustedCA *v1.ConfigMap) (*appsv1.Deployment, error) {
+func (f *Factory) ThanosQuerierDeployment(grpcTLS *v1.Secret, enableUserWorkloadMonitoring bool) (*appsv1.Deployment, error) {
 	d, err := f.NewDeployment(f.assets.MustNewAssetSlice(ThanosQuerierDeployment))
 	if err != nil {
 		return nil, err
@@ -3066,10 +3065,6 @@ func (f *Factory) ThanosQuerierDeployment(grpcTLS *v1.Secret, enableUserWorkload
 	}
 
 	return d, nil
-}
-
-func (f *Factory) ThanosQuerierTrustedCABundle() (*v1.ConfigMap, error) {
-	return f.NewConfigMap(f.assets.MustNewAssetSlice(ThanosQuerierTrustedCABundle))
 }
 
 func (f *Factory) ThanosQuerierService() (*v1.Service, error) {

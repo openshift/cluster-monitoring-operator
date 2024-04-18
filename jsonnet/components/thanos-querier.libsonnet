@@ -1,4 +1,3 @@
-local generateCertInjection = import '../utils/generate-certificate-injection.libsonnet';
 local generateSecret = import '../utils/generate-secret.libsonnet';
 local querier = import 'github.com/thanos-io/kube-thanos/jsonnet/kube-thanos/kube-thanos-query.libsonnet';
 local withDescription = (import '../utils/add-annotations.libsonnet').withDescription;
@@ -28,8 +27,6 @@ function(params)
       },
       spec: $.mixin.prometheusAlerts,
     },
-
-    trustedCaBundle: generateCertInjection.trustedCNOCaBundleCM(cfg.namespace, 'thanos-querier-trusted-ca-bundle'),
 
     route: {
       apiVersion: 'v1',

@@ -18,6 +18,9 @@ import (
 	"context"
 	"fmt"
 
+	v1 "k8s.io/api/core/v1"
+	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+
 	"github.com/openshift/cluster-monitoring-operator/pkg/client"
 	"github.com/openshift/cluster-monitoring-operator/pkg/manifests"
 )
@@ -178,26 +181,9 @@ func (t *ThanosQuerierTask) Run(ctx context.Context) error {
 	}
 
 	{
-		// Create trusted CA bundle ConfigMap.
-		trustedCA, err := t.factory.ThanosQuerierTrustedCABundle()
-		if err != nil {
-			return fmt.Errorf("initializing Thanos Querier trusted CA bundle ConfigMap failed: %w", err)
-		}
-
-		cbs := &caBundleSyncer{
-			client:  t.client,
-			factory: t.factory,
-			prefix:  "thanos-querier",
-		}
-		trustedCA, err = cbs.syncTrustedCABundle(ctx, trustedCA)
-		if err != nil {
-			return fmt.Errorf("syncing Thanos Querier trusted CA bundle ConfigMap failed: %w", err)
-		}
-
 		dep, err := t.factory.ThanosQuerierDeployment(
 			s,
 			*t.config.ClusterMonitoringConfiguration.UserWorkloadEnabled,
-			trustedCA,
 		)
 		if err != nil {
 			return fmt.Errorf("initializing Thanos Querier Deployment failed: %w", err)
@@ -241,6 +227,23 @@ func (t *ThanosQuerierTask) Run(ctx context.Context) error {
 	err = t.client.CreateOrUpdatePrometheusRule(ctx, tqpr)
 	if err != nil {
 		return fmt.Errorf("reconciling Thanos Querier PrometheusRule failed: %w", err)
+	}
+
+	// TODO(simonpasquier): remove this step after OCP 4.16 is released.
+	err = t.client.DeleteHashedConfigMap(ctx, "openshift-monitoring", "thanos-querier-trusted-ca-bundle", "")
+	if err != nil {
+		return fmt.Errorf("deleting all hashed Thanos Querier trusted CA bundle ConfigMap failed: %w", err)
+	}
+
+	// TODO(simonpasquier): remove this step after OCP 4.16 is released.
+	err = t.client.DeleteConfigMap(ctx, &v1.ConfigMap{
+		ObjectMeta: metav1.ObjectMeta{
+			Name:      "thanos-querier-trusted-ca-bundle",
+			Namespace: "openshift-monitoring",
+		},
+	})
+	if err != nil {
+		return fmt.Errorf("deleting Thanos Querier trusted CA bundle ConfigMap failed: %w", err)
 	}
 
 	return nil
