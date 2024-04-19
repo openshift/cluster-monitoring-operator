@@ -3,6 +3,7 @@
 ## 4.16
 
 - [#2302](https://github.com/openshift/cluster-monitoring-operator/issues/2302) Enable feature `extra-scrape-metrics` in Prometheus user-workload
+- [#2319](https://github.com/openshift/cluster-monitoring-operator/pull/2319) Allow read-only access to the Alertmanager API (use `monitoring-alertmanager-view`).
 
 ## 4.15
 
