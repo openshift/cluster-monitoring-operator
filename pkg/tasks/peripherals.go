@@ -3,6 +3,7 @@ package tasks
 import (
 	"context"
 	"fmt"
+
 	"github.com/openshift/cluster-monitoring-operator/pkg/client"
 	"github.com/openshift/cluster-monitoring-operator/pkg/manifests"
 )
