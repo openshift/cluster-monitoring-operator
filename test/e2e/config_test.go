@@ -488,6 +488,7 @@ func TestTelemeterClientSecret(t *testing.T) {
 }
 
 func TestClusterMonitorK8sPromAdapterConfig(t *testing.T) {
+	skipPrometheusAdapterTests(t)
 	const (
 		deploymentName = "prometheus-adapter"
 	)

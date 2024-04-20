@@ -102,9 +102,6 @@ func TestTLSSecurityProfileConfiguration(t *testing.T) {
 			assertCorrectTLSConfiguration(t, "prometheus-operator", "deployment",
 				manifests.KubeRbacProxyTLSCipherSuitesFlag,
 				manifests.KubeRbacProxyMinTLSVersionFlag, tt.expectedCipherSuite, tt.expectedMinTLSVersion)
-			assertCorrectTLSConfiguration(t, "prometheus-adapter", "deployment",
-				manifests.PrometheusAdapterTLSCipherSuitesFlag,
-				manifests.PrometheusAdapterTLSMinTLSVersionFlag, tt.expectedCipherSuite, tt.expectedMinTLSVersion)
 			assertCorrectTLSConfiguration(t, "kube-state-metrics", "deployment",
 				manifests.KubeRbacProxyTLSCipherSuitesFlag,
 				manifests.KubeRbacProxyMinTLSVersionFlag, tt.expectedCipherSuite, tt.expectedMinTLSVersion)
@@ -126,6 +123,16 @@ func TestTLSSecurityProfileConfiguration(t *testing.T) {
 			assertCorrectTLSConfiguration(t, "prometheus-k8s", "statefulset",
 				manifests.KubeRbacProxyTLSCipherSuitesFlag,
 				manifests.KubeRbacProxyMinTLSVersionFlag, tt.expectedCipherSuite, tt.expectedMinTLSVersion)
+			if f.IsFeatureGateEnabled(t, MetricsServerFeatureGate) {
+				assertCorrectTLSConfiguration(t, "metrics-server", "deployment",
+					manifests.MetricsServerTLSCipherSuitesFlag,
+					manifests.MetricsServerTLSMinTLSVersionFlag, tt.expectedCipherSuite, tt.expectedMinTLSVersion)
+			}
+			if !f.IsFeatureGateEnabled(t, MetricsServerFeatureGate) {
+				assertCorrectTLSConfiguration(t, "prometheus-adapter", "deployment",
+					manifests.PrometheusAdapterTLSCipherSuitesFlag,
+					manifests.PrometheusAdapterTLSMinTLSVersionFlag, tt.expectedCipherSuite, tt.expectedMinTLSVersion)
+			}
 		})
 	}
 }
