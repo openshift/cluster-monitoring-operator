@@ -1080,6 +1080,11 @@ data:
     #
     # ols:rest_api_query_calls_total:5xx shows the count of ols query calls that failed due to internal OLS errors (which may include errors interacting with external services such as LLM providers)
     - '{__name__="ols:rest_api_query_calls_total:5xx"}'
+    #
+    # owners: (https://github.com/openshift/cluster-network-operator @openshift/networking)
+    #
+    # openshift:openshift_network_operator_ipsec_state:info shows the cluster ipsec status (Disabled, External, Full) and whether the legacy or new API was used to set the status
+    - '{__name__="openshift:openshift_network_operator_ipsec_state:info"}'
 kind: ConfigMap
 metadata:
   name: telemetry-config
