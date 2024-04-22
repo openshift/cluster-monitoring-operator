@@ -565,6 +565,24 @@ function(params)
           },
           {
             name: 'prometheus',
+            volumeMounts+: [
+              {
+                name: $.trustedCaBundle.metadata.name,
+                mountPath: '/etc/pki/ca-trust/extracted/pem/',
+              },
+            ],
+          },
+        ],
+        volumes+: [
+          {
+            name: $.trustedCaBundle.metadata.name,
+            configMap: {
+              name: $.trustedCaBundle.metadata.name,
+              items: [{
+                key: 'ca-bundle.crt',
+                path: 'tls-ca-bundle.pem',
+              }],
+            },
           },
         ],
       },

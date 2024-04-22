@@ -157,6 +157,9 @@ spec:
       name: secret-grpc-tls
   - name: prometheus
     terminationMessagePolicy: FallbackToLogsOnError
+    volumeMounts:
+    - mountPath: /etc/pki/ca-trust/extracted/pem/
+      name: prometheus-trusted-ca-bundle
   enableFeatures: []
   externalLabels: {}
   externalURL: https://prometheus-k8s.openshift-monitoring.svc:9091
@@ -217,6 +220,13 @@ spec:
         memory: 100Mi
     version: 0.34.1
   version: 2.51.2
+  volumes:
+  - configMap:
+      items:
+      - key: ca-bundle.crt
+        path: tls-ca-bundle.pem
+      name: prometheus-trusted-ca-bundle
+    name: prometheus-trusted-ca-bundle
   web:
     httpConfig:
       headers:

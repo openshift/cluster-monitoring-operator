@@ -381,7 +381,7 @@ func TestUnconfiguredManifests(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	_, err = f.PrometheusK8s(&v1.Secret{ObjectMeta: metav1.ObjectMeta{Name: "foo"}}, nil, nil)
+	_, err = f.PrometheusK8s(&v1.Secret{ObjectMeta: metav1.ObjectMeta{Name: "foo"}}, nil)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -1155,7 +1155,6 @@ func TestPrometheusK8sRemoteWriteClusterIDRelabel(t *testing.T) {
 			f := NewFactory("openshift-monitoring", "openshift-user-workload-monitoring", c, defaultInfrastructureReader(), &fakeProxyReader{}, NewAssets(assetsPath), &APIServerConfig{}, &configv1.Console{})
 			p, err := f.PrometheusK8s(
 				&v1.Secret{ObjectMeta: metav1.ObjectMeta{Name: "foo"}},
-				&v1.ConfigMap{ObjectMeta: metav1.ObjectMeta{Name: "foo"}},
 				nil,
 			)
 			if err != nil {
@@ -1279,7 +1278,6 @@ func TestPrometheusK8sRemoteWriteURLs(t *testing.T) {
 			f := NewFactory("openshift-monitoring", "openshift-user-workload-monitoring", c, defaultInfrastructureReader(), &fakeProxyReader{}, NewAssets(assetsPath), &APIServerConfig{}, &configv1.Console{})
 			p, err := f.PrometheusK8s(
 				&v1.Secret{ObjectMeta: metav1.ObjectMeta{Name: "foo"}},
-				&v1.ConfigMap{ObjectMeta: metav1.ObjectMeta{Name: "foo"}},
 				tc.telemetrySecret,
 			)
 			if err != nil {
@@ -1350,7 +1348,6 @@ func TestPrometheusK8sRemoteWriteOauth2(t *testing.T) {
 	f := NewFactory("openshift-monitoring", "openshift-user-workload-monitoring", c, defaultInfrastructureReader(), &fakeProxyReader{}, NewAssets(assetsPath), &APIServerConfig{}, &configv1.Console{})
 	p, err := f.PrometheusK8s(
 		&v1.Secret{ObjectMeta: metav1.ObjectMeta{Name: "foo"}},
-		&v1.ConfigMap{ObjectMeta: metav1.ObjectMeta{Name: "foo"}},
 		nil,
 	)
 	if err != nil {
@@ -1493,7 +1490,6 @@ func TestRemoteWriteAuthorizationConfig(t *testing.T) {
 			f := NewFactory("openshift-monitoring", "openshift-user-workload-monitoring", c, defaultInfrastructureReader(), &fakeProxyReader{}, NewAssets(assetsPath), &APIServerConfig{}, &configv1.Console{})
 			p, err := f.PrometheusK8s(
 				&v1.Secret{ObjectMeta: metav1.ObjectMeta{Name: "foo"}},
-				&v1.ConfigMap{ObjectMeta: metav1.ObjectMeta{Name: "foo"}},
 				nil,
 			)
 			if err != nil {
@@ -1556,7 +1552,6 @@ func TestPrometheusK8sRemoteWriteProxy(t *testing.T) {
 			f := NewFactory("openshift-monitoring", "openshift-user-workload-monitoring", config(), defaultInfrastructureReader(), tc.proxyReader, NewAssets(assetsPath), &APIServerConfig{}, &configv1.Console{})
 			p, err := f.PrometheusK8s(
 				&v1.Secret{ObjectMeta: metav1.ObjectMeta{Name: "foo"}},
-				&v1.ConfigMap{ObjectMeta: metav1.ObjectMeta{Name: "foo"}},
 				nil,
 			)
 			if err != nil {
@@ -1625,7 +1620,6 @@ ingress:
 	f := NewFactory("openshift-monitoring", "openshift-user-workload-monitoring", c, defaultInfrastructureReader(), &fakeProxyReader{}, NewAssets(assetsPath), &APIServerConfig{}, &configv1.Console{Status: configv1.ConsoleStatus{ConsoleURL: "https://console-openshift-console.apps.foo.devcluster.openshift.com"}})
 	p, err := f.PrometheusK8s(
 		&v1.Secret{ObjectMeta: metav1.ObjectMeta{Name: "foo"}},
-		&v1.ConfigMap{ObjectMeta: metav1.ObjectMeta{Name: "foo"}},
 		nil,
 	)
 	if err != nil {
@@ -1837,7 +1831,6 @@ func TestPrometheusQueryLogFileConfig(t *testing.T) {
 			f := NewFactory("openshift-monitoring", "openshift-user-workload-monitoring", c, defaultInfrastructureReader(), &fakeProxyReader{}, NewAssets(assetsPath), &APIServerConfig{}, &configv1.Console{})
 			p, err := f.PrometheusK8s(
 				&v1.Secret{ObjectMeta: metav1.ObjectMeta{Name: "foo"}},
-				&v1.ConfigMap{ObjectMeta: metav1.ObjectMeta{Name: "foo"}},
 				nil,
 			)
 			if err != nil {
@@ -1913,7 +1906,6 @@ func TestPrometheusCollectionProfile(t *testing.T) {
 			f := NewFactory("openshift-monitoring", "openshift-user-workload-monitoring", c, defaultInfrastructureReader(), &fakeProxyReader{}, NewAssets(assetsPath), &APIServerConfig{}, &configv1.Console{})
 			p, err := f.PrometheusK8s(
 				&v1.Secret{ObjectMeta: metav1.ObjectMeta{Name: "foo"}},
-				&v1.ConfigMap{ObjectMeta: metav1.ObjectMeta{Name: "foo"}},
 				&v1.Secret{ObjectMeta: metav1.ObjectMeta{Name: "foo"}},
 			)
 			if err != nil {
@@ -1972,7 +1964,6 @@ func TestPrometheusRetentionConfigs(t *testing.T) {
 
 			p, err := f.PrometheusK8s(
 				&v1.Secret{ObjectMeta: metav1.ObjectMeta{Name: "foo"}},
-				&v1.ConfigMap{ObjectMeta: metav1.ObjectMeta{Name: "foo"}},
 				nil,
 			)
 
@@ -2024,7 +2015,6 @@ prometheusK8s:
 	f := NewFactory("openshift-monitoring", "openshift-user-workload-monitoring", c, defaultInfrastructureReader(), &fakeProxyReader{}, NewAssets(assetsPath), &APIServerConfig{}, nil)
 	p, err := f.PrometheusK8s(
 		&v1.Secret{ObjectMeta: metav1.ObjectMeta{Name: "foo"}},
-		&v1.ConfigMap{ObjectMeta: metav1.ObjectMeta{Name: "foo"}},
 		nil,
 	)
 	if err != nil {
@@ -2231,7 +2221,6 @@ func TestPrometheusK8sAdditionalAlertManagerConfigsSecret(t *testing.T) {
 
 			p, err := f.PrometheusK8s(
 				&v1.Secret{ObjectMeta: metav1.ObjectMeta{Name: "foo"}},
-				&v1.ConfigMap{ObjectMeta: metav1.ObjectMeta{Name: "foo"}},
 				nil,
 			)
 			if err != nil {
@@ -4354,7 +4343,6 @@ func TestNonHighlyAvailableInfrastructure(t *testing.T) {
 			getSpec: func(f *Factory) (spec, error) {
 				p, err := f.PrometheusK8s(
 					&v1.Secret{ObjectMeta: metav1.ObjectMeta{Name: "foo"}},
-					&v1.ConfigMap{ObjectMeta: metav1.ObjectMeta{Name: "foo"}},
 					nil,
 				)
 				if err != nil {
