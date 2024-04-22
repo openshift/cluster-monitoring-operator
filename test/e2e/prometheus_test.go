@@ -30,7 +30,7 @@ import (
 )
 
 func TestPrometheusMetrics(t *testing.T) {
-	for service, expected := range map[string]int{
+	expected := map[string]int{
 		"prometheus-operator":           1,
 		"prometheus-k8s":                2,
 		"prometheus-k8s-thanos-sidecar": 2,
@@ -40,13 +40,21 @@ func TestPrometheusMetrics(t *testing.T) {
 		"kube-state-metrics":            2, // one for the kube metrics + one for the metrics of the process itself.
 		"openshift-state-metrics":       2, // ditto.
 		"telemeter-client":              1,
-	} {
+	}
+
+	// Since only either of them would be running at a time in cluster
+	if f.IsFeatureGateEnabled(t, MetricsServerFeatureGate) {
+		expected["metrics-server"] = 2
+		delete(expected, "prometheus-adapter")
+	}
+
+	for service, metric := range expected {
 		t.Run(service, func(t *testing.T) {
 			f.ThanosQuerierClient.WaitForQueryReturn(
 				t, 10*time.Minute, fmt.Sprintf(`count(up{service="%s",namespace="openshift-monitoring"} == 1)`, service),
 				func(v float64) error {
-					if v != float64(expected) {
-						return fmt.Errorf("expected %d targets to be up but got %f", expected, v)
+					if v != float64(metric) {
+						return fmt.Errorf("expected %d targets to be up but got %f", metric, v)
 					}
 
 					return nil
