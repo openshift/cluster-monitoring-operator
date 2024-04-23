@@ -16,6 +16,7 @@ package e2e
 
 import (
 	"errors"
+	"fmt"
 	v1 "k8s.io/api/autoscaling/v1"
 	apiextv1 "k8s.io/apiextensions-apiserver/pkg/apis/apiextensions/v1"
 	apierrors "k8s.io/apimachinery/pkg/api/errors"
@@ -73,15 +74,17 @@ func TestKSMMetricsSuppression(t *testing.T) {
 }
 
 func TestKSMCRSMetrics(t *testing.T) {
+	const timeout = 5 * time.Minute
 	assetsDir := "./assets"
+	ksmCRSMetricPrefix := "kube_customresource"
 	updateMode := vpav1.UpdateModeOff
-	queryPresenceCheck := "group(verticalpodautoscaler_spec_updatepolicy_updatemode{update_mode=\"" + string(updateMode) + "\"} == 1)"
-	queryAbsenceCheck := "absent(verticalpodautoscaler_spec_updatepolicy_updatemode)"
+	queryAbsenceCheck := fmt.Sprintf("absent(%s_verticalpodautoscaler_spec_updatepolicy_updatemode)", ksmCRSMetricPrefix)
+	queryPresenceCheck := fmt.Sprintf("group(%s_verticalpodautoscaler_spec_updatepolicy_updatemode{updatemode=\"%s\"} == 1)", ksmCRSMetricPrefix, updateMode)
 
 	// Fetch KSM CRS metrics, but expect absence.
-	f.ThanosQuerierClient.WaitForQueryReturnOne(t, 10*time.Minute, queryAbsenceCheck)
+	f.ThanosQuerierClient.WaitForQueryReturnOne(t, timeout, queryAbsenceCheck)
 
-	// Install a VPAv1 CRD.
+	// Install VPAv1 CRD.
 	manifest, err := f.ReadManifest(path.Join(assetsDir, "verticalpodautoscalers-v1-crd.yaml"))
 	if err != nil {
 		t.Fatalf("failed to read VPA CRD manifest: %v", err)
@@ -112,13 +115,13 @@ func TestKSMCRSMetrics(t *testing.T) {
 	createVPACR(t, vpaCR)
 
 	// Fetch KSM CRS metrics.
-	f.ThanosQuerierClient.WaitForQueryReturnOne(t, time.Minute, queryPresenceCheck)
+	f.ThanosQuerierClient.WaitForQueryReturnOne(t, timeout, queryPresenceCheck)
 
 	// Cleanup.
 	deleteVPACRD(t, vpaCRD)
 
 	// Fetch KSM CRS metrics, but expect absence.
-	f.ThanosQuerierClient.WaitForQueryReturnOne(t, time.Minute, queryAbsenceCheck)
+	f.ThanosQuerierClient.WaitForQueryReturnOne(t, timeout, queryAbsenceCheck)
 }
 
 func createVPACR(t *testing.T, vpaCR *vpav1.VerticalPodAutoscaler) {

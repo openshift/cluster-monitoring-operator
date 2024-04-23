@@ -779,17 +779,16 @@ func (o *Operator) sync(ctx context.Context, key string) error {
 	}
 
 	// Enable kube-state-metrics' custom-resource-state-based metrics if VPA CRD is installed within the cluster.
-	isVPACRDPresent, err := o.client.VPACustomResourceDefinitionPresent(ctx, o.lastKnownVPACustomResourceDefinitionPresent)
+	o.lastKnownVPACustomResourceDefinitionPresent, err = o.client.VPACustomResourceDefinitionPresent(ctx, o.lastKnownVPACustomResourceDefinitionPresent)
 	if err != nil {
 		// Throw on all transient errors.
 		return fmt.Errorf("unable to guess the desired state for kube-state-metrics' custom-resource-state metrics enablement: %w", err)
 	} else {
 		// If we didn't get an error, we can safely assume that the CRD is deterministically either present or absent.
-		if *isVPACRDPresent {
+		if *o.lastKnownVPACustomResourceDefinitionPresent {
 			klog.Infof("%s CRD found, enabling kube-state-metrics' custom-resource-state-based metrics", client.VerticalPodAutoscalerCRDMetadataName)
 		}
 	}
-	o.lastKnownVPACustomResourceDefinitionPresent = isVPACRDPresent
 
 	factory := manifests.NewFactory(
 		o.namespace,
