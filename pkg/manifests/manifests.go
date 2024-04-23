@@ -715,7 +715,7 @@ func (f *Factory) KubeStateMetricsClusterRole() (*rbacv1.ClusterRole, error) {
 }
 
 func (f *Factory) KubeStateMetricsServiceMonitors() ([]*monv1.ServiceMonitor, error) {
-	return serviceMonitors(f.config.TechPreview, f.KubeStateMetricsServiceMonitor, f.KubeStateMetricsMinimalServiceMonitor)
+	return serviceMonitors(f.config.CollectionProfilesFeatureGateEnabled, f.KubeStateMetricsServiceMonitor, f.KubeStateMetricsMinimalServiceMonitor)
 }
 
 func (f *Factory) KubeStateMetricsServiceMonitor() (*monv1.ServiceMonitor, error) {
@@ -835,7 +835,7 @@ func (f *Factory) OpenShiftStateMetricsRBACProxySecret() (*v1.Secret, error) {
 }
 
 func (f *Factory) NodeExporterServiceMonitors() ([]*monv1.ServiceMonitor, error) {
-	return serviceMonitors(f.config.TechPreview, f.NodeExporterServiceMonitor, f.NodeExporterMinimalServiceMonitor)
+	return serviceMonitors(f.config.CollectionProfilesFeatureGateEnabled, f.NodeExporterServiceMonitor, f.NodeExporterMinimalServiceMonitor)
 }
 
 func (f *Factory) NodeExporterServiceMonitor() (*monv1.ServiceMonitor, error) {
@@ -1930,7 +1930,7 @@ func (f *Factory) PrometheusAdapterService() (*v1.Service, error) {
 }
 
 func (f *Factory) PrometheusAdapterServiceMonitors() ([]*monv1.ServiceMonitor, error) {
-	return serviceMonitors(f.config.TechPreview, f.PrometheusAdapterServiceMonitor, f.PrometheusAdapterMinimalServiceMonitor)
+	return serviceMonitors(f.config.CollectionProfilesFeatureGateEnabled, f.PrometheusAdapterServiceMonitor, f.PrometheusAdapterMinimalServiceMonitor)
 }
 
 func (f *Factory) PrometheusAdapterServiceMonitor() (*monv1.ServiceMonitor, error) {
@@ -2597,7 +2597,7 @@ func (f *Factory) ControlPlanePrometheusRule() (*monv1.PrometheusRule, error) {
 }
 
 func (f *Factory) ControlPlaneKubeletServiceMonitors() ([]*monv1.ServiceMonitor, error) {
-	return serviceMonitors(f.config.TechPreview, f.ControlPlaneKubeletServiceMonitor, f.ControlPlaneKubeletMinimalServiceMonitor)
+	return serviceMonitors(f.config.CollectionProfilesFeatureGateEnabled, f.ControlPlaneKubeletServiceMonitor, f.ControlPlaneKubeletMinimalServiceMonitor)
 }
 
 func (f *Factory) ControlPlaneKubeletServiceMonitor() (*monv1.ServiceMonitor, error) {

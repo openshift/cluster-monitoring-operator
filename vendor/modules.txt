@@ -332,7 +332,7 @@ github.com/mwitkow/go-conntrack
 # github.com/oklog/ulid v1.3.1
 ## explicit
 github.com/oklog/ulid
-# github.com/openshift/api v0.0.0-20240320105957-b09bc66e1760
+# github.com/openshift/api v0.0.0-20240327143419-1e5b8d673d96
 ## explicit; go 1.21
 github.com/openshift/api
 github.com/openshift/api/annotations

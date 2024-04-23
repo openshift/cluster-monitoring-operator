@@ -49,9 +49,9 @@ const (
 )
 
 type Config struct {
-	Images      *Images `json:"-"`
-	RemoteWrite bool    `json:"-"`
-	TechPreview bool    `json:"-"`
+	Images                               *Images `json:"-"`
+	RemoteWrite                          bool    `json:"-"`
+	CollectionProfilesFeatureGateEnabled bool    `json:"-"`
 
 	ClusterMonitoringConfiguration *ClusterMonitoringConfiguration `json:"-"`
 	UserWorkloadConfiguration      *UserWorkloadConfiguration      `json:"-"`
@@ -189,8 +189,8 @@ func (cps CollectionProfiles) String() string {
 	return sb.String()
 }
 
-func NewConfig(content io.Reader, tp bool) (*Config, error) {
-	c := Config{TechPreview: tp}
+func NewConfig(content io.Reader, collectionProfilesFeatureGateEnabled bool) (*Config, error) {
+	c := Config{CollectionProfilesFeatureGateEnabled: collectionProfilesFeatureGateEnabled}
 	cmc := defaultClusterMonitoringConfiguration()
 	err := k8syaml.NewYAMLOrJSONDecoder(content, 4096).Decode(&cmc)
 	if err != nil {
@@ -436,12 +436,12 @@ func (c *Config) LoadEnforcedBodySizeLimit(pcr PodCapacityReader, ctx context.Co
 }
 
 func (c *Config) Precheck() error {
-	if c.ClusterMonitoringConfiguration.PrometheusK8sConfig.CollectionProfile != FullCollectionProfile && !c.TechPreview {
-		return fmt.Errorf("collectionProfiles is a TechPreview feature, to be able to use a profile different from the default (\"full\") please enable TechPreview: %w", ErrConfigValidation)
+	if c.ClusterMonitoringConfiguration.PrometheusK8sConfig.CollectionProfile != FullCollectionProfile && !c.CollectionProfilesFeatureGateEnabled {
+		return fmt.Errorf("%w: collectionProfiles is currently a TechPreview feature behind the \"MetricsCollectionProfiles\" feature-gate, to be able to use a profile different from the default (\"full\") please enable it first", ErrConfigValidation)
 	}
 
 	// Validate the configured collection profile iff tech preview is enabled, even if the default profile is set.
-	if c.TechPreview {
+	if c.CollectionProfilesFeatureGateEnabled {
 		for _, profile := range SupportedCollectionProfiles {
 			var v float64
 			if profile == c.ClusterMonitoringConfiguration.PrometheusK8sConfig.CollectionProfile {
@@ -482,12 +482,12 @@ func calculateBodySizeLimit(podCapacity int) string {
 // structure that facilitates programmatical checks of that configuration. The
 // content of the data structure might change if TechPreview is enabled (tp), as
 // some features are only meant for TechPreview.
-func NewConfigFromString(content string, tp bool) (*Config, error) {
+func NewConfigFromString(content string, collectionProfilesFeatureGateEnabled bool) (*Config, error) {
 	if content == "" {
 		return NewDefaultConfig(), nil
 	}
 
-	return NewConfig(bytes.NewBuffer([]byte(content)), tp)
+	return NewConfig(bytes.NewBuffer([]byte(content)), collectionProfilesFeatureGateEnabled)
 }
 
 func NewDefaultConfig() *Config {

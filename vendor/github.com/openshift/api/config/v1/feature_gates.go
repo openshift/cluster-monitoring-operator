@@ -22,8 +22,7 @@ type ClusterProfileName string
 var (
 	Hypershift         = ClusterProfileName("include.release.openshift.io/ibm-cloud-managed")
 	SelfManaged        = ClusterProfileName("include.release.openshift.io/self-managed-high-availability")
-	SingleNode         = ClusterProfileName("include.release.openshift.io/single-node-developer")
-	AllClusterProfiles = []ClusterProfileName{Hypershift, SelfManaged, SingleNode}
+	AllClusterProfiles = []ClusterProfileName{Hypershift, SelfManaged}
 )
 
 type OwningProduct string
@@ -553,4 +552,18 @@ var (
 				productScope(ocpSpecific).
 				enableIn(TechPreviewNoUpgrade).
 				mustRegister()
+
+	FeatureGateNodeDisruptionPolicy = newFeatureGate("NodeDisruptionPolicy").
+					reportProblemsToJiraComponent("MachineConfigOperator").
+					contactPerson("jerzhang").
+					productScope(ocpSpecific).
+					enableIn(TechPreviewNoUpgrade).
+					mustRegister()
+
+	FeatureGateMetricsCollectionProfiles = newFeatureGate("MetricsCollectionProfiles").
+						reportProblemsToJiraComponent("Monitoring").
+						contactPerson("rexagod").
+						productScope(ocpSpecific).
+						enableIn(TechPreviewNoUpgrade).
+						mustRegister()
 )
