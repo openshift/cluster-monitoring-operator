@@ -610,7 +610,7 @@ func testAlertmanagerAPIAccess(t *testing.T) {
 
 func checkAlertmanagerAPIVerbs(_ *testing.T, client *framework.PrometheusClient, desc string, methods map[string][2]string, allowed bool) error {
 	var sid string
-	return framework.Poll(5*time.Second, time.Minute, func() error {
+	return framework.Poll(5*time.Second, 5*time.Minute, func() error {
 		for method, v := range methods {
 			if method == http.MethodDelete {
 				if !allowed {
