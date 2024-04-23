@@ -26,6 +26,7 @@ import (
 	configv1 "github.com/openshift/api/config/v1"
 	configv1client "github.com/openshift/client-go/config/clientset/versioned"
 	configv1informers "github.com/openshift/client-go/config/informers/externalversions"
+	"github.com/openshift/library-go/pkg/controller/factory"
 	"github.com/openshift/library-go/pkg/operator/certrotation"
 	"github.com/openshift/library-go/pkg/operator/configobserver/featuregates"
 	"github.com/openshift/library-go/pkg/operator/csr"
@@ -71,6 +72,23 @@ var (
 			},
 		},
 		Subject:    &pkix.Name{CommonName: "system:serviceaccount:openshift-monitoring:prometheus-k8s"},
+		SignerName: certapiv1.KubeAPIServerClientSignerName,
+	}
+)
+
+var (
+	// The cluster-policy-controller will automatically approve the
+	// CertificateSigningRequest resources issued for the metrics-server
+	// service account.
+	// See https://github.com/openshift/cluster-policy-controller/blob/cc787e1b1e177696817b66689a03471914083a67/pkg/cmd/controller/csr.go#L21-L46.
+	csrMetricsServerOption = csr.CSROption{
+		ObjectMeta: metav1.ObjectMeta{
+			GenerateName: "system:openshift:openshift-monitoring-",
+			Labels: map[string]string{
+				"metrics.openshift.io/csr.subject": "metrics-server",
+			},
+		},
+		Subject:    &pkix.Name{CommonName: "system:serviceaccount:openshift-monitoring:metrics-server"},
 		SignerName: certapiv1.KubeAPIServerClientSignerName,
 	}
 )
@@ -150,6 +168,7 @@ const (
 	alertmanagerCABundleConfigMap = "openshift-monitoring/alertmanager-trusted-ca-bundle"
 	grpcTLS                       = "openshift-monitoring/grpc-tls"
 	metricsClientCerts            = "openshift-monitoring/metrics-client-certs"
+	metricsServerClientCerts      = "openshift-monitoring/metrics-server-client-certs"
 	federateClientCerts           = "openshift-monitoring/federate-client-certs"
 
 	// Canonical name of the cluster-wide infrastructure resource.
@@ -443,6 +462,34 @@ func New(
 		klog.Info("Metrics Server enabled")
 	}
 
+	var csrMetricsServerController factory.Controller
+
+	// csrMetricsServerController runs a controller that requests a client TLS certificate
+	// for Metrics Server. This certificate is used to authenticate against the
+	// kubelet /metrics endpoint.
+	if o.metricsServerEnabled {
+		csrMetricsServerController, err = csr.NewClientCertificateController(
+			csr.ClientCertOption{
+				SecretNamespace: "openshift-monitoring",
+				SecretName:      "metrics-server-client-certs",
+				AdditionalAnnotations: certrotation.AdditionalAnnotations{
+					JiraComponent: "Monitoring",
+				},
+			},
+			csrMetricsServerOption,
+			kubeInformersOperatorNS.Certificates().V1().CertificateSigningRequests(),
+			o.client.KubernetesInterface().CertificatesV1().CertificateSigningRequests(),
+			kubeInformersOperatorNS.Core().V1().Secrets(),
+			o.client.KubernetesInterface().CoreV1(),
+			o.client.EventRecorder(),
+			"OpenShiftMonitoringMetricsServerClientCertRequester",
+		)
+
+		if err != nil {
+			return nil, fmt.Errorf("failed to create client certificate controller: %w", err)
+		}
+	}
+
 	// csrController runs a controller that requests a client TLS certificate
 	// for Prometheus k8s. This certificate is used to authenticate against the
 	// /metrics endpoint of the targets.
@@ -491,8 +538,11 @@ func New(
 		return nil, fmt.Errorf("failed to create federate certificate controller: %w", err)
 	}
 
-	o.controllersToRunFunc = append(o.controllersToRunFunc, csrFederateController.Run, csrController.Run)
+	if o.metricsServerEnabled {
+		o.controllersToRunFunc = append(o.controllersToRunFunc, csrMetricsServerController.Run)
+	}
 
+	o.controllersToRunFunc = append(o.controllersToRunFunc, csrFederateController.Run, csrController.Run)
 	o.controllersToRunFunc = append(o.controllersToRunFunc, o.ruleController.Run, o.relabelController.Run)
 
 	return o, nil
@@ -633,6 +683,15 @@ func (o *Operator) handleEvent(obj interface{}) {
 	default:
 		klog.V(5).Infof("ConfigMap or Secret (%s) not triggering an update.", key)
 		return
+	}
+
+	if o.metricsServerEnabled {
+		switch key {
+		case metricsServerClientCerts:
+		default:
+			klog.V(5).Infof("ConfigMap or Secret (%s) not triggering an update.", key)
+			return
+		}
 	}
 
 	klog.Infof("Triggering an update due to ConfigMap or Secret: %s", key)

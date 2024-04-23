@@ -69,6 +69,17 @@ function(params) {
     },
   },
 
+  metricsServerClientCerts: {
+    apiVersion: 'v1',
+    kind: 'Secret',
+    metadata: {
+      name: 'metrics-server-client-certs',
+      namespace: cfg.namespace,
+    },
+    type: 'Opaque',
+    data: {},
+  },
+
   metricsClientCerts: {
     apiVersion: 'v1',
     kind: 'Secret',

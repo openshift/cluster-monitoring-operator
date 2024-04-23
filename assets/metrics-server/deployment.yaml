@@ -45,8 +45,8 @@ spec:
         - --kubelet-use-node-status-port
         - --metric-resolution=15s
         - --kubelet-certificate-authority=/etc/tls/kubelet-serving-ca-bundle/ca-bundle.crt
-        - --kubelet-client-certificate=/etc/tls/metrics-client-certs/tls.crt
-        - --kubelet-client-key=/etc/tls/metrics-client-certs/tls.key
+        - --kubelet-client-certificate=/etc/tls/metrics-server-client-certs/tls.crt
+        - --kubelet-client-key=/etc/tls/metrics-server-client-certs/tls.key
         - --tls-cert-file=/etc/tls/private/tls.crt
         - --tls-private-key-file=/etc/tls/private/tls.key
         - --tls-cipher-suites=TLS_ECDHE_RSA_WITH_AES_128_GCM_SHA256,TLS_ECDHE_ECDSA_WITH_AES_128_GCM_SHA256,TLS_ECDHE_RSA_WITH_AES_256_GCM_SHA384,TLS_ECDHE_ECDSA_WITH_AES_256_GCM_SHA384,TLS_ECDHE_RSA_WITH_CHACHA20_POLY1305,TLS_ECDHE_ECDSA_WITH_CHACHA20_POLY1305
@@ -84,8 +84,8 @@ spec:
         volumeMounts:
         - mountPath: /etc/tls/private
           name: secret-metrics-server-tls
-        - mountPath: /etc/tls/metrics-client-certs
-          name: secret-metrics-client-certs
+        - mountPath: /etc/tls/metrics-server-client-certs
+          name: secret-metrics-server-client-certs
         - mountPath: /etc/tls/kubelet-serving-ca-bundle
           name: configmap-kubelet-serving-ca-bundle
         - mountPath: /etc/audit
@@ -99,9 +99,9 @@ spec:
       priorityClassName: system-cluster-critical
       serviceAccountName: metrics-server
       volumes:
-      - name: secret-metrics-client-certs
+      - name: secret-metrics-server-client-certs
         secret:
-          secretName: metrics-client-certs
+          secretName: metrics-server-client-certs
       - name: secret-metrics-server-tls
         secret:
           secretName: metrics-server-tls

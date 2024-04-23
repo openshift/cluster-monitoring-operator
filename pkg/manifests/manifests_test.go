@@ -2805,7 +2805,7 @@ metricsServer:
 	}
 	metricsClientSecret := &v1.Secret{
 		ObjectMeta: metav1.ObjectMeta{
-			Name:      "metrics-client-cert",
+			Name:      "metrics-server-client-certs",
 			Namespace: "openshift-monitoring",
 		},
 		Data: map[string][]byte{
@@ -2865,7 +2865,7 @@ metricsServer:
 
 	podAnnotations := d.Spec.Template.Annotations
 	require.Equal(t, "eplue2a9srfkb", podAnnotations["monitoring.openshift.io/kubelet-serving-ca-bundle-hash"])
-	require.Equal(t, "arprfan3mk728", podAnnotations["monitoring.openshift.io/metrics-client-cert-hash"])
+	require.Equal(t, "arprfan3mk728", podAnnotations["monitoring.openshift.io/metrics-server-client-certs-hash"])
 	require.Equal(t, "383c7cmidrae2", podAnnotations["monitoring.openshift.io/serving-ca-secret-hash"])
 }
 
