@@ -16,9 +16,13 @@ package client
 
 import (
 	"context"
+	"crypto/tls"
+	"crypto/x509"
 	"encoding/json"
 	"errors"
 	"fmt"
+	"io"
+	"net/http"
 	"net/url"
 	"reflect"
 	"slices"
@@ -601,22 +605,6 @@ func (c *Client) GetConfigmap(ctx context.Context, namespace, name string) (*v1.
 
 func (c *Client) GetSecret(ctx context.Context, namespace, name string) (*v1.Secret, error) {
 	return c.kclient.CoreV1().Secrets(namespace).Get(ctx, name, metav1.GetOptions{})
-}
-
-// GetTokenSecret returns the first secret in the given namespace with the name: prefix+"-token-"+[hash].
-func (c *Client) GetTokenSecret(ctx context.Context, namespace, prefix string) (*v1.Secret, error) {
-	secrets, err := c.kclient.CoreV1().Secrets(namespace).List(ctx, metav1.ListOptions{})
-	if err != nil {
-		return nil, fmt.Errorf("listing secrets in namespace %s failed: %w", namespace, err)
-	}
-
-	for _, secret := range secrets.Items {
-		if strings.HasPrefix(secret.GetName(), prefix+"-token-") {
-			return &secret, nil
-		}
-	}
-
-	return nil, fmt.Errorf("no secret found with the prefix \"%s-token\" in namespace %s", prefix, namespace)
 }
 
 func (c *Client) GetPrometheusRule(ctx context.Context, namespace, name string) (*monv1.PrometheusRule, error) {
@@ -1753,6 +1741,68 @@ func (c *Client) RegisterConsolePlugin(ctx context.Context, name string) error {
 		return fmt.Errorf("registering console-plugin %q with console %q failed: %w", name, clusterConsole, err)
 	}
 	return nil
+}
+
+func (c *Client) QueryMetricsEndpoint(ctx context.Context, service *v1.Service, metricsPortName string, rootCAs *v1.ConfigMap, clientTLS, serverTLS *v1.Secret) ([]byte, error) {
+	// Fetch the `/metrics` port.
+	var portNumber int32
+	for _, port := range service.Spec.Ports {
+		if port.Name == metricsPortName {
+			portNumber = port.Port
+			break
+		}
+	}
+
+	// Fetch the `/metrics` endpoint data.
+	var responseData []byte
+	err := wait.PollUntilContextTimeout(ctx, time.Second, 5*time.Second, true, func(ctx context.Context) (bool, error) {
+		u := &url.URL{
+			Scheme: "https",
+			Host:   fmt.Sprintf("%s.%s.svc:%d", service.GetName(), service.GetNamespace(), portNumber),
+			Path:   "/metrics",
+		}
+
+		// Establish a mutual TLS connection to component's KRP instance.
+		cert, err := tls.X509KeyPair(clientTLS.Data["tls.crt"], clientTLS.Data["tls.key"])
+		if err != nil {
+			return false, fmt.Errorf("cannot load TLS key pair: %w", err)
+		}
+		caCertPool := x509.NewCertPool()
+		caCertPool.AppendCertsFromPEM([]byte(rootCAs.Data["client-ca.crt"]))
+		caCertPool.AppendCertsFromPEM(serverTLS.Data["tls.crt"])
+		tlsConfig := &tls.Config{
+			Certificates: []tls.Certificate{cert},
+			// RootCAs are used by the client (CMO) to verify the server's (component's KRP instance) public TLS
+			// certificate, i.e., `kube-state-metrics-tls`.
+			// * The RootCAs included here are: `metrics-client-ca` and `kube-state-metrics-tls`.
+			// * An `openssl verify` will show that component's KRP instance's certificate is not present in the
+			// `metrics-client-ca`'s chain of trust. This is expected, as `/metrics` queries from CMO to another
+			// component are uncommon. However, that is the case here, which is why we include both CAs.
+			// Similarly, ClientCAs are used within KRP to verify the client's (CMO) public TLS certificate,
+			// i.e., `metrics-client-certs`.
+			// * The ClientCAs included there (`--client-ca-file`) are: `metrics-client-ca`.
+			// This is the minimum required configuration to establish a mutual TLS connection between CMO and one of
+			// its components.
+			RootCAs: caCertPool,
+			// Defaults to `tls.NoClientCert` otherwise.
+			ClientAuth: tls.RequireAndVerifyClientCert,
+		}
+		client := &http.Client{
+			Transport: &http.Transport{TLSClientConfig: tlsConfig},
+		}
+		resp, err := client.Get(u.String())
+		if err != nil {
+			return false, fmt.Errorf("cannot fetch /metrics endpoint: %w", err)
+		}
+		defer resp.Body.Close()
+		responseData, err = io.ReadAll(resp.Body)
+		if err != nil {
+			return false, fmt.Errorf("cannot read /metrics response: %w", err)
+		}
+
+		return resp.StatusCode == http.StatusOK, nil
+	})
+	return responseData, err
 }
 
 // mergeMetadata merges labels and annotations from `existing` map into `required` one where `required` has precedence

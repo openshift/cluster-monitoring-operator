@@ -16,18 +16,14 @@ package manifests
 
 import (
 	"bufio"
-	"context"
 	"crypto/sha256"
 	"crypto/tls"
-	"crypto/x509"
 	"encoding/base64"
 	"encoding/json"
 	"errors"
 	"fmt"
 	"hash/fnv"
-	"io"
 	"net"
-	"net/http"
 	"net/url"
 	"path/filepath"
 	"regexp"
@@ -51,7 +47,6 @@ import (
 	rbacv1 "k8s.io/api/rbac/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/util/sets"
-	"k8s.io/apimachinery/pkg/util/wait"
 	auditv1 "k8s.io/apiserver/pkg/apis/audit/v1"
 	apiregistrationv1 "k8s.io/kube-aggregator/pkg/apis/apiregistration/v1"
 	"k8s.io/utils/ptr"
@@ -768,72 +763,10 @@ func (f *Factory) KubeStateMetricsDeployment() (*appsv1.Deployment, error) {
 // KubeStateMetricsDenylistBoundsCheck ensures that the user is:
 // * able to enable metrics that are denied by default, and,
 // * unable to disable metrics that are enabled by default.
-func (f *Factory) KubeStateMetricsDenylistBoundsCheck(deployment *appsv1.Deployment, service *v1.Service, rootCAs *v1.ConfigMap, clientTLS, serverTLS *v1.Secret) (*appsv1.Deployment, error) {
+func (f *Factory) KubeStateMetricsDenylistBoundsCheck(deployment *appsv1.Deployment, responseData []byte) (*appsv1.Deployment, error) {
 	// Fail early if the deny-list is empty.
 	if len(f.config.ClusterMonitoringConfiguration.KubeStateMetricsConfig.MetricDenylist) == 0 {
 		return deployment, nil
-	}
-
-	// Fetch the `/metrics` port.
-	var p int32
-	for _, port := range service.Spec.Ports {
-		if port.Name == "https-main" {
-			p = port.Port
-			break
-		}
-	}
-
-	// Query the endpoint.
-	var responseData []byte
-	err := wait.PollUntilContextTimeout(context.Background(), time.Second, 5*time.Second, true, func(ctx context.Context) (bool, error) {
-		u := &url.URL{
-			Scheme: "https",
-			Host:   fmt.Sprintf("%s.%s.svc:%d", service.GetName(), service.GetNamespace(), p),
-			Path:   "/metrics",
-		}
-
-		// Establish a mutual TLS connection to KSM's KRP instance.
-		cert, err := tls.X509KeyPair(clientTLS.Data["tls.crt"], clientTLS.Data["tls.key"])
-		if err != nil {
-			return false, fmt.Errorf("cannot load TLS key pair: %w", err)
-		}
-		caCertPool := x509.NewCertPool()
-		caCertPool.AppendCertsFromPEM([]byte(rootCAs.Data["client-ca.crt"]))
-		caCertPool.AppendCertsFromPEM(serverTLS.Data["tls.crt"])
-		tlsConfig := &tls.Config{
-			Certificates: []tls.Certificate{cert},
-			// RootCAs are used by the client (CMO) to verify the server's (KSM's KRP instance) public TLS certificate,
-			// i.e., `kube-state-metrics-tls`.
-			// * The RootCAs included here are: `metrics-client-ca` and `kube-state-metrics-tls`.
-			// * An `openssl verify` will show that KSM's KRP instance's certificate is not present in the
-			// `metrics-client-ca`'s chain of trust. This is expected, as `/metrics` queries from CMO to another
-			// component are uncommon. However, that is the case here, which is why we include both CAs.
-			// Similarly, ClientCAs are used within KRP to verify the client's (CMO) public TLS certificate,
-			// i.e., `metrics-client-certs`.
-			// * The ClientCAs included there (`--client-ca-file`) are: `metrics-client-ca`.
-			// This is the minimum required configuration to establish a mutual TLS connection between CMO and one of
-			// its components.
-			RootCAs: caCertPool,
-			// Defaults to `tls.NoClientCert` otherwise.
-			ClientAuth: tls.RequireAndVerifyClientCert,
-		}
-		client := &http.Client{
-			Transport: &http.Transport{TLSClientConfig: tlsConfig},
-		}
-		resp, err := client.Get(u.String())
-		if err != nil {
-			return false, fmt.Errorf("cannot fetch kube-state-metrics /metrics endpoint: %w", err)
-		}
-		defer resp.Body.Close()
-		responseData, err = io.ReadAll(resp.Body)
-		if err != nil {
-			return false, fmt.Errorf("cannot read kube-state-metrics /metrics response: %w", err)
-		}
-
-		return resp.StatusCode == http.StatusOK, nil
-	})
-	if err != nil {
-		return nil, fmt.Errorf("cannot fetch kube-state-metrics /metrics endpoint: %w", err)
 	}
 
 	// Prep the current deny-list regex.

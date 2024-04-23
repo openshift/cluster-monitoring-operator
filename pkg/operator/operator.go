@@ -771,16 +771,13 @@ func (o *Operator) sync(ctx context.Context, key string) error {
 				newUWMTaskSpec("Alertmanager", tasks.NewAlertmanagerUserWorkloadTask(o.client, factory, config)),
 				newUWMTaskSpec("ThanosRuler", tasks.NewThanosRulerUserWorkloadTask(o.client, factory, config)),
 			}),
-		// The shared configmap depends on resources being created by the previous tasks hence run it last.
 		tasks.NewTaskGroup(
 			[]*tasks.TaskSpec{
+				// The shared configmap depends on resources being created by the previous tasks.
 				newTaskSpec("ConfigurationSharing", tasks.NewConfigSharingTask(o.client, factory, config)),
-			},
-		),
-		// Peripheral tasks are volatile and run after critical tasks to ensure a stable stack rollout.
-		tasks.NewTaskGroup(
-			[]*tasks.TaskSpec{
-				newTaskSpec("Peripherals", tasks.NewPeripheralsTask(o.client, factory)),
+				// NewUserKubeStateMetricsDenyListTask can degrade the operator if an invalid metrics-denylist is
+				// provided by the user. It is run after critical tasks to ensure a stable stack rollout.
+				newTaskSpec("Peripherals", tasks.NewUserKubeStateMetricsDenyListTask(o.client, factory)),
 			},
 		),
 	)
