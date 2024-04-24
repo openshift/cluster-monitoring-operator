@@ -146,13 +146,12 @@ type DedicatedServiceMonitors struct {
 // The `KubeStateMetricsConfig` resource defines settings for the
 // `kube-state-metrics` agent.
 type KubeStateMetricsConfig struct {
-	// Comma-separated list of metrics not to be enabled. This list comprises
-	// exact metric names and/or regex patterns. CMO has a default deny-list
-	// that forms the overall scope of the set of metrics that are allowed to
-	// be enabled. However, metrics that are not in the default deny-list
-	// cannot be disabled by the user, since various OpenShift components rely
-	// on them. Doing so will cause the operator to go into a degraded state,
-	// until a valid (or empty) list is provided by the user.
+	// A comma-separated list of metrics that are disabled by default. This list
+	// comprises exact metric names and/or regex patterns. You can enable the
+	// metrics from the CMO default deny-list. However, you cannot disable metrics
+	// that are not in the default deny-list, because various OpenShift components
+	// rely on them. Doing so causes the Operator to go into a degraded state, until
+	// a valid (or empty) list is provided by the user.
 	MetricDenylist []string `json:"metricDenylist,omitempty"`
 	// Defines the nodes on which the pods are scheduled.
 	NodeSelector map[string]string `json:"nodeSelector,omitempty"`
