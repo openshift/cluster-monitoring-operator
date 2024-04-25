@@ -678,23 +678,13 @@ func (o *Operator) handleEvent(obj interface{}) {
 	case alertmanagerCABundleConfigMap:
 	case grpcTLS:
 	case metricsClientCerts:
+	case metricsServerClientCerts:
 	case federateClientCerts:
 	case uwmConfigMap:
 	default:
 		klog.V(5).Infof("ConfigMap or Secret (%s) not triggering an update.", key)
 		return
 	}
-
-	if o.metricsServerEnabled {
-		switch key {
-		case metricsServerClientCerts:
-		default:
-			klog.V(5).Infof("ConfigMap or Secret (%s) not triggering an update.", key)
-			return
-		}
-	}
-
-	klog.Infof("Triggering an update due to ConfigMap or Secret: %s", key)
 
 	// Always enqueue the cluster monitoring operator configmap.
 	// That way we reuse the same synchronization logic for all triggering object changes.
