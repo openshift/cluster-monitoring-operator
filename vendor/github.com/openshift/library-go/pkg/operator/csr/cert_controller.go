@@ -224,14 +224,7 @@ func (c *clientCertificateController) sync(ctx context.Context, syncCtx factory.
 		c.reset()
 		return err
 	}
-	// amrini
 	syncCtx.Recorder().Eventf("CSRCreated", "A csr %q is created for %s", c.csrName, c.controllerName)
-	csr, err := c.hubCSRLister.Get(c.csrName)
-	if err != nil {
-		klog.Infof("DEBBUG WEIRD %s", c.csrName)
-	} else {
-		klog.Infof("DEBBUG csr %s %+v %+v %+v %s", csr.Name, csr, csr.Spec, csr.Status, csr.String())
-	}
 	return nil
 }
 
@@ -309,6 +302,7 @@ func (c *clientCertificateController) createCSR(ctx context.Context) (string, er
 	if err != nil {
 		return "", err
 	}
+	klog.Infof("DEBBUG CREATED csr %s %+v %+v %+v %s", req.Name, req, req.Spec, req.Status, req.String())
 	return req.Name, nil
 }
 
