@@ -1,13 +1,26 @@
 local tmpVolumeName = 'volume-directive-shadow';
 local tlsVolumeName = 'kube-state-metrics-tls';
+local crsVolumeName = 'kube-state-metrics-custom-resource-state-configmap';
 
 local kubeStateMetrics = import 'github.com/prometheus-operator/kube-prometheus/jsonnet/kube-prometheus/components/kube-state-metrics.libsonnet';
+local kubeStateMetricsCRS = import '../utils/kube-state-metrics-custom-resource-state.libsonnet';
 local generateSecret = import '../utils/generate-secret.libsonnet';
 local generateServiceMonitor = import '../utils/generate-service-monitors.libsonnet';
 local withDescription = (import '../utils/add-annotations.libsonnet').withDescription;
 
 function(params)
   local cfg = params;
+  local crsConfig = {
+    apiVersion: 'v1',
+    kind: 'ConfigMap',
+    metadata: {
+      name: 'kube-state-metrics-custom-resource-state-configmap',
+      namespace: 'openshift-monitoring',
+    },
+    data: {
+      'custom-resource-state-configmap.yaml': std.manifestYamlDoc(kubeStateMetricsCRS.Config()),
+    },
+  };
 
   kubeStateMetrics(cfg) + {
     // Adding the serving certs annotation causes the serving certs controller
@@ -25,6 +38,23 @@ function(params)
           ||| % [$.service.spec.ports[0].port, $.service.spec.ports[1].port],
         ),
       },
+    },
+
+    clusterRole+: {
+      rules+: [
+        {
+          apiGroups: ['autoscaling.k8s.io'],
+          resources: ['verticalpodautoscalers'],
+          verbs: ['list', 'watch'],
+        },
+        // CRD read permissions are required for kube-state-metrics to support the CRS feature-set.
+        // Refer: https://github.com/kubernetes/kube-state-metrics/pull/1851/files#diff-916e6863e1245c673b4e5965c98dc27bafbd72650fdb38ce65ea73ee6304e027R45-R47
+        {
+          apiGroups: ['apiextensions.k8s.io'],
+          resources: ['customresourcedefinitions'],
+          verbs: ['get', 'list', 'watch'],
+        },
+      ],
     },
 
     // This changes kube-state-metrics to be scraped with validating TLS.
@@ -208,6 +238,8 @@ function(params)
                           --metric-denylist=
                           ^kube_secret_labels$,
                           ^kube_.+_annotations$
+                          ^kube_customresource_.+_annotations_info$,
+                          ^kube_customresource_.+_labels_info$,
                         |||,
                         '--metric-labels-allowlist=pods=[*],nodes=[*],namespaces=[*],persistentvolumes=[*],persistentvolumeclaims=[*],poddisruptionbudgets=[*]',
                       ],
@@ -218,11 +250,19 @@ function(params)
                           cpu: '2m',
                         },
                       },
-                      volumeMounts: [{
-                        mountPath: '/tmp',
-                        name: tmpVolumeName,
-                        readOnly: false,
-                      }],
+                      volumeMounts: [
+                        {
+                          mountPath: '/tmp',
+                          name: tmpVolumeName,
+                          readOnly: false,
+                        },
+                        // The custom resource state configmap is always mounted in the kube-state-metrics container and only when the VPA CRD is installed, CMO will add `--custom-resource-state-config-file` to the container arguments list.
+                        {
+                          mountPath: '/etc/kube-state-metrics',
+                          name: crsVolumeName,
+                          readOnly: true,
+                        },
+                      ],
                     },
                 super.containers,
               ),
@@ -249,6 +289,12 @@ function(params)
                   secretName: 'kube-state-metrics-kube-rbac-proxy-config',
                 },
               },
+              {
+                name: crsVolumeName,
+                configMap: {
+                  name: crsVolumeName,
+                },
+              },
             ],
             securityContext: {},
             priorityClassName: 'system-cluster-critical',
@@ -256,4 +302,6 @@ function(params)
         },
       },
     },
+
+    customResourceStateConfigmap: crsConfig,
   }
