@@ -106,7 +106,7 @@ spec:
         secret:
           secretName: metrics-server-tls
       - configMap:
-          name: kubelet-serving-ca-bundle
+          name: metrics-server-kubelet-serving-ca-bundle
         name: configmap-kubelet-serving-ca-bundle
       - emptyDir: {}
         name: audit-log

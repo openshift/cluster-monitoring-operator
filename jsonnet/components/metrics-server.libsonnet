@@ -108,6 +108,18 @@ function(params) {
     ],
   },
 
+  kubeletServingCaBundle+: {
+    apiVersion: 'v1',
+    kind: 'ConfigMap',
+    metadata+: {
+      name: 'metrics-server-kubelet-serving-ca-bundle',
+      namespace: cfg.namespace,
+      annotations: {
+        'openshift.io/owning-component': 'Monitoring',
+      },
+    },
+    data: {},
+  },
   service: {
     apiVersion: 'v1',
     kind: 'Service',
@@ -278,7 +290,7 @@ function(params) {
             },
             {
               configMap: {
-                name: 'kubelet-serving-ca-bundle',
+                name: 'metrics-server-kubelet-serving-ca-bundle',
               },
               name: 'configmap-kubelet-serving-ca-bundle',
             },

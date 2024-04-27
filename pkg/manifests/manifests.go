@@ -198,6 +198,7 @@ var (
 	PrometheusAdapterMinimalServiceMonitor       = "prometheus-adapter/minimal-service-monitor.yaml"
 	PrometheusAdapterServiceAccount              = "prometheus-adapter/service-account.yaml"
 
+	MetricsServerKubeletServingCABundle          = "metrics-server/kubelet-serving-ca-bundle.yaml"
 	MetricsServerAPIService                      = "metrics-server/api-service.yaml"
 	MetricsServerServiceAccount                  = "metrics-server/service-account.yaml"
 	MetricsServerClusterRole                     = "metrics-server/cluster-role.yaml"
@@ -2033,6 +2034,16 @@ func (f *Factory) MetricsServerClusterRoleBindingAuthDelegator() (*rbacv1.Cluste
 
 func (f *Factory) MetricsServerRoleBindingAuthReader() (*rbacv1.RoleBinding, error) {
 	return f.NewRoleBinding(f.assets.MustNewAssetSlice(MetricsServerRoleBindingAuthReader))
+}
+
+func (f *Factory) MetricsServerKubeletServingCABundle(data map[string]string) (*v1.ConfigMap, error) {
+	c, err := f.NewConfigMap(f.assets.MustNewAssetSlice(MetricsServerKubeletServingCABundle))
+	if err != nil {
+		return nil, err
+	}
+
+	c.Data = data
+	return c, nil
 }
 
 func (f *Factory) MetricsServerDeployment(apiAuthSecretName string, kubeletCABundle *v1.ConfigMap, servingCASecret, metricsClientCert *v1.Secret, requestheader map[string]string) (*appsv1.Deployment, error) {

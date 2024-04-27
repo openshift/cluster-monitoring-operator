@@ -106,17 +106,19 @@ func (t *MetricsServerTask) create(ctx context.Context) error {
 			return fmt.Errorf("reconciling MetricsServer Service failed: %w", err)
 		}
 
-		cacm, err := t.factory.PrometheusK8sKubeletServingCABundle(map[string]string{})
+		kscm, err := t.client.GetConfigmap(ctx, "openshift-config-managed", "kubelet-serving-ca")
+		if err != nil {
+			return fmt.Errorf("openshift-config-managed/kubelet-serving-ca: %w", err)
+		}
+
+		kubeletServingCABundle, err := t.factory.MetricsServerKubeletServingCABundle(kscm.Data)
 		if err != nil {
 			return fmt.Errorf("initializing kubelet serving CA Bundle ConfigMap failed: %w", err)
 		}
 
-		cacm, err = t.client.WaitForConfigMap(
-			ctx,
-			cacm,
-		)
+		err = t.client.CreateOrUpdateConfigMap(ctx, kubeletServingCABundle)
 		if err != nil {
-			return err
+			return fmt.Errorf("creating kubelet serving CA Bundle ConfigMap failed: %w", err)
 		}
 
 		scas, err := t.client.WaitForSecretByNsName(
@@ -180,7 +182,7 @@ func (t *MetricsServerTask) create(ctx context.Context) error {
 			return fmt.Errorf("reconciling MetricsServer Secret failed: %w", err)
 		}
 
-		dep, err := t.factory.MetricsServerDeployment(secret.Name, cacm, scas, mcs, apiAuthConfigmap.Data)
+		dep, err := t.factory.MetricsServerDeployment(secret.Name, kubeletServingCABundle, scas, mcs, apiAuthConfigmap.Data)
 		if err != nil {
 			return fmt.Errorf("initializing MetricsServer Deployment failed: %w", err)
 		}
