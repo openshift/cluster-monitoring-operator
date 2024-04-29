@@ -218,18 +218,23 @@ function(params) {
                   protocol: 'TCP',
                 },
               ],
-              // metrics-server waits for 2 scrapes to report ready.
-              // The first one happens during boostrap and the second one after 15s (kubelet scrape interval)
-              // kubelet scrape interval is specified in metrics-server flag `--metric-resolution=15s`
+              // metrics-server waits for 2 kubelet scrapes to report ready for the "metric-storage-ready" check:
+              // https://github.com/kubernetes-sigs/metrics-server/blob/34c63f9eb69b479550c9ec87f8a9e4c26555c3d5/pkg/storage/storage.go#L42-L46
+              // The two scrapes happen --metric-resolution=15s apart.
+              // Note that with this prober hidden "feature": https://github.com/kubernetes/kubernetes/pull/98376,
+              // the two first failing probes may run within the same second.
+              // Additionally, to account for scrape timeouts that can occur when the kubelet is overwhelmed with other requests,
+              // refer to https://issues.redhat.com/browse/OCPBUGS-32510.
+              // The following configuration was chosen:
               readinessProbe: {
-                failureThreshold: 3,
+                failureThreshold: 6,
                 httpGet: {
                   path: '/readyz',
                   port: 'https',
                   scheme: 'HTTPS',
                 },
                 initialDelaySeconds: 20,
-                periodSeconds: 10,
+                periodSeconds: 20,
               },
               resources: {
                 requests: {
