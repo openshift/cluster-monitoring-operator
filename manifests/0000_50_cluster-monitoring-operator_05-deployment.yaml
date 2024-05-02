@@ -21,6 +21,7 @@ spec:
         app.kubernetes.io/name: cluster-monitoring-operator
       annotations:
         target.workload.openshift.io/management: '{"effect": "PreferredDuringScheduling"}'
+        openshift.io/required-scc: restricted-v2
     spec:
       serviceAccountName: cluster-monitoring-operator
       nodeSelector:

@@ -169,6 +169,7 @@ spec:
     kubernetes.io/os: linux
   podMetadata:
     annotations:
+      openshift.io/required-scc: nonroot
       target.workload.openshift.io/management: '{"effect": "PreferredDuringScheduling"}'
     labels:
       app.kubernetes.io/component: prometheus

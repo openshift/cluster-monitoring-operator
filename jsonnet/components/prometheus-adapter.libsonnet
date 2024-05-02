@@ -92,6 +92,9 @@ function(params)
               labels+: {
                 'app.kubernetes.io/managed-by': 'cluster-monitoring-operator',
               },
+              annotations+: {
+                'openshift.io/required-scc': 'restricted-v2',
+              },
             },
             spec+: {
               containers:

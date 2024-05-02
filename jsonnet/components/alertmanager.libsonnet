@@ -213,6 +213,11 @@ function(params)
     // TLS.
     alertmanager+: {
       spec+: {
+        podMetadata+: {
+          annotations+: {
+            'openshift.io/required-scc': 'nonroot',
+          },
+        },
         securityContext: {
           fsGroup: 65534,
           runAsNonRoot: true,
