@@ -20,6 +20,7 @@ spec:
     metadata:
       annotations:
         kubectl.kubernetes.io/default-container: prometheus-operator
+        openshift.io/required-scc: restricted-v2
         target.workload.openshift.io/management: '{"effect": "PreferredDuringScheduling"}'
       labels:
         app.kubernetes.io/component: controller
