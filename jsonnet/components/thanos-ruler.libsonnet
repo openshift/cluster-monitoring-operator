@@ -353,6 +353,11 @@ function(params)
             }],
           },
         },
+        podMetadata+: {
+          annotations+: {
+            'openshift.io/required-scc': 'nonroot-v2',
+          },
+        },
         securityContext: {
           fsGroup: 65534,
           runAsNonRoot: true,
