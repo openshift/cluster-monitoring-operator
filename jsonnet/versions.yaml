@@ -20,7 +20,7 @@ versions:
     kubeStateMetrics: 2.12.0
     kubernetesMetricsServer: 0.7.1
     monitoringPlugin: 1.0.0
-    nodeExporter: 1.7.0
+    nodeExporter: 1.8.0
     promLabelProxy: 0.8.1
     prometheus: 2.51.2
     prometheusAdapter: 0.11.2
