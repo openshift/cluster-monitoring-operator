@@ -2856,6 +2856,75 @@ metricsServer:
 	require.Equal(t, "383c7cmidrae2", podAnnotations["monitoring.openshift.io/serving-ca-secret-hash"])
 }
 
+func TestMetricsServerReadinessProbe(t *testing.T) {
+	c, err := NewConfigFromString("", true)
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	c.SetImages(map[string]string{
+		"kube-metrics-server": "docker.io/openshift/origin-kube-metrics-server:latest",
+	})
+
+	f := NewFactory("openshift-monitoring", "openshift-user-workload-monitoring", c, &fakeInfrastructureReader{}, &fakeProxyReader{}, NewAssets(assetsPath), &APIServerConfig{}, &configv1.Console{})
+	kubeletCABundle := &v1.ConfigMap{
+		ObjectMeta: metav1.ObjectMeta{
+			Name:      "kubelet-serving-ca-bundle",
+			Namespace: "openshift-monitoring",
+		},
+		Data: map[string]string{
+			"ca-bundle.crt": "ca-certificate",
+		},
+	}
+	servingCASecret := &v1.Secret{
+		ObjectMeta: metav1.ObjectMeta{
+			Name:      "metrics-server-tls",
+			Namespace: "openshift-monitoring",
+		},
+		Data: map[string][]byte{
+			"tls.crt": []byte("foo"),
+			"tls.key": []byte("bar"),
+		},
+	}
+	metricsClientSecret := &v1.Secret{
+		ObjectMeta: metav1.ObjectMeta{
+			Name:      "metrics-client-cert",
+			Namespace: "openshift-monitoring",
+		},
+		Data: map[string][]byte{
+			"tls.crt": []byte("bar"),
+			"tls.key": []byte("foo"),
+		},
+	}
+	apiAuthConfigMapData := map[string]string{
+		"requestheader-allowed-names":        "",
+		"requestheader-extra-headers-prefix": "",
+		"requestheader-group-headers":        "",
+		"requestheader-username-headers":     "",
+	}
+
+	d, err := f.MetricsServerDeployment("foo", kubeletCABundle, servingCASecret, metricsClientSecret, apiAuthConfigMapData)
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	for _, container := range d.Spec.Template.Spec.Containers {
+		if container.Name == "metrics-server" {
+			if container.ReadinessProbe.HTTPGet.Path != "/livez" {
+				t.Fatalf("expected readiness probe's path to be '/livez', got %q", container.ReadinessProbe.HTTPGet.Path)
+			}
+
+			if container.StartupProbe.HTTPGet.Path != "/readyz" {
+				t.Fatalf("expected startup probe's path to be '/readyz', got %q", container.StartupProbe.HTTPGet.Path)
+			}
+
+			return
+		}
+	}
+
+	t.Fatalf("failed to find container %q", "metrics-server")
+}
+
 func TestMetricsServerAuditLog(t *testing.T) {
 	argsForProfile := func(profile string) []string {
 		return []string{
