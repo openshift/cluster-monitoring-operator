@@ -41,6 +41,32 @@ func (t *MetricsServerTask) Run(ctx context.Context) error {
 
 func (t *MetricsServerTask) create(ctx context.Context) error {
 	{
+		// TODO: This is a temporary workaround until the requirements for https://github.com/openshift/cluster-monitoring-operator/pull/2329
+		// are ready.
+		// Because the metrics-server Pods rely on the system:serviceaccount:openshift-monitoring:prometheus-k8s SA to reach kubelet,
+		// the task needs to ensure that the necessary RBAC permissions for that SA are set up before starting the Pods to avoid scrape failures.
+		// For detailed information, refer to: https://issues.redhat.com/browse/OCPBUGS-32510.
+		cr, err := t.factory.PrometheusK8sClusterRole()
+		if err != nil {
+			return fmt.Errorf("initializing Prometheus ClusterRole failed: %w", err)
+		}
+
+		err = t.client.CreateOrUpdateClusterRole(ctx, cr)
+		if err != nil {
+			return fmt.Errorf("reconciling Prometheus ClusterRole failed: %w", err)
+		}
+
+		crb, err := t.factory.PrometheusK8sClusterRoleBinding()
+		if err != nil {
+			return fmt.Errorf("initializing Prometheus ClusterRoleBinding failed: %w", err)
+		}
+
+		err = t.client.CreateOrUpdateClusterRoleBinding(ctx, crb)
+		if err != nil {
+			return fmt.Errorf("reconciling Prometheus ClusterRoleBinding failed: %w", err)
+		}
+	}
+	{
 		sa, err := t.factory.MetricsServerServiceAccount()
 		if err != nil {
 			return fmt.Errorf("initializing MetricsServer ServiceAccount failed: %w", err)
