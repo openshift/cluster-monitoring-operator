@@ -34,6 +34,8 @@ Appears in: link:nodeexporterconfig.adoc[NodeExporterConfig]
 
 |processes|link:nodeexportercollectorprocessesconfig.adoc[NodeExporterCollectorProcessesConfig]|Defines the configuration of the `processes` collector, which collects statistics from processes and threads running in the system. Disabled by default.
 
+|sysctl|link:nodeexportercollectorsysctlconfig.adoc[NodeExporterCollectorSysctlConfig]|Defines the configuration of the `sysctl` collector, which collects sysctl metrics. Disabled by default.
+
 |systemd|link:nodeexportercollectorsystemdconfig.adoc[NodeExporterCollectorSystemdConfig]|Defines the configuration of the `systemd` collector, which collects statistics on the systemd daemon and its managed services. Disabled by default.
 
 |===

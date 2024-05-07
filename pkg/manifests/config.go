@@ -387,6 +387,11 @@ func defaultClusterMonitoringConfiguration() ClusterMonitoringConfiguration {
 				Systemd: NodeExporterCollectorSystemdConfig{
 					Enabled: false,
 				},
+				Sysctl: NodeExporterCollectorSysctlConfig{
+					Enabled:                  false,
+					IncludeSysctlMetrics:     []string{},
+					IncludeInfoSysctlMetrics: []string{},
+				},
 			},
 		},
 	}
