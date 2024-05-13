@@ -2053,6 +2053,24 @@ func (f *Factory) MetricsServerDeployment(apiAuthSecretName string, kubeletCABun
 	containers[idx].Args = f.setTLSSecurityConfiguration(podSpec.Containers[0].Args,
 		MetricsServerTLSCipherSuitesFlag, MetricsServerTLSMinTLSVersionFlag)
 
+	// By default, the /readyz endpoint is used to assert the component
+	// readiness. This endpoint returns success when the metrics-server has
+	// metric samples over 2 intervals (e.g. it has scraped at least one
+	// kubelet twice).
+	// In single-node deployments, it happens sometimes (especially in
+	// end-to-end tests) that the kubelet fails to respond in a timely fashion
+	// due to contention in cAdvisor, leading to a delayed readiness (and test
+	// failures). To workaround the issue, we use the /livez endpoint in this
+	// mode.
+	// The long-term plan is to switch resource metrics from cAdvisor to the
+	// CRI stats API (currently an alpha feature). Once it happens, we can
+	// remove this change.
+	// See https://issues.redhat.com//browse/OCPBUGS-32510 for details.
+	if !f.infrastructure.HighlyAvailableInfrastructure() {
+		containers[idx].StartupProbe = containers[idx].ReadinessProbe.DeepCopy()
+		containers[idx].ReadinessProbe.HTTPGet.Path = "/livez"
+	}
+
 	// Hash the Kubelet Serving CA Bundle configmap value and propagate it as a annotation to the
 	// deployment's pods to trigger a new rollout when the CA is rotated.
 	dep.Spec.Template.Annotations["monitoring.openshift.io/kubelet-serving-ca-bundle-hash"] = hashStringMap(kubeletCABundle.Data)
