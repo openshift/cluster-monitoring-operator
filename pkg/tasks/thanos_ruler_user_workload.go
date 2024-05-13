@@ -16,7 +16,6 @@ package tasks
 
 import (
 	"context"
-	"net/url"
 
 	"github.com/openshift/cluster-monitoring-operator/pkg/client"
 	"github.com/openshift/cluster-monitoring-operator/pkg/manifests"
@@ -230,22 +229,6 @@ func (t *ThanosRulerUserWorkloadTask) create(ctx context.Context) error {
 			return errors.Wrap(err, "error deleting expired UserWorkload Thanos Ruler GRPC TLS secret")
 		}
 
-		hasRoutes, err := t.client.HasRouteCapability(ctx)
-		if err != nil {
-			return errors.Wrap(err, "checking for Route capability failed")
-		}
-		var queryURL *url.URL
-		if hasRoutes {
-			querierRoute, err := t.factory.ThanosQuerierRoute()
-			if err != nil {
-				return errors.Wrap(err, "initializing Thanos Querier Route failed")
-			}
-			queryURL, err = t.client.GetRouteURL(ctx, querierRoute)
-			if err != nil {
-				return errors.Wrap(err, "error getting Thanos Querier Route url")
-			}
-		}
-
 		pdb, err := t.factory.ThanosRulerPodDisruptionBudget()
 		if err != nil {
 			return errors.Wrap(err, "initializing Thanos Ruler PodDisruptionBudget object failed")
@@ -258,7 +241,7 @@ func (t *ThanosRulerUserWorkloadTask) create(ctx context.Context) error {
 			}
 		}
 
-		tr, err := t.factory.ThanosRulerCustomResource(queryURL.String(), trustedCA, grpcSecret, acs)
+		tr, err := t.factory.ThanosRulerCustomResource(trustedCA, grpcSecret, acs)
 		if err != nil {
 			return errors.Wrap(err, "initializing ThanosRuler object failed")
 		}
@@ -448,7 +431,7 @@ func (t *ThanosRulerUserWorkloadTask) destroy(ctx context.Context) error {
 		}
 	}
 
-	tr, err := t.factory.ThanosRulerCustomResource("", trustedCA, grpcSecret, acs)
+	tr, err := t.factory.ThanosRulerCustomResource(trustedCA, grpcSecret, acs)
 	if err != nil {
 		return errors.Wrap(err, "initializing ThanosRuler object failed")
 	}
