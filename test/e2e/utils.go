@@ -16,6 +16,7 @@ package e2e
 
 import (
 	"fmt"
+	"github.com/openshift/cluster-monitoring-operator/test/e2e/framework"
 	apierrors "k8s.io/apimachinery/pkg/api/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"testing"
@@ -166,18 +167,10 @@ func getSecurityContextRestrictedProfile() *v1.SecurityContext {
 func getOrCreateCMOConfig(t *testing.T) (*v1.ConfigMap, error) {
 	t.Helper()
 
-	cfg, err := f.KubeClient.CoreV1().ConfigMaps(operatorNamespace).Get(ctx, "cluster-monitoring-config", metav1.GetOptions{})
+	cfg, err := f.KubeClient.CoreV1().ConfigMaps(operatorNamespace).Get(ctx, framework.ClusterMonitorConfigMapName, metav1.GetOptions{})
 	if err != nil {
 		if apierrors.IsNotFound(err) {
-			cfg, err = f.KubeClient.CoreV1().ConfigMaps(operatorNamespace).Create(ctx, &v1.ConfigMap{
-				ObjectMeta: metav1.ObjectMeta{
-					Name:      "cluster-monitoring-config",
-					Namespace: operatorNamespace,
-				},
-				Data: map[string]string{
-					"config.yaml": "",
-				},
-			}, metav1.CreateOptions{})
+			cfg, err = f.KubeClient.CoreV1().ConfigMaps(operatorNamespace).Create(ctx, f.BuildCMOConfigMap(t, ""), metav1.CreateOptions{})
 			if err != nil {
 				return nil, err
 			}
