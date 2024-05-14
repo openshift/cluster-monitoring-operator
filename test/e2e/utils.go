@@ -20,7 +20,6 @@ import (
 
 	"github.com/Jeffail/gabs"
 	"github.com/openshift/library-go/pkg/crypto"
-
 	v1 "k8s.io/api/core/v1"
 	"k8s.io/apimachinery/pkg/util/sets"
 	"k8s.io/apiserver/pkg/authentication/user"

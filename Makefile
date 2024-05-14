@@ -200,13 +200,11 @@ go-fmt:
 
 .PHONY: golangci-lint
 golangci-lint: $(GOLANGCI_LINT_BIN)
-	$(GOLANGCI_LINT_BIN) run -c .golangci.yaml --verbose --print-resources-usage
-	$(GOLANGCI_LINT_BIN) run -c .golangci.test.yaml --verbose --print-resources-usage
+	$(GOLANGCI_LINT_BIN) run --verbose --print-resources-usage
 
 .PHONY: golangci-lint-fix
 golangci-lint-fix: $(GOLANGCI_LINT_BIN)
-	$(GOLANGCI_LINT_BIN) run -c .golangci.yaml --verbose --print-resources-usage --fix
-	$(GOLANGCI_LINT_BIN) run -c .golangci.test.yaml --verbose --print-resources-usage --fix
+	$(GOLANGCI_LINT_BIN) run --verbose --print-resources-usage --fix
 
 .PHONY:
 misspell:
