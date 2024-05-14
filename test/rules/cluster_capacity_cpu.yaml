@@ -1,0 +1,194 @@
+# Tests for cluster:capacity_cpu_cores:sum
+# Verifying basic logic and check infra & master nodes are correctly labeled.
+
+rule_files:
+  - rules.yaml
+
+evaluation_interval: 30s
+
+tests:
+  # worker capacity is the only series (hypershift-style)
+  - interval: 1m
+    input_series:
+      - series: 'kube_node_status_capacity{node="worker-1",resource="cpu",unit="core"}'
+        values: "4"
+      - series: 'kube_node_labels{node="worker-1",label_beta_kubernetes_io_instance_type="e2-standard-4",label_kubernetes_io_arch="amd64",label_node_openshift_io_os_id="rhcos"}'
+        values: "1"
+    promql_expr_test:
+      - expr: cluster:capacity_cpu_cores:sum
+        eval_time: 1m
+        exp_samples:
+          - labels: 'cluster:capacity_cpu_cores:sum{label_beta_kubernetes_io_instance_type="e2-standard-4",label_kubernetes_io_arch="amd64",label_node_openshift_io_os_id="rhcos"}'
+            value: 4
+  # multiple worker capacity buckets
+  - interval: 1m
+    input_series:
+      - series: 'kube_node_status_capacity{node="worker-1",resource="cpu",unit="core"}'
+        values: "4"
+      - series: 'kube_node_labels{node="worker-1",label_beta_kubernetes_io_instance_type="e2-standard-4",label_kubernetes_io_arch="amd64",label_node_openshift_io_os_id="rhcos"}'
+        values: "1"
+      - series: 'kube_node_status_capacity{node="worker-2",resource="cpu",unit="core"}'
+        values: "2"
+      - series: 'kube_node_labels{node="worker-2",label_beta_kubernetes_io_instance_type="e2-standard-4",label_kubernetes_io_arch="amd64",label_node_openshift_io_os_id="rhcos"}'
+        values: "1"
+    promql_expr_test:
+      - expr: cluster:capacity_cpu_cores:sum
+        eval_time: 1m
+        exp_samples:
+          - labels: 'cluster:capacity_cpu_cores:sum{label_beta_kubernetes_io_instance_type="e2-standard-4",label_kubernetes_io_arch="amd64",label_node_openshift_io_os_id="rhcos"}'
+            value: 6
+  # infra node capacity is listed as different series than workers.
+  - interval: 1m
+    input_series:
+      - series: 'kube_node_status_capacity{node="worker-1",resource="cpu",unit="core"}'
+        values: "4"
+      - series: 'kube_node_labels{node="worker-1",label_beta_kubernetes_io_instance_type="e2-standard-4",label_kubernetes_io_arch="amd64",label_node_openshift_io_os_id="rhcos"}'
+        values: "1"
+      - series: 'kube_node_role{node="worker-1",role="worker"}'
+        values: "1"
+      - series: 'kube_node_status_capacity{node="worker-2",resource="cpu",unit="core"}'
+        values: "2"
+      - series: 'kube_node_labels{node="worker-2",label_beta_kubernetes_io_instance_type="e2-standard-4",label_kubernetes_io_arch="amd64",label_node_openshift_io_os_id="rhcos"}'
+        values: "1"
+      - series: 'kube_node_role{node="worker-2",role="worker"}'
+        values: "1"
+      - series: 'kube_node_status_capacity{node="infra-1",resource="cpu",unit="core"}'
+        values: "1"
+      - series: 'kube_node_labels{node="infra-1",label_beta_kubernetes_io_instance_type="e2-standard-4",label_kubernetes_io_arch="amd64",label_node_openshift_io_os_id="rhcos"}'
+        values: "1"
+      - series: 'kube_node_role{node="infra-1",role="infra"}'
+        values: "1"
+    promql_expr_test:
+      - expr: cluster:capacity_cpu_cores:sum
+        eval_time: 1m
+        exp_samples:
+          - labels: 'cluster:capacity_cpu_cores:sum{label_beta_kubernetes_io_instance_type="e2-standard-4",label_node_role_kubernetes_io="infra",label_kubernetes_io_arch="amd64",label_node_openshift_io_os_id="rhcos"}'
+            value: 1
+          - labels: 'cluster:capacity_cpu_cores:sum{label_beta_kubernetes_io_instance_type="e2-standard-4",label_kubernetes_io_arch="amd64",label_node_openshift_io_os_id="rhcos"}'
+            value: 6
+  # master node capacity is listed as distinct series
+  - interval: 1m
+    input_series:
+      - series: 'kube_node_status_capacity{node="worker-1",resource="cpu",unit="core"}'
+        values: "4"
+      - series: 'kube_node_labels{node="worker-1",label_beta_kubernetes_io_instance_type="e2-standard-4",label_kubernetes_io_arch="amd64",label_node_openshift_io_os_id="rhcos"}'
+        values: "1"
+      - series: 'kube_node_status_capacity{node="master-1",resource="cpu",unit="core"}'
+        values: "2"
+      - series: 'kube_node_role{node="master-1",role="master"}'
+        values: "1"
+      - series: 'kube_node_role{node="master-1",role="control-plane"}'
+        values: "1"
+      - series: 'kube_node_labels{node="master-1",label_beta_kubernetes_io_instance_type="e2-standard-4",label_kubernetes_io_arch="amd64",label_node_openshift_io_os_id="rhcos"}'
+        values: "1"
+    promql_expr_test:
+      - expr: cluster:capacity_cpu_cores:sum
+        eval_time: 1m
+        exp_samples:
+          - labels: 'cluster:capacity_cpu_cores:sum{label_beta_kubernetes_io_instance_type="e2-standard-4",label_node_role_kubernetes_io="master",label_kubernetes_io_arch="amd64",label_node_openshift_io_os_id="rhcos"}'
+            value: 2
+          - labels: 'cluster:capacity_cpu_cores:sum{label_beta_kubernetes_io_instance_type="e2-standard-4",label_kubernetes_io_arch="amd64",label_node_openshift_io_os_id="rhcos"}'
+            value: 4
+  # node with both master and infra role is counted as master.
+  - interval: 1m
+    input_series:
+      - series: 'kube_node_status_capacity{node="worker-1",resource="cpu",unit="core"}'
+        values: "4"
+      - series: 'kube_node_labels{node="worker-1",label_beta_kubernetes_io_instance_type="e2-standard-4",label_kubernetes_io_arch="amd64",label_node_openshift_io_os_id="rhcos"}'
+        values: "1"
+      - series: 'kube_node_status_capacity{node="master-1",resource="cpu",unit="core"}'
+        values: "3"
+      - series: 'kube_node_role{node="master-1",role="master"}'
+        values: "1"
+      - series: 'kube_node_role{node="master-1",role="control-plane"}'
+        values: "1"
+      - series: 'kube_node_labels{node="master-1",label_beta_kubernetes_io_instance_type="e2-standard-4",label_kubernetes_io_arch="amd64",label_node_openshift_io_os_id="rhcos"}'
+        values: "1"
+      - series: 'kube_node_status_capacity{node="master-infra-1",resource="cpu",unit="core"}'
+        values: "2"
+      - series: 'kube_node_role{node="master-infra-1",role="master"}'
+        values: "1"
+      - series: 'kube_node_role{node="master-infra-1",role="control-plane"}'
+        values: "1"
+      - series: 'kube_node_role{node="master-infra-1",role="infra"}'
+        values: "1"
+      - series: 'kube_node_labels{node="master-infra-1",label_beta_kubernetes_io_instance_type="e2-standard-4",label_kubernetes_io_arch="amd64",label_node_openshift_io_os_id="rhcos"}'
+        values: "1"
+    promql_expr_test:
+      - expr: cluster:capacity_cpu_cores:sum
+        eval_time: 1m
+        exp_samples:
+          - labels: 'cluster:capacity_cpu_cores:sum{label_beta_kubernetes_io_instance_type="e2-standard-4",label_node_role_kubernetes_io="master",label_kubernetes_io_arch="amd64",label_node_openshift_io_os_id="rhcos"}'
+            value: 5
+          - labels: 'cluster:capacity_cpu_cores:sum{label_beta_kubernetes_io_instance_type="e2-standard-4",label_kubernetes_io_arch="amd64",label_node_openshift_io_os_id="rhcos"}'
+            value: 4
+  # node with both worker and infra role is counted as infra.
+  - interval: 1m
+    input_series:
+      - series: 'kube_node_status_capacity{node="worker-1",resource="cpu",unit="core"}'
+        values: "4"
+      - series: 'kube_node_labels{node="worker-1",label_beta_kubernetes_io_instance_type="e2-standard-4",label_kubernetes_io_arch="amd64",label_node_openshift_io_os_id="rhcos"}'
+        values: "1"
+      - series: 'kube_node_role{node="worker-1",role="worker"}'
+        values: "1"
+      - series: 'kube_node_status_capacity{node="worker-infra-1",resource="cpu",unit="core"}'
+        values: "4"
+      - series: 'kube_node_role{node="worker-infra-1",role="worker"}'
+        values: "1"
+      - series: 'kube_node_role{node="worker-infra-1",role="infra"}'
+        values: "1"
+      - series: 'kube_node_labels{node="worker-infra-1",label_beta_kubernetes_io_instance_type="e2-standard-4",label_kubernetes_io_arch="amd64",label_node_openshift_io_os_id="rhcos"}'
+        values: "1"
+      - series: 'kube_node_status_capacity{node="master-1",resource="cpu",unit="core"}'
+        values: "3"
+      - series: 'kube_node_labels{node="master-1",label_beta_kubernetes_io_instance_type="e2-standard-4",label_kubernetes_io_arch="amd64",label_node_openshift_io_os_id="rhcos"}'
+        values: "1"
+      - series: 'kube_node_role{node="master-1",role="master"}'
+        values: "1"
+      - series: 'kube_node_status_capacity{node="master-infra-1",resource="cpu",unit="core"}'
+        values: "2"
+      - series: 'kube_node_role{node="master-infra-1",role="master"}'
+        values: "1"
+      - series: 'kube_node_role{node="master-infra-1",role="infra"}'
+        values: "1"
+      - series: 'kube_node_labels{node="master-infra-1",label_beta_kubernetes_io_instance_type="e2-standard-4",label_kubernetes_io_arch="amd64",label_node_openshift_io_os_id="rhcos"}'
+        values: "1"
+    promql_expr_test:
+      - expr: cluster:capacity_cpu_cores:sum
+        eval_time: 1m
+        exp_samples:
+          - labels: 'cluster:capacity_cpu_cores:sum{label_beta_kubernetes_io_instance_type="e2-standard-4",label_node_role_kubernetes_io="master",label_kubernetes_io_arch="amd64",label_node_openshift_io_os_id="rhcos"}'
+            value: 5
+          - labels: 'cluster:capacity_cpu_cores:sum{label_beta_kubernetes_io_instance_type="e2-standard-4",label_kubernetes_io_arch="amd64",label_node_openshift_io_os_id="rhcos"}'
+            value: 4
+          - labels: 'cluster:capacity_cpu_cores:sum{label_beta_kubernetes_io_instance_type="e2-standard-4",label_node_role_kubernetes_io="infra",label_kubernetes_io_arch="amd64",label_node_openshift_io_os_id="rhcos"}'
+            value: 4
+  # node without the role "master" or "infra" but only custom roles ("ai-worker" in the test) is counted as worker.
+  - interval: 1m
+    input_series:
+      - series: 'kube_node_status_capacity{node="worker-1",resource="cpu",unit="core"}'
+        values: "4"
+      - series: 'kube_node_labels{node="worker-1",label_beta_kubernetes_io_instance_type="e2-standard-4",label_kubernetes_io_arch="amd64",label_node_openshift_io_os_id="rhcos"}'
+        values: "1"
+      - series: 'kube_node_role{node="worker-1",role="worker"}'
+        values: "1"
+      - series: 'kube_node_status_capacity{node="ai-worker-1",resource="cpu",unit="core"}'
+        values: "4"
+      - series: 'kube_node_role{node="ai-worker-1",role="ai-worker"}'
+        values: "1"
+      - series: 'kube_node_labels{node="ai-worker-1",label_beta_kubernetes_io_instance_type="e2-standard-4",label_kubernetes_io_arch="amd64",label_node_openshift_io_os_id="rhcos"}'
+        values: "1"
+      - series: 'kube_node_status_capacity{node="master-1",resource="cpu",unit="core"}'
+        values: "3"
+      - series: 'kube_node_labels{node="master-1",label_beta_kubernetes_io_instance_type="e2-standard-4",label_kubernetes_io_arch="amd64",label_node_openshift_io_os_id="rhcos"}'
+        values: "1"
+      - series: 'kube_node_role{node="master-1",role="master"}'
+        values: "1"
+    promql_expr_test:
+      - expr: cluster:capacity_cpu_cores:sum
+        eval_time: 1m
+        exp_samples:
+          - labels: 'cluster:capacity_cpu_cores:sum{label_beta_kubernetes_io_instance_type="e2-standard-4",label_node_role_kubernetes_io="master",label_kubernetes_io_arch="amd64",label_node_openshift_io_os_id="rhcos"}'
+            value: 3
+          - labels: 'cluster:capacity_cpu_cores:sum{label_beta_kubernetes_io_instance_type="e2-standard-4",label_kubernetes_io_arch="amd64",label_node_openshift_io_os_id="rhcos"}'
+            value: 8

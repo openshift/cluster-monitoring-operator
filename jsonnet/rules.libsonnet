@@ -121,6 +121,13 @@ function(params) {
                 )
               )
               or on(node) (
+                label_replace(cluster:infra_nodes, "label_node_role_kubernetes_io", "infra", "", "")
+                * on(node) group_left() max by(node)
+                (
+                  kube_node_status_capacity{resource="cpu",unit="core"}
+                )
+              )
+              or on(node) (
                 max without(endpoint, instance, job, pod, service)
                 (
                   kube_node_labels
