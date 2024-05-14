@@ -32,6 +32,7 @@ TYPES_TARGET=pkg/manifests/types.go
 K8S_VERSION=$(shell echo -n v1. &&  cat go.mod | grep -w "k8s.io/api" | awk '{ print $$2 }' | cut -d "." -f 2)
 PO_VERSION=$(shell cat go.mod | grep "github.com/prometheus-operator/prometheus-operator[^=>]\+$$" | awk '{ print $$2 }' | sort -u)
 
+CONTROLLER_GEN := $(BIN_DIR)/controller-gen
 EMBEDMD_BIN=$(BIN_DIR)/embedmd
 JB_BIN=$(BIN_DIR)/jb
 GOJSONTOYAML_BIN=$(BIN_DIR)/gojsontoyaml
@@ -42,7 +43,7 @@ GOLANGCI_LINT_VERSION=v1.55.2
 PROMTOOL_BIN=$(BIN_DIR)/promtool
 DOCGEN_BIN=$(BIN_DIR)/docgen
 MISSPELL_BIN=$(BIN_DIR)/misspell
-TOOLING=$(EMBEDMD_BIN) $(JB_BIN) $(GOJSONTOYAML_BIN) $(JSONNET_BIN) $(JSONNETFMT_BIN) $(PROMTOOL_BIN) $(DOCGEN_BIN) $(GOLANGCI_LINT_BIN)
+TOOLING=$(CONTROLLER_GEN) $(EMBEDMD_BIN) $(JB_BIN) $(GOJSONTOYAML_BIN) $(JSONNET_BIN) $(JSONNETFMT_BIN) $(PROMTOOL_BIN) $(DOCGEN_BIN) $(GOLANGCI_LINT_BIN)
 
 MANIFESTS_DIR ?= $(shell pwd)/manifests
 JSON_MANIFESTS_DIR ?= $(shell pwd)/tmp/json-manifests/manifests
@@ -267,8 +268,31 @@ $(BIN_DIR):
 $(JSON_MANIFESTS_DIR):
 	mkdir -p $(JSON_MANIFESTS_DIR)
 
+.PHONY: tools
+tools: $(TOOLING)
 $(TOOLING): $(BIN_DIR)
 	@echo Installing tools from hack/tools/tools.go
 	@cd hack/tools && go list -mod=mod -tags tools -e -f '{{ range .Imports }}{{ printf "%s\n" .}}{{end}}' ./ | xargs -tI % go build -mod=mod -o $(BIN_DIR) %
 	@GOBIN=$(BIN_DIR) go install $(GO_PKG)/hack/docgen
 	curl -sfL https://raw.githubusercontent.com/golangci/golangci-lint/master/install.sh| sh -s -- -b $(BIN_DIR) $(GOLANGCI_LINT_VERSION)
+
+
+
+## Tool Versions
+CONTROLLER_TOOLS_VERSION ?= v0.13.0
+
+.PHONY: controller-gen
+controller-gen: $(CONTROLLER_GEN) ## Download controller-gen locally if necessary. If wrong version is installed, it will be overwritten.
+$(CONTROLLER_GEN): $(LOCALBIN)
+	test -s $(LOCALBIN)/controller-gen && $(LOCALBIN)/controller-gen --version | grep -q $(CONTROLLER_TOOLS_VERSION) || \
+	GOBIN=$(LOCALBIN) go install sigs.k8s.io/controller-tools/cmd/controller-gen@$(CONTROLLER_TOOLS_VERSION)
+
+##@ Development
+
+.PHONY: manifests
+manifests: controller-gen ## Generate WebhookConfiguration, ClusterRole and CustomResourceDefinition objects.
+	$(CONTROLLER_GEN) rbac:roleName=manager-role crd webhook paths="./..." output:crd:artifacts:config=config/crd/bases
+
+.PHONY: generate-crd
+generate-crd: controller-gen ## Generate code containing DeepCopy, DeepCopyInto, and DeepCopyObject method implementations.
+	$(CONTROLLER_GEN) object:headerFile="hack/boilerplate.go.txt" paths="./..."
