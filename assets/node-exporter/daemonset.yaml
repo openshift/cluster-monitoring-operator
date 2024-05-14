@@ -18,6 +18,7 @@ spec:
   template:
     metadata:
       annotations:
+        cluster-autoscaler.kubernetes.io/enable-ds-eviction: "false"
         kubectl.kubernetes.io/default-container: node-exporter
         openshift.io/required-scc: node-exporter
         target.workload.openshift.io/management: '{"effect": "PreferredDuringScheduling"}'

@@ -171,6 +171,7 @@ function(params)
             },
             annotations+: {
               'openshift.io/required-scc': 'node-exporter',
+              'cluster-autoscaler.kubernetes.io/enable-ds-eviction': 'false',
             },
           },
           spec+: {
