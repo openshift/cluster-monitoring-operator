@@ -56,7 +56,6 @@ spec:
         - "-namespace-user-workload=openshift-user-workload-monitoring"
         - "-configmap=cluster-monitoring-config"
         - "-release-version=$(RELEASE_VERSION)"
-        - "-logtostderr=true"
         - "-v=2"
         - "-cert-file=/etc/tls/private/tls.crt"
         - "-key-file=/etc/tls/private/tls.key"

@@ -93,7 +93,6 @@ spec:
         args:
         - "-namespace=openshift-monitoring"
         - "-configmap=cluster-monitoring-config"
-        - "-logtostderr=true"
         - "-v=4"
         - "-tags=prometheus-operator=${TAG}"
         - "-tags=prometheus-config-reloader=${TAG}"
