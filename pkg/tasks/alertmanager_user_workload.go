@@ -156,23 +156,17 @@ func (t *AlertmanagerUserWorkloadTask) create(ctx context.Context) error {
 	}
 
 	{
-		// Create trusted CA bundle ConfigMap.
 		trustedCA, err := t.factory.AlertmanagerUserWorkloadTrustedCABundle()
 		if err != nil {
 			return fmt.Errorf("initializing Alertmanager User Workload CA bundle ConfigMap failed: %w", err)
 		}
 
-		cbs := &caBundleSyncer{
-			client:  t.client,
-			factory: t.factory,
-			prefix:  "alertmanager",
-		}
-		trustedCA, err = cbs.syncTrustedCABundle(ctx, trustedCA)
+		err = t.client.CreateOrUpdateConfigMap(ctx, trustedCA)
 		if err != nil {
-			return fmt.Errorf("syncing Alertmanager User Workload trusted CA bundle ConfigMap failed: %w", err)
+			return fmt.Errorf("reconciling Alertmanager User Workload trusted CA bundle ConfigMap failed: %w", err)
 		}
 
-		a, err := t.factory.AlertmanagerUserWorkload(trustedCA)
+		a, err := t.factory.AlertmanagerUserWorkload()
 		if err != nil {
 			return fmt.Errorf("initializing Alertmanager User Workload object failed: %w", err)
 		}
@@ -196,6 +190,13 @@ func (t *AlertmanagerUserWorkloadTask) create(ctx context.Context) error {
 	if err != nil {
 		return fmt.Errorf("reconciling Alertmanager User Workload ServiceMonitor failed: %w", err)
 	}
+
+	// TODO(simonpasquier): remove this step after OCP 4.17 is released.
+	err = t.client.DeleteHashedConfigMap(ctx, "openshift-user-workload-monitoring", "alertmanager-trusted-ca-bundle", "")
+	if err != nil {
+		return fmt.Errorf("deleting all hashed Alertmanager User Workload trusted CA bundle ConfigMap failed: %w", err)
+	}
+
 	return nil
 }
 
@@ -303,7 +304,7 @@ func (t *AlertmanagerUserWorkloadTask) destroy(ctx context.Context) error {
 			return fmt.Errorf("deleting Alertmanager User Workload trusted CA bundle failed: %w", err)
 		}
 
-		a, err := t.factory.AlertmanagerUserWorkload(trustedCA)
+		a, err := t.factory.AlertmanagerUserWorkload()
 		if err != nil {
 			return fmt.Errorf("initializing Alertmanager User Workload object failed: %w", err)
 		}
@@ -324,5 +325,6 @@ func (t *AlertmanagerUserWorkloadTask) destroy(ctx context.Context) error {
 	if err != nil {
 		return fmt.Errorf("deleting Alertmanager User Workload ServiceMonitor failed: %w", err)
 	}
+
 	return nil
 }

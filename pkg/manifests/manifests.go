@@ -466,7 +466,7 @@ func (f *Factory) injectProxyVariables(container *v1.Container) {
 	}
 }
 
-func (f *Factory) AlertmanagerUserWorkload(trustedCABundleCM *v1.ConfigMap) (*monv1.Alertmanager, error) {
+func (f *Factory) AlertmanagerUserWorkload() (*monv1.Alertmanager, error) {
 	a, err := f.NewAlertmanager(f.assets.MustNewAssetSlice(AlertmanagerUserWorkload))
 	if err != nil {
 		return nil, err
