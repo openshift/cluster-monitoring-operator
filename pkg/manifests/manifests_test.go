@@ -1612,7 +1612,6 @@ ingress:
 	}
 	c.SetImages(map[string]string{
 		"prometheus":       "docker.io/openshift/origin-prometheus:latest",
-		"oauth-proxy":      "docker.io/openshift/origin-oauth-proxy:latest",
 		"kube-rbac-proxy":  "docker.io/openshift/origin-kube-rbac-proxy:latest",
 		"prom-label-proxy": "docker.io/openshift/origin-prom-label-proxy:latest",
 	})
@@ -4141,15 +4140,6 @@ grpc:
 					// For now this "index out of range" prior to this if the flag is set
 					t.Fatalf("CORS headers should be enabled on Thanos query")
 				}
-			}
-
-		case "oauth-proxy":
-			volumeName := "thanos-querier-trusted-ca-bundle"
-			if !volumeConfigured(d.Spec.Template.Spec.Volumes, volumeName) {
-				t.Fatalf("trusted CA bundle volume for %s is not configured correctly", c.Name)
-			}
-			if !volumeMountsConfigured(c.VolumeMounts, volumeName) {
-				t.Fatalf("trusted CA bundle volume mount for %s is not configured correctly", c.Name)
 			}
 
 		case "kube-rbac-proxy", "kube-rbac-proxy-rules", "kube-rbac-proxy-metrics":
