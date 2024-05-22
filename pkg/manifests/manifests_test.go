@@ -513,7 +513,6 @@ func TestUnconfiguredManifests(t *testing.T) {
 
 	_, err = f.PrometheusUserWorkload(
 		&v1.Secret{ObjectMeta: metav1.ObjectMeta{Name: "foo"}},
-		&v1.ConfigMap{ObjectMeta: metav1.ObjectMeta{Name: "foo"}},
 	)
 	if err != nil {
 		t.Fatal(err)
@@ -1748,7 +1747,6 @@ func TestPrometheusUserWorkloadConfiguration(t *testing.T) {
 	f := NewFactory("openshift-monitoring", "openshift-user-workload-monitoring", c, defaultInfrastructureReader(), &fakeProxyReader{}, NewAssets(assetsPath), &APIServerConfig{}, &configv1.Console{})
 	p, err := f.PrometheusUserWorkload(
 		&v1.Secret{ObjectMeta: metav1.ObjectMeta{Name: "foo"}},
-		&v1.ConfigMap{ObjectMeta: metav1.ObjectMeta{Name: "foo"}},
 	)
 	if err != nil {
 		t.Fatal(err)
@@ -1764,6 +1762,27 @@ func TestPrometheusUserWorkloadConfiguration(t *testing.T) {
 
 	if !reflect.DeepEqual(*f.config.UserWorkloadConfiguration.Prometheus.Resources, p.Spec.Resources) {
 		t.Fatal("Prometheus UWM resources not configured correctly")
+	}
+
+	var container *v1.Container
+	for i := range p.Spec.Containers {
+		if p.Spec.Containers[i].Name == "prometheus" {
+			container = &p.Spec.Containers[i]
+			break
+		}
+	}
+
+	if container == nil {
+		t.Fatalf("could not find container 'prometheus'")
+	}
+
+	var volumeName = "prometheus-user-workload-trusted-ca-bundle"
+	if !volumeConfigured(p.Spec.Volumes, volumeName) {
+		t.Fatalf("trusted CA bundle volume for %s is not configured correctly", container.Name)
+	}
+
+	if !volumeMountsConfigured(container.VolumeMounts, volumeName) {
+		t.Fatalf("trusted CA bundle volume mount for %s is not configured correctly", container.Name)
 	}
 }
 
@@ -4465,7 +4484,6 @@ func TestNonHighlyAvailableInfrastructure(t *testing.T) {
 			getSpec: func(f *Factory) (spec, error) {
 				p, err := f.PrometheusUserWorkload(
 					&v1.Secret{ObjectMeta: metav1.ObjectMeta{Name: "foo"}},
-					&v1.ConfigMap{ObjectMeta: metav1.ObjectMeta{Name: "foo"}},
 				)
 				if err != nil {
 					return spec{}, err

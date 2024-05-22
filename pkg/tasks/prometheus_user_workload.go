@@ -226,15 +226,9 @@ func (t *PrometheusUserWorkloadTask) create(ctx context.Context) error {
 		return fmt.Errorf("initializing UserWorkload CA bundle ConfigMap failed: %w", err)
 	}
 
-	cbs := &caBundleSyncer{
-		client:  t.client,
-		factory: t.factory,
-		prefix:  "prometheus-user-workload",
-	}
-
-	trustedCA, err = cbs.syncTrustedCABundle(ctx, trustedCA)
+	err = t.client.CreateOrUpdateConfigMap(ctx, trustedCA)
 	if err != nil {
-		return fmt.Errorf("syncing UserWorkload trusted CA bundle ConfigMap failed: %w", err)
+		return fmt.Errorf("creating or updating UserWorkload Prometheus CA bundle ConfigMap failed: %w", err)
 	}
 
 	secret, err := t.factory.PrometheusUserWorkloadAdditionalAlertManagerConfigsSecret()
@@ -260,7 +254,7 @@ func (t *PrometheusUserWorkloadTask) create(ctx context.Context) error {
 	}
 
 	klog.V(4).Info("initializing UserWorkload Prometheus object")
-	p, err := t.factory.PrometheusUserWorkload(s, trustedCA)
+	p, err := t.factory.PrometheusUserWorkload(s)
 	if err != nil {
 		return fmt.Errorf("initializing UserWorkload Prometheus object failed: %w", err)
 	}
@@ -316,6 +310,12 @@ func (t *PrometheusUserWorkloadTask) create(ctx context.Context) error {
 		if err != nil {
 			return fmt.Errorf("waiting for UserWorkload federate Route to become ready failed: %w", err)
 		}
+	}
+
+	// TODO(simonpasquier): remove this step after OCP 4.17 is released.
+	err = t.client.DeleteHashedConfigMap(ctx, "openshift-user-workload-monitoring", "prometheus-user-workload", "")
+	if err != nil {
+		return fmt.Errorf("deleting UserWorkload trusted CA Bundle ConfigMap failed: %w", err)
 	}
 
 	return nil
@@ -394,7 +394,7 @@ func (t *PrometheusUserWorkloadTask) destroy(ctx context.Context) error {
 		return fmt.Errorf("deleting UserWorkload trusted CA Bundle ConfigMap failed: %w", err)
 	}
 
-	p, err := t.factory.PrometheusUserWorkload(s, nil)
+	p, err := t.factory.PrometheusUserWorkload(s)
 	if err != nil {
 		return fmt.Errorf("initializing UserWorkload Prometheus object failed: %w", err)
 	}
