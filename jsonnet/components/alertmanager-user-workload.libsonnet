@@ -254,7 +254,6 @@ function(params)
               '--tls-private-key-file=/etc/tls/private/tls.key',
               '--tls-cipher-suites=' + cfg.tlsCipherSuites,
               '--config-file=/etc/kube-rbac-proxy/config.yaml',
-              '--logtostderr=true',
             ],
             volumeMounts: [
               {
@@ -340,7 +339,6 @@ function(params)
               '--tls-private-key-file=/etc/tls/private/tls.key',
               '--tls-cipher-suites=' + cfg.tlsCipherSuites,
               '--client-ca-file=/etc/tls/client/client-ca.crt',
-              '--logtostderr=true',
               '--allow-paths=/metrics',
             ],
             volumeMounts: [
