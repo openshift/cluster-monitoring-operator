@@ -9,7 +9,7 @@ metadata:
     app.kubernetes.io/managed-by: cluster-monitoring-operator
     app.kubernetes.io/name: alertmanager
     app.kubernetes.io/part-of: openshift-monitoring
-    app.kubernetes.io/version: 0.26.0
+    app.kubernetes.io/version: 0.27.0
   name: user-workload
   namespace: openshift-user-workload-monitoring
 spec:
@@ -135,7 +135,7 @@ spec:
         drop:
         - ALL
     terminationMessagePolicy: FallbackToLogsOnError
-  image: quay.io/prometheus/alertmanager:v0.26.0
+  image: quay.io/prometheus/alertmanager:v0.27.0
   listenLocal: true
   nodeSelector:
     kubernetes.io/os: linux
@@ -147,7 +147,7 @@ spec:
       app.kubernetes.io/instance: user-workload
       app.kubernetes.io/name: alertmanager
       app.kubernetes.io/part-of: openshift-monitoring
-      app.kubernetes.io/version: 0.26.0
+      app.kubernetes.io/version: 0.27.0
   priorityClassName: system-cluster-critical
   replicas: 2
   resources:
@@ -166,7 +166,7 @@ spec:
     seccompProfile:
       type: RuntimeDefault
   serviceAccountName: alertmanager-user-workload
-  version: 0.26.0
+  version: 0.27.0
   volumes:
   - configMap:
       name: metrics-client-ca
