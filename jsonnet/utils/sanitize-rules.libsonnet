@@ -491,6 +491,7 @@ local includeRunbooks = {
   NodeRAIDDegraded: openShiftRunbookCMO('NodeRAIDDegraded.md'),
   NodeClockNotSynchronising: openShiftRunbookCMO('NodeClockNotSynchronising.md'),
   PrometheusRuleFailures: openShiftRunbookCMO('PrometheusRuleFailures.md'),
+  PrometheusDuplicateTimestamps: openShiftRunbookCMO('PrometheusDuplicateTimestamps.md'),
   PrometheusTargetSyncFailure: openShiftRunbookCMO('PrometheusTargetSyncFailure.md'),
   TargetDown: openShiftRunbookCMO('TargetDown.md'),
   ThanosRuleQueueIsDroppingAlerts: openShiftRunbookCMO('ThanosRuleQueueIsDroppingAlerts.md'),
