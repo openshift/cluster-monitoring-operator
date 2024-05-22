@@ -18,8 +18,6 @@ import (
 	"context"
 	"fmt"
 
-	v1 "k8s.io/api/core/v1"
-	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	apiutilerrors "k8s.io/apimachinery/pkg/util/errors"
 	"k8s.io/klog/v2"
 
@@ -413,23 +411,6 @@ func (t *PrometheusTask) create(ctx context.Context) error {
 	err = t.client.CreateOrUpdateServiceMonitor(ctx, smt)
 	if err != nil {
 		return fmt.Errorf("reconciling Prometheus Thanos sidecar ServiceMonitor failed: %w", err)
-	}
-
-	// TODO(simonpasquier): remove this step after OCP 4.16 is released.
-	err = t.client.DeleteSecret(ctx, &v1.Secret{
-		ObjectMeta: metav1.ObjectMeta{
-			Name:      "prometheus-k8s-proxy",
-			Namespace: "openshift-monitoring",
-		},
-	})
-	if err != nil {
-		return fmt.Errorf("deleting Prometheus proxy Secret failed: %w", err)
-	}
-
-	// TODO(simonpasquier): remove this step after OCP 4.16 is released.
-	err = t.client.DeleteHashedConfigMap(ctx, "openshift-monitoring", "prometheus-trusted-ca-bundle", "")
-	if err != nil {
-		return fmt.Errorf("deleting all hashed Prometheus trusted CA bundle ConfigMap failed: %w", err)
 	}
 
 	return nil

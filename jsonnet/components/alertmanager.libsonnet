@@ -43,14 +43,6 @@ function(params)
     },
 
     serviceAccount+: {
-      metadata+: {
-        annotations+: {
-          // TODO(simonpasquier): remove this step after OCP 4.16 is released.
-          // https://issues.redhat.com/browse/MON-3801.
-          'serviceaccounts.openshift.io/oauth-redirectreference.alertmanager-main-': '',
-        },
-      },
-
       // Alertmanager can mount the token into the pod since
       // https://github.com/prometheus-operator/prometheus-operator/pull/5474
       // and v0.66.0

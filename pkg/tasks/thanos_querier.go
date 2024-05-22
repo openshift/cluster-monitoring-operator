@@ -18,9 +18,6 @@ import (
 	"context"
 	"fmt"
 
-	v1 "k8s.io/api/core/v1"
-	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
-
 	"github.com/openshift/cluster-monitoring-operator/pkg/client"
 	"github.com/openshift/cluster-monitoring-operator/pkg/manifests"
 )
@@ -227,23 +224,6 @@ func (t *ThanosQuerierTask) Run(ctx context.Context) error {
 	err = t.client.CreateOrUpdatePrometheusRule(ctx, tqpr)
 	if err != nil {
 		return fmt.Errorf("reconciling Thanos Querier PrometheusRule failed: %w", err)
-	}
-
-	// TODO(simonpasquier): remove this step after OCP 4.16 is released.
-	err = t.client.DeleteHashedConfigMap(ctx, "openshift-monitoring", "thanos-querier-trusted-ca-bundle", "")
-	if err != nil {
-		return fmt.Errorf("deleting all hashed Thanos Querier trusted CA bundle ConfigMap failed: %w", err)
-	}
-
-	// TODO(simonpasquier): remove this step after OCP 4.16 is released.
-	err = t.client.DeleteConfigMap(ctx, &v1.ConfigMap{
-		ObjectMeta: metav1.ObjectMeta{
-			Name:      "thanos-querier-trusted-ca-bundle",
-			Namespace: "openshift-monitoring",
-		},
-	})
-	if err != nil {
-		return fmt.Errorf("deleting Thanos Querier trusted CA bundle ConfigMap failed: %w", err)
 	}
 
 	return nil

@@ -10,14 +10,6 @@ rules:
 - apiGroups:
   - monitoring.coreos.com
   resourceNames:
-  - non-existant
-  resources:
-  - alertmanagers
-  verbs:
-  - patch
-- apiGroups:
-  - monitoring.coreos.com
-  resourceNames:
   - main
   resources:
   - alertmanagers/api
