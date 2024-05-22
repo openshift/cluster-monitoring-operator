@@ -240,6 +240,12 @@ data:
     #
     # owners: (https://github.com/kubevirt)
     #
+    # cnv_abnormal represents the reason why the operator might have an issue
+    # and includes the container, and reason labels.
+    - '{__name__="cnv_abnormal", reason=~"memory_working_set_delta_from_request|memory_rss_delta_from_request"}'
+    #
+    # owners: (https://github.com/kubevirt)
+    #
     # cluster:vmi_request_cpu_cores:sum is the total number of CPU cores requested by pods of VMIs.
     - '{__name__="cluster:vmi_request_cpu_cores:sum"}'
     #
