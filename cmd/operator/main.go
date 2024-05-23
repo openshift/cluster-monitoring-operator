@@ -26,10 +26,13 @@ import (
 	"syscall"
 
 	"golang.org/x/sync/errgroup"
+	utilruntime "k8s.io/apimachinery/pkg/util/runtime"
 	"k8s.io/apimachinery/pkg/util/yaml"
+	"k8s.io/client-go/kubernetes/scheme"
 	"k8s.io/client-go/tools/clientcmd"
 	"k8s.io/klog/v2"
 
+	cmoscheme "github.com/openshift/cluster-monitoring-operator/pkg/generated/clientset/versioned/scheme"
 	"github.com/openshift/cluster-monitoring-operator/pkg/manifests"
 	"github.com/openshift/cluster-monitoring-operator/pkg/metrics"
 	cmo "github.com/openshift/cluster-monitoring-operator/pkg/operator"
@@ -99,6 +102,9 @@ func Main() int {
 	images := images{}
 	flag.Var(&images, "images", "Images to use for containers managed by the cluster-monitoring-operator.")
 	flag.Parse()
+
+	utilruntime.Must(cmoscheme.AddToScheme(scheme.Scheme))
+	//+kubebuilder:scaffold:scheme
 
 	f, err := os.Open(*telemetryConfigFile)
 	if err != nil {

@@ -66,6 +66,8 @@ import (
 	apiregistrationv1 "k8s.io/kube-aggregator/pkg/apis/apiregistration/v1"
 	aggregatorclient "k8s.io/kube-aggregator/pkg/client/clientset_generated/clientset"
 	"k8s.io/utils/ptr"
+
+	openshiftcmoclientset "github.com/openshift/cluster-monitoring-operator/pkg/generated/clientset/versioned"
 )
 
 const (
@@ -88,6 +90,7 @@ type Client struct {
 	osrclient   openshiftrouteclientset.Interface
 	osopclient  openshiftoperatorclientset.Interface
 	osconclient openshiftconsoleclientset.Interface
+	cmoclient   openshiftcmoclientset.Interface
 	mclient     monitoring.Interface
 	eclient     apiextensionsclient.Interface
 	aggclient   aggregatorclient.Interface
@@ -190,6 +193,14 @@ func NewForConfig(cfg *rest.Config, version string, namespace, userWorkloadNames
 			return nil, fmt.Errorf("creating metadata clientset client: %w", err)
 		}
 		client.mdataclient = mdataclient
+	}
+
+	if client.cmoclient == nil {
+		crclient, err := openshiftcmoclientset.NewForConfig(cfg)
+		if err != nil {
+			return nil, fmt.Errorf("creating kubernetes clientset client: %w", err)
+		}
+		client.cmoclient = crclient
 	}
 
 	return client, nil
@@ -311,6 +322,10 @@ func (c *Client) AlertRelabelConfigListWatchForNamespace(ns string) *cache.ListW
 
 func (c *Client) ConfigMapListWatchForNamespace(ns string) *cache.ListWatch {
 	return cache.NewListWatchFromClient(c.kclient.CoreV1().RESTClient(), "configmaps", ns, fields.Everything())
+}
+
+func (c *Client) CMOListWatchForResource(ns string) *cache.ListWatch {
+	return cache.NewListWatchFromClient(c.cmoclient.CmoV1().RESTClient(), "clustermonitoringoperators", ns, fields.Everything())
 }
 
 func (c *Client) SecretListWatchForNamespace(ns string) *cache.ListWatch {

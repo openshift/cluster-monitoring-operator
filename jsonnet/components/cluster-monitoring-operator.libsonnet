@@ -257,6 +257,11 @@ function(params) {
         resources: ['consoleplugins'],
         verbs: ['get', 'create', 'update'],
       },
+      {
+        apiGroups: ['cmo.example.com'],
+        resources: ['clustermonitoringoperators'],
+        verbs: ['get', 'list', 'watch'],
+      },
     ],
   },
 

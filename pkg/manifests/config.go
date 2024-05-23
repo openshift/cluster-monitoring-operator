@@ -52,6 +52,7 @@ type Config struct {
 	Images                               *Images `json:"-"`
 	RemoteWrite                          bool    `json:"-"`
 	CollectionProfilesFeatureGateEnabled bool    `json:"-"`
+	BasedCRDFeatureGateEnabled           bool    `json:"-"`
 
 	ClusterMonitoringConfiguration *ClusterMonitoringConfiguration `json:"-"`
 	UserWorkloadConfiguration      *UserWorkloadConfiguration      `json:"-"`
