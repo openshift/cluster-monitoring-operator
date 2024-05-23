@@ -172,6 +172,12 @@ function(params)
           resources: ['namespaces'],
           verbs: ['get'],
         },
+        // This is required for the "prometheus-k8s" service account to be able to query the node metadata
+        {
+          apiGroups: [''],
+          resources: ['nodes'],
+          verbs: ['get', 'list', 'watch'],
+        },
         {
           // By default authenticated service accounts are assigned to the `restricted` SCC which implies MustRunAsRange.
           // This is problematic with statefulsets as UIDs (and file permissions) can change if SCCs are elevated.
