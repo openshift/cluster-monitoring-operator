@@ -3,7 +3,7 @@ apiVersion: apiextensions.k8s.io/v1
 kind: CustomResourceDefinition
 metadata:
   annotations:
-    controller-gen.kubebuilder.io/version: v0.13.0
+    controller-gen.kubebuilder.io/version: v0.15.0
   name: clustermonitoringoperators.cmo.example.com
 spec:
   group: cmo.example.com
@@ -214,11 +214,13 @@ spec:
                                     items:
                                       type: string
                                     type: array
+                                    x-kubernetes-list-type: atomic
                                 required:
                                 - key
                                 - operator
                                 type: object
                               type: array
+                              x-kubernetes-list-type: atomic
                             matchLabels:
                               additionalProperties:
                                 type: string
@@ -289,9 +291,6 @@ spec:
                             In this situation, new pod with the same labelSelector cannot be scheduled,
                             because computed skew will be 3(3 - 0) if new Pod is scheduled to any of the three zones,
                             it will violate MaxSkew.
-
-
-                            This is a beta field and requires the MinDomainsInPodTopologySpread feature gate to be enabled (enabled by default).
                           format: int32
                           type: integer
                         nodeAffinityPolicy:
@@ -422,6 +421,7 @@ spec:
                             items:
                               type: string
                             type: array
+                            x-kubernetes-list-type: atomic
                           dataSource:
                             description: |-
                               dataSource field can be used to specify either:
@@ -561,11 +561,13 @@ spec:
                                       items:
                                         type: string
                                       type: array
+                                      x-kubernetes-list-type: atomic
                                   required:
                                   - key
                                   - operator
                                   type: object
                                 type: array
+                                x-kubernetes-list-type: atomic
                               matchLabels:
                                 additionalProperties:
                                   type: string
@@ -593,7 +595,7 @@ spec:
                               If the resource referred to by volumeAttributesClass does not exist, this PersistentVolumeClaim will be
                               set to a Pending state, as reflected by the modifyVolumeStatus field, until such as a resource
                               exists.
-                              More info: https://kubernetes.io/docs/concepts/storage/persistent-volumes#volumeattributesclass
+                              More info: https://kubernetes.io/docs/concepts/storage/volume-attributes-classes/
                               (Alpha) Using this field requires the VolumeAttributesClass feature gate to be enabled.
                             type: string
                           volumeMode:
@@ -616,6 +618,7 @@ spec:
                             items:
                               type: string
                             type: array
+                            x-kubernetes-list-type: atomic
                           allocatedResourceStatuses:
                             additionalProperties:
                               description: |-
@@ -707,7 +710,7 @@ spec:
                           conditions:
                             description: |-
                               conditions is the current Condition of persistent volume claim. If underlying persistent volume is being
-                              resized then the Condition will be set to 'ResizeStarted'.
+                              resized then the Condition will be set to 'Resizing'.
                             items:
                               description: PersistentVolumeClaimCondition contains
                                 details about state of pvc
@@ -729,7 +732,7 @@ spec:
                                 reason:
                                   description: |-
                                     reason is a unique, this should be a short, machine understandable string that gives the reason
-                                    for condition's last transition. If it reports "ResizeStarted" that means the underlying
+                                    for condition's last transition. If it reports "Resizing" that means the underlying
                                     persistent volume is being resized.
                                   type: string
                                 status:
@@ -743,6 +746,9 @@ spec:
                               - type
                               type: object
                             type: array
+                            x-kubernetes-list-map-keys:
+                            - type
+                            x-kubernetes-list-type: map
                           currentVolumeAttributesClassName:
                             description: |-
                               currentVolumeAttributesClassName is the current name of the VolumeAttributesClass the PVC is using.
@@ -968,11 +974,13 @@ spec:
                                     items:
                                       type: string
                                     type: array
+                                    x-kubernetes-list-type: atomic
                                 required:
                                 - key
                                 - operator
                                 type: object
                               type: array
+                              x-kubernetes-list-type: atomic
                             matchLabels:
                               additionalProperties:
                                 type: string
@@ -1043,9 +1051,6 @@ spec:
                             In this situation, new pod with the same labelSelector cannot be scheduled,
                             because computed skew will be 3(3 - 0) if new Pod is scheduled to any of the three zones,
                             it will violate MaxSkew.
-
-
-                            This is a beta field and requires the MinDomainsInPodTopologySpread feature gate to be enabled (enabled by default).
                           format: int32
                           type: integer
                         nodeAffinityPolicy:
@@ -1254,11 +1259,13 @@ spec:
                                     items:
                                       type: string
                                     type: array
+                                    x-kubernetes-list-type: atomic
                                 required:
                                 - key
                                 - operator
                                 type: object
                               type: array
+                              x-kubernetes-list-type: atomic
                             matchLabels:
                               additionalProperties:
                                 type: string
@@ -1329,9 +1336,6 @@ spec:
                             In this situation, new pod with the same labelSelector cannot be scheduled,
                             because computed skew will be 3(3 - 0) if new Pod is scheduled to any of the three zones,
                             it will violate MaxSkew.
-
-
-                            This is a beta field and requires the MinDomainsInPodTopologySpread feature gate to be enabled (enabled by default).
                           format: int32
                           type: integer
                         nodeAffinityPolicy:
@@ -1559,11 +1563,13 @@ spec:
                                     items:
                                       type: string
                                     type: array
+                                    x-kubernetes-list-type: atomic
                                 required:
                                 - key
                                 - operator
                                 type: object
                               type: array
+                              x-kubernetes-list-type: atomic
                             matchLabels:
                               additionalProperties:
                                 type: string
@@ -1634,9 +1640,6 @@ spec:
                             In this situation, new pod with the same labelSelector cannot be scheduled,
                             because computed skew will be 3(3 - 0) if new Pod is scheduled to any of the three zones,
                             it will violate MaxSkew.
-
-
-                            This is a beta field and requires the MinDomainsInPodTopologySpread feature gate to be enabled (enabled by default).
                           format: int32
                           type: integer
                         nodeAffinityPolicy:
@@ -1845,11 +1848,13 @@ spec:
                                     items:
                                       type: string
                                     type: array
+                                    x-kubernetes-list-type: atomic
                                 required:
                                 - key
                                 - operator
                                 type: object
                               type: array
+                              x-kubernetes-list-type: atomic
                             matchLabels:
                               additionalProperties:
                                 type: string
@@ -1920,9 +1925,6 @@ spec:
                             In this situation, new pod with the same labelSelector cannot be scheduled,
                             because computed skew will be 3(3 - 0) if new Pod is scheduled to any of the three zones,
                             it will violate MaxSkew.
-
-
-                            This is a beta field and requires the MinDomainsInPodTopologySpread feature gate to be enabled (enabled by default).
                           format: int32
                           type: integer
                         nodeAffinityPolicy:
@@ -2320,11 +2322,13 @@ spec:
                                     items:
                                       type: string
                                     type: array
+                                    x-kubernetes-list-type: atomic
                                 required:
                                 - key
                                 - operator
                                 type: object
                               type: array
+                              x-kubernetes-list-type: atomic
                             matchLabels:
                               additionalProperties:
                                 type: string
@@ -2395,9 +2399,6 @@ spec:
                             In this situation, new pod with the same labelSelector cannot be scheduled,
                             because computed skew will be 3(3 - 0) if new Pod is scheduled to any of the three zones,
                             it will violate MaxSkew.
-
-
-                            This is a beta field and requires the MinDomainsInPodTopologySpread feature gate to be enabled (enabled by default).
                           format: int32
                           type: integer
                         nodeAffinityPolicy:
@@ -3396,11 +3397,13 @@ spec:
                                     items:
                                       type: string
                                     type: array
+                                    x-kubernetes-list-type: atomic
                                 required:
                                 - key
                                 - operator
                                 type: object
                               type: array
+                              x-kubernetes-list-type: atomic
                             matchLabels:
                               additionalProperties:
                                 type: string
@@ -3471,9 +3474,6 @@ spec:
                             In this situation, new pod with the same labelSelector cannot be scheduled,
                             because computed skew will be 3(3 - 0) if new Pod is scheduled to any of the three zones,
                             it will violate MaxSkew.
-
-
-                            This is a beta field and requires the MinDomainsInPodTopologySpread feature gate to be enabled (enabled by default).
                           format: int32
                           type: integer
                         nodeAffinityPolicy:
@@ -3604,6 +3604,7 @@ spec:
                             items:
                               type: string
                             type: array
+                            x-kubernetes-list-type: atomic
                           dataSource:
                             description: |-
                               dataSource field can be used to specify either:
@@ -3743,11 +3744,13 @@ spec:
                                       items:
                                         type: string
                                       type: array
+                                      x-kubernetes-list-type: atomic
                                   required:
                                   - key
                                   - operator
                                   type: object
                                 type: array
+                                x-kubernetes-list-type: atomic
                               matchLabels:
                                 additionalProperties:
                                   type: string
@@ -3775,7 +3778,7 @@ spec:
                               If the resource referred to by volumeAttributesClass does not exist, this PersistentVolumeClaim will be
                               set to a Pending state, as reflected by the modifyVolumeStatus field, until such as a resource
                               exists.
-                              More info: https://kubernetes.io/docs/concepts/storage/persistent-volumes#volumeattributesclass
+                              More info: https://kubernetes.io/docs/concepts/storage/volume-attributes-classes/
                               (Alpha) Using this field requires the VolumeAttributesClass feature gate to be enabled.
                             type: string
                           volumeMode:
@@ -3798,6 +3801,7 @@ spec:
                             items:
                               type: string
                             type: array
+                            x-kubernetes-list-type: atomic
                           allocatedResourceStatuses:
                             additionalProperties:
                               description: |-
@@ -3889,7 +3893,7 @@ spec:
                           conditions:
                             description: |-
                               conditions is the current Condition of persistent volume claim. If underlying persistent volume is being
-                              resized then the Condition will be set to 'ResizeStarted'.
+                              resized then the Condition will be set to 'Resizing'.
                             items:
                               description: PersistentVolumeClaimCondition contains
                                 details about state of pvc
@@ -3911,7 +3915,7 @@ spec:
                                 reason:
                                   description: |-
                                     reason is a unique, this should be a short, machine understandable string that gives the reason
-                                    for condition's last transition. If it reports "ResizeStarted" that means the underlying
+                                    for condition's last transition. If it reports "Resizing" that means the underlying
                                     persistent volume is being resized.
                                   type: string
                                 status:
@@ -3925,6 +3929,9 @@ spec:
                               - type
                               type: object
                             type: array
+                            x-kubernetes-list-map-keys:
+                            - type
+                            x-kubernetes-list-type: map
                           currentVolumeAttributesClassName:
                             description: |-
                               currentVolumeAttributesClassName is the current name of the VolumeAttributesClass the PVC is using.
@@ -4113,11 +4120,13 @@ spec:
                                     items:
                                       type: string
                                     type: array
+                                    x-kubernetes-list-type: atomic
                                 required:
                                 - key
                                 - operator
                                 type: object
                               type: array
+                              x-kubernetes-list-type: atomic
                             matchLabels:
                               additionalProperties:
                                 type: string
@@ -4188,9 +4197,6 @@ spec:
                             In this situation, new pod with the same labelSelector cannot be scheduled,
                             because computed skew will be 3(3 - 0) if new Pod is scheduled to any of the three zones,
                             it will violate MaxSkew.
-
-
-                            This is a beta field and requires the MinDomainsInPodTopologySpread feature gate to be enabled (enabled by default).
                           format: int32
                           type: integer
                         nodeAffinityPolicy:
@@ -4355,11 +4361,13 @@ spec:
                                     items:
                                       type: string
                                     type: array
+                                    x-kubernetes-list-type: atomic
                                 required:
                                 - key
                                 - operator
                                 type: object
                               type: array
+                              x-kubernetes-list-type: atomic
                             matchLabels:
                               additionalProperties:
                                 type: string
@@ -4430,9 +4438,6 @@ spec:
                             In this situation, new pod with the same labelSelector cannot be scheduled,
                             because computed skew will be 3(3 - 0) if new Pod is scheduled to any of the three zones,
                             it will violate MaxSkew.
-
-
-                            This is a beta field and requires the MinDomainsInPodTopologySpread feature gate to be enabled (enabled by default).
                           format: int32
                           type: integer
                         nodeAffinityPolicy:
@@ -4654,11 +4659,13 @@ spec:
                                     items:
                                       type: string
                                     type: array
+                                    x-kubernetes-list-type: atomic
                                 required:
                                 - key
                                 - operator
                                 type: object
                               type: array
+                              x-kubernetes-list-type: atomic
                             matchLabels:
                               additionalProperties:
                                 type: string
@@ -4729,9 +4736,6 @@ spec:
                             In this situation, new pod with the same labelSelector cannot be scheduled,
                             because computed skew will be 3(3 - 0) if new Pod is scheduled to any of the three zones,
                             it will violate MaxSkew.
-
-
-                            This is a beta field and requires the MinDomainsInPodTopologySpread feature gate to be enabled (enabled by default).
                           format: int32
                           type: integer
                         nodeAffinityPolicy:
@@ -4960,11 +4964,13 @@ spec:
                                     items:
                                       type: string
                                     type: array
+                                    x-kubernetes-list-type: atomic
                                 required:
                                 - key
                                 - operator
                                 type: object
                               type: array
+                              x-kubernetes-list-type: atomic
                             matchLabels:
                               additionalProperties:
                                 type: string
@@ -5035,9 +5041,6 @@ spec:
                             In this situation, new pod with the same labelSelector cannot be scheduled,
                             because computed skew will be 3(3 - 0) if new Pod is scheduled to any of the three zones,
                             it will violate MaxSkew.
-
-
-                            This is a beta field and requires the MinDomainsInPodTopologySpread feature gate to be enabled (enabled by default).
                           format: int32
                           type: integer
                         nodeAffinityPolicy:
