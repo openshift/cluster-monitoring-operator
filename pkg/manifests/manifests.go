@@ -1620,7 +1620,7 @@ func (f *Factory) PrometheusUserWorkloadAdditionalAlertManagerConfigsSecret() (*
 	}, nil
 }
 
-func (f *Factory) PrometheusUserWorkload(grpcTLS *v1.Secret, trustedCABundleCM *v1.ConfigMap) (*monv1.Prometheus, error) {
+func (f *Factory) PrometheusUserWorkload(grpcTLS *v1.Secret) (*monv1.Prometheus, error) {
 	p, err := f.NewPrometheus(f.assets.MustNewAssetSlice(PrometheusUserWorkload))
 	if err != nil {
 		return nil, err
@@ -1720,16 +1720,6 @@ func (f *Factory) PrometheusUserWorkload(grpcTLS *v1.Secret, trustedCABundleCM *
 		return nil, err
 	}
 
-	var trustedCABundleVolumeName string
-	if trustedCABundleCM != nil {
-		trustedCABundleVolumeName = "prometheus-user-workload-trusted-ca-bundle"
-		volume := trustedCABundleVolume(trustedCABundleCM.Name, trustedCABundleVolumeName)
-		volume.VolumeSource.ConfigMap.Items = append(volume.VolumeSource.ConfigMap.Items, v1.KeyToPath{
-			Key:  TrustedCABundleKey,
-			Path: "tls-ca-bundle.pem",
-		})
-		p.Spec.Volumes = append(p.Spec.Volumes, volume)
-	}
 	p.Spec.Volumes = append(p.Spec.Volumes, v1.Volume{
 		Name: "secret-grpc-tls",
 		VolumeSource: v1.VolumeSource{
@@ -1751,13 +1741,7 @@ func (f *Factory) PrometheusUserWorkload(grpcTLS *v1.Secret, trustedCABundleCM *
 				PeriodSeconds:    15,
 				FailureThreshold: 240,
 			}
-			// Support CA bundles for Prometheus UWM.
-			if trustedCABundleVolumeName != "" {
-				p.Spec.Containers[i].VolumeMounts = append(
-					p.Spec.Containers[i].VolumeMounts,
-					trustedCABundleVolumeMount(trustedCABundleVolumeName),
-				)
-			}
+
 		case "kube-rbac-proxy-metrics", "kube-rbac-proxy-federate", "kube-rbac-proxy-thanos":
 			p.Spec.Containers[i].Image = f.config.Images.KubeRbacProxy
 			p.Spec.Containers[i].Args = f.setTLSSecurityConfiguration(container.Args, KubeRbacProxyTLSCipherSuitesFlag, KubeRbacProxyMinTLSVersionFlag)

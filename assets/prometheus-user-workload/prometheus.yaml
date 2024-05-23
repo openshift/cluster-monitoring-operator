@@ -167,6 +167,9 @@ spec:
       name: secret-grpc-tls
   - name: prometheus
     terminationMessagePolicy: FallbackToLogsOnError
+    volumeMounts:
+    - mountPath: /etc/pki/ca-trust/extracted/pem/
+      name: prometheus-user-workload-trusted-ca-bundle
   enableFeatures:
   - extra-scrape-metrics
   enforcedNamespaceLabel: namespace
@@ -262,3 +265,10 @@ spec:
         memory: 100Mi
     version: 0.35.0
   version: 2.52.0
+  volumes:
+  - configMap:
+      items:
+      - key: ca-bundle.crt
+        path: tls-ca-bundle.pem
+      name: prometheus-user-workload-trusted-ca-bundle
+    name: prometheus-user-workload-trusted-ca-bundle
