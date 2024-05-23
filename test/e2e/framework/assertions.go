@@ -445,9 +445,16 @@ func (f *Framework) AssertOperatorConditionMessageContains(conditionType configv
 
 func (f *Framework) AssertValueInConfigMapEquals(name, namespace, key, compareWith string) func(t *testing.T) {
 	return func(t *testing.T) {
-		cm := f.MustGetConfigMap(t, name, namespace)
-		if cm.Data[key] != compareWith {
-			t.Fatalf("wanted value %s for key %s but got %s", compareWith, key, cm.Data[key])
+		err := Poll(time.Second, time.Minute, func() error {
+			cm := f.MustGetConfigMap(t, name, namespace)
+			if cm.Data[key] != compareWith {
+				return fmt.Errorf("wanted value %s for key %s but got %s", compareWith, key, cm.Data[key])
+			}
+
+			return nil
+		})
+		if err != nil {
+			t.Fatal(err)
 		}
 	}
 }
