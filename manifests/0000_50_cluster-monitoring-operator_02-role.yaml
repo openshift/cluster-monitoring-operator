@@ -480,6 +480,14 @@ rules:
   verbs:
   - get
 - apiGroups:
+  - ""
+  resources:
+  - nodes
+  verbs:
+  - get
+  - list
+  - watch
+- apiGroups:
   - security.openshift.io
   resourceNames:
   - nonroot
