@@ -26,6 +26,9 @@ function(params)
             'k8s-app': 'kubelet',
           },
         },
+        attachMetadata: {
+          node: true,
+        },
         endpoints:
           std.map(
             function(e)
@@ -78,6 +81,11 @@ function(params)
             interval: '30s',
             port: 'https-metrics',
             relabelings: [
+              {
+                sourceLabels: ['__meta_kubernetes_node_label_kubernetes_io_os'],
+                action: 'keep',
+                regex: '(linux|)',
+              },
               {
                 sourceLabels: ['__address__'],
                 action: 'replace',

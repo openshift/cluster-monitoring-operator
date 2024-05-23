@@ -10,6 +10,8 @@ metadata:
   name: kubelet-minimal
   namespace: openshift-monitoring
 spec:
+  attachMetadata:
+    node: true
   endpoints:
   - bearerTokenFile: ""
     honorLabels: true
@@ -87,6 +89,10 @@ spec:
       - __name__
     port: https-metrics
     relabelings:
+    - action: keep
+      regex: (linux|)
+      sourceLabels:
+      - __meta_kubernetes_node_label_kubernetes_io_os
     - action: replace
       regex: (.+)(?::\d+)
       replacement: $1:9537
