@@ -18,9 +18,6 @@ import (
 	"context"
 	"fmt"
 
-	v1 "k8s.io/api/core/v1"
-	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
-
 	"github.com/openshift/cluster-monitoring-operator/pkg/client"
 	"github.com/openshift/cluster-monitoring-operator/pkg/manifests"
 )
@@ -278,35 +275,6 @@ func (t *ThanosRulerUserWorkloadTask) create(ctx context.Context) error {
 		}
 	}
 
-	// TODO(simonpasquier): remove this step after OCP 4.16 is released.
-	err = t.client.DeleteSecret(ctx, &v1.Secret{
-		ObjectMeta: metav1.ObjectMeta{
-			Name:      "thanos-ruler-oauth-cookie",
-			Namespace: "openshift-user-workload-monitoring",
-		},
-	})
-	if err != nil {
-		return fmt.Errorf("deleting Thanos Ruler OAuth Cookie Secret failed: %w", err)
-	}
-
-	// TODO(simonpasquier): remove this step after OCP 4.16 is released.
-	trustedCA := &v1.ConfigMap{
-		ObjectMeta: metav1.ObjectMeta{
-			Name:      "thanos-ruler-trusted-ca-bundle",
-			Namespace: "openshift-user-workload-monitoring",
-		},
-	}
-	err = t.client.DeleteConfigMap(ctx, trustedCA)
-	if err != nil {
-		return fmt.Errorf("deleting Thanos Ruler trusted CA bundle ConfigMap failed: %w", err)
-	}
-
-	// TODO(simonpasquier): remove this step after OCP 4.16 is released.
-	err = t.client.DeleteHashedConfigMap(ctx, trustedCA.GetNamespace(), "thanos-ruler", "")
-	if err != nil {
-		return fmt.Errorf("deleting all hashed Thanos Ruler trusted CA bundle ConfigMap failed: %w", err)
-	}
-
 	return nil
 }
 
@@ -480,17 +448,6 @@ func (t *ThanosRulerUserWorkloadTask) destroy(ctx context.Context) error {
 	err = t.client.DeleteServiceMonitor(ctx, trsm)
 	if err != nil {
 		return fmt.Errorf("deleting Thanos Ruler ServiceMonitor failed: %w", err)
-	}
-
-	// TODO(simonpasquier): remove this step after OCP 4.16 is released.
-	err = t.client.DeleteSecret(ctx, &v1.Secret{
-		ObjectMeta: metav1.ObjectMeta{
-			Name:      "thanos-ruler-oauth-cookie",
-			Namespace: "openshift-user-workload-monitoring",
-		},
-	})
-	if err != nil {
-		return fmt.Errorf("deleting Thanos Ruler OAuth Cookie Secret failed: %w", err)
 	}
 
 	return nil

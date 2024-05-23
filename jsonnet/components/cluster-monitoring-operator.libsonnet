@@ -393,14 +393,6 @@ function(params) {
     },
     rules: [
       {
-        // this permission used to be required when Alertmanager was protected via OAuth proxy.
-        // TODO: remove it after OCP 4.16 is released.
-        apiGroups: ['monitoring.coreos.com'],
-        resources: ['alertmanagers'],
-        verbs: ['patch'],
-        resourceNames: ['non-existant'],
-      },
-      {
         apiGroups: ['monitoring.coreos.com'],
         resources: ['alertmanagers/api'],
         resourceNames: ['main'],
