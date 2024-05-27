@@ -1,6 +1,8 @@
 module github.com/openshift/cluster-monitoring-operator
 
-go 1.22
+go 1.22.0
+
+toolchain go1.22.3
 
 require (
 	github.com/Jeffail/gabs v1.4.0
@@ -32,7 +34,6 @@ require (
 	k8s.io/apiserver v0.30.0
 	k8s.io/autoscaler/vertical-pod-autoscaler v1.0.0
 	k8s.io/client-go v0.30.0
-	k8s.io/code-generator v0.30.0
 	k8s.io/component-base v0.30.0
 	k8s.io/klog/v2 v2.120.1
 	k8s.io/kube-aggregator v0.30.0
@@ -130,13 +131,11 @@ require (
 	go.uber.org/zap v1.26.0 // indirect
 	golang.org/x/crypto v0.22.0 // indirect
 	golang.org/x/exp v0.0.0-20231127185646-65229373498e // indirect
-	golang.org/x/mod v0.17.0 // indirect
 	golang.org/x/net v0.24.0 // indirect
 	golang.org/x/oauth2 v0.17.0 // indirect
 	golang.org/x/sys v0.19.0 // indirect
 	golang.org/x/term v0.19.0 // indirect
 	golang.org/x/time v0.5.0 // indirect
-	golang.org/x/tools v0.20.0 // indirect
 	google.golang.org/appengine v1.6.8 // indirect
 	google.golang.org/genproto v0.0.0-20240227224415-6ceb2ff114de // indirect
 	google.golang.org/genproto/googleapis/api v0.0.0-20240227224415-6ceb2ff114de // indirect
@@ -145,7 +144,6 @@ require (
 	google.golang.org/protobuf v1.33.0 // indirect
 	gopkg.in/inf.v0 v0.9.1 // indirect
 	gopkg.in/natefinch/lumberjack.v2 v2.2.1 // indirect
-	k8s.io/gengo/v2 v2.0.0-20240228010128-51d4e06bde70 // indirect
 	k8s.io/kms v0.30.0 // indirect
 	k8s.io/kube-openapi v0.0.0-20240430033511-f0e62f92d13f // indirect
 	sigs.k8s.io/apiserver-network-proxy/konnectivity-client v0.29.0 // indirect
