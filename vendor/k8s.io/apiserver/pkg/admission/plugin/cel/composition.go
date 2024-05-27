@@ -54,22 +54,13 @@ func NewCompositedCompiler(envSet *environment.EnvSet) (*CompositedCompiler, err
 	if err != nil {
 		return nil, err
 	}
-	return NewCompositedCompilerFromTemplate(compositionContext), nil
-}
-
-func NewCompositedCompilerFromTemplate(context *CompositionEnv) *CompositedCompiler {
-	context = &CompositionEnv{
-		MapType:           context.MapType,
-		EnvSet:            context.EnvSet,
-		CompiledVariables: map[string]CompilationResult{},
-	}
-	compiler := NewCompiler(context.EnvSet)
-	filterCompiler := NewFilterCompiler(context.EnvSet)
+	compiler := NewCompiler(compositionContext.EnvSet)
+	filterCompiler := NewFilterCompiler(compositionContext.EnvSet)
 	return &CompositedCompiler{
 		Compiler:       compiler,
 		FilterCompiler: filterCompiler,
-		CompositionEnv: context,
-	}
+		CompositionEnv: compositionContext,
+	}, nil
 }
 
 func (c *CompositedCompiler) CompileAndStoreVariables(variables []NamedExpressionAccessor, options OptionalVariableDeclarations, mode environment.Type) {
@@ -187,7 +178,7 @@ func (a *variableAccessor) Callback(_ *lazy.MapValue) ref.Val {
 		return types.NewErr("composited variable %q fails to compile: %v", a.name, a.result.Error)
 	}
 
-	v, details, err := a.result.Program.ContextEval(a.context, a.activation)
+	v, details, err := a.result.Program.Eval(a.activation)
 	if details == nil {
 		return types.NewErr("unable to get evaluation details of variable %q", a.name)
 	}

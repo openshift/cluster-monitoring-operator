@@ -404,15 +404,7 @@ type eventBroadcasterAdapterImpl struct {
 
 // NewEventBroadcasterAdapter creates a wrapper around new and legacy broadcasters to simplify
 // migration of individual components to the new Event API.
-//
-//logcheck:context // NewEventBroadcasterAdapterWithContext should be used instead because record.NewBroadcaster is called and works better when a context is supplied (contextual logging, cancellation).
 func NewEventBroadcasterAdapter(client clientset.Interface) EventBroadcasterAdapter {
-	return NewEventBroadcasterAdapterWithContext(context.Background(), client)
-}
-
-// NewEventBroadcasterAdapterWithContext creates a wrapper around new and legacy broadcasters to simplify
-// migration of individual components to the new Event API.
-func NewEventBroadcasterAdapterWithContext(ctx context.Context, client clientset.Interface) EventBroadcasterAdapter {
 	eventClient := &eventBroadcasterAdapterImpl{}
 	if _, err := client.Discovery().ServerResourcesForGroupVersion(eventsv1.SchemeGroupVersion.String()); err == nil {
 		eventClient.eventsv1Client = client.EventsV1()
@@ -422,7 +414,7 @@ func NewEventBroadcasterAdapterWithContext(ctx context.Context, client clientset
 	// we create it unconditionally because its overhead is minor and will simplify using usage
 	// patterns of this library in all components.
 	eventClient.coreClient = client.CoreV1()
-	eventClient.coreBroadcaster = record.NewBroadcaster(record.WithContext(ctx))
+	eventClient.coreBroadcaster = record.NewBroadcaster()
 	return eventClient
 }
 

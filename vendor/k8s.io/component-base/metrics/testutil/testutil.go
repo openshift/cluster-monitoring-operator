@@ -19,6 +19,7 @@ package testutil
 import (
 	"fmt"
 	"io"
+	"testing"
 
 	"github.com/prometheus/client_golang/prometheus/testutil"
 
@@ -26,12 +27,6 @@ import (
 	"k8s.io/component-base/metrics"
 	"k8s.io/component-base/metrics/legacyregistry"
 )
-
-type TB interface {
-	Logf(format string, args ...any)
-	Errorf(format string, args ...any)
-	Fatalf(format string, args ...any)
-}
 
 // CollectAndCompare registers the provided Collector with a newly created
 // pedantic Registry. It then does the same as GatherAndCompare, gathering the
@@ -99,7 +94,7 @@ func NewFakeKubeRegistry(ver string) metrics.KubeRegistry {
 	return metrics.NewKubeRegistry()
 }
 
-func AssertVectorCount(t TB, name string, labelFilter map[string]string, wantCount int) {
+func AssertVectorCount(t *testing.T, name string, labelFilter map[string]string, wantCount int) {
 	metrics, err := legacyregistry.DefaultGatherer.Gather()
 	if err != nil {
 		t.Fatalf("Failed to gather metrics: %s", err)
@@ -129,7 +124,7 @@ func AssertVectorCount(t TB, name string, labelFilter map[string]string, wantCou
 	}
 }
 
-func AssertHistogramTotalCount(t TB, name string, labelFilter map[string]string, wantCount int) {
+func AssertHistogramTotalCount(t *testing.T, name string, labelFilter map[string]string, wantCount int) {
 	metrics, err := legacyregistry.DefaultGatherer.Gather()
 	if err != nil {
 		t.Fatalf("Failed to gather metrics: %s", err)

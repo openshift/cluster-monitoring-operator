@@ -24,7 +24,6 @@ import (
 	"strconv"
 
 	"k8s.io/apimachinery/pkg/runtime"
-	"k8s.io/apimachinery/pkg/runtime/schema"
 	"k8s.io/apiserver/pkg/endpoints/handlers/responsewriters"
 )
 
@@ -40,7 +39,6 @@ import (
 func ServeHTTPWithETag(
 	object runtime.Object,
 	hash string,
-	targetGV schema.GroupVersion,
 	serializer runtime.NegotiatedSerializer,
 	w http.ResponseWriter,
 	req *http.Request,
@@ -66,7 +64,7 @@ func ServeHTTPWithETag(
 	responsewriters.WriteObjectNegotiated(
 		serializer,
 		DiscoveryEndpointRestrictions,
-		targetGV,
+		AggregatedDiscoveryGV,
 		w,
 		req,
 		http.StatusOK,

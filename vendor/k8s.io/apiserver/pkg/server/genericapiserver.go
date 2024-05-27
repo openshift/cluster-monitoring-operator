@@ -29,7 +29,7 @@ import (
 	systemd "github.com/coreos/go-systemd/v22/daemon"
 
 	"golang.org/x/time/rate"
-	apidiscoveryv2 "k8s.io/api/apidiscovery/v2"
+	apidiscoveryv2beta1 "k8s.io/api/apidiscovery/v2beta1"
 	"k8s.io/apimachinery/pkg/api/meta"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/runtime"
@@ -60,6 +60,7 @@ import (
 	"k8s.io/kube-openapi/pkg/handler3"
 	openapiutil "k8s.io/kube-openapi/pkg/util"
 	"k8s.io/kube-openapi/pkg/validation/spec"
+	"k8s.io/utils/clock"
 )
 
 // Info about an API group.
@@ -190,11 +191,19 @@ type GenericAPIServer struct {
 	preShutdownHooksCalled bool
 
 	// healthz checks
-	healthzRegistry healthCheckRegistry
-	readyzRegistry  healthCheckRegistry
-	livezRegistry   healthCheckRegistry
-
-	livezGracePeriod time.Duration
+	healthzLock            sync.Mutex
+	healthzChecks          []healthz.HealthChecker
+	healthzChecksInstalled bool
+	// livez checks
+	livezLock            sync.Mutex
+	livezChecks          []healthz.HealthChecker
+	livezChecksInstalled bool
+	// readyz checks
+	readyzLock            sync.Mutex
+	readyzChecks          []healthz.HealthChecker
+	readyzChecksInstalled bool
+	livezGracePeriod      time.Duration
+	livezClock            clock.Clock
 
 	// auditing. The backend is started before the server starts listening.
 	AuditBackend audit.Backend
@@ -321,7 +330,7 @@ func (s *GenericAPIServer) PreShutdownHooks() map[string]preShutdownHookEntry {
 	return s.preShutdownHooks
 }
 func (s *GenericAPIServer) HealthzChecks() []healthz.HealthChecker {
-	return s.healthzRegistry.checks
+	return s.healthzChecks
 }
 func (s *GenericAPIServer) ListedPaths() []string {
 	return s.listedPathProvider.ListedPaths()
@@ -756,8 +765,8 @@ func (s *GenericAPIServer) installAPIResources(apiPrefix string, apiGroupInfo *A
 			if apiPrefix == APIGroupPrefix {
 				s.AggregatedDiscoveryGroupManager.AddGroupVersion(
 					groupVersion.Group,
-					apidiscoveryv2.APIVersionDiscovery{
-						Freshness: apidiscoveryv2.DiscoveryFreshnessCurrent,
+					apidiscoveryv2beta1.APIVersionDiscovery{
+						Freshness: apidiscoveryv2beta1.DiscoveryFreshnessCurrent,
 						Version:   groupVersion.Version,
 						Resources: discoveryAPIResources,
 					},
@@ -766,8 +775,8 @@ func (s *GenericAPIServer) installAPIResources(apiPrefix string, apiGroupInfo *A
 				// There is only one group version for legacy resources, priority can be defaulted to 0.
 				s.AggregatedLegacyDiscoveryGroupManager.AddGroupVersion(
 					groupVersion.Group,
-					apidiscoveryv2.APIVersionDiscovery{
-						Freshness: apidiscoveryv2.DiscoveryFreshnessCurrent,
+					apidiscoveryv2beta1.APIVersionDiscovery{
+						Freshness: apidiscoveryv2beta1.DiscoveryFreshnessCurrent,
 						Version:   groupVersion.Version,
 						Resources: discoveryAPIResources,
 					},

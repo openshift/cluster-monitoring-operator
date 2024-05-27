@@ -242,7 +242,7 @@ func (ce *CheckedEntry) Write(fields ...Field) {
 			// CheckedEntry is being used after it was returned to the pool,
 			// the message may be an amalgamation from multiple call sites.
 			fmt.Fprintf(ce.ErrorOutput, "%v Unsafe CheckedEntry re-use near Entry %+v.\n", ce.Time, ce.Entry)
-			_ = ce.ErrorOutput.Sync() // ignore error
+			ce.ErrorOutput.Sync()
 		}
 		return
 	}
@@ -254,7 +254,7 @@ func (ce *CheckedEntry) Write(fields ...Field) {
 	}
 	if err != nil && ce.ErrorOutput != nil {
 		fmt.Fprintf(ce.ErrorOutput, "%v write error: %v\n", ce.Time, err)
-		_ = ce.ErrorOutput.Sync() // ignore error
+		ce.ErrorOutput.Sync()
 	}
 
 	hook := ce.after

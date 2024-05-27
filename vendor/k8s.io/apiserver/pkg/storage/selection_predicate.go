@@ -17,13 +17,10 @@ limitations under the License.
 package storage
 
 import (
-	"context"
-
 	"k8s.io/apimachinery/pkg/api/meta"
 	"k8s.io/apimachinery/pkg/fields"
 	"k8s.io/apimachinery/pkg/labels"
 	"k8s.io/apimachinery/pkg/runtime"
-	"k8s.io/apiserver/pkg/endpoints/request"
 )
 
 // AttrFunc returns label and field sets and the uninitialized flag for List or Watch to match.
@@ -148,16 +145,11 @@ func (s *SelectionPredicate) Empty() bool {
 // For any index defined by IndexFields, if a matcher can match only (a subset)
 // of objects that return <value> for a given index, a pair (<index name>, <value>)
 // wil be returned.
-func (s *SelectionPredicate) MatcherIndex(ctx context.Context) []MatchValue {
+func (s *SelectionPredicate) MatcherIndex() []MatchValue {
 	var result []MatchValue
 	for _, field := range s.IndexFields {
 		if value, ok := s.Field.RequiresExactMatch(field); ok {
 			result = append(result, MatchValue{IndexName: FieldIndex(field), Value: value})
-		} else if field == "metadata.namespace" {
-			// list pods in the namespace. i.e. /api/v1/namespaces/default/pods
-			if namespace, isNamespaceScope := isNamespaceScopedRequest(ctx); isNamespaceScope {
-				result = append(result, MatchValue{IndexName: FieldIndex(field), Value: namespace})
-			}
 		}
 	}
 	for _, label := range s.IndexLabels {
@@ -166,14 +158,6 @@ func (s *SelectionPredicate) MatcherIndex(ctx context.Context) []MatchValue {
 		}
 	}
 	return result
-}
-
-func isNamespaceScopedRequest(ctx context.Context) (string, bool) {
-	re, _ := request.RequestInfoFrom(ctx)
-	if re == nil || len(re.Namespace) == 0 {
-		return "", false
-	}
-	return re.Namespace, true
 }
 
 // LabelIndex add prefix for label index.
