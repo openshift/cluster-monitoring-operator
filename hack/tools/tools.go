@@ -27,5 +27,6 @@ import (
 	_ "github.com/google/go-jsonnet/cmd/jsonnetfmt"
 	_ "github.com/jsonnet-bundler/jsonnet-bundler/cmd/jb"
 	_ "github.com/prometheus/prometheus/cmd/promtool"
+	_ "k8s.io/code-generator"
 	_ "sigs.k8s.io/controller-tools/cmd/controller-gen"
 )
