@@ -3381,6 +3381,21 @@ func TestAlertManagerUserWorkloadConfiguration(t *testing.T) {
 	if a.Spec.ExternalURL != expectedExternalURL {
 		t.Fatalf("Alertmanager external URL is not configured correctly, expected %s, but got %s", expectedExternalURL, a.Spec.ExternalURL)
 	}
+
+	if !slices.ContainsFunc(a.Spec.Volumes, func(v v1.Volume) bool {
+		if v.VolumeSource.ConfigMap == nil {
+			return false
+		}
+		return v.VolumeSource.ConfigMap.Name == "alertmanager-trusted-ca-bundle"
+	}) {
+		t.Fatal("Alertmanager volumes is not configured correctly")
+	}
+
+	if !slices.ContainsFunc(a.Spec.VolumeMounts, func(vm v1.VolumeMount) bool {
+		return vm.Name == "alertmanager-trusted-ca-bundle"
+	}) {
+		t.Fatal("Alertmanager volumeMounts is not configured correctly")
+	}
 }
 
 func TestNodeExporter(t *testing.T) {
