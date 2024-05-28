@@ -272,7 +272,7 @@ $(JSON_MANIFESTS_DIR):
 tools: $(TOOLING)
 $(TOOLING): $(BIN_DIR)
 	@echo Installing tools from hack/tools/tools.go
-	@cd hack/tools && go list -mod=mod -tags tools -e -f '{{ range .Imports }}{{ printf "%s\n" .}}{{end}}' ./ | xargs -tI % go build -mod=mod -o $(BIN_DIR) %
+	@cd hack/tools && go list -mod=mod -tags tools -e -f '{{ range .Imports }}{{ printf "%s\n" .}}{{end}}' ./ | grep -v "code-gen" | xargs -tI % go build -mod=mod -o $(BIN_DIR) %
 	@GOBIN=$(BIN_DIR) go install $(GO_PKG)/hack/docgen
 	curl -sfL https://raw.githubusercontent.com/golangci/golangci-lint/master/install.sh| sh -s -- -b $(BIN_DIR) $(GOLANGCI_LINT_VERSION)
 

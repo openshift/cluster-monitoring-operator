@@ -19,6 +19,9 @@ set -o nounset
 set -o pipefail
 
 SCRIPT_ROOT=$(dirname "${BASH_SOURCE[0]}")/..
+
+(cd hack/tools/; go mod vendor)
+
 CODEGEN_PKG=${CODEGEN_PKG:-$(cd "${SCRIPT_ROOT}"; ls -d -1 ./hack/tools/vendor/k8s.io/code-generator 2>/dev/null || echo ../code-generator)}
 
 source "${CODEGEN_PKG}/kube_codegen.sh"
