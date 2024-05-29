@@ -3349,9 +3349,7 @@ func TestAlertManagerUserWorkloadConfiguration(t *testing.T) {
 	c.UserWorkloadConfiguration = uwc
 
 	f := NewFactory("openshift-monitoring", "openshift-user-workload-monitoring", c, defaultInfrastructureReader(), &fakeProxyReader{}, NewAssets(assetsPath), &APIServerConfig{}, &configv1.Console{Status: configv1.ConsoleStatus{ConsoleURL: "https://console-openshift-console.apps.foo.devcluster.openshift.com"}})
-	a, err := f.AlertmanagerUserWorkload(
-		&v1.ConfigMap{ObjectMeta: metav1.ObjectMeta{Name: "foo"}},
-	)
+	a, err := f.AlertmanagerUserWorkload()
 
 	if err != nil {
 		t.Fatal(err)
@@ -4475,9 +4473,7 @@ func TestNonHighlyAvailableInfrastructure(t *testing.T) {
 		{
 			name: "Alertmanager (user-workload)",
 			getSpec: func(f *Factory) (spec, error) {
-				p, err := f.AlertmanagerUserWorkload(
-					&v1.ConfigMap{ObjectMeta: metav1.ObjectMeta{Name: "foo"}},
-				)
+				p, err := f.AlertmanagerUserWorkload()
 				if err != nil {
 					return spec{}, err
 				}
