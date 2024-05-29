@@ -17,6 +17,7 @@ package e2e
 import (
 	"context"
 	"fmt"
+	"io"
 	"io/ioutil"
 	"net"
 	"net/http"
@@ -26,15 +27,17 @@ import (
 	"time"
 
 	"github.com/Jeffail/gabs"
-	"github.com/openshift/cluster-monitoring-operator/test/e2e/framework"
 	"github.com/pkg/errors"
 	monitoringv1 "github.com/prometheus-operator/prometheus-operator/pkg/apis/monitoring/v1"
 	appsv1 "k8s.io/api/apps/v1"
 	v1 "k8s.io/api/core/v1"
+	rbacv1 "k8s.io/api/rbac/v1"
 	apierrors "k8s.io/apimachinery/pkg/api/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/util/wait"
 	"k8s.io/client-go/util/cert"
+
+	"github.com/openshift/cluster-monitoring-operator/test/e2e/framework"
 )
 
 type scenario struct {
@@ -525,16 +528,10 @@ func assertTenancyForMetrics(t *testing.T) {
 
 	err := framework.Poll(2*time.Second, 10*time.Second, func() error {
 		_, err := f.CreateServiceAccount(userWorkloadTestNs, testAccount)
-		return err
-	})
-	if err != nil {
-		t.Fatal(err)
-	}
-
-	// Grant enough permissions to the account so it can read metrics.
-	err = framework.Poll(2*time.Second, 10*time.Second, func() error {
-		_, err = f.CreateRoleBindingFromClusterRole(userWorkloadTestNs, testAccount, "admin")
-		return err
+		if !apierrors.IsAlreadyExists(err) {
+			return err
+		}
+		return nil
 	})
 	if err != nil {
 		t.Fatal(err)
@@ -575,6 +572,32 @@ func assertTenancyForMetrics(t *testing.T) {
 	} {
 		t.Run(tc.name, func(t *testing.T) {
 			t.Logf("Running query %q", tc.query)
+
+			var cleanupFn func() error
+			// Grant just-enough permissions to the account so it can read metrics.
+			err = framework.Poll(2*time.Second, 10*time.Second, func() error {
+				cleanupFn, err = f.CreateRoleBindingFromTypedRole(userWorkloadTestNs, testAccount, &rbacv1.Role{
+					ObjectMeta: metav1.ObjectMeta{
+						Name: "tenancy-test-metrics",
+					},
+					Rules: []rbacv1.PolicyRule{
+						{
+							APIGroups: []string{"metrics.k8s.io"},
+							Resources: []string{"pods"},
+							Verbs:     []string{"get"},
+						},
+					},
+				})
+				return err
+			})
+			if err != nil {
+				t.Fatal(err)
+			}
+			defer func() {
+				if err := cleanupFn(); err != nil {
+					t.Fatal(err)
+				}
+			}()
 
 			err = framework.Poll(5*time.Second, time.Minute, func() error {
 				// The tenancy port (9092) is only exposed in-cluster so we need to use
@@ -680,6 +703,122 @@ func assertTenancyForMetrics(t *testing.T) {
 	})
 	if err != nil {
 		t.Fatalf("the account has access to the rules endpoint of Thanos querier: %v", err)
+	}
+
+	for _, tc := range []struct {
+		role               rbacv1.Role
+		expectNotOKOnQuery bool
+		desc               string
+		method             string
+	}{
+
+		{
+			role: rbacv1.Role{
+				ObjectMeta: metav1.ObjectMeta{
+					Name: "tenancy-test-metrics",
+				},
+				Rules: []rbacv1.PolicyRule{
+					{
+						APIGroups: []string{"metrics.k8s.io"},
+						Resources: []string{"pods"},
+						Verbs:     []string{"get"},
+					},
+				},
+			},
+			method:             http.MethodPost,
+			expectNotOKOnQuery: true,
+			desc:               "should disallow POST queries to the endpoint for SA with no create permission",
+		},
+		{
+			role: rbacv1.Role{
+				ObjectMeta: metav1.ObjectMeta{
+					Name: "tenancy-test-metrics",
+				},
+				Rules: []rbacv1.PolicyRule{
+					{
+						APIGroups: []string{"metrics.k8s.io"},
+						Resources: []string{"pods"},
+						Verbs:     []string{"get"},
+					},
+				},
+			},
+			method: http.MethodGet,
+			desc:   "should allow GET queries to the endpoint for SA with get permission",
+		},
+		{
+			role: rbacv1.Role{
+				ObjectMeta: metav1.ObjectMeta{
+					Name: "tenancy-test-metrics",
+				},
+				Rules: []rbacv1.PolicyRule{
+					{
+						APIGroups: []string{"metrics.k8s.io"},
+						Resources: []string{"pods"},
+						Verbs:     []string{"get", "create"},
+					},
+				},
+			},
+			method: http.MethodPost,
+			desc:   "should allow POST queries to the endpoint for SA with get and create permission",
+		},
+	} {
+		t.Run(tc.desc, func(t *testing.T) {
+			var cleanupFn framework.CleanUpFunc
+
+			// Create a role binding for the test SA.
+			err = framework.Poll(time.Second, time.Minute, func() error {
+				cleanupFn, err = f.CreateRoleBindingFromTypedRole(userWorkloadTestNs, testAccount, &tc.role)
+				return err
+			})
+			if err != nil {
+				t.Fatal(err)
+			}
+
+			// Remove associated artifacts.
+			defer func() {
+				if err := cleanupFn(); err != nil {
+					t.Fatal(err)
+				}
+			}()
+
+			// Forward the tenancy port.
+			host, cleanUp, err := f.ForwardPort(t, f.Ns, "thanos-querier", 9092)
+			if err != nil {
+				t.Fatal(err)
+			}
+			defer cleanUp()
+
+			// Create a Prometheus client with the test SA token.
+			client := framework.NewPrometheusClient(
+				host,
+				token,
+				&framework.QueryParameterInjector{
+					Name:  "namespace",
+					Value: userWorkloadTestNs,
+				},
+			)
+
+			resp, err := client.Do(tc.method, "/api/v1/query?namespace="+userWorkloadTestNs+"&query=up", nil)
+			if err != nil {
+				t.Fatal(err)
+			}
+			defer resp.Body.Close()
+			// Body: {"status":"success","data":{"resultType":"vector","result":[{"metric":{"__name__":"up",...},"value":[1695582946.784,"1"]}]}}
+			respBodyBytes, err := io.ReadAll(resp.Body)
+			if err != nil {
+				t.Fatal(err)
+			}
+
+			if tc.expectNotOKOnQuery {
+				if resp.StatusCode == http.StatusOK {
+					t.Fatal("expected request to be rejected, but succeeded")
+				}
+			} else {
+				if resp.StatusCode != http.StatusOK {
+					t.Fatalf("expected request to be accepted, but got status code %d (%s)", resp.StatusCode, respBodyBytes)
+				}
+			}
+		})
 	}
 }
 
