@@ -1,6 +1,6 @@
 module github.com/openshift/cluster-monitoring-operator/hack
 
-go 1.21
+go 1.22
 
 require (
 	github.com/brancz/gojsontoyaml v0.1.0
