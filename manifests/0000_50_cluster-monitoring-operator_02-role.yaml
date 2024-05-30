@@ -177,6 +177,14 @@ rules:
   - create
   - update
 - apiGroups:
+  - cmo.example.com
+  resources:
+  - clustermonitoringoperators
+  verbs:
+  - get
+  - list
+  - watch
+- apiGroups:
   - authentication.k8s.io
   resources:
   - tokenreviews

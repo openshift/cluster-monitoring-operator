@@ -1,0 +1,23 @@
+apiVersion: cmo.example.com/v1
+kind: ClusterMonitoringOperator 
+metadata:
+  name: clustermonitoringoperator
+  namespace: openshift-monitoring
+spec:
+  telemeterClient:
+    enabled: true
+    nodeSelector:
+      kubernetes.io/os: linux
+    tolerations:
+      - operator: Exists
+  prometheusK8s:
+    volumeClaimTemplate:
+      metadata:
+        name: prometheus-data
+        annotations:
+          openshift.io/cluster-monitoring-drop-pvc: "yes"
+      spec:
+        resources:
+          requests:
+            storage: 20Gi
+

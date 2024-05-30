@@ -45,7 +45,9 @@ import (
 	"k8s.io/client-go/util/workqueue"
 	"k8s.io/klog/v2"
 
+	//clientv1 "github.com/openshift/cluster-monitoring-operator/pkg/generated/informers/externalversions/clustermonitoringoperator/v1/"
 	"github.com/openshift/cluster-monitoring-operator/pkg/alert"
+	cmov1 "github.com/openshift/cluster-monitoring-operator/pkg/apis/cmo/v1"
 	"github.com/openshift/cluster-monitoring-operator/pkg/client"
 	"github.com/openshift/cluster-monitoring-operator/pkg/manifests"
 	"github.com/openshift/cluster-monitoring-operator/pkg/metrics"
@@ -179,6 +181,7 @@ type Operator struct {
 	client *client.Client
 
 	cmapInf              cache.SharedIndexInformer
+	CRInf                cache.SharedIndexInformer
 	informers            []cache.SharedIndexInformer
 	informerFactories    []informers.SharedInformerFactory
 	controllersToRunFunc []func(ctx context.Context, workers int)
@@ -297,6 +300,19 @@ func New(
 		o.client.ConfigMapListWatchForNamespace(namespace), &v1.ConfigMap{}, resyncPeriod, cache.Indexers{},
 	)
 	_, err = o.cmapInf.AddEventHandler(cache.ResourceEventHandlerFuncs{
+		AddFunc:    o.handleEvent,
+		UpdateFunc: func(_, newObj interface{}) { o.handleEvent(newObj) },
+		DeleteFunc: o.handleEvent,
+	})
+	if err != nil {
+		return nil, err
+	}
+
+	o.CRInf = cache.NewSharedIndexInformer(
+		o.client.CMOListWatchForResource(namespace), &cmov1.ClusterMonitoringOperator{}, resyncPeriod, cache.Indexers{},
+	)
+
+	_, err = o.CRInf.AddEventHandler(cache.ResourceEventHandlerFuncs{
 		AddFunc:    o.handleEvent,
 		UpdateFunc: func(_, newObj interface{}) { o.handleEvent(newObj) },
 		DeleteFunc: o.handleEvent,
@@ -565,6 +581,8 @@ func (o *Operator) Run(ctx context.Context) error {
 
 	go o.cmapInf.Run(stopc)
 	synced := []cache.InformerSynced{o.cmapInf.HasSynced}
+	go o.CRInf.Run(stopc)
+	synced = append(synced, o.CRInf.HasSynced)
 	for _, inf := range o.informers {
 		go inf.Run(stopc)
 		synced = append(synced, inf.HasSynced)
@@ -591,6 +609,9 @@ func (o *Operator) Run(ctx context.Context) error {
 
 	ticker := time.NewTicker(reconciliationPeriod)
 	defer ticker.Stop()
+
+	// TODO MARIOFER first enque key
+	// add CR
 
 	key := o.namespace + "/" + o.configMapName
 	_, exists, _ := o.cmapInf.GetStore().GetByKey(key)
@@ -633,7 +654,8 @@ func (o *Operator) handleEvent(obj interface{}) {
 		*configv1.ClusterVersion,
 		// Currently, the CRDs that trigger reconciliation are:
 		// * verticalpodautoscalers.autoscaling.k8s.io
-		*apiextv1.CustomResourceDefinition:
+		*apiextv1.CustomResourceDefinition,
+		*cmov1.ClusterMonitoringOperator:
 		// Log GroupKind and Name of the obj
 		rtObj := obj.(k8sruntime.Object)
 		gk := rtObj.GetObjectKind().GroupVersionKind().GroupKind()
@@ -648,6 +670,7 @@ func (o *Operator) handleEvent(obj interface{}) {
 			objKind = fmt.Sprintf("%T", obj)
 		}
 		klog.Infof("Triggering an update due to a change in %s/%s", objKind, name)
+		fmt.Println("cmoConfigMap: ", cmoConfigMap)
 		o.enqueue(cmoConfigMap)
 		return
 	}
