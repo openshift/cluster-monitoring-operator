@@ -467,9 +467,47 @@ data:
     #
     # owners: (@openshift/networking)
     #
-    # ovnkube_master_egress_routing_via_host" informs if the OVN-K cluster's gateway mode is
+    # cluster:ovnkube_controller_egress_routing_via_host:max informs if the OVN-K cluster's gateway mode is
     # `routingViaOVN` (0), `routingViaHost` (1) or invalid (2).
-    - '{__name__="cluster:ovnkube_master_egress_routing_via_host:max"}'
+    - '{__name__="cluster:ovnkube_controller_egress_routing_via_host:max"}'
+    #
+    # owners: (@openshift/networking)
+    #
+    # cluster:ovnkube_controller_admin_network_policies_db_objects:max informs the total number of
+    # OVN database objects (table_name) owned by admin network policies in the cluster.
+    # Labels:
+    # * `table_name`: `ACL` or `Address_Set`.
+    #
+    - '{__name__="cluster:ovnkube_controller_admin_network_policies_db_objects:max",table_name=~"ACL|Address_Set"}'
+    #
+    # owners: (@openshift/networking)
+    #
+    # cluster:ovnkube_controller_baseline_admin_network_policies_db_objects:max informs the total number of
+    # OVN database objects (table_name) owned by baseline admin network policies in the cluster.
+    # Labels:
+    # * `table_name`: `ACL` or `Address_Set`.
+    #
+    - '{__name__="cluster:ovnkube_controller_baseline_admin_network_policies_db_objects:max",table_name=~"ACL|Address_Set"}'
+    #
+    # owners: (@openshift/networking)
+    #
+    # cluster:ovnkube_controller_admin_network_policies_rules:max informs the total number of
+    # admin network policy rules in the cluster
+    # Labels:
+    # * `direction`: `Ingress` or `Egress`.
+    # * `action`: `Pass` or `Allow` or `Deny`.
+    #
+    - '{__name__="cluster:ovnkube_controller_admin_network_policies_rules:max",direction=~"Ingress|Egress",action=~"Pass|Allow|Deny"}'
+    #
+    # owners: (@openshift/networking)
+    #
+    # cluster:ovnkube_controller_baseline_admin_network_policies_rules:max informs the total number of
+    # baseline admin network policy rules in the cluster
+    # Labels:
+    # * `direction`: `Ingress` or `Egress`.
+    # * `action`: `Allow` or `Deny`.
+    #
+    - '{__name__="cluster:ovnkube_controller_baseline_admin_network_policies_rules:max",direction=~"Ingress|Egress",action=~"Allow|Deny"}'
     #
     # owners: (@openshift/networking)
     #
