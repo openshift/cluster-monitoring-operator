@@ -9,8 +9,7 @@ It contains the following components:
 * [Alertmanager](https://github.com/prometheus/alertmanager) cluster for cluster and application level alerting
 * [kube-state-metrics](https://github.com/kubernetes/kube-state-metrics)
 * [node_exporter](https://github.com/prometheus/node_exporter)
-* [prometheus-adapter](https://github.com/kubernetes-sigs/prometheus-adapter)
-* [kubernetes-metrics-server](https://github.com/openshift/kubernetes-metrics-server) only on TechPreviewNoUpgrade cluster
+* [kubernetes-metrics-server](https://github.com/openshift/kubernetes-metrics-server)
 
 The deployed Prometheus instance (`prometheus-k8s`) is responsible for monitoring and alerting on cluster and OpenShift components; it should not be extended to monitor user applications. Users interested in leveraging Prometheus for application monitoring on OpenShift should consider enabling [User Workload Monitoring](https://docs.openshift.com/container-platform/4.5/monitoring/monitoring-your-own-services.html) to easily setup new Prometheus instances to monitor and alert on their applications.
 

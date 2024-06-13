@@ -41,7 +41,7 @@ type ClusterMonitoringConfiguration struct {
 	UserWorkloadEnabled *bool `json:"enableUserWorkload,omitempty"`
 	// OmitFromDoc
 	HTTPConfig *HTTPConfig `json:"http,omitempty"`
-	// `K8sPrometheusAdapter` defines settings for the Prometheus Adapter component.
+	// OmitFromDoc: `K8sPrometheusAdapter` defines settings for the Prometheus Adapter component.
 	K8sPrometheusAdapter *K8sPrometheusAdapter `json:"k8sPrometheusAdapter,omitempty"`
 	// `MetricsServer` defines settings for the MetricsServer component.
 	MetricsServerConfig *MetricsServerConfig `json:"metricsServer,omitempty"`
@@ -104,7 +104,8 @@ type AlertmanagerMainConfig struct {
 }
 
 // The `K8sPrometheusAdapter` resource defines settings for the Prometheus Adapter component.
-// This is deprecated and will be removed in a future version.
+// This is deprecated config, setting this has no effect and will be removed in a future version.
+// TODO: Remove this in 4.19. We should block upgrades till config is been removed
 type K8sPrometheusAdapter struct {
 	// Defines the audit configuration used by the Prometheus Adapter instance.
 	// Possible profile values are: `metadata`, `request`, `requestresponse`, and `none`.

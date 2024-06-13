@@ -11,7 +11,6 @@ repos:
     nodeExporter: openshift/node_exporter
     promLabelProxy: openshift/prom-label-proxy
     prometheus: openshift/prometheus
-    prometheusAdapter: openshift/k8s-prometheus-adapter
     prometheusOperator: openshift/prometheus-operator
     thanos: openshift/thanos
 versions:

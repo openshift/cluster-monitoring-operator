@@ -35,17 +35,11 @@ func TestPrometheusMetrics(t *testing.T) {
 		"prometheus-k8s":                2,
 		"prometheus-k8s-thanos-sidecar": 2,
 		"thanos-querier":                2,
-		"prometheus-adapter":            2,
+		"metrics-server":                2,
 		"alertmanager-main":             2,
 		"kube-state-metrics":            2, // one for the kube metrics + one for the metrics of the process itself.
 		"openshift-state-metrics":       2, // ditto.
 		"telemeter-client":              1,
-	}
-
-	// Since only either of them would be running at a time in cluster
-	if f.IsFeatureGateEnabled(t, MetricsServerFeatureGate) {
-		expected["metrics-server"] = 2
-		delete(expected, "prometheus-adapter")
 	}
 
 	for service, metric := range expected {
