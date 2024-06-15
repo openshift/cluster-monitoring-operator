@@ -168,7 +168,7 @@ spec:
         - --label=namespace
         - --enable-label-apis
         - --error-on-replace
-        image: quay.io/prometheuscommunity/prom-label-proxy:v0.9.0
+        image: quay.io/prometheuscommunity/prom-label-proxy:v0.10.0
         name: prom-label-proxy
         resources:
           requests:
