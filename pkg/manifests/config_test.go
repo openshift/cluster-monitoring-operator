@@ -376,36 +376,23 @@ func TestDeprecatedConfig(t *testing.T) {
 		expectedMetricValue float64
 	}{
 		{
-			name: "enabled",
+			name: "setting a field in k8sPrometheusAdapter",
 			config: `k8sPrometheusAdapter:
-  dedicatedServiceMonitors:
-    enabled: true
+  resources:
+    requests:
+      cpu: 1m
+      memory: 20Mi
   `,
 			expectedMetricValue: 1,
 		},
 		{
-			name: "default",
-			config: `k8sPrometheusAdapter:
-  dedicatedServiceMonitors:
-  `,
-			expectedMetricValue: 0,
-		},
-		{
-			name: "default",
-			config: `k8sPrometheusAdapter:
-  dedicatedServiceMonitors:
-    enabled: false
-  `,
-			expectedMetricValue: 1,
-		},
-		{
-			name: "default",
+			name: "k8sPrometheusAdapter nil",
 			config: `k8sPrometheusAdapter:
   `,
 			expectedMetricValue: 0,
 		},
 		{
-			name:                "default",
+			name:                "no config set",
 			config:              "",
 			expectedMetricValue: 0,
 		},

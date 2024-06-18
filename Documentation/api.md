@@ -146,7 +146,7 @@ The `ClusterMonitoringConfiguration` resource defines settings that customize th
 
 #### Description
 
-The `K8sPrometheusAdapter` resource defines settings for the Prometheus Adapter component.
+The `K8sPrometheusAdapter` resource defines settings for the Prometheus Adapter component. This is deprecated and will be removed in a future version.
 
 
 <em>appears in: [ClusterMonitoringConfiguration](#clustermonitoringconfiguration)</em>
@@ -183,7 +183,7 @@ The `KubeStateMetricsConfig` resource defines settings for the `kube-state-metri
 
 #### Description
 
-The `MetricsServerConfig` resource defines settings for the Metrics Server component. Note that this setting only applies when the MetricsServer feature gate is enabled.
+The `MetricsServerConfig` resource defines settings for the Metrics Server component.
 
 
 <em>appears in: [ClusterMonitoringConfiguration](#clustermonitoringconfiguration)</em>
