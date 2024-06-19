@@ -2874,6 +2874,117 @@ metricsServer:
 	require.Equal(t, "383c7cmidrae2", podAnnotations["monitoring.openshift.io/serving-ca-secret-hash"])
 }
 
+func TestMetricsServerConfigurationWhenPrometheusAdapterConfigPresent(t *testing.T) {
+	config := `
+k8sPrometheusAdapter:
+  resources:
+    requests:
+      cpu: 100m
+      memory: 100Mi
+    limits:
+      cpu: 200m
+      memory: 200Mi
+  nodeSelector:
+    node: linux
+  tolerations:
+  - effect: PreferNoSchedule
+    operator: Exists`
+
+	c, err := NewConfigFromString(config, true)
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	c.SetImages(map[string]string{
+		"kube-metrics-server": "docker.io/openshift/origin-kube-metrics-server:latest",
+	})
+
+	f := NewFactory("openshift-monitoring", "openshift-user-workload-monitoring", c, defaultInfrastructureReader(), &fakeProxyReader{}, NewAssets(assetsPath), &APIServerConfig{}, &configv1.Console{})
+	kubeletCABundle := &v1.ConfigMap{
+		ObjectMeta: metav1.ObjectMeta{
+			Name:      "kubelet-serving-ca-bundle",
+			Namespace: "openshift-monitoring",
+		},
+		Data: map[string]string{
+			"ca-bundle.crt": "ca-certificate",
+		},
+	}
+	servingCASecret := &v1.Secret{
+		ObjectMeta: metav1.ObjectMeta{
+			Name:      "metrics-server-tls",
+			Namespace: "openshift-monitoring",
+		},
+		Data: map[string][]byte{
+			"tls.crt": []byte("foo"),
+			"tls.key": []byte("bar"),
+		},
+	}
+	metricsClientSecret := &v1.Secret{
+		ObjectMeta: metav1.ObjectMeta{
+			Name:      "metrics-client-cert",
+			Namespace: "openshift-monitoring",
+		},
+		Data: map[string][]byte{
+			"tls.crt": []byte("bar"),
+			"tls.key": []byte("foo"),
+		},
+	}
+	apiAuthConfigMapData := map[string]string{
+		"requestheader-allowed-names":        "",
+		"requestheader-extra-headers-prefix": "",
+		"requestheader-group-headers":        "",
+		"requestheader-username-headers":     "",
+	}
+	d, err := f.MetricsServerDeployment("foo", kubeletCABundle, servingCASecret, metricsClientSecret, apiAuthConfigMapData)
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	for _, container := range d.Spec.Template.Spec.Containers {
+		if container.Name == "metrics-server" {
+			if container.Image != "docker.io/openshift/origin-kube-metrics-server:latest" {
+				t.Fatal("metrics-server image is not configured correctly")
+			}
+
+			if !reflect.DeepEqual(container.Resources, *f.config.ClusterMonitoringConfiguration.K8sPrometheusAdapter.Resources) {
+				t.Fatal("metrics-server resources are not configured correctly")
+			}
+		}
+	}
+
+	for _, tc := range []struct {
+		name      string
+		want, got interface{}
+	}{
+		{
+			name: "node selector",
+			want: map[string]string{"node": "linux"},
+			got:  d.Spec.Template.Spec.NodeSelector,
+		},
+		{
+			name: "tolerations",
+			want: []v1.Toleration{
+				{
+					Effect:   "PreferNoSchedule",
+					Operator: "Exists",
+				},
+			},
+			got: d.Spec.Template.Spec.Tolerations,
+		},
+	} {
+		t.Run(tc.name, func(t *testing.T) {
+			if !reflect.DeepEqual(tc.got, tc.want) {
+				t.Errorf("want %+v, got %+v", tc.want, tc.got)
+			}
+		})
+	}
+
+	podAnnotations := d.Spec.Template.Annotations
+	require.Equal(t, "eplue2a9srfkb", podAnnotations["monitoring.openshift.io/kubelet-serving-ca-bundle-hash"])
+	require.Equal(t, "arprfan3mk728", podAnnotations["monitoring.openshift.io/metrics-client-cert-hash"])
+	require.Equal(t, "383c7cmidrae2", podAnnotations["monitoring.openshift.io/serving-ca-secret-hash"])
+}
+
 func TestMetricsServerReadinessProbe(t *testing.T) {
 	c, err := NewConfigFromString("", true)
 	if err != nil {

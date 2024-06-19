@@ -2069,6 +2069,9 @@ func (f *Factory) MetricsServerDeployment(apiAuthSecretName string, kubeletCABun
 	// is rotated.
 	dep.Spec.Template.Annotations["monitoring.openshift.io/metrics-client-cert-hash"] = hashByteMap(metricsClientCert.Data)
 
+	// This is to retrieve existing prometheus adapter config to use for metrics server
+	paConfig := f.config.ClusterMonitoringConfiguration.K8sPrometheusAdapter
+
 	config := f.config.ClusterMonitoringConfiguration.MetricsServerConfig
 	if config == nil {
 		return dep, nil
@@ -2128,19 +2131,29 @@ func (f *Factory) MetricsServerDeployment(apiAuthSecretName string, kubeletCABun
 		},
 	)
 
-	if len(config.NodeSelector) > 0 {
+	// TODO(slashpai): Remove the conditional check between pa and metrics-server after 4.16
+	// This check is added to use same config as prometheus adapter for metrics-server during upgrade from 4.15 -> 4.16
+	if len(paConfig.NodeSelector) > 0 && len(config.NodeSelector) == 0 {
+		podSpec.NodeSelector = paConfig.NodeSelector
+	} else if len(config.NodeSelector) > 0 {
 		podSpec.NodeSelector = config.NodeSelector
 	}
 
-	if len(config.Tolerations) > 0 {
+	if len(paConfig.NodeSelector) > 0 && len(config.Tolerations) == 0 {
+		podSpec.Tolerations = paConfig.Tolerations
+	} else if len(config.Tolerations) > 0 {
 		podSpec.Tolerations = config.Tolerations
 	}
 
-	if config.Resources != nil {
+	if paConfig.Resources != nil && config.Resources == nil {
+		containers[idx].Resources = *paConfig.Resources
+	} else if config.Resources != nil {
 		containers[idx].Resources = *config.Resources
 	}
 
-	if len(config.TopologySpreadConstraints) > 0 {
+	if len(paConfig.TopologySpreadConstraints) > 0 && len(config.TopologySpreadConstraints) == 0 {
+		podSpec.TopologySpreadConstraints = paConfig.TopologySpreadConstraints
+	} else if len(config.TopologySpreadConstraints) > 0 {
 		podSpec.TopologySpreadConstraints = config.TopologySpreadConstraints
 	}
 
