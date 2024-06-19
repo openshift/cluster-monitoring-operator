@@ -50,7 +50,7 @@ func (f Framework) MakePrometheusWithWebTLSRemoteReceive(name, tlsSecretName str
 				Replicas:           &replicas,
 				ServiceAccountName: "prometheus-k8s",
 				Secrets:            []string{tlsSecretName},
-				EnableFeatures:     []string{"remote-write-receiver"},
+				EnableFeatures:     []monitoringv1.EnableFeature{"remote-write-receiver"},
 				Web: &monitoringv1.PrometheusWebSpec{
 					WebConfigFileFields: monitoringv1.WebConfigFileFields{
 						TLSConfig: &monitoringv1.WebTLSConfig{

@@ -34,6 +34,7 @@ import (
 	policyv1 "k8s.io/api/policy/v1"
 	"k8s.io/apimachinery/pkg/api/resource"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	"k8s.io/utils/ptr"
 )
 
 type fakeInfrastructureReader struct {
@@ -1025,7 +1026,7 @@ func TestPrometheusK8sRemoteWriteClusterIDRelabel(t *testing.T) {
 				{
 					{
 						TargetLabel: "__tmp_openshift_cluster_id__",
-						Replacement: "",
+						Replacement: ptr.To(""),
 					},
 					{
 						Regex:  "__tmp_openshift_cluster_id__",
@@ -1062,7 +1063,7 @@ func TestPrometheusK8sRemoteWriteClusterIDRelabel(t *testing.T) {
 				{
 					{
 						TargetLabel: "__tmp_openshift_cluster_id__",
-						Replacement: "",
+						Replacement: ptr.To(""),
 					},
 					{
 						SourceLabels: []monv1.LabelName{"__tmp_openshift_cluster_id__"},
@@ -1103,7 +1104,7 @@ func TestPrometheusK8sRemoteWriteClusterIDRelabel(t *testing.T) {
 							},
 							{
 								TargetLabel: "unrelated_to_cluster_id",
-								Replacement: "some_value",
+								Replacement: ptr.To("some_value"),
 							},
 						},
 					},
@@ -1116,7 +1117,7 @@ func TestPrometheusK8sRemoteWriteClusterIDRelabel(t *testing.T) {
 				{
 					{
 						TargetLabel: "__tmp_openshift_cluster_id__",
-						Replacement: "",
+						Replacement: ptr.To(""),
 					},
 					{
 						SourceLabels: []monv1.LabelName{"__tmp_openshift_cluster_id__"},
@@ -1130,7 +1131,7 @@ func TestPrometheusK8sRemoteWriteClusterIDRelabel(t *testing.T) {
 				{
 					{
 						TargetLabel: "__tmp_openshift_cluster_id__",
-						Replacement: "",
+						Replacement: ptr.To(""),
 					},
 					{
 						SourceLabels: []monv1.LabelName{"__tmp_openshift_cluster_id__"},
@@ -1138,7 +1139,7 @@ func TestPrometheusK8sRemoteWriteClusterIDRelabel(t *testing.T) {
 					},
 					{
 						TargetLabel: "unrelated_to_cluster_id",
-						Replacement: "some_value",
+						Replacement: ptr.To("some_value"),
 					},
 					{
 						Regex:  "__tmp_openshift_cluster_id__",

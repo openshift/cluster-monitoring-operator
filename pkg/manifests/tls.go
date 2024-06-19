@@ -220,7 +220,7 @@ func RotateGRPCSecret(s *v1.Secret) error {
 
 	{
 		cfg, err := newCA.MakeServerCert(
-			sets.NewString("prometheus-grpc"),
+			sets.New("prometheus-grpc"),
 			crypto.DefaultCertificateLifetimeInDays,
 		)
 		if err != nil {

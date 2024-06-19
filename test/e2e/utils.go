@@ -104,7 +104,7 @@ func createSelfSignedMTLSArtifacts(s *v1.Secret) error {
 	// create serving cert and key
 	{
 		cfg, err := newCA.MakeServerCert(
-			sets.NewString(string(s.Data["serving-cert-url"])),
+			sets.New(string(s.Data["serving-cert-url"])),
 			crypto.DefaultCertificateLifetimeInDays,
 		)
 		if err != nil {
