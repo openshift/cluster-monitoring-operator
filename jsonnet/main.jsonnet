@@ -240,6 +240,7 @@ local inCluster =
         mixin+: {
           ruleLabels: $.values.common.ruleLabels,
           _config+: {
+            showMultiCluster: false,
             prometheusSelector: 'job=~"prometheus-k8s|prometheus-user-workload"',
             thanos+: {
               sidecar+: {
