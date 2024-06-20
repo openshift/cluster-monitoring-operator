@@ -1451,6 +1451,7 @@ func (f *Factory) PrometheusK8s(grpcTLS *v1.Secret, telemetrySecret *v1.Secret) 
 	}
 
 	setupAlerting(p, platformAlertmanagerService, f.namespace)
+	f.setupGoGC(p)
 
 	for i, container := range p.Spec.Containers {
 		switch container.Name {
@@ -1484,6 +1485,27 @@ func (f *Factory) PrometheusK8s(grpcTLS *v1.Secret, telemetrySecret *v1.Secret) 
 	}
 
 	return p, nil
+}
+
+func (f *Factory) setupGoGC(p *monv1.Prometheus) {
+	if f.infrastructure.HighlyAvailableInfrastructure() {
+		return
+	}
+
+	for i, container := range p.Spec.Containers {
+		if container.Name != "prometheus" {
+			continue
+		}
+
+		// Prometheus automatically sets GOGC=75 unless the environment
+		// variable is set explicitly. The (upstream) rationale is that GOGC=75
+		// reduces memory usage significantly for a slight increase of CPU
+		// usage.
+		// OCP components running on Single Node OpenShift environments should
+		// be savvy on CPU hence set GOGC=100 (Go runtime default) in this
+		// case.
+		p.Spec.Containers[i].Env = append(p.Spec.Containers[i].Env, v1.EnvVar{Name: "GOGC", Value: "100"})
+	}
 }
 
 func setupAlerting(p *monv1.Prometheus, svcName, svcNamespace string) {
@@ -1747,6 +1769,8 @@ func (f *Factory) PrometheusUserWorkload(grpcTLS *v1.Secret) (*monv1.Prometheus,
 			p.Spec.Containers[i].Args = f.setTLSSecurityConfiguration(container.Args, KubeRbacProxyTLSCipherSuitesFlag, KubeRbacProxyMinTLSVersionFlag)
 		}
 	}
+
+	f.setupGoGC(p)
 
 	if f.config.UserWorkloadConfiguration.Alertmanager.Enabled {
 		setupAlerting(p, userWorkloadAlertmanagerService, f.namespaceUserWorkload)
