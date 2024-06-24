@@ -4424,6 +4424,71 @@ func TestThanosRulerRetentionConfig(t *testing.T) {
 	}
 }
 
+func TestPrometheusGoGC(t *testing.T) {
+	for _, tc := range []struct {
+		ir    InfrastructureReader
+		promf func(*Factory) (*monv1.Prometheus, error)
+
+		exp string
+	}{
+		{
+			ir: &fakeInfrastructureReader{highlyAvailableInfrastructure: false},
+			promf: func(f *Factory) (*monv1.Prometheus, error) {
+				return f.PrometheusK8s(&v1.Secret{ObjectMeta: metav1.ObjectMeta{Name: "foo"}}, nil)
+			},
+
+			exp: "100",
+		},
+		{
+			ir: &fakeInfrastructureReader{highlyAvailableInfrastructure: true},
+			promf: func(f *Factory) (*monv1.Prometheus, error) {
+				return f.PrometheusK8s(&v1.Secret{ObjectMeta: metav1.ObjectMeta{Name: "foo"}}, nil)
+			},
+
+			exp: "",
+		},
+		{
+			ir: &fakeInfrastructureReader{highlyAvailableInfrastructure: false},
+			promf: func(f *Factory) (*monv1.Prometheus, error) {
+				return f.PrometheusUserWorkload(&v1.Secret{ObjectMeta: metav1.ObjectMeta{Name: "foo"}})
+			},
+
+			exp: "100",
+		},
+		{
+			ir: &fakeInfrastructureReader{highlyAvailableInfrastructure: true},
+			promf: func(f *Factory) (*monv1.Prometheus, error) {
+				return f.PrometheusUserWorkload(&v1.Secret{ObjectMeta: metav1.ObjectMeta{Name: "foo"}})
+			},
+
+			exp: "",
+		},
+	} {
+		t.Run("", func(t *testing.T) {
+			f := NewFactory("openshift-monitoring", "openshift-user-workload-monitoring", NewDefaultConfig(), tc.ir, &fakeProxyReader{}, NewAssets(assetsPath), &APIServerConfig{}, &configv1.Console{})
+
+			p, err := tc.promf(f)
+			require.NoError(t, err)
+
+			var c *v1.Container
+			for i := range p.Spec.Containers {
+				if p.Spec.Containers[i].Name == "prometheus" {
+					c = &p.Spec.Containers[i]
+				}
+			}
+			require.NotNil(t, c)
+			if tc.exp == "" {
+				for _, env := range c.Env {
+					require.NotEqual(t, env.Name, "GOGC")
+				}
+				return
+			}
+
+			require.Contains(t, c.Env, v1.EnvVar{Name: "GOGC", Value: tc.exp})
+		})
+	}
+}
+
 func TestNonHighlyAvailableInfrastructure(t *testing.T) {
 	type spec struct {
 		replicas int32
