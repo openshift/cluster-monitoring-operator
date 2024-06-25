@@ -1398,20 +1398,20 @@ func (f *Factory) PrometheusK8s(grpcTLS *v1.Secret, telemetrySecret *v1.Secret) 
 				MaxSamplesPerSend: 10000,
 				// Batch samples for 1m until we send them if we not reach the
 				// 10000 MaxSamplesPerSend first.
-				BatchSendDeadline: "1m",
+				BatchSendDeadline: ptr.To(monv1.Duration("1m")),
 				// Backoff is doubled on every backoff. We start with 1s
 				// backoff and double until the MaxBackOff.
-				MinBackoff: "1s",
+				MinBackoff: ptr.To(monv1.Duration("1s")),
 				// 128s is the 8th backoff in a row, once we end up here, we
 				// don't increase backoff time anymore. As we would at most
 				// produce (concurrency/256) number of requests per second.
-				MaxBackoff: "256s",
+				MaxBackoff: ptr.To(monv1.Duration("256s")),
 			},
 			WriteRelabelConfigs: []monv1.RelabelConfig{
 				*selectorRelabelConfig,
 				{
 					TargetLabel: "_id",
-					Replacement: clusterID,
+					Replacement: ptr.To(clusterID),
 				},
 				// relabeling the `ALERTS` series to `alerts` allows us to make
 				// a distinction between the series produced in-cluster and out
@@ -1420,7 +1420,7 @@ func (f *Factory) PrometheusK8s(grpcTLS *v1.Secret, telemetrySecret *v1.Secret) 
 					SourceLabels: []monv1.LabelName{"__name__"},
 					TargetLabel:  "__name__",
 					Regex:        "ALERTS",
-					Replacement:  "alerts",
+					Replacement:  ptr.To("alerts"),
 				},
 			},
 			MetadataConfig: &monv1.MetadataConfig{
@@ -1513,7 +1513,7 @@ func setupAlerting(p *monv1.Prometheus, svcName, svcNamespace string) {
 
 	eps.Name = svcName
 	eps.Namespace = svcNamespace
-	eps.TLSConfig.ServerName = fmt.Sprintf("%s.%s.svc", svcName, svcNamespace)
+	eps.TLSConfig.ServerName = ptr.To(fmt.Sprintf("%s.%s.svc", svcName, svcNamespace))
 
 	p.Spec.Alerting.Alertmanagers = []monv1.AlertmanagerEndpoints{eps}
 }
@@ -3115,7 +3115,7 @@ func (f *Factory) ThanosQuerierServiceMonitor() (*monv1.ServiceMonitor, error) {
 	for i := range sm.Spec.Endpoints {
 		if sm.Spec.Endpoints[i].Port == endpointPort {
 			found = true
-			sm.Spec.Endpoints[i].TLSConfig.ServerName = fmt.Sprintf("thanos-querier.%s.svc", f.namespace)
+			sm.Spec.Endpoints[i].TLSConfig.ServerName = ptr.To(fmt.Sprintf("thanos-querier.%s.svc", f.namespace))
 		}
 	}
 	if !found {
@@ -3577,7 +3577,7 @@ func addRemoteWriteConfigs(clusterID string, rw []monv1.RemoteWriteSpec, rwTarge
 	clusterIDRelabelConfig := []monv1.RelabelConfig{
 		{
 			TargetLabel: tmpClusterIDLabelName,
-			Replacement: clusterID,
+			Replacement: ptr.To(clusterID),
 		},
 	}
 	tmpRelabelDrop := monv1.RelabelConfig{

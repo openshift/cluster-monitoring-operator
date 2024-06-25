@@ -24,6 +24,7 @@ import (
 
 	"github.com/blang/semver/v4"
 	configv1 "github.com/openshift/api/config/v1"
+	"github.com/openshift/api/features"
 	configv1client "github.com/openshift/client-go/config/clientset/versioned"
 	configv1informers "github.com/openshift/client-go/config/informers/externalversions"
 	"github.com/openshift/library-go/pkg/operator/certrotation"
@@ -472,8 +473,8 @@ func New(
 		if err != nil {
 			return nil, err
 		}
-		o.metricsServerEnabled = featureGates.Enabled(configv1.FeatureGateMetricsServer)
-		o.collectionProfilesEnabled = featureGates.Enabled(configv1.FeatureGateMetricsCollectionProfiles)
+		o.metricsServerEnabled = featureGates.Enabled(features.FeatureGateMetricsServer)
+		o.collectionProfilesEnabled = featureGates.Enabled(features.FeatureGateMetricsCollectionProfiles)
 	case <-time.After(1 * time.Minute):
 		return nil, fmt.Errorf("timed out waiting for FeatureGate detection")
 	}
