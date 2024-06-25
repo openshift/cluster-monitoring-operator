@@ -21,11 +21,13 @@ import (
 	"time"
 
 	_ "github.com/prometheus/prometheus/discovery/kubernetes" // required for promConfig.Load to parse kubernetes_sd_configs
+	"github.com/stretchr/testify/require"
 	v1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/types"
 
 	osConfigv1 "github.com/openshift/api/config/v1"
+	operator "github.com/openshift/cluster-monitoring-operator/pkg/operator"
 	"github.com/openshift/cluster-monitoring-operator/test/e2e/framework"
 )
 
@@ -62,6 +64,31 @@ func TestPrometheusMetrics(t *testing.T) {
 			)
 		})
 	}
+}
+
+// TestPrometheusGOGC verifies that Prometheus containers use the appropriate gogc value. It also helps us stay informed
+// about any changes to the default gogc value upstream. If that value changes, this test will fail, prompting us to
+// consider whether the new default value is still suitable.
+// Refer to this link for some points that may need to be examined https://github.com/openshift/prometheus/pull/206#issuecomment-2182168575.
+func TestPrometheusGOGC(t *testing.T) {
+	infra, err := f.OperatorClient.GetInfrastructure(ctx, "cluster")
+	require.NoError(t, err)
+	infraConfig := operator.NewInfrastructureConfig(infra)
+
+	gogc := 100
+	if infraConfig.HighlyAvailableInfrastructure() {
+		gogc = 75
+	}
+	f.ThanosQuerierClient.WaitForQueryReturn(
+		t, 5*time.Minute, `min(go_gc_gogc_percent{namespace="openshift-monitoring", service="prometheus-k8s", container="kube-rbac-proxy"})`, // kube-rbac-proxy exposes prometheus container's metrics.
+		func(v float64) error {
+			if v != float64(gogc) {
+				return fmt.Errorf("expected gogc for prometheus to be %f", v)
+			}
+
+			return nil
+		},
+	)
 }
 
 func TestAntiAffinity(t *testing.T) {
