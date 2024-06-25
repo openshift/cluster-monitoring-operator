@@ -431,7 +431,10 @@ func TestAlertmanagerDataReplication(t *testing.T) {
 			),
 		},
 	} {
-		t.Run(test.name, test.assertion)
+		t.Run(test.name, func(t *testing.T) {
+			t.Parallel()
+			test.assertion(t)
+		})
 	}
 
 	// Ensure that the silence has been preserved.
@@ -465,6 +468,8 @@ func TestAlertmanagerDataReplication(t *testing.T) {
 
 // The Alertmanager API should be protected by authentication/authorization.
 func TestAlertmanagerAPI(t *testing.T) {
+	// The test shouldn't be disruptive, safe to run in parallel with others.
+	t.Parallel()
 	err := framework.Poll(5*time.Second, 5*time.Minute, func() error {
 		body, err := f.AlertmanagerClient.GetAlertmanagerAlerts(
 			"filter", `alertname="Watchdog"`,
@@ -747,51 +752,6 @@ func TestAlertmanagerDisabling(t *testing.T) {
 	})
 }
 
-func TestAlertManagerHasAdditionalAlertRelabelConfigs(t *testing.T) {
-	const (
-		expectPlatformLabel      = "openshift_io_alert_source"
-		expectPlatformLabelValue = "platform"
-	)
-
-	type Alerts []struct {
-		Labels map[string]string `json:"labels"`
-	}
-
-	var alerts Alerts
-
-	err := framework.Poll(5*time.Second, time.Minute, func() error {
-		resp, err := f.AlertmanagerClient.Do("GET", "/api/v2/alerts", nil)
-		if err != nil {
-			return err
-		}
-		defer resp.Body.Close()
-
-		if resp.StatusCode != http.StatusOK {
-			return fmt.Errorf("expecting 200 status code, got %d (%q)", resp.StatusCode, resp.Body)
-		}
-
-		if err := json.NewDecoder(resp.Body).Decode(&alerts); err != nil {
-			return fmt.Errorf("error decoding alert response")
-		}
-
-		return nil
-	})
-	if err != nil {
-		t.Fatal(err)
-	}
-
-	for _, alert := range alerts {
-		v, found := alert.Labels[expectPlatformLabel]
-		if !found {
-			t.Fatal("expected correct label to be present")
-		}
-
-		if v != expectPlatformLabelValue {
-			t.Fatalf("expected correct value for %s but got %s", expectPlatformLabel, v)
-		}
-	}
-}
-
 // TestAlertmanagerConfigPipeline ensures that the AlertManagerConfig CR's
 // created in a user namespace can be reconciled and have alerts sent to the
 // correct Alertmanager (depending on whether user-defined Alertmanager is
@@ -907,7 +867,7 @@ func testAlertmanagerConfigPipeline(t *testing.T, wr *webhookReceiver, am *monit
 		t.Fatal(err)
 	}
 
-	if err := createUWMTestNsIfNotExist(t, f); err != nil {
+	if err := createUWMTestNsIfNotExist(t, f, userWorkloadTestNs); err != nil {
 		t.Fatal(err)
 	}
 

@@ -182,6 +182,8 @@ func testTargetsUp(t *testing.T) {
 // Once we have the need to test multiple recording rules, we can unite them in
 // a single test function.
 func TestMemoryUsageRecordingRule(t *testing.T) {
+	// The test is "read-only", safe to run in parallel with others.
+	t.Parallel()
 	f.ThanosQuerierClient.WaitForQueryReturnGreaterEqualOne(
 		t,
 		time.Minute,

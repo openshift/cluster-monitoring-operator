@@ -90,6 +90,8 @@ func TestTelemeterRemoteWrite(t *testing.T) {
 
 // TestTelemeterClient verifies that the telemeter client can collect metrics from the monitoring stack and forward them to the telemeter server.
 func TestTelemeterClient(t *testing.T) {
+	// The test is "read-only", safe to run in parallel with others.
+	t.Parallel()
 	{
 		f.PrometheusK8sClient.WaitForQueryReturn(
 			t,

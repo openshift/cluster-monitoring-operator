@@ -1488,7 +1488,7 @@ func (c *Client) CreateOrUpdateConfigMap(ctx context.Context, cm *v1.ConfigMap) 
 	return err
 }
 
-func (c *Client) DeleteIfExists(ctx context.Context, nsName string) error {
+func (c *Client) DeleteNSIfExists(ctx context.Context, nsName string) error {
 	nClient := c.kclient.CoreV1().Namespaces()
 	_, err := nClient.Get(ctx, nsName, metav1.GetOptions{})
 	if apierrors.IsNotFound(err) {
@@ -1502,7 +1502,7 @@ func (c *Client) DeleteIfExists(ctx context.Context, nsName string) error {
 
 	err = nClient.Delete(ctx, nsName, metav1.DeleteOptions{})
 	if err != nil {
-		return fmt.Errorf("deleting ConfigMap object failed: %w", err)
+		return fmt.Errorf("deleting Namespace object failed: %w", err)
 	}
 	return nil
 }
