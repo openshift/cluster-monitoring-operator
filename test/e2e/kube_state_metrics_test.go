@@ -32,6 +32,8 @@ import (
 )
 
 func TestKSMMetricsSuppression(t *testing.T) {
+	// The test is "read-only", safe to run in parallel with others.
+	t.Parallel()
 
 	suppressedPattern, _ := regexp.Compile("kube_.*_annotations")
 
@@ -74,6 +76,8 @@ func TestKSMMetricsSuppression(t *testing.T) {
 }
 
 func TestKSMCRSMetrics(t *testing.T) {
+	// The test shouldn't be disruptive, safe to run in parallel with others.
+	t.Parallel()
 	const timeout = 5 * time.Minute
 	assetsDir := "./assets"
 	ksmCRSMetricPrefix := "kube_customresource"

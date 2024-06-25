@@ -16,28 +16,25 @@ package e2e
 
 import (
 	"context"
+	"encoding/json"
 	"fmt"
 	"strconv"
 	"testing"
 	"time"
 
 	"github.com/openshift/cluster-monitoring-operator/test/e2e/framework"
+	"github.com/stretchr/testify/require"
 
-	monv1 "github.com/prometheus-operator/prometheus-operator/pkg/apis/monitoring/v1"
 	v1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
-	"k8s.io/apimachinery/pkg/util/intstr"
-	"k8s.io/apimachinery/pkg/util/wait"
 )
 
 func TestMultinamespacePrometheusRule(t *testing.T) {
-	ctx := context.Background()
-	nsName := "openshift-test-prometheus-rules" + strconv.FormatInt(time.Now().Unix(), 36)
+	// The test shouldn't be disruptive, safe to run in parallel with others.
 	t.Parallel()
-
-	t.Cleanup(func() {
-		f.OperatorClient.DeleteIfExists(ctx, nsName)
-	})
+	ctx := context.Background()
+	firingAlertName := "FiringAlertInNamespace"
+	nsName := "openshift-test-prometheus-rules" + strconv.FormatInt(time.Now().Unix(), 36)
 
 	ns := &v1.Namespace{
 		ObjectMeta: metav1.ObjectMeta{
@@ -49,57 +46,74 @@ func TestMultinamespacePrometheusRule(t *testing.T) {
 		},
 	}
 	_, err := f.KubeClient.CoreV1().Namespaces().Create(ctx, ns, metav1.CreateOptions{})
-	if err != nil {
-		t.Fatal(err)
-	}
-
-	err = f.OperatorClient.CreateOrUpdatePrometheusRule(ctx, &monv1.PrometheusRule{
-		ObjectMeta: metav1.ObjectMeta{
-			Name:      "non-monitoring-prometheus-rules",
-			Namespace: nsName,
-			Labels: map[string]string{
-				framework.E2eTestLabelName: framework.E2eTestLabelValue,
-			},
-		},
-		Spec: monv1.PrometheusRuleSpec{
-			Groups: []monv1.RuleGroup{
-				{
-					Name: "test-group",
-					Rules: []monv1.Rule{
-						{
-							Alert: "AdditionalTestAlertRule",
-							Expr:  intstr.FromString("vector(1)"),
-						},
-					},
-				},
-			},
-		},
-	})
-	if err != nil {
-		t.Fatal(err)
-	}
-
-	var lastErr error
-	// wait for proxies bootstrap
-	err = wait.Poll(time.Second, 5*time.Minute, func() (bool, error) {
-		_, err := f.ThanosQuerierClient.Do("GET", "/-/ready", nil)
-		if err != nil {
-			lastErr = fmt.Errorf("establishing connection to thanos proxy failed: %w", err)
-			return false, nil
-		}
-		return true, nil
+	require.NoError(t, err)
+	t.Cleanup(func() {
+		f.DeleteNamespace(t, nsName)
 	})
 
-	if err != nil {
-		if err == wait.ErrWaitTimeout && lastErr != nil {
-			err = lastErr
-		}
-		t.Fatal(err)
+	createPrometheusRule(t, nsName, "non-monitoring-prometheus-rules", firingAlertName)
+
+	for _, check := range []struct {
+		name string
+		f    func(*testing.T)
+	}{
+		{
+			name: "the alert was taken into account by Thanos",
+			f: func(t *testing.T) {
+				f.ThanosQuerierClient.WaitForQueryReturnOne(
+					t,
+					5*time.Minute,
+					fmt.Sprintf(`count(ALERTS{alertname="%s"} == 1)`, firingAlertName),
+				)
+			},
+		},
+		{
+			name: "the alert has the default platform labels in Alertmanager",
+			f: func(t *testing.T) {
+				checkAlertHasPlatformLabels(t, firingAlertName)
+			},
+		},
+	} {
+		t.Run(check.name, func(t *testing.T) {
+			t.Parallel()
+			check.f(t)
+		})
 	}
 
-	f.ThanosQuerierClient.WaitForQueryReturnOne(
-		t,
-		10*time.Minute,
-		`count(ALERTS{alertname="AdditionalTestAlertRule"} == 1)`,
+}
+
+func checkAlertHasPlatformLabels(t *testing.T, alertName string) {
+	const (
+		expectPlatformLabel      = "openshift_io_alert_source"
+		expectPlatformLabelValue = "platform"
 	)
+
+	type Alerts []struct {
+		Labels map[string]string `json:"labels"`
+	}
+
+	var alerts Alerts
+
+	err := framework.Poll(5*time.Second, 5*time.Minute, func() error {
+		body, err := f.AlertmanagerClient.GetAlertmanagerAlerts(
+			"filter", fmt.Sprintf(`alertname="%s"`, alertName),
+			"active", "true",
+		)
+		if err != nil {
+			return err
+		}
+
+		if err = json.Unmarshal(body, &alerts); err != nil {
+			return err
+		}
+
+		if len(alerts) != 1 {
+			return fmt.Errorf("couldn't find the firing alert")
+		}
+
+		return nil
+	})
+	require.NoError(t, err)
+
+	require.Subset(t, alerts[0].Labels, map[string]string{expectPlatformLabel: expectPlatformLabelValue})
 }

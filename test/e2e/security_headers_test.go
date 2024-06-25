@@ -24,6 +24,8 @@ import (
 )
 
 func TestAlertmanagerPolicyHeaders(t *testing.T) {
+	// The test shouldn't be disruptive, safe to run in parallel with others.
+	t.Parallel()
 	// The tenancy port (9092) is only exposed in-cluster, so we need to use
 	// port forwarding to access kube-rbac-proxy.
 	host, cleanUp, err := f.ForwardPort(t, f.Ns, "alertmanager-main", 9092)
@@ -36,6 +38,8 @@ func TestAlertmanagerPolicyHeaders(t *testing.T) {
 }
 
 func TestPrometheusPolicyHeaders(t *testing.T) {
+	// The test shouldn't be disruptive, safe to run in parallel with others.
+	t.Parallel()
 	host, cleanUp, err := f.ForwardPort(t, f.Ns, "prometheus-k8s", 9091)
 	if err != nil {
 		t.Fatal(err)

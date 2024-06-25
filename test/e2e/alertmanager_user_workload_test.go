@@ -38,17 +38,7 @@ func TestUserWorkloadAlertmanager(t *testing.T) {
 	f.AssertStatefulSetExistsAndRollout("alertmanager-user-workload", f.UserWorkloadMonitoringNs)(t)
 	f.AssertServiceExists("alertmanager-user-workload", f.UserWorkloadMonitoringNs)(t)
 
-	for _, scenario := range []struct {
-		name string
-		f    func(*testing.T)
-	}{
-		{
-			name: "assert UWM alert access",
-			f:    assertUWMAlertsAccess,
-		},
-	} {
-		t.Run(scenario.name, scenario.f)
-	}
+	t.Run("assert UWM alert access", assertUWMAlertsAccess)
 }
 
 // assertUWMAlertsAccess ensures that a user can't access all alerts from the UWM alertmanager via the api.
@@ -79,17 +69,16 @@ func assertUWMAlertsAccess(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	// The uwm alerts port (9095) is only exposed in-cluster, so we need to use
-	// port forwarding to access kube-rbac-proxy.
-	host, cleanUp, err := f.ForwardPort(t, f.UserWorkloadMonitoringNs, "alertmanager-user-workload", 9095)
-	if err != nil {
-		t.Fatal(err)
-	}
-	defer cleanUp()
-
-	client := framework.NewPrometheusClient(host, token)
-
 	err = framework.Poll(5*time.Second, time.Minute, func() error {
+		// The uwm alerts port (9095) is only exposed in-cluster, so we need to use
+		// port forwarding to access kube-rbac-proxy.
+		host, cleanUp, err := f.ForwardPort(t, f.UserWorkloadMonitoringNs, "alertmanager-user-workload", 9095)
+		if err != nil {
+			t.Fatal(err)
+		}
+		defer cleanUp()
+
+		client := framework.NewPrometheusClient(host, token)
 		resp, err := client.Do("GET", "/api/v2/alerts", nil)
 		if err != nil {
 			return err

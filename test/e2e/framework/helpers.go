@@ -2,6 +2,7 @@ package framework
 
 import (
 	"context"
+	"fmt"
 	"io/ioutil"
 	apiextv1 "k8s.io/apiextensions-apiserver/pkg/apis/apiextensions/v1"
 	"k8s.io/apimachinery/pkg/runtime"
@@ -15,6 +16,7 @@ import (
 	"gopkg.in/yaml.v2"
 	appsv1 "k8s.io/api/apps/v1"
 	v1 "k8s.io/api/core/v1"
+	apierrors "k8s.io/apimachinery/pkg/api/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/util/wait"
 )
@@ -174,12 +176,12 @@ func (f *Framework) MustGetStatefulSet(t *testing.T, name, namespace string) *ap
 	return statefulSet
 }
 
-// MustGetPods return all pods from `namespace` within 5 minutes or fail
-func (f *Framework) MustGetPods(t *testing.T, namespace string) *v1.PodList {
+// MustListPods returns all pods matching labelSelector from `namespace` within 5 minutes or fail
+func (f *Framework) MustListPods(t *testing.T, namespace string, labelSelector string) *v1.PodList {
 	t.Helper()
 	var pods *v1.PodList
 	err := wait.Poll(time.Second, 5*time.Minute, func() (bool, error) {
-		pl, err := f.KubeClient.CoreV1().Pods(namespace).List(ctx, metav1.ListOptions{})
+		pl, err := f.KubeClient.CoreV1().Pods(namespace).List(ctx, metav1.ListOptions{LabelSelector: labelSelector})
 		if err != nil {
 			return false, nil
 		}
@@ -210,5 +212,19 @@ func ensureCreatedByTestLabel(obj metav1.Object) {
 
 	if _, ok := labels[E2eTestLabelName]; !ok {
 		labels[E2eTestLabelName] = E2eTestLabelValue
+	}
+}
+
+func (f *Framework) DeleteNamespace(t *testing.T, nsName string) error {
+	t.Helper()
+	nClient := f.KubeClient.CoreV1().Namespaces()
+	_, err := nClient.Get(ctx, nsName, metav1.GetOptions{})
+	if err != nil && !apierrors.IsNotFound(err) {
+		return fmt.Errorf("retrieving Namespace object failed: %w", err)
+	}
+
+	err = nClient.Delete(ctx, nsName, metav1.DeleteOptions{})
+	if err != nil {
+		return fmt.Errorf("deleting Namespace object failed: %w", err)
 	}
 }

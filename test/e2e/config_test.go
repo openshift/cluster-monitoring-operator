@@ -292,7 +292,10 @@ func TestClusterMonitorPrometheusK8Config(t *testing.T) {
 			assertion: f.AssertPrometheusRuleExists(thanosRule, f.Ns),
 		},
 	} {
-		t.Run(tc.name, tc.assertion)
+		t.Run(tc.name, func(t *testing.T) {
+			t.Parallel()
+			tc.assertion(t)
+		})
 	}
 }
 
@@ -344,7 +347,10 @@ func TestClusterMonitorAlertManagerConfig(t *testing.T) {
 			),
 		},
 	} {
-		t.Run(tc.name, tc.assertion)
+		t.Run(tc.name, func(t *testing.T) {
+			t.Parallel()
+			tc.assertion(t)
+		})
 	}
 }
 
@@ -664,7 +670,10 @@ func TestUserWorkloadMonitorPrometheusK8Config(t *testing.T) {
 			assertion: assertQueryLogValueEquals(f.UserWorkloadMonitoringNs, crName, "/tmp/test.log"),
 		},
 	} {
-		t.Run(tc.name, tc.assertion)
+		t.Run(tc.name, func(t *testing.T) {
+			t.Parallel()
+			tc.assertion(t)
+		})
 	}
 }
 
@@ -721,7 +730,10 @@ func TestUserWorkloadMonitorThanosRulerConfig(t *testing.T) {
 			),
 		},
 	} {
-		t.Run(tc.name, tc.assertion)
+		t.Run(tc.name, func(t *testing.T) {
+			t.Parallel()
+			tc.assertion(t)
+		})
 	}
 }
 
@@ -767,7 +779,10 @@ monitoringPlugin:
 			),
 		},
 	} {
-		t.Run(tc.name, tc.assertion)
+		t.Run(tc.name, func(t *testing.T) {
+			t.Parallel()
+			tc.assertion(t)
+		})
 	}
 }
 

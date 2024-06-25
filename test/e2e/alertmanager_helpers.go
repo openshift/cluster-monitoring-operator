@@ -183,7 +183,7 @@ func (wr *webhookReceiver) getAlertsByID(id string) ([]alert, error) {
 func (wr *webhookReceiver) tearDown(t *testing.T, f *framework.Framework) {
 	t.Helper()
 	err := framework.Poll(time.Second, 5*time.Minute, func() error {
-		return f.OperatorClient.DeleteIfExists(ctx, wr.namespace)
+		return f.DeleteNamespace(t, wr.namespace)
 	})
 
 	if err != nil {

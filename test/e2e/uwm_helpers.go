@@ -2,7 +2,9 @@ package e2e
 
 import (
 	"context"
+	"errors"
 	"fmt"
+	"sync"
 	"testing"
 	"time"
 
@@ -10,14 +12,14 @@ import (
 	monitoringv1 "github.com/prometheus-operator/prometheus-operator/pkg/apis/monitoring/v1"
 	appsv1 "k8s.io/api/apps/v1"
 	v1 "k8s.io/api/core/v1"
-	"k8s.io/apimachinery/pkg/api/errors"
 	apierrors "k8s.io/apimachinery/pkg/api/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/util/intstr"
 )
 
 const (
-	userWorkloadTestNs = "user-workload-test"
+	userWorkloadTestNs       = "user-workload-test"
+	userWorkloadOptOutTestNs = "user-workload-opt-out-test"
 )
 
 var (
@@ -64,18 +66,34 @@ func tearDownUserWorkloadAssets(t *testing.T, f *framework.Framework) {
 	f.AssertStatefulsetDoesNotExist("prometheus-user-workload", f.UserWorkloadMonitoringNs)(t)
 }
 
-// setupUserApplication is idempotent and deploys the sample app and resources in UserWorkloadTestNs
-func setupUserApplication(t *testing.T, f *framework.Framework) {
+// setupUserApplications is idempotent and deploys the sample apps and resources in UserWorkloadTestNs and userWorkloadOptOutTestNs
+func setupUserApplications(t *testing.T, f *framework.Framework) {
 	t.Helper()
-	deployUserApplication(t, f)
-	createPrometheusAlertmanagerInUserNamespace(t, f)
+	var wg sync.WaitGroup
+
+	wg.Add(2)
+	go func() {
+		t.Helper()
+		deployUserApplication(t, f, userWorkloadTestNs)
+		createPrometheusAlertmanagerInUserNamespace(t, f)
+		wg.Done()
+	}()
+	go func() {
+		t.Helper()
+		// This is used for the opt-out test so it can run in parallel.
+		deployUserApplication(t, f, userWorkloadOptOutTestNs)
+		wg.Done()
+	}()
+	wg.Wait()
 }
 
-// tearDownUserApplication deletes the UserWorkloadTestNs and waits for deletion
-func tearDownUserApplication(t *testing.T, f *framework.Framework) {
+// tearDownUserApplications deletes the namespaces and waits for deletions
+func tearDownUserApplications(t *testing.T, f *framework.Framework) {
 	// check if its deleted and return if true
 	err := framework.Poll(time.Second, 5*time.Minute, func() error {
-		return f.OperatorClient.DeleteIfExists(ctx, userWorkloadTestNs)
+		err1 := f.DeleteNamespace(t, userWorkloadTestNs)
+		err2 := f.DeleteNamespace(t, userWorkloadOptOutTestNs)
+		return errors.Join(err1, err2)
 	})
 
 	if err != nil {
@@ -83,33 +101,34 @@ func tearDownUserApplication(t *testing.T, f *framework.Framework) {
 	}
 
 	f.AssertNamespaceDoesNotExist(userWorkloadTestNs)(t)
+	f.AssertNamespaceDoesNotExist(userWorkloadOptOutTestNs)(t)
 }
 
-func createUWMTestNsIfNotExist(t *testing.T, f *framework.Framework) error {
+func createUWMTestNsIfNotExist(t *testing.T, f *framework.Framework, namespace string) error {
 	t.Helper()
 	_, err := f.KubeClient.CoreV1().Namespaces().Create(ctx, &v1.Namespace{
 		ObjectMeta: metav1.ObjectMeta{
-			Name: userWorkloadTestNs,
+			Name: namespace,
 			Labels: map[string]string{
 				framework.E2eTestLabelName: framework.E2eTestLabelValue,
 			},
 		},
 	}, metav1.CreateOptions{})
-	if err != nil && !errors.IsAlreadyExists(err) {
+	if err != nil && !apierrors.IsAlreadyExists(err) {
 		return err
 	}
 
-	f.AssertNamespaceExists(userWorkloadTestNs)(t)
+	f.AssertNamespaceExists(namespace)(t)
 	return nil
 }
 
-func deployUserApplication(t *testing.T, f *framework.Framework) error {
+func deployUserApplication(t *testing.T, f *framework.Framework, namespace string) error {
 	t.Helper()
-	if err := createUWMTestNsIfNotExist(t, f); err != nil {
+	if err := createUWMTestNsIfNotExist(t, f, namespace); err != nil {
 		return err
 	}
 
-	app, err := f.KubeClient.AppsV1().Deployments(userWorkloadTestNs).Create(ctx, &appsv1.Deployment{
+	app, err := f.KubeClient.AppsV1().Deployments(namespace).Create(ctx, &appsv1.Deployment{
 		ObjectMeta: metav1.ObjectMeta{
 			Name: "prometheus-example-app",
 			Labels: map[string]string{
@@ -145,7 +164,7 @@ func deployUserApplication(t *testing.T, f *framework.Framework) error {
 		return err
 	}
 
-	_, err = f.KubeClient.CoreV1().Services(userWorkloadTestNs).Create(ctx, &v1.Service{
+	_, err = f.KubeClient.CoreV1().Services(namespace).Create(ctx, &v1.Service{
 		ObjectMeta: metav1.ObjectMeta{
 			Name: "prometheus-example-app",
 			Labels: map[string]string{
@@ -169,7 +188,7 @@ func deployUserApplication(t *testing.T, f *framework.Framework) error {
 		},
 	}, metav1.CreateOptions{})
 
-	_, err = f.MonitoringClient.ServiceMonitors(userWorkloadTestNs).Create(ctx, &monitoringv1.ServiceMonitor{
+	_, err = f.MonitoringClient.ServiceMonitors(namespace).Create(ctx, &monitoringv1.ServiceMonitor{
 		ObjectMeta: metav1.ObjectMeta{
 			Name: "prometheus-example-monitor",
 			Labels: map[string]string{
@@ -196,7 +215,7 @@ func deployUserApplication(t *testing.T, f *framework.Framework) error {
 		return err
 	}
 
-	_, err = f.MonitoringClient.PrometheusRules(userWorkloadTestNs).Create(ctx, &monitoringv1.PrometheusRule{
+	_, err = f.MonitoringClient.PrometheusRules(namespace).Create(ctx, &monitoringv1.PrometheusRule{
 		ObjectMeta: metav1.ObjectMeta{
 			Name: "prometheus-example-rule",
 			Labels: map[string]string{
@@ -215,7 +234,7 @@ func deployUserApplication(t *testing.T, f *framework.Framework) error {
 						},
 						{
 							Alert: "VersionAlert",
-							Expr:  intstr.FromString(fmt.Sprintf(`version{namespace="%s",job="prometheus-example-app"} == 1`, userWorkloadTestNs)),
+							Expr:  intstr.FromString(fmt.Sprintf(`version{namespace="%s",job="prometheus-example-app"} == 1`, namespace)),
 							For:   func(d monitoringv1.Duration) *monitoringv1.Duration { return &d }("1s"),
 						},
 					},
@@ -227,7 +246,7 @@ func deployUserApplication(t *testing.T, f *framework.Framework) error {
 		return err
 	}
 
-	_, err = f.MonitoringClient.PrometheusRules(userWorkloadTestNs).Create(ctx, &monitoringv1.PrometheusRule{
+	_, err = f.MonitoringClient.PrometheusRules(namespace).Create(ctx, &monitoringv1.PrometheusRule{
 		ObjectMeta: metav1.ObjectMeta{
 			Name: "prometheus-example-rule-leaf",
 			Labels: map[string]string{

@@ -39,6 +39,8 @@ const (
 )
 
 func TestAlertingRule(t *testing.T) {
+	// The test shouldn't be disruptive, safe to run in parallel with others.
+	t.Parallel()
 	ctx := context.Background()
 	alertingRules := f.OpenShiftMonitoringClient.MonitoringV1().AlertingRules(f.Ns)
 
@@ -167,6 +169,7 @@ func prometheusRuleCount(t *testing.T) int {
 }
 
 func assertPrometheusRuleCount(t *testing.T, count int) {
+	t.Helper()
 	currentCount := prometheusRuleCount(t)
 	if currentCount != count {
 		t.Fatalf("Different generated PrometheusRule count (%d != %d)", currentCount, count)
