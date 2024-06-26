@@ -36,6 +36,15 @@ spec:
       for: 20m
       labels:
         severity: warning
+    - alert: PrometheusKubernetesListWatchFailures
+      annotations:
+        description: Kubernetes service discovery of Prometheus {{$labels.namespace}}/{{$labels.pod}} is experiencing {{ printf "%.0f" $value }} failures with LIST/WATCH requests to the Kubernetes API in the last 5 minutes.
+        summary: Requests in Kubernetes SD are failing.
+      expr: |
+        increase(prometheus_sd_kubernetes_failures_total{job=~"prometheus-k8s|prometheus-user-workload"}[5m]) > 0
+      for: 15m
+      labels:
+        severity: warning
     - alert: PrometheusNotificationQueueRunningFull
       annotations:
         description: Alert notification queue of Prometheus {{$labels.namespace}}/{{$labels.pod}} is running full.
