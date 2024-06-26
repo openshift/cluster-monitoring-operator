@@ -20,10 +20,11 @@ import (
 	"testing"
 	"time"
 
-	_ "github.com/prometheus/prometheus/discovery/kubernetes" // required for promConfig.Load to parse kubernetes_sd_configs
 	v1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/types"
+
+	_ "github.com/prometheus/prometheus/discovery/kubernetes" // required for promConfig.Load to parse kubernetes_sd_configs
 
 	osConfigv1 "github.com/openshift/api/config/v1"
 	"github.com/openshift/cluster-monitoring-operator/test/e2e/framework"
@@ -278,7 +279,7 @@ func TestPrometheusRemoteWrite(t *testing.T) {
 		t.Run(tc.name, func(t *testing.T) {
 			// deploy remote write target
 			prometheusReceiver := f.MakePrometheusWithWebTLSRemoteReceive(name, secName)
-			if err := f.OperatorClient.CreateOrUpdatePrometheus(ctx, prometheusReceiver); err != nil {
+			if _, err := f.OperatorClient.CreateOrUpdatePrometheus(ctx, prometheusReceiver); err != nil {
 				t.Fatal(err)
 			}
 			if err := f.OperatorClient.ValidatePrometheus(ctx, types.NamespacedName{

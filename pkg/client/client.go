@@ -50,6 +50,7 @@ import (
 	apiextensionsclient "k8s.io/apiextensions-apiserver/pkg/client/clientset/clientset"
 	apierrors "k8s.io/apimachinery/pkg/api/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	"k8s.io/apimachinery/pkg/apis/meta/v1/unstructured"
 	"k8s.io/apimachinery/pkg/fields"
 	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/apimachinery/pkg/runtime/schema"
@@ -58,6 +59,7 @@ import (
 	"k8s.io/apimachinery/pkg/util/intstr"
 	"k8s.io/apimachinery/pkg/util/wait"
 	"k8s.io/apimachinery/pkg/watch"
+	"k8s.io/client-go/dynamic"
 	"k8s.io/client-go/kubernetes"
 	"k8s.io/client-go/metadata"
 	"k8s.io/client-go/rest"
@@ -81,6 +83,7 @@ type Client struct {
 	userWorkloadNamespace string
 
 	kclient     kubernetes.Interface
+	dclient     dynamic.Interface
 	mdataclient metadata.Interface
 	osmclient   openshiftmonitoringclientset.Interface
 	oscclient   openshiftconfigclientset.Interface
@@ -105,6 +108,14 @@ func NewForConfig(cfg *rest.Config, version string, namespace, userWorkloadNames
 			return nil, fmt.Errorf("creating kubernetes clientset client: %w", err)
 		}
 		client.kclient = kclient
+	}
+
+	if client.dclient == nil {
+		dclient, err := dynamic.NewForConfig(cfg)
+		if err != nil {
+			return nil, fmt.Errorf("creating dynamic clientset client: %w", err)
+		}
+		client.dclient = dclient
 	}
 
 	if client.eclient == nil {
@@ -200,6 +211,12 @@ type Option = func(*Client)
 func KubernetesClient(kclient kubernetes.Interface) Option {
 	return func(c *Client) {
 		c.kclient = kclient
+	}
+}
+
+func DynamicClient(dclient *dynamic.DynamicClient) Option {
+	return func(c *Client) {
+		c.dclient = dclient
 	}
 }
 
@@ -632,29 +649,96 @@ func (c *Client) GetAlertingRule(ctx context.Context, namespace, name string) (*
 	return c.osmclient.MonitoringV1().AlertingRules(namespace).Get(ctx, name, metav1.GetOptions{})
 }
 
-func (c *Client) CreateOrUpdatePrometheus(ctx context.Context, p *monv1.Prometheus) error {
-	pclient := c.mclient.MonitoringV1().Prometheuses(p.GetNamespace())
-	existing, err := pclient.Get(ctx, p.GetName(), metav1.GetOptions{})
+func (c *Client) CreateOrUpdatePrometheus(ctx context.Context, structuredRequiredPrometheus *monv1.Prometheus) (*bool, error) {
+	unstructuredRequiredPrometheusObject, err := runtime.DefaultUnstructuredConverter.ToUnstructured(structuredRequiredPrometheus)
+	if err != nil {
+		return nil, fmt.Errorf("converting Prometheus object to unstructured failed: %w", err)
+	}
+	unstructuredRequiredPrometheus := &unstructured.Unstructured{}
+	unstructuredRequiredPrometheus.SetUnstructuredContent(unstructuredRequiredPrometheusObject)
+
+	// Preserve the original behavior: always merge the metadata, never replace.
+	// Refer: https://github.com/openshift/cluster-monitoring-operator/pull/942.
+	unstructuredExistingPrometheus, err := c.dclient.Resource(structuredRequiredPrometheus.GroupVersionKind().GroupVersion().WithResource("prometheuses")).Namespace(structuredRequiredPrometheus.GetNamespace()).Get(ctx, structuredRequiredPrometheus.GetName(), metav1.GetOptions{})
 	if apierrors.IsNotFound(err) {
-		_, err := pclient.Create(ctx, p, metav1.CreateOptions{})
+		_, err := c.dclient.Resource(structuredRequiredPrometheus.GroupVersionKind().GroupVersion().WithResource("prometheuses")).Namespace(structuredRequiredPrometheus.GetNamespace()).Create(ctx, unstructuredRequiredPrometheus, metav1.CreateOptions{})
 		if err != nil {
-			return fmt.Errorf("creating Prometheus object failed: %w", err)
+			return nil, fmt.Errorf("creating Prometheus object failed: %w", err)
 		}
-		return nil
+		return ptr.To(true), nil
 	}
 	if err != nil {
-		return fmt.Errorf("retrieving Prometheus object failed: %w", err)
+		return nil, fmt.Errorf("retrieving Prometheus object failed: %w", err)
 	}
+	unstructuredRequiredPrometheusMetadataLabels := unstructuredRequiredPrometheus.GetLabels()
+	unstructuredRequiredPrometheusMetadataAnnotations := unstructuredRequiredPrometheus.GetAnnotations()
+	mergeMetadataLabels(unstructuredRequiredPrometheusMetadataLabels, unstructuredExistingPrometheus.GetLabels())
+	mergeMetadataAnnotations(unstructuredRequiredPrometheusMetadataAnnotations, unstructuredExistingPrometheus.GetAnnotations())
+	unstructuredRequiredPrometheus.SetLabels(unstructuredRequiredPrometheusMetadataLabels)
+	unstructuredRequiredPrometheus.SetAnnotations(unstructuredRequiredPrometheusMetadataAnnotations)
+	unstructuredRequiredPrometheus.SetResourceVersion(unstructuredExistingPrometheus.GetResourceVersion())
 
-	required := p.DeepCopy()
-	mergeMetadata(&required.ObjectMeta, existing.ObjectMeta)
-
-	required.ResourceVersion = existing.ResourceVersion
-	_, err = pclient.Update(ctx, required, metav1.UpdateOptions{})
+	_, didUpdate, err := resourceapply.ApplyUnstructuredResourceImproved(
+		ctx,
+		c.dclient,
+		c.eventRecorder,
+		unstructuredRequiredPrometheus,
+		c.resourceCache,
+		structuredRequiredPrometheus.GroupVersionKind().GroupVersion().WithResource("prometheuses"),
+		prometheusDefaultingFunc,
+		nil,
+	)
 	if err != nil {
-		return fmt.Errorf("updating Prometheus object failed: %w", err)
+		return &didUpdate, fmt.Errorf("updating Prometheus object failed: %w", err)
 	}
-	return nil
+
+	return &didUpdate, nil
+}
+
+func prometheusDefaultingFunc(unstructuredPrometheus *unstructured.Unstructured) {
+	// Cast to the corresponding structured representation.
+	structuredPrometheus := &monv1.Prometheus{}
+	if err := runtime.DefaultUnstructuredConverter.FromUnstructured(unstructuredPrometheus.UnstructuredContent(), structuredPrometheus); err != nil {
+		klog.ErrorS(err, "failed to convert unstructured to structured Prometheus spec")
+		return
+	}
+
+	// Set defaults.
+	if structuredPrometheus.Spec.CommonPrometheusFields.ScrapeInterval == "" {
+		structuredPrometheus.Spec.CommonPrometheusFields.ScrapeInterval = "30s"
+	}
+	if len(structuredPrometheus.Spec.CommonPrometheusFields.ExternalLabels) == 0 {
+		structuredPrometheus.Spec.CommonPrometheusFields.ExternalLabels = nil
+	}
+	if len(structuredPrometheus.Spec.CommonPrometheusFields.EnableFeatures) == 0 {
+		structuredPrometheus.Spec.CommonPrometheusFields.EnableFeatures = nil
+	}
+	for i, container := range structuredPrometheus.Spec.CommonPrometheusFields.Containers {
+		for j, port := range container.Ports {
+			if port.Protocol == "" {
+				structuredPrometheus.Spec.CommonPrometheusFields.Containers[i].Ports[j].Protocol = "TCP"
+			}
+		}
+	}
+	if structuredPrometheus.Spec.CommonPrometheusFields.PortName == "" {
+		structuredPrometheus.Spec.CommonPrometheusFields.PortName = "web"
+	}
+	if structuredPrometheus.Spec.Thanos == nil {
+		structuredPrometheus.Spec.Thanos = &monv1.ThanosSpec{}
+	}
+	if structuredPrometheus.Spec.Thanos.BlockDuration == "" {
+		structuredPrometheus.Spec.Thanos.BlockDuration = "2h"
+	}
+	if structuredPrometheus.Spec.EvaluationInterval == "" {
+		structuredPrometheus.Spec.EvaluationInterval = "30s"
+	}
+
+	// Convert back to the corresponding unstructured representation and inject.
+	var err error
+	unstructuredPrometheus.Object, err = runtime.DefaultUnstructuredConverter.ToUnstructured(structuredPrometheus)
+	if err != nil {
+		klog.ErrorS(err, "failed to convert structured to unstructured Prometheus")
+	}
 }
 
 func (c *Client) CreateOrUpdatePrometheusRule(ctx context.Context, p *monv1.PrometheusRule) error {
@@ -1788,20 +1872,28 @@ func (c *Client) VPACustomResourceDefinitionPresent(ctx context.Context, lastKno
 // where keys starting from string defined in `metadataPrefix` are deleted. This prevents issues with preserving stale
 // metadata defined by the operator
 func mergeMetadata(required *metav1.ObjectMeta, existing metav1.ObjectMeta) {
-	for k := range existing.Annotations {
+	mergeMetadataLabels(required.Labels, existing.Labels)
+	mergeMetadataAnnotations(required.Annotations, existing.Annotations)
+}
+
+func mergeMetadataLabels(requiredLabels map[string]string, existingLabels map[string]string) {
+	for k := range existingLabels {
 		if strings.HasPrefix(k, metadataPrefix) {
-			delete(existing.Annotations, k)
+			delete(existingLabels, k)
 		}
 	}
 
-	for k := range existing.Labels {
+	_ = mergo.Merge(&requiredLabels, existingLabels)
+}
+
+func mergeMetadataAnnotations(requiredAnnotations map[string]string, existingAnnotations map[string]string) {
+	for k := range existingAnnotations {
 		if strings.HasPrefix(k, metadataPrefix) {
-			delete(existing.Labels, k)
+			delete(existingAnnotations, k)
 		}
 	}
 
-	_ = mergo.Merge(&required.Annotations, existing.Annotations)
-	_ = mergo.Merge(&required.Labels, existing.Labels)
+	_ = mergo.Merge(&requiredAnnotations, existingAnnotations)
 }
 
 type jsonPatch struct {
