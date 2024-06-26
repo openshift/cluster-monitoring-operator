@@ -276,16 +276,6 @@ func (c *Config) applyDefaults() {
 		c.ClusterMonitoringConfiguration.MetricsServerConfig.Audit.Profile = auditv1.LevelMetadata
 	}
 
-	if c.ClusterMonitoringConfiguration.K8sPrometheusAdapter == nil {
-		c.ClusterMonitoringConfiguration.K8sPrometheusAdapter = &K8sPrometheusAdapter{}
-	}
-	if c.ClusterMonitoringConfiguration.K8sPrometheusAdapter.Audit == nil {
-		c.ClusterMonitoringConfiguration.K8sPrometheusAdapter.Audit = &Audit{}
-	}
-	if c.ClusterMonitoringConfiguration.K8sPrometheusAdapter.Audit.Profile == "" {
-		c.ClusterMonitoringConfiguration.K8sPrometheusAdapter.Audit.Profile = auditv1.LevelMetadata
-	}
-
 	if c.ClusterMonitoringConfiguration.PrometheusK8sConfig.CollectionProfile == "" {
 		c.ClusterMonitoringConfiguration.PrometheusK8sConfig.CollectionProfile = FullCollectionProfile
 	}
@@ -456,11 +446,12 @@ func (c *Config) Precheck() error {
 
 	// Highlight deprecated config fields.
 	var d float64
-	if c.ClusterMonitoringConfiguration.K8sPrometheusAdapter.DedicatedServiceMonitors != nil {
+	if c.ClusterMonitoringConfiguration.K8sPrometheusAdapter != nil {
+		klog.Infof("k8sPrometheusAdapter is a deprecated config use metricsServer instead")
 		d = 1
 	}
-	// Deprecated in https://github.com/openshift/cluster-monitoring-operator/pull/2160
-	metrics.DeprecatedConfig.WithLabelValues("openshift-monitoring/cluster-monitoring-config", "k8sPrometheusAdapter.dedicatedServiceMonitors", "4.15").Set(d)
+	// Prometheus-Adapter is replaced with Metrics Server by default from 4.16
+	metrics.DeprecatedConfig.WithLabelValues("openshift-monitoring/cluster-monitoring-config", "k8sPrometheusAdapter", "4.16").Set(d)
 	return nil
 }
 
