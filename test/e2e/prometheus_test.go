@@ -32,6 +32,7 @@ import (
 )
 
 func TestPrometheusMetrics(t *testing.T) {
+	t.Parallel()
 	expected := map[string]int{
 		"prometheus-operator":           1,
 		"prometheus-k8s":                2,
@@ -71,6 +72,7 @@ func TestPrometheusMetrics(t *testing.T) {
 // consider whether the new default value is still suitable.
 // Refer to this link for some points that may need to be examined https://github.com/openshift/prometheus/pull/206#issuecomment-2182168575.
 func TestPrometheusGOGC(t *testing.T) {
+	t.Parallel()
 	infra, err := f.OperatorClient.GetInfrastructure(ctx, "cluster")
 	require.NoError(t, err)
 	infraConfig := operator.NewInfrastructureConfig(infra)
@@ -92,6 +94,7 @@ func TestPrometheusGOGC(t *testing.T) {
 }
 
 func TestAntiAffinity(t *testing.T) {
+	t.Parallel()
 	for _, tc := range []struct {
 		name     string
 		instance string

@@ -32,6 +32,7 @@ import (
 )
 
 func TestKSMMetricsSuppression(t *testing.T) {
+	t.Parallel()
 
 	suppressedPattern, _ := regexp.Compile("kube_.*_annotations")
 
@@ -74,6 +75,7 @@ func TestKSMMetricsSuppression(t *testing.T) {
 }
 
 func TestKSMCRSMetrics(t *testing.T) {
+	t.Parallel()
 	const timeout = 5 * time.Minute
 	assetsDir := "./assets"
 	ksmCRSMetricPrefix := "kube_customresource"

@@ -126,6 +126,8 @@ func testMain(m *testing.M) error {
 }
 
 func TestTargetsUp(t *testing.T) {
+	// TODO: this may be noisy as it alters a main secret. Let's see
+	t.Parallel()
 	ctx := context.Background()
 
 	// Check that all targets are up initially.
@@ -182,6 +184,7 @@ func testTargetsUp(t *testing.T) {
 // Once we have the need to test multiple recording rules, we can unite them in
 // a single test function.
 func TestMemoryUsageRecordingRule(t *testing.T) {
+	t.Parallel()
 	f.ThanosQuerierClient.WaitForQueryReturnGreaterEqualOne(
 		t,
 		time.Minute,

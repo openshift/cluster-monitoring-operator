@@ -38,6 +38,8 @@ func atLeastVersionTLS12(v string) string {
 }
 
 func TestTLSSecurityProfileConfiguration(t *testing.T) {
+	// TODO: this may be noisy. Let's see
+	t.Parallel()
 	testCases := []struct {
 		name                  string
 		profile               *configv1.TLSSecurityProfile

@@ -465,6 +465,7 @@ func TestAlertmanagerDataReplication(t *testing.T) {
 
 // The Alertmanager API should be protected by authentication/authorization.
 func TestAlertmanagerAPI(t *testing.T) {
+	t.Parallel()
 	err := framework.Poll(5*time.Second, 5*time.Minute, func() error {
 		body, err := f.AlertmanagerClient.GetAlertmanagerAlerts(
 			"filter", `alertname="Watchdog"`,
@@ -748,6 +749,7 @@ func TestAlertmanagerDisabling(t *testing.T) {
 }
 
 func TestAlertManagerHasAdditionalAlertRelabelConfigs(t *testing.T) {
+	t.Parallel()
 	const (
 		expectPlatformLabel      = "openshift_io_alert_source"
 		expectPlatformLabelValue = "platform"

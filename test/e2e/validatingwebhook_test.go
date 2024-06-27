@@ -104,6 +104,7 @@ spec:
 )
 
 func TestPrometheusRuleValidatingWebhook(t *testing.T) {
+	t.Parallel()
 	ctx := context.Background()
 
 	_, err := f.AdmissionClient.ValidatingWebhookConfigurations().Get(ctx, prometheusRuleWebhookName, metav1.GetOptions{})
@@ -134,6 +135,7 @@ func TestPrometheusRuleValidatingWebhook(t *testing.T) {
 }
 
 func TestAlertManagerConfigValidatingWebhook(t *testing.T) {
+	t.Parallel()
 	ctx := context.Background()
 
 	_, err := f.AdmissionClient.ValidatingWebhookConfigurations().Get(ctx, alertmanagerConfigWebhookName, metav1.GetOptions{})

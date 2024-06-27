@@ -19,6 +19,7 @@ import (
 )
 
 func TestGetFirstValueFromPromQuery(t *testing.T) {
+	t.Parallel()
 	tests := []struct {
 		Name string
 		F    func(t *testing.T)

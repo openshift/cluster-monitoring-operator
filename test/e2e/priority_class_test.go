@@ -27,6 +27,7 @@ import (
 // system-cluster-critical   2000000000   false            114m
 // system-node-critical      2000001000   false            114m
 func TestToEnsureUserPriorityClassIsPresentAndLower(t *testing.T) {
+	t.Parallel()
 	ctx := context.Background()
 
 	// Get system priority class values.

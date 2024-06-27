@@ -39,6 +39,7 @@ const (
 )
 
 func TestAlertingRule(t *testing.T) {
+	t.Parallel()
 	ctx := context.Background()
 	alertingRules := f.OpenShiftMonitoringClient.MonitoringV1().AlertingRules(f.Ns)
 
