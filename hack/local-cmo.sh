@@ -226,7 +226,7 @@ main() {
 		-kubeconfig="$kubeconfig" \
 		-namespace=openshift-monitoring \
 		-configmap=cluster-monitoring-config \
-		-logtostderr=true -v=4 2>&1 | tee tmp/operator.log
+		-v=4 2>&1 | tee tmp/operator.log
 }
 
 main "$@"

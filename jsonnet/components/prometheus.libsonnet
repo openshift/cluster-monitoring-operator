@@ -524,7 +524,6 @@ function(params)
               '--config-file=/etc/kube-rbac-proxy/config.yaml',
               '--tls-cipher-suites=' + cfg.tlsCipherSuites,
               '--allow-paths=/metrics',
-              '--logtostderr=true',
             ],
             volumeMounts: [
               {
