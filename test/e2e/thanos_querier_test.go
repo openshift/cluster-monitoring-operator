@@ -24,6 +24,7 @@ import (
 )
 
 func TestThanosQueryCanQueryWatchdogAlert(t *testing.T) {
+	t.Parallel()
 	// The 2-minute timeout is what console CI tests set.
 	// If this test is flaky, we should increase until
 	// we can fix the possible DNS resolve issues.
@@ -43,6 +44,7 @@ const (
 )
 
 func TestMonitoringApiRoles(t *testing.T) {
+	t.Parallel()
 
 	cf, err := f.CreateNamespace(testNamespaceTQ)
 	if err != nil {

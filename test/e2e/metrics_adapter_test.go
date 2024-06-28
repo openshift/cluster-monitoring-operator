@@ -79,6 +79,7 @@ func isAPIServiceAvailable(conditions []apiservicesv1.APIServiceCondition) bool 
 }
 
 func TestMetricsAPIAvailability(t *testing.T) {
+	t.Parallel()
 	ctx := context.Background()
 	var lastErr error
 	err := wait.Poll(time.Second, 5*time.Minute, func() (bool, error) {
@@ -106,6 +107,7 @@ func TestMetricsAPIAvailability(t *testing.T) {
 }
 
 func TestNodeMetricsPresence(t *testing.T) {
+	t.Parallel()
 	ctx := context.Background()
 	var lastErr error
 	err := wait.Poll(time.Second, 5*time.Minute, func() (bool, error) {
@@ -144,6 +146,7 @@ func TestNodeMetricsPresence(t *testing.T) {
 }
 
 func TestPodMetricsPresence(t *testing.T) {
+	t.Parallel()
 	var lastErr error
 	ctx := context.Background()
 	err := wait.Poll(time.Second, 5*time.Minute, func() (bool, error) {
@@ -185,6 +188,7 @@ func TestPodMetricsPresence(t *testing.T) {
 }
 
 func TestAggregatedMetricPermissions(t *testing.T) {
+	t.Parallel()
 	ctx := context.Background()
 	present := func(where []string, what string) bool {
 		sort.Strings(where)
@@ -251,6 +255,8 @@ func TestAggregatedMetricPermissions(t *testing.T) {
 }
 
 func TestPrometheusAdapterCARotation(t *testing.T) {
+	// TODO: this may be noisy. Let's see
+	t.Parallel()
 	skipPrometheusAdapterTests(t)
 	ctx := context.Background()
 	// Wait for prometheus-adapter deployment
@@ -340,6 +346,7 @@ func TestPrometheusAdapterCARotation(t *testing.T) {
 }
 
 func TestMetricsServerRollout(t *testing.T) {
+	t.Parallel()
 	skipMetricsServerTests(t)
 	for _, test := range []scenario{
 		{

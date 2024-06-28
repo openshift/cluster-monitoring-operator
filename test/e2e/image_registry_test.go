@@ -8,6 +8,8 @@ import (
 	v1 "k8s.io/api/core/v1"
 )
 
+
+// TODO: split and paralll the first one
 func TestImageRegistryPods(t *testing.T) {
 	var pods *v1.PodList
 
