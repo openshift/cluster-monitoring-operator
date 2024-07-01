@@ -1,0 +1,11 @@
+apiVersion: v1
+data: {}
+kind: ConfigMap
+metadata:
+  annotations:
+    openshift.io/owning-component: Monitoring
+  labels:
+    app.kubernetes.io/managed-by: cluster-monitoring-operator
+    app.kubernetes.io/part-of: openshift-monitoring
+  name: metrics-server-kubelet-serving-ca-bundle
+  namespace: openshift-monitoring
