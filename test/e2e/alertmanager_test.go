@@ -907,7 +907,7 @@ func testAlertmanagerConfigPipeline(t *testing.T, wr *webhookReceiver, am *monit
 		t.Fatal(err)
 	}
 
-	if err := createUWMTestNsIfNotExist(t, f); err != nil {
+	if err := createNamespaceIfNotExist(f, userWorkloadTestNs); err != nil {
 		t.Fatal(err)
 	}
 

@@ -39,6 +39,8 @@ type ClusterMonitoringConfiguration struct {
 	AlertmanagerMainConfig *AlertmanagerMainConfig `json:"alertmanagerMain,omitempty"`
 	// `UserWorkloadEnabled` is a Boolean flag that enables monitoring for user-defined projects.
 	UserWorkloadEnabled *bool `json:"enableUserWorkload,omitempty"`
+	// `UserWorkload` defines settings for the monitoring of user-defined projects.
+	UserWorkload *UserWorkloadConfig `json:"userWorkload,omitempty"`
 	// OmitFromDoc
 	HTTPConfig *HTTPConfig `json:"http,omitempty"`
 	// `K8sPrometheusAdapter` defines settings for the Prometheus Adapter component.
@@ -64,6 +66,19 @@ type ClusterMonitoringConfiguration struct {
 	NodeExporterConfig NodeExporterConfig `json:"nodeExporter,omitempty"`
 	// `MonitoringPluginConfig` defines settings for the monitoring `console-plugin`.
 	MonitoringPluginConfig *MonitoringPluginConfig `json:"monitoringPlugin,omitempty"`
+}
+
+// The `UserWorkloadConfig` resource defines settings for the monitoring of
+// user-defined projects.
+type UserWorkloadConfig struct {
+	// A Boolean flag that enables or disables the ability to deploy
+	// user-defined `PrometheusRules` objects for which the `namespace` label
+	// isn't enforced to the namespace of the object. Such objects should be
+	// created in a namespace configured under the
+	// `namespacesWithoutLabelEnforcement` property of the
+	// `UserWorkloadConfiguration` resource.
+	// The default value is `true`.
+	RulesWithoutLabelEnforcementAllowed *bool `json:"rulesWithoutLabelEnforcementAllowed,omitempty"`
 }
 
 // The `AlertmanagerMainConfig` resource defines settings for the
@@ -531,6 +546,19 @@ type UserWorkloadConfiguration struct {
 	// Defines the settings for the Thanos Ruler component in user workload
 	// monitoring.
 	ThanosRuler *ThanosRulerConfig `json:"thanosRuler,omitempty"`
+
+	// Defines the list of namespaces for which Prometheus and Thanos Ruler in
+	// user-defined monitoring don't enforce the `namespace` label value in
+	// `PrometheusRule` objects.
+	//
+	// It allows to define recording and alerting rules that can query across
+	// multiple projects instead of deploying identical `PrometheusRule`
+	// objects in each user project.
+	//
+	// To make the resulting alerts and metrics visible to project users, the
+	// query expressions should return a `namespace` label with a non-empty
+	// value.
+	NamespacesWithoutLabelEnforcement []string `json:"namespacesWithoutLabelEnforcement,omitempty"`
 }
 
 // The `AlertmanagerUserWorkloadConfig` resource defines the settings for the Alertmanager instance used for user-defined projects.

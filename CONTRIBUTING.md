@@ -112,39 +112,32 @@ This targets needs `docker` to be installed on host and was not tested with othe
 
 ## Testing
 
-Supposing $KUBECONFIG is set to the config file of a Kubernetes cluster running the codes to test. We can run all tests by using this command `make test`.
+Assuming that the `KUBECONFIG` environment variable is set to the config file of an OpenShift cluster against which the tests will run, you can execute all the tests running `make test`.
 
-The testing consist of 3 aspects:
-- unit tests, can be run separately by `make test-unit`.
-- Prometheus rule tests, can be run separately by `make test-rules`.
-- end-to-end tests, can be run separately by `make test-e2e`.
+Testing entails 3 types of tests:
+- Unit tests which can be run separately with `make test-unit`.
+- Prometheus rule tests which can be run separately with `make test-rules`.
+- End-to-end tests which can be run separately with `make test-e2e`.
 
-If we need to run a specific test case of the E2E test, we can use the following command.
+If you need to run a specific unit test (for example `TestHashSecret`), you can use the following command:
+
 ```bash
-go test -v -timeout=120m ./test/e2e/ --kubeconfig $KUBECONFIG -run TestBodySizeLimit
-```
-Attention that we have to pass a valid $KUBECONFIG explicitly `--kubeconfig $KUBECONFIG` even if ~/.kube/config exists.
-
-To run a specific test case of unit tests, we can use the command `go test -v $PACKAGE_DIR -run $TEST_FUNC_NAME`.
-The `$PACKAGE_DIR` is where the source files of a Go package lives. The `$TEST_FUNC_NAME` is the test function whose name always starts with "Test" (regex pattern `TEST\w+`).
-For example, we have a test function `TestImageParsing` in package `manifests`.The source file `./pkg/manifests/image_test.go` and other source code files of this package lives in `./pkg/manifests`. So we can use the following command to run the test function `TestImageParsing` in package `manifests`.
-```bash
-go test -v ./pkg/manifests -run TestImageParsing
+go test -v ./pkg/... -run TestHashSecret
 ```
 
+If you need to run a specific test case from the E2E test suite (for instance `TestBodySizeLimit`), you can use the following command:
 
-## Coding Style
-
-cluster-monitoring-operator projects written in Go follow a set of style guidelines that we've documented [here](https://github.com/coreos/docs/tree/master/golang).
-Please follow them when working on your contributions.
+```bash
+go test -v -timeout=120m -run TestBodySizeLimit ./test/e2e/ --kubeconfig $KUBECONFIG
+```
+Note: you have to set the `KUBECONFIG` environment variable even if `~/.kube/config` exists.
 
 ## Format of Pull Requests
-We are making heavy use of bots and integrations.
-In order for those to work properly, your Pull Request should match the following structure:
 
-```
-Bug 123456: this is the exact problem or fix
-```
+We are making heavy use of bots and integrations which expect the pull request title to contain a reference to a JIRA ticket:
+
+* For bug fixes, `OCPBUGS-12345: ...`
+* For features, `MON-1234: ...`
 
 ## Format of the Commit Message
 
@@ -175,7 +168,5 @@ The first line is the subject and should be no longer than 70 characters, the
 second line is always blank, and other lines should be wrapped at 80 characters.
 This allows the message to be easier to read on GitHub as well as in various
 git tools.
-
-
 
 Thank you for contributing!

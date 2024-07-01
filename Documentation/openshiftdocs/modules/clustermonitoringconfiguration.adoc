@@ -19,6 +19,8 @@ The `ClusterMonitoringConfiguration` resource defines settings that customize th
 
 |enableUserWorkload|*bool|`UserWorkloadEnabled` is a Boolean flag that enables monitoring for user-defined projects.
 
+|userWorkload|*link:userworkloadconfig.adoc[UserWorkloadConfig]|`UserWorkload` defines settings for the monitoring of user-defined projects.
+
 |k8sPrometheusAdapter|*link:k8sprometheusadapter.adoc[K8sPrometheusAdapter]|`K8sPrometheusAdapter` defines settings for the Prometheus Adapter component.
 
 |metricsServer|*link:metricsserverconfig.adoc[MetricsServerConfig]|`MetricsServer` defines settings for the MetricsServer component.
