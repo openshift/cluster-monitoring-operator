@@ -1858,6 +1858,18 @@ func (f *Factory) PrometheusAdapterDeployment(apiAuthSecretName string, requesth
 
 	spec.Containers[0].Image = f.config.Images.K8sPrometheusAdapter
 
+	if f.config.ClusterMonitoringConfiguration.K8sPrometheusAdapter == nil {
+		f.config.ClusterMonitoringConfiguration.K8sPrometheusAdapter = &K8sPrometheusAdapter{}
+	}
+
+	if f.config.ClusterMonitoringConfiguration.K8sPrometheusAdapter.Audit == nil {
+		f.config.ClusterMonitoringConfiguration.K8sPrometheusAdapter.Audit = &Audit{}
+	}
+
+	if f.config.ClusterMonitoringConfiguration.K8sPrometheusAdapter.Audit.Profile == "" {
+		f.config.ClusterMonitoringConfiguration.K8sPrometheusAdapter.Audit.Profile = auditv1.LevelMetadata
+	}
+
 	config := f.config.ClusterMonitoringConfiguration.K8sPrometheusAdapter
 	if config != nil && len(config.NodeSelector) > 0 {
 		spec.NodeSelector = config.NodeSelector

@@ -104,6 +104,7 @@ type AlertmanagerMainConfig struct {
 }
 
 // The `K8sPrometheusAdapter` resource defines settings for the Prometheus Adapter component.
+// This is deprecated and will be removed in a future version.
 type K8sPrometheusAdapter struct {
 	// Defines the audit configuration used by the Prometheus Adapter instance.
 	// Possible profile values are: `metadata`, `request`, `requestresponse`, and `none`.
@@ -122,7 +123,6 @@ type K8sPrometheusAdapter struct {
 }
 
 // The `MetricsServerConfig` resource defines settings for the Metrics Server component.
-// Note that this setting only applies when the MetricsServer feature gate is enabled.
 type MetricsServerConfig struct {
 	// Defines the audit configuration used by the Metrics Server instance.
 	// Possible profile values are: `metadata`, `request`, `requestresponse`, and `none`.

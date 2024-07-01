@@ -808,7 +808,7 @@ func TestClusterMonitoringDeprecatedConfig(t *testing.T) {
 	checkMetricValue := func(value float64) {
 		t.Helper()
 		f.PrometheusK8sClient.WaitForQueryReturn(
-			t, 5*time.Minute, fmt.Sprintf(`%s{configmap="openshift-monitoring/cluster-monitoring-config", field="k8sPrometheusAdapter.dedicatedServiceMonitors", deprecation_version="4.15"}`, metricName),
+			t, 5*time.Minute, fmt.Sprintf(`%s{configmap="openshift-monitoring/cluster-monitoring-config", field="k8sPrometheusAdapter", deprecation_version="4.16"}`, metricName),
 			func(v float64) error {
 				if v != value {
 					return fmt.Errorf("expected %s to be of value %f.", metricName, value)
@@ -820,11 +820,11 @@ func TestClusterMonitoringDeprecatedConfig(t *testing.T) {
 	// No deprecated config should have been used.
 	checkMetricValue(0)
 
-	// Use deprecated config.
+	// Set a field for k8sPrometheusAdapter.
 	data := `
 k8sPrometheusAdapter:
-  dedicatedServiceMonitors:
-    enabled: true`
+  audit:
+    profile: Request`
 	f.MustCreateOrUpdateConfigMap(t, f.BuildCMOConfigMap(t, data))
 	checkMetricValue(1)
 

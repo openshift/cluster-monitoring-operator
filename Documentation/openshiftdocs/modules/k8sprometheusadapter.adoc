@@ -9,7 +9,7 @@
 
 === Description
 
-The `K8sPrometheusAdapter` resource defines settings for the Prometheus Adapter component.
+The `K8sPrometheusAdapter` resource defines settings for the Prometheus Adapter component. This is deprecated and will be removed in a future version.
 
 
 
