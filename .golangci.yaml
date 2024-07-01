@@ -1,6 +1,6 @@
 run:
   timeout: 5m
-  tests: false
+  tests: true
   skip-dirs:
     - vendor
     - test
@@ -44,3 +44,26 @@ linters-settings:
       - standard
       - default
       - prefix(github.com/openshift/cluster-monitoring-operator)
+
+issues:
+  exclude-rules:
+    - path: _test\.go
+      linters:
+       - depguard
+       - errcheck
+       - errorlint
+       - bodyclose
+       - exportloopref
+       - gosimple
+       - ineffassign
+       - misspell
+       - nolintlint
+       - nosprintfhostport
+       - staticcheck
+       - tenv
+       - typecheck
+       - unconvert
+       - unused
+       - wastedassign
+       - whitespace
+       - gci
