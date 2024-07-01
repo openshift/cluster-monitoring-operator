@@ -302,6 +302,7 @@ func (c *clientCertificateController) createCSR(ctx context.Context) (string, er
 	if err != nil {
 		return "", err
 	}
+	klog.Infof("DEBBUG CREATED csr %s %+v %+v %+v %s", req.Name, req, req.Spec, req.Status, req.String())
 	return req.Name, nil
 }
 
