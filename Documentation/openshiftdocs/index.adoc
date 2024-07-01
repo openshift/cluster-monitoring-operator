@@ -54,6 +54,7 @@ The configuration file itself is always defined under the `config.yaml` key in t
 * link:modules/nodeexportercollectornetclassconfig.adoc[NodeExporterCollectorNetClassConfig]
 * link:modules/nodeexportercollectornetdevconfig.adoc[NodeExporterCollectorNetDevConfig]
 * link:modules/nodeexportercollectorprocessesconfig.adoc[NodeExporterCollectorProcessesConfig]
+* link:modules/nodeexportercollectorsysctlconfig.adoc[NodeExporterCollectorSysctlConfig]
 * link:modules/nodeexportercollectorsystemdconfig.adoc[NodeExporterCollectorSystemdConfig]
 * link:modules/nodeexportercollectortcpstatconfig.adoc[NodeExporterCollectorTcpStatConfig]
 * link:modules/nodeexporterconfig.adoc[NodeExporterConfig]
