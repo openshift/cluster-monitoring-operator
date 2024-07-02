@@ -26,6 +26,9 @@ function(params)
             'k8s-app': 'kubelet',
           },
         },
+        attachMetadata: {
+          node: true,
+        },
         endpoints:
           std.map(
             function(e)
@@ -92,6 +95,11 @@ function(params)
               caFile: '/etc/prometheus/configmaps/kubelet-serving-ca-bundle/ca-bundle.crt',
             },
             relabelings: [
+              {
+                sourceLabels: ['__meta_kubernetes_node_label_kubernetes_io_os'],
+                action: 'keep',
+                regex: '(linux|)',
+              },
               {
                 sourceLabels: ['__address__'],
                 action: 'replace',
