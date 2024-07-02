@@ -208,6 +208,7 @@ function(params)
                         '--tls-private-key-file=/etc/tls/private/tls.key',
                         '--client-ca-file=/etc/tls/client/client-ca.crt',
                         '--config-file=/etc/kube-rbac-policy/config.yaml',
+                        '--ignore-paths=' + std.join(',', if std.endsWith(c.name, '-self') then ['/metrics'] else ['/livez']),
                       ],
                       volumeMounts: [
                         {
@@ -266,6 +267,36 @@ function(params)
                           readOnly: true,
                         },
                       ],
+                      local mainPort = 8443,
+                      local mainPortName = 'main',
+                      local selfPort = 9443,
+                      local selfPortName = 'self',
+                      ports::: [
+                        {
+                          containerPort: mainPort,
+                          name: mainPortName,
+                        },
+                        {
+                          containerPort: selfPort,
+                          name: selfPortName,
+                        },
+                      ],
+                      local livenessProbePath = 'livez',
+                      local readinessProbePath = 'metrics',
+                      livenessProbe::: {
+                        httpGet: {
+                          path: livenessProbePath,
+                          port: mainPortName,
+                          scheme: 'HTTPS',
+                        },
+                      },
+                      readinessProbe::: {
+                        httpGet: {
+                          path: readinessProbePath,
+                          port: selfPortName,
+                          scheme: 'HTTPS',
+                        },
+                      },
                     },
                 super.containers,
               ),
