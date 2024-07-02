@@ -349,6 +349,22 @@ function(params)
               name: 'metrics-client-ca',
             },
           },
+          {
+            name: $.trustedCaBundle.metadata.name,
+            configMap: {
+              name: $.trustedCaBundle.metadata.name,
+              items: [{
+                key: 'ca-bundle.crt',
+                path: 'tls-ca-bundle.pem',
+              }],
+            },
+          },
+        ],
+        volumeMounts+: [
+          {
+            name: $.trustedCaBundle.metadata.name,
+            mountPath: '/etc/pki/ca-trust/extracted/pem/',
+          },
         ],
       },
     },
