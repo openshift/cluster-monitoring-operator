@@ -918,8 +918,9 @@ func (c *Client) DeleteSecret(ctx context.Context, s *v1.Secret) error {
 func (c Client) validatePrometheusResource(ctx context.Context, prom types.NamespacedName) (bool, []error) {
 	p, err := c.mclient.MonitoringV1().Prometheuses(prom.Namespace).Get(ctx, prom.Name, metav1.GetOptions{})
 	if err != nil {
+		err = fmt.Errorf("failed to get Prometheus CR %s: %w", prom.String(), err)
+		klog.V(4).Info(err)
 		// failing to get Prometheus -> Degraded: Unknown & Unavailable: Unknown
-		klog.V(4).Info("validate prometheus failed to get prometheus: ", err)
 		return false, []error{
 			NewUnknownAvailabiltyError(err.Error()),
 			NewUnknownDegradedError(err.Error()),
@@ -928,7 +929,8 @@ func (c Client) validatePrometheusResource(ctx context.Context, prom types.Names
 
 	avail, err := getMonitoringCondition(p.Status.Conditions, monv1.Available)
 	if err != nil {
-		err = fmt.Errorf("prometheus: %w", err)
+		err = fmt.Errorf("Prometheus CR %s: %w", prom.String(), err)
+		klog.V(4).Info(err)
 		// failing to get Prometheus.Status.Condtion -> Degraded: Unknown & Unavailable: Unknown
 		return false, []error{
 			NewUnknownAvailabiltyError(err.Error()),
@@ -940,12 +942,13 @@ func (c Client) validatePrometheusResource(ctx context.Context, prom types.Names
 		// Prometheus is Available; check reconciled Condition as well
 		reconciled, err := getMonitoringCondition(p.Status.Conditions, monv1.Reconciled)
 		if err != nil {
-			err = fmt.Errorf("prometheus: %w", err)
+			err = fmt.Errorf("Prometheus CR %s: %w", prom.String(), err)
+			klog.V(4).Info(err)
 			// failing to get Prometheus.Status.Condtion -> Degraded: Unknown
 			return false, []error{NewUnknownDegradedError(err.Error())}
 		} else if reconciled.Status != monv1.ConditionTrue {
-			klog.V(4).Info("validate prometheus failed reconciled condition: ", reconciled.Status)
-			msg := fmt.Sprintf("%s: %s", reconciled.Reason, reconciled.Message)
+			msg := fmt.Sprintf("Prometheus CR %s not reconciled reason=%s message=%s", prom.String(), reconciled.Reason, reconciled.Message)
+			klog.V(4).Info(msg)
 			return false, []error{NewDegradedError(msg)}
 		}
 
@@ -953,10 +956,8 @@ func (c Client) validatePrometheusResource(ctx context.Context, prom types.Names
 		return true, nil
 	}
 
-	// return reason for failure as state-errors - Degraded: True & Unavailable: True
-	// since prometheus is Unavailable
-
-	msg := fmt.Sprintf("%s: %s", avail.Reason, avail.Message)
+	msg := fmt.Sprintf("Prometheus CR %s not available status=%s reason=%s message=%s", prom.String(), avail.Status, avail.Reason, avail.Message)
+	klog.V(4).Info(msg)
 	errs := []error{NewDegradedError(msg)}
 
 	if avail.Status == monv1.ConditionFalse {
