@@ -469,9 +469,9 @@ local openShiftRunbookCMO(runbook) =
   openShiftRunbook('alerts/cluster-monitoring-operator/' + runbook);
 
 local includeRunbooks = {
+  AlertmanagerClusterFailedToSendAlerts: openShiftRunbookCMO('AlertmanagerClusterFailedToSendAlerts.md'),
   AlertmanagerFailedReload: openShiftRunbookCMO('AlertmanagerFailedReload.md'),
   AlertmanagerFailedToSendAlerts: openShiftRunbookCMO('AlertmanagerFailedToSendAlerts.md'),
-  AlertmanagerClusterFailedToSendAlerts: openShiftRunbookCMO('AlertmanagerClusterFailedToSendAlerts.md'),
   ClusterOperatorDegraded: openShiftRunbookCMO('ClusterOperatorDegraded.md'),
   ClusterOperatorDown: openShiftRunbookCMO('ClusterOperatorDown.md'),
   KubeAggregatedAPIErrors: openShiftRunbookCMO('KubeAggregatedAPIErrors.md'),
@@ -490,8 +490,11 @@ local includeRunbooks = {
   NodeFilesystemSpaceFillingUp: openShiftRunbookCMO('NodeFilesystemSpaceFillingUp.md'),
   NodeRAIDDegraded: openShiftRunbookCMO('NodeRAIDDegraded.md'),
   NodeClockNotSynchronising: openShiftRunbookCMO('NodeClockNotSynchronising.md'),
-  PrometheusRuleFailures: openShiftRunbookCMO('PrometheusRuleFailures.md'),
+  PrometheusOperatorRejectedResources: openShiftRunbookCMO('PrometheusOperatorRejectedResources.md'),
   PrometheusDuplicateTimestamps: openShiftRunbookCMO('PrometheusDuplicateTimestamps.md'),
+  PrometheusRuleFailures: openShiftRunbookCMO('PrometheusRuleFailures.md'),
+  PrometheusRemoteStorageFailures: openShiftRunbookCMO('PrometheusRemoteStorageFailures.md'),
+  PrometheusScrapeBodySizeLimitHit: openShiftRunbookCMO('PrometheusScrapeBodySizeLimitHit.md'),
   PrometheusTargetSyncFailure: openShiftRunbookCMO('PrometheusTargetSyncFailure.md'),
   TargetDown: openShiftRunbookCMO('TargetDown.md'),
   ThanosRuleQueueIsDroppingAlerts: openShiftRunbookCMO('ThanosRuleQueueIsDroppingAlerts.md'),
