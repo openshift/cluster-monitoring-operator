@@ -2199,8 +2199,6 @@ func (f *Factory) MetricsServerSecret(tlsSecret *v1.Secret, apiAuthConfigmap *v1
 	var (
 		clientCA              = r.value("client-ca-file")
 		requestheaderClientCA = r.value("requestheader-client-ca-file")
-		tlsCA                 = r.value("tls.crt")
-		tlsKey                = r.value("tls.key")
 	)
 
 	if r.Error() != nil {
@@ -2208,7 +2206,7 @@ func (f *Factory) MetricsServerSecret(tlsSecret *v1.Secret, apiAuthConfigmap *v1
 	}
 
 	h := fnv.New64()
-	h.Write([]byte(clientCA + requestheaderClientCA + tlsCA + tlsKey))
+	h.Write([]byte(clientCA + requestheaderClientCA))
 	hash := strconv.FormatUint(h.Sum64(), 32)
 
 	return &v1.Secret{
@@ -2223,8 +2221,6 @@ func (f *Factory) MetricsServerSecret(tlsSecret *v1.Secret, apiAuthConfigmap *v1
 		Data: map[string][]byte{
 			"client-ca-file":               []byte(clientCA),
 			"requestheader-client-ca-file": []byte(requestheaderClientCA),
-			"tls.crt":                      []byte(tlsCA),
-			"tls.key":                      []byte(tlsKey),
 		},
 	}, nil
 }
