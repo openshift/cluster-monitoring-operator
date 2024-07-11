@@ -376,7 +376,7 @@ function(params) {
           'for': '1h',
           annotations: {
             summary: 'Cluster Monitoring Operator is being used with deprecated configuration.',
-            description: 'The configuration field {{ $labels.field }} in {{ $labels.configmap }} was deprecated in {{ $labels.deprecation_version }} and has no effect, you can remove it.',
+            description: 'The configuration field {{ $labels.field }} in {{ $labels.configmap }} was deprecated in {{ $labels.deprecation_version }} and has no effect.',
           },
           labels: {
             severity: 'info',
