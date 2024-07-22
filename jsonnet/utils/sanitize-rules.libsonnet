@@ -15,6 +15,8 @@ local excludedRuleGroups = [
   // Availability of kube-proxy depends on the selected CNO plugin hence the
   // rules should be managed by CNO directly.
   'kubernetes-system-kube-proxy',
+  // cluster-storage-operator now owns these rules, see https://github.com/openshift/cluster-storage-operator/pull/477
+  'kubernetes-storage',
 ];
 
 // List of rules which are dropped from the final manifests.
