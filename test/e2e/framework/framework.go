@@ -32,15 +32,11 @@ import (
 	openshiftconfigclientset "github.com/openshift/client-go/config/clientset/versioned"
 	openshiftmonitoringclientset "github.com/openshift/client-go/monitoring/clientset/versioned"
 	routev1 "github.com/openshift/client-go/route/clientset/versioned/typed/route/v1"
-	"github.com/openshift/cluster-monitoring-operator/pkg/client"
-	"github.com/openshift/cluster-monitoring-operator/pkg/manifests"
-	authenticationv1 "k8s.io/api/authentication/v1"
-	"k8s.io/utils/ptr"
-
 	"github.com/openshift/library-go/pkg/operator/events"
 	"github.com/prometheus-operator/prometheus-operator/pkg/apis/monitoring/v1beta1"
 	monClient "github.com/prometheus-operator/prometheus-operator/pkg/client/versioned/typed/monitoring/v1"
 	monBetaClient "github.com/prometheus-operator/prometheus-operator/pkg/client/versioned/typed/monitoring/v1beta1"
+	authenticationv1 "k8s.io/api/authentication/v1"
 	v1 "k8s.io/api/core/v1"
 	rbacv1 "k8s.io/api/rbac/v1"
 	apierrors "k8s.io/apimachinery/pkg/api/errors"
@@ -54,6 +50,10 @@ import (
 	"k8s.io/client-go/tools/clientcmd"
 	apiservicesclient "k8s.io/kube-aggregator/pkg/client/clientset_generated/clientset"
 	metricsclient "k8s.io/metrics/pkg/client/clientset/versioned"
+	"k8s.io/utils/ptr"
+
+	"github.com/openshift/cluster-monitoring-operator/pkg/client"
+	"github.com/openshift/cluster-monitoring-operator/pkg/manifests"
 )
 
 const E2eServiceAccount = "cluster-monitoring-operator-e2e"
