@@ -208,7 +208,7 @@ function(params)
                         '--tls-private-key-file=/etc/tls/private/tls.key',
                         '--client-ca-file=/etc/tls/client/client-ca.crt',
                         '--config-file=/etc/kube-rbac-policy/config.yaml',
-                        '--ignore-paths=' + std.join(',', if std.endsWith(c.name, '-self') then ['/metrics'] else ['/livez']),
+                        '--ignore-paths=' + std.join(',', if std.endsWith(c.name, '-self') then ['/readyz'] else ['/livez']),
                       ],
                       volumeMounts: [
                         {
@@ -281,8 +281,8 @@ function(params)
                           name: selfPortName,
                         },
                       ],
-                      local livenessProbePath = 'livez',
-                      local readinessProbePath = 'metrics',
+                      local livenessProbePath = '/livez',
+                      local readinessProbePath = '/readyz',
                       livenessProbe::: {
                         httpGet: {
                           path: livenessProbePath,

@@ -59,7 +59,7 @@ spec:
         image: registry.k8s.io/kube-state-metrics/kube-state-metrics:v2.13.0
         livenessProbe:
           httpGet:
-            path: livez
+            path: /livez
             port: main
             scheme: HTTPS
         name: kube-state-metrics
@@ -70,7 +70,7 @@ spec:
           name: self
         readinessProbe:
           httpGet:
-            path: metrics
+            path: /readyz
             port: self
             scheme: HTTPS
         resources:
@@ -124,7 +124,7 @@ spec:
         - --tls-private-key-file=/etc/tls/private/tls.key
         - --client-ca-file=/etc/tls/client/client-ca.crt
         - --config-file=/etc/kube-rbac-policy/config.yaml
-        - --ignore-paths=/metrics
+        - --ignore-paths=/readyz
         image: quay.io/brancz/kube-rbac-proxy:v0.17.1
         name: kube-rbac-proxy-self
         ports:
