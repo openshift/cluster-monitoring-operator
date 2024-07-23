@@ -2064,10 +2064,9 @@ func TestValidatePrometheus(t *testing.T) {
 	}{
 		{
 			name: "prometheus missing conditions",
-			// status: nil,
 			errs: []error{
-				NewUnknownAvailabiltyError("prometheus: failed to find condition type \"Available\""),
-				NewUnknownDegradedError("prometheus: failed to find condition type \"Available\""),
+				NewUnknownAvailabiltyError("Prometheus \"openshift-monitoring/k8s\": failed to find condition type \"Available\""),
+				NewUnknownDegradedError("Prometheus \"openshift-monitoring/k8s\": failed to find condition type \"Available\""),
 			},
 		}, {
 			name: "prometheus availabe but missing reconciled",
@@ -2080,7 +2079,7 @@ func TestValidatePrometheus(t *testing.T) {
 				},
 			},
 			errs: []error{
-				NewUnknownDegradedError("prometheus: failed to find condition type \"Reconciled\""),
+				NewUnknownDegradedError("Prometheus \"openshift-monitoring/k8s\": failed to find condition type \"Reconciled\""),
 			},
 		}, {
 			name: "prometheus availabe but not reconciled",
@@ -2098,7 +2097,7 @@ func TestValidatePrometheus(t *testing.T) {
 				},
 			},
 			errs: []error{
-				NewDegradedError("reason: human readable message"),
+				NewDegradedError("Prometheus \"openshift-monitoring/k8s\": reason: human readable message"),
 			},
 		}, {
 			name: "prometheus not availabe",
@@ -2113,8 +2112,8 @@ func TestValidatePrometheus(t *testing.T) {
 				},
 			},
 			errs: []error{
-				NewDegradedError("reason: human readable message"),
-				NewAvailabilityError("reason: human readable message"),
+				NewDegradedError("Prometheus \"openshift-monitoring/k8s\": reason: human readable message"),
+				NewAvailabilityError("Prometheus \"openshift-monitoring/k8s\": reason: human readable message"),
 			},
 		}, {
 			name: "prometheus availabe and reconciled",
