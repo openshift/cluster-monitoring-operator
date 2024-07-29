@@ -38,17 +38,8 @@ func skipMetricsServerTests(t *testing.T) {
 	}
 }
 
-func skipPrometheusAdapterTests(t *testing.T) {
-	if f.IsFeatureGateEnabled(t, MetricsServerFeatureGate) {
-		t.Skip("Skipping Prometheus Adapter test")
-	}
-}
-
 func isAPIServicePointingToRightMetricsService(t *testing.T, metricsService *apiservicesv1.APIService) bool {
-	if f.IsFeatureGateEnabled(t, MetricsServerFeatureGate) {
-		return metricsService.Spec.Service.Name == "metrics-server"
-	}
-	return metricsService.Spec.Service.Name == "prometheus-adapter"
+	return metricsService.Spec.Service.Name == "metrics-server"
 }
 
 func isNodeInNodesList(node string, nodes []corev1.Node) bool {
@@ -91,7 +82,7 @@ func TestMetricsAPIAvailability(t *testing.T) {
 			lastErr = errors.New("v1beta1.metrics.k8s.io apiservice is not available")
 			return false, nil
 		}
-		if !isAPIServicePointingToRightMetricsService(t, metricsService) {
+		if metricsService.Spec.Service.Name != "metrics-server" {
 			lastErr = errors.New("v1beta1.metrics.k8s.io apiservice is not pointing to right metrics api service")
 			return false, nil
 		}
@@ -248,95 +239,6 @@ func TestAggregatedMetricPermissions(t *testing.T) {
 			}
 		})
 	}
-}
-
-func TestPrometheusAdapterCARotation(t *testing.T) {
-	skipPrometheusAdapterTests(t)
-	ctx := context.Background()
-	// Wait for prometheus-adapter deployment
-	f.AssertDeploymentExistsAndRollout("prometheus-adapter", f.Ns)(t)
-
-	tls, err := f.KubeClient.CoreV1().Secrets(f.Ns).Get(ctx, "prometheus-adapter-tls", metav1.GetOptions{})
-	if err != nil {
-		t.Fatal(err)
-	}
-
-	apiAuth, err := f.KubeClient.CoreV1().ConfigMaps("kube-system").Get(ctx, "extension-apiserver-authentication", metav1.GetOptions{})
-	if err != nil {
-		t.Fatal(err)
-	}
-
-	adapterSecret, err := f.ManifestsFactory.PrometheusAdapterSecret(tls, apiAuth)
-	if err != nil {
-		t.Fatal(err)
-	}
-
-	// the secret might not have been created yet, so wait for it
-	f.AssertSecretExists(adapterSecret.GetName(), f.Ns)(t)
-
-	// Delete the signer secrets. This causes kube-system/extension-apiserver-authentication
-	// to be reissued.
-	err = f.KubeClient.CoreV1().Secrets("openshift-kube-controller-manager-operator").Delete(ctx, "csr-signer-signer", metav1.DeleteOptions{})
-	if err != nil {
-		t.Fatal(err)
-	}
-
-	err = f.KubeClient.CoreV1().Secrets("openshift-kube-controller-manager-operator").Delete(ctx, "csr-signer", metav1.DeleteOptions{})
-	if err != nil {
-		t.Fatal(err)
-	}
-
-	// Wait for the new secret to be deployed
-	var newSecret corev1.Secret
-	err = framework.Poll(5*time.Second, 15*time.Minute, func() error {
-		secrets, err := f.KubeClient.CoreV1().Secrets("openshift-monitoring").List(ctx, metav1.ListOptions{
-			LabelSelector: "monitoring.openshift.io/name=prometheus-adapter,monitoring.openshift.io/hash!=" + adapterSecret.Labels["monitoring.openshift.io/hash"],
-		})
-
-		if err != nil {
-			return fmt.Errorf("error listing prometheus adapter secrets: %w", err)
-		}
-
-		if len(secrets.Items) == 0 {
-			return errors.New("expected prometheus adapter secret to have rotated, but it didn't")
-		}
-
-		if got := len(secrets.Items); got > 1 {
-			return fmt.Errorf("expected exactly 1 prometheus adapter secret to be present, got %d", got)
-		}
-
-		newSecret = secrets.Items[0]
-		return nil
-	})
-	if err != nil {
-		t.Fatal(err)
-	}
-
-	// Wait for prometheus-adapter deployment to reference new secret
-	err = framework.Poll(time.Second, 5*time.Minute, func() error {
-		d, err := f.KubeClient.AppsV1().Deployments(f.Ns).Get(ctx, "prometheus-adapter", metav1.GetOptions{})
-		if err != nil {
-			return fmt.Errorf("getting prometheus-adapter deployment failed: %w", err)
-		}
-
-		for _, v := range d.Spec.Template.Spec.Volumes {
-			if v.Name != "tls" {
-				continue
-			}
-
-			if v.VolumeSource.Secret.SecretName != newSecret.GetName() {
-				continue
-			}
-
-			return nil
-		}
-
-		return fmt.Errorf("expected secret %v to be referenced in prometheus-adapter but it didn't", newSecret.GetName())
-	})
-	if err != nil {
-		t.Fatal(err)
-	}
-	f.AssertDeploymentExistsAndRollout("prometheus-adapter", f.Ns)(t)
 }
 
 func TestMetricsServerRollout(t *testing.T) {

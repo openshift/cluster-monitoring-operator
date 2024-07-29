@@ -12,7 +12,6 @@ local dashboards = import './components/dashboards.libsonnet';
 local kubeStateMetrics = import './components/kube-state-metrics.libsonnet';
 local controlPlane = import './components/control-plane.libsonnet';
 local nodeExporter = import './components/node-exporter.libsonnet';
-local prometheusAdapter = import './components/prometheus-adapter.libsonnet';
 local metricsServer = import './components/metrics-server.libsonnet';
 local prometheusOperator = import './components/prometheus-operator.libsonnet';
 local admissionWebhook = import './components/admission-webhook.libsonnet';
@@ -65,7 +64,6 @@ local commonConfig = {
     prometheus: 'quay.io/prometheus/prometheus:v' + $.versions.prometheus,
     kubeStateMetrics: 'registry.k8s.io/kube-state-metrics/kube-state-metrics:v' + $.versions.kubeStateMetrics,
     nodeExporter: 'quay.io/prometheus/node-exporter:v' + $.versions.nodeExporter,
-    prometheusAdapter: 'kubernetes-sigs/prometheus-adapter:v' + $.versions.prometheusAdapter,
     kubernetesMetricsServer: 'registry.k8s.io/metrics-server/metrics-server:v' + $.versions.kubernetesMetricsServer,
     prometheusOperator: 'quay.io/prometheus-operator/prometheus-operator:v' + $.versions.prometheusOperator,
     prometheusOperatorReloader: 'quay.io/prometheus-operator/prometheus-config-reloader:v' + $.versions.prometheusOperator,
@@ -266,15 +264,6 @@ local inCluster =
           optional: true,
         },
       },
-      prometheusAdapter: {
-        namespace: $.values.common.namespace,
-        version: $.values.common.versions.prometheusAdapter,
-        image: $.values.common.images.prometheusAdapter,
-        prometheusURL: 'https://prometheus-' + $.values.prometheus.name + '.' + $.values.common.namespace + '.svc:9091',
-        commonLabels+: $.values.common.commonLabels,
-        tlsCipherSuites: $.values.common.tlsCipherSuites,
-        containerQuerySelector: 'job="kubelet"',
-      },
       metricsServer: {
         namespace: $.values.common.namespace,
         version: $.values.common.versions.kubernetesMetricsServer,
@@ -403,8 +392,6 @@ local inCluster =
                 inCluster.kubeStateMetrics.clusterRole.rules +
                 inCluster.nodeExporter.clusterRole.rules +
                 inCluster.openshiftStateMetrics.clusterRole.rules +
-                inCluster.prometheusAdapter.clusterRole.rules +
-                inCluster.prometheusAdapter.clusterRoleServerResources.rules +
                 inCluster.metricsServer.clusterRole.rules +
                 inCluster.prometheus.clusterRole.rules +
                 std.flatMap(function(role) role.rules,
@@ -422,7 +409,6 @@ local inCluster =
     kubeStateMetrics: kubeStateMetrics($.values.kubeStateMetrics),
     nodeExporter: nodeExporter($.values.nodeExporter),
     prometheus: prometheus($.values.prometheus),
-    prometheusAdapter: prometheusAdapter($.values.prometheusAdapter),
     metricsServer: metricsServer($.values.metricsServer),
     admissionWebhook: admissionWebhook($.values.admissionWebhook),
     prometheusOperator: prometheusOperator($.values.prometheusOperator),
@@ -438,7 +424,6 @@ local inCluster =
   (import './utils/anti-affinity.libsonnet') +
   (import 'github.com/prometheus-operator/kube-prometheus/jsonnet/kube-prometheus/addons/ksm-lite.libsonnet') +
   (import './utils/ibm-cloud-managed-profile.libsonnet') +
-  (import './components/prometheus-adapter-audit.libsonnet') +
   (import './components/metrics-server-audit.libsonnet') +
   {};  // Including empty object to simplify adding and removing imports during development
 
@@ -525,7 +510,6 @@ setTerminationMessagePolicy(
               { ['prometheus-operator/' + name]: inCluster.prometheusOperator[name] for name in std.objectFields(inCluster.prometheusOperator) } +
               { ['prometheus-operator-user-workload/' + name]: userWorkload.prometheusOperator[name] for name in std.objectFields(userWorkload.prometheusOperator) } +
               { ['prometheus-user-workload/' + name]: userWorkload.prometheus[name] for name in std.objectFields(userWorkload.prometheus) } +
-              { ['prometheus-adapter/' + name]: inCluster.prometheusAdapter[name] for name in std.objectFields(inCluster.prometheusAdapter) } +
               { ['metrics-server/' + name]: inCluster.metricsServer[name] for name in std.objectFields(inCluster.metricsServer) } +
               // needs to be removed once remote-write is allowed for sending telemetry
               { ['telemeter-client/' + name]: inCluster.telemeterClient[name] for name in std.objectFields(inCluster.telemeterClient) } +

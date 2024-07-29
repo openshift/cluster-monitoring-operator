@@ -4,7 +4,6 @@ import (
 	"context"
 	"fmt"
 
-	appsv1 "k8s.io/api/apps/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/types"
 
@@ -252,61 +251,6 @@ func (t *MetricsServerTask) create(ctx context.Context) error {
 		}
 	}
 
-	return t.removePrometheusAdapterResources(ctx)
-}
-
-func (t *MetricsServerTask) removePrometheusAdapterResources(ctx context.Context) error {
-	pa := NewPrometheusAdapterTask(ctx, t.namespace, t.client, false, t.factory, t.config)
-	d := &appsv1.Deployment{
-		ObjectMeta: metav1.ObjectMeta{
-			Name:      "prometheus-adapter",
-			Namespace: t.namespace,
-		},
-	}
-
-	{
-		pdb, err := pa.factory.PrometheusAdapterPodDisruptionBudget()
-		if err != nil {
-			return fmt.Errorf("initializing PrometheusAdapter PodDisruptionBudget failed: %w", err)
-		}
-
-		if pdb != nil {
-			err = pa.client.DeletePodDisruptionBudget(ctx, pdb)
-			if err != nil {
-				return fmt.Errorf("deleting PrometheusAdapter PodDisruptionBudget failed: %w", err)
-			}
-		}
-	}
-	{
-		sm, err := pa.factory.PrometheusAdapterServiceMonitor()
-		if err != nil {
-			return fmt.Errorf("initializing PrometheusAdapter ServiceMonitors failed: %w", err)
-		}
-
-		err = pa.client.DeleteServiceMonitor(ctx, sm)
-		if err != nil {
-			return fmt.Errorf("deleting %s/%s ServiceMonitor failed: %w", sm.Namespace, sm.Name, err)
-		}
-	}
-	{
-		s, err := pa.factory.PrometheusAdapterService()
-		if err != nil {
-			return fmt.Errorf("initializing PrometheusAdapter Service failed: %w", err)
-		}
-
-		err = pa.client.DeleteService(ctx, s)
-		if err != nil {
-			return fmt.Errorf("deleting PrometheusAdapter Service failed: %w", err)
-		}
-	}
-	{
-		err := pa.client.DeleteDeployment(ctx, d)
-		if err != nil {
-			return fmt.Errorf("deleting PrometheusAdapter Deployment failed: %w", err)
-		}
-	}
-
-	// TODO(slashpai): Add steps to remove other resources if any
 	return nil
 }
 

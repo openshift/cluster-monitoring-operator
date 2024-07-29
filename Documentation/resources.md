@@ -82,10 +82,6 @@ Expose openshift-state-metrics `/metrics` endpoints within the cluster on the fo
 * Port 8443 provides access to the OpenShift resource metrics. This port is for internal use, and no other usage is guaranteed.
 * Port 9443 provides access to the internal `openshift-state-metrics` metrics. This port is for internal use, and no other usage is guaranteed.
 
-### openshift-monitoring/prometheus-adapter
-
-Expose the `prometheus-adapter` web server on port 443. This port is for internal use, and no other usage is guaranteed.
-
 ### openshift-monitoring/prometheus-k8s
 
 Expose the Prometheus web server within the cluster on the following ports:

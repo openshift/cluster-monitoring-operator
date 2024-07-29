@@ -487,38 +487,6 @@ func TestTelemeterClientSecret(t *testing.T) {
 	}
 }
 
-func TestClusterMonitorK8sPromAdapterConfig(t *testing.T) {
-	skipPrometheusAdapterTests(t)
-	const (
-		deploymentName = "prometheus-adapter"
-	)
-
-	data := `k8sPrometheusAdapter:
-  tolerations:
-    - operator: "Exists"
-`
-	f.MustCreateOrUpdateConfigMap(t, f.BuildCMOConfigMap(t, data))
-
-	for _, tc := range []scenario{
-		{
-			name:      "test the prometheus-adapter deployment is rolled out",
-			assertion: f.AssertDeploymentExistsAndRollout(deploymentName, f.Ns),
-		},
-		{
-			name: "assert pod configuration is as expected",
-			assertion: f.AssertPodConfiguration(
-				f.Ns,
-				"app.kubernetes.io/component=metrics-adapter",
-				[]framework.PodAssertion{
-					expectCatchAllToleration(),
-				},
-			),
-		},
-	} {
-		t.Run(tc.name, tc.assertion)
-	}
-}
-
 func TestClusterMonitorThanosQuerierConfig(t *testing.T) {
 	const (
 		deploymentName = "thanos-querier"

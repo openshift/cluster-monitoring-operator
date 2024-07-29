@@ -128,11 +128,6 @@ func TestTLSSecurityProfileConfiguration(t *testing.T) {
 					manifests.MetricsServerTLSCipherSuitesFlag,
 					manifests.MetricsServerTLSMinTLSVersionFlag, tt.expectedCipherSuite, tt.expectedMinTLSVersion)
 			}
-			if !f.IsFeatureGateEnabled(t, MetricsServerFeatureGate) {
-				assertCorrectTLSConfiguration(t, "prometheus-adapter", "deployment",
-					manifests.PrometheusAdapterTLSCipherSuitesFlag,
-					manifests.PrometheusAdapterTLSMinTLSVersionFlag, tt.expectedCipherSuite, tt.expectedMinTLSVersion)
-			}
 		})
 	}
 }

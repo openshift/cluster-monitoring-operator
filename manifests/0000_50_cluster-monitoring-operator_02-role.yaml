@@ -438,23 +438,6 @@ rules:
 - apiGroups:
   - ""
   resources:
-  - nodes
-  - namespaces
-  - pods
-  - services
-  verbs:
-  - get
-  - list
-  - watch
-- apiGroups:
-  - metrics.k8s.io
-  resources:
-  - '*'
-  verbs:
-  - '*'
-- apiGroups:
-  - ""
-  resources:
   - nodes/metrics
   verbs:
   - get

@@ -147,7 +147,6 @@ const (
 	// see https://github.com/kubernetes/apiserver/blob/b571c70e6e823fd78910c3f5b9be895a756f4cbb/pkg/server/options/authentication.go#L239
 	apiAuthenticationConfigMap    = "kube-system/extension-apiserver-authentication"
 	kubeletServingCAConfigMap     = "openshift-config-managed/kubelet-serving-ca"
-	prometheusAdapterTLSSecret    = "openshift-monitoring/prometheus-adapter-tls"
 	telemeterCABundleConfigMap    = "openshift-monitoring/telemeter-trusted-ca-bundle"
 	alertmanagerCABundleConfigMap = "openshift-monitoring/alertmanager-trusted-ca-bundle"
 	grpcTLS                       = "openshift-monitoring/grpc-tls"
@@ -667,7 +666,6 @@ func (o *Operator) handleEvent(obj interface{}) {
 	case cmoConfigMap:
 	case apiAuthenticationConfigMap:
 	case kubeletServingCAConfigMap:
-	case prometheusAdapterTLSSecret:
 	case telemeterCABundleConfigMap:
 	case alertmanagerCABundleConfigMap:
 	case grpcTLS:
@@ -821,7 +819,6 @@ func (o *Operator) sync(ctx context.Context, key string) error {
 				newTaskSpec("NodeExporter", tasks.NewNodeExporterTask(o.client, factory)),
 				newTaskSpec("KubeStateMetrics", tasks.NewKubeStateMetricsTask(o.client, factory, *o.lastKnownVPACustomResourceDefinitionPresent)),
 				newTaskSpec("OpenshiftStateMetrics", tasks.NewOpenShiftStateMetricsTask(o.client, factory)),
-				newTaskSpec("PrometheusAdapter", tasks.NewPrometheusAdapterTask(ctx, o.namespace, o.client, !o.metricsServerEnabled, factory, config)),
 				newTaskSpec("MetricsServer", tasks.NewMetricsServerTask(ctx, o.namespace, o.client, o.metricsServerEnabled, factory, config)),
 				newTaskSpec("TelemeterClient", tasks.NewTelemeterClientTask(o.client, factory, config)),
 				newTaskSpec("ThanosQuerier", tasks.NewThanosQuerierTask(o.client, factory, config)),

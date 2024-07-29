@@ -397,46 +397,6 @@ func TestUnconfiguredManifests(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	_, err = f.PrometheusAdapterClusterRole()
-	if err != nil {
-		t.Fatal(err)
-	}
-
-	_, err = f.PrometheusAdapterClusterRoleServerResources()
-	if err != nil {
-		t.Fatal(err)
-	}
-
-	_, err = f.PrometheusAdapterClusterRoleBinding()
-	if err != nil {
-		t.Fatal(err)
-	}
-
-	_, err = f.PrometheusAdapterClusterRoleBindingDelegator()
-	if err != nil {
-		t.Fatal(err)
-	}
-
-	_, err = f.PrometheusAdapterRoleBindingAuthReader()
-	if err != nil {
-		t.Fatal(err)
-	}
-
-	_, err = f.PrometheusAdapterServiceAccount()
-	if err != nil {
-		t.Fatal(err)
-	}
-
-	_, err = f.PrometheusAdapterConfigMap()
-	if err != nil {
-		t.Fatal(err)
-	}
-
-	_, err = f.PrometheusAdapterConfigMapPrometheus()
-	if err != nil {
-		t.Fatal(err)
-	}
-
 	_, err = f.PrometheusOperatorUserWorkloadServiceMonitor()
 	if err != nil {
 		t.Fatal(err)
@@ -520,50 +480,6 @@ func TestUnconfiguredManifests(t *testing.T) {
 	}
 
 	_, err = f.PrometheusUserWorkloadPrometheusServiceMonitor()
-	if err != nil {
-		t.Fatal(err)
-	}
-
-	tlsSecret := &v1.Secret{
-		Data: map[string][]byte{
-			"tls.crt": []byte("foo"),
-			"tls.key": []byte("bar"),
-		},
-	}
-
-	apiAuthConfigmap := &v1.ConfigMap{
-		Data: map[string]string{
-			"client-ca-file":               "foo",
-			"requestheader-client-ca-file": "bar",
-		},
-	}
-
-	_, err = f.PrometheusAdapterSecret(tlsSecret, apiAuthConfigmap)
-	if err != nil {
-		t.Fatal(err)
-	}
-
-	_, err = f.PrometheusAdapterDeployment("foo", map[string]string{
-		"requestheader-allowed-names":        "",
-		"requestheader-extra-headers-prefix": "",
-		"requestheader-group-headers":        "",
-		"requestheader-username-headers":     "",
-	})
-	if err != nil {
-		t.Fatal(err)
-	}
-
-	_, err = f.PrometheusAdapterService()
-	if err != nil {
-		t.Fatal(err)
-	}
-
-	_, err = f.PrometheusAdapterServiceMonitor()
-	if err != nil {
-		t.Fatal(err)
-	}
-
-	_, err = f.PrometheusAdapterAPIService()
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -2585,108 +2501,6 @@ func TestThanosRulerAdditionalAlertManagerConfigsSecret(t *testing.T) {
 	}
 }
 
-func TestK8sPrometheusAdapterAuditLog(t *testing.T) {
-	argsForProfile := func(profile string) []string {
-		return []string{
-			fmt.Sprintf("--audit-policy-file=/etc/audit/%s-profile.yaml", profile),
-			"--audit-log-path=/var/log/adapter/audit.log",
-			"--audit-log-maxsize=100",
-			"--audit-log-maxbackup=5",
-			"--audit-log-compress=true",
-		}
-	}
-
-	tt := []struct {
-		scenario string
-		config   string
-		args     []string
-		err      error
-	}{{
-		scenario: "no config",
-		config:   ``,
-		args:     argsForProfile("metadata"),
-	}, {
-		scenario: "no adapter config",
-		config:   `k8sPrometheusAdapter: `,
-		args:     argsForProfile("metadata"),
-	}, {
-		scenario: "no audit config",
-		config: `
-k8sPrometheusAdapter:
-  audit: {} `,
-		args: argsForProfile("metadata"),
-	}, {
-		scenario: "Request",
-		config: `
-k8sPrometheusAdapter:
-  audit:
-    profile: Request
-`,
-		args: argsForProfile("request"),
-	}, {
-		scenario: "RequestResponse",
-		config: `
-k8sPrometheusAdapter:
-  audit:
-    profile: RequestResponse
-`,
-		args: argsForProfile("requestresponse"),
-	}, {
-		scenario: "None",
-		config: `
-  k8sPrometheusAdapter:
-    audit:
-     profile: None
-`,
-		args: argsForProfile("none"),
-	}, {
-		scenario: "no audit config",
-		config: `
-  k8sPrometheusAdapter:
-    audit:
-      profile: Foobar  # should generate an error
-`,
-		err: ErrConfigValidation,
-	}}
-
-	for _, test := range tt {
-		t.Run(test.scenario, func(t *testing.T) {
-			c, err := NewConfigFromString(test.config, false)
-			if err != nil {
-				t.Logf("%s\n\n", test.config)
-				t.Fatal(err)
-			}
-
-			f := NewFactory("openshift-monitoring", "openshift-user-workload-monitoring", c, defaultInfrastructureReader(), &fakeProxyReader{}, NewAssets(assetsPath), &APIServerConfig{}, &configv1.Console{})
-
-			d, err := f.PrometheusAdapterDeployment("foo", map[string]string{
-				"requestheader-allowed-names":        "",
-				"requestheader-extra-headers-prefix": "",
-				"requestheader-group-headers":        "",
-				"requestheader-username-headers":     "",
-			})
-
-			if test.err != nil || err != nil {
-				// fail only if the error isn't what is expected
-				if !errors.Is(err, test.err) {
-					t.Fatalf("Expected error %q but got %q", test.err, err)
-				}
-				return
-			}
-
-			adapterArgs := d.Spec.Template.Spec.Containers[0].Args
-			auditArgs := []string{}
-			for _, arg := range adapterArgs {
-				if strings.HasPrefix(arg, "--audit-") {
-					auditArgs = append(auditArgs, arg)
-				}
-			}
-			assertDeepEqual(t, test.args, auditArgs,
-				"k8s-prometheus-adapter audit is not configured correctly")
-		})
-	}
-}
-
 func assertDeepEqual(t *testing.T, expected, got interface{}, msg string) {
 	if !reflect.DeepEqual(expected, got) {
 		t.Fatalf(`%s
@@ -2696,71 +2510,6 @@ got:
 expected:
 	%#+v
 	`, msg, got, expected)
-	}
-}
-
-func TestK8sPrometheusAdapterConfiguration(t *testing.T) {
-	config := `
-k8sPrometheusAdapter:
-  resources:
-    requests:
-      cpu: 100m
-      memory: 100Mi
-    limits:
-      cpu: 200m
-      memory: 200Mi
-  nodeSelector:
-    test: value
-  topologySpreadConstraints:
-  - maxSkew: 1
-    topologyKey: type
-    whenUnsatisfiable: DoNotSchedule
-    labelSelector:
-      matchLabels:
-        foo: bar`
-
-	c, err := NewConfigFromString(config, false)
-	if err != nil {
-		t.Fatal(err)
-	}
-	c.SetImages(map[string]string{
-		"k8s-prometheus-adapter": "docker.io/openshift/origin-k8s-prometheus-adapter:latest",
-	})
-
-	f := NewFactory("openshift-monitoring", "openshift-user-workload-monitoring", c, defaultInfrastructureReader(), &fakeProxyReader{}, NewAssets(assetsPath), &APIServerConfig{}, &configv1.Console{})
-	d, err := f.PrometheusAdapterDeployment("foo", map[string]string{
-		"requestheader-allowed-names":        "",
-		"requestheader-extra-headers-prefix": "",
-		"requestheader-group-headers":        "",
-		"requestheader-username-headers":     "",
-	})
-	if err != nil {
-		t.Fatal(err)
-	}
-
-	if d.Spec.Template.Spec.Containers[0].Image != "docker.io/openshift/origin-k8s-prometheus-adapter:latest" {
-		t.Fatal("k8s-prometheus-adapter image is not configured correctly")
-	}
-
-	if d.Spec.Template.Spec.TopologySpreadConstraints[0].MaxSkew != 1 {
-		t.Fatal("k8s-prometheus-adapter topology spread constraints MaxSkew not configured correctly")
-	}
-
-	if d.Spec.Template.Spec.TopologySpreadConstraints[0].WhenUnsatisfiable != "DoNotSchedule" {
-		t.Fatal("k8s-prometheus-adapter topology spread constraints WhenUnsatisfiable not configured correctly")
-	}
-
-	for _, container := range d.Spec.Template.Spec.Containers {
-		if container.Name == "k8s-prometheus-adapter" {
-			if !reflect.DeepEqual(container.Resources, *f.config.ClusterMonitoringConfiguration.K8sPrometheusAdapter.Resources) {
-				t.Fatal("k8s-prometheus-adapter resources are not configured correctly")
-			}
-		}
-	}
-
-	expected := map[string]string{"test": "value"}
-	if !reflect.DeepEqual(d.Spec.Template.Spec.NodeSelector, expected) {
-		t.Fatalf("k8s-prometheus-adapter nodeSelector is not configured correctly\n\ngot:\n\n%#+v\n\nexpected:\n\n%#+v\n", d.Spec.Template.Spec.NodeSelector, expected)
 	}
 }
 
@@ -4571,22 +4320,6 @@ func TestNonHighlyAvailableInfrastructure(t *testing.T) {
 				return spec{*t.Spec.Replicas, t.Spec.Affinity}, nil
 			},
 		},
-		{
-			name: "Prometheus adapter",
-			getSpec: func(f *Factory) (spec, error) {
-				p, err := f.PrometheusAdapterDeployment("foo",
-					map[string]string{
-						"requestheader-allowed-names":        "",
-						"requestheader-extra-headers-prefix": "",
-						"requestheader-group-headers":        "",
-						"requestheader-username-headers":     "",
-					})
-				if err != nil {
-					return spec{}, err
-				}
-				return spec{*p.Spec.Replicas, p.Spec.Template.Spec.Affinity}, nil
-			},
-		},
 	}
 
 	for _, tc := range tests {
@@ -4611,16 +4344,6 @@ func TestNonHighlyAvailableInfrastructureServiceMonitors(t *testing.T) {
 		name         string
 		getEndpoints func(f *Factory) ([]monv1.Endpoint, error)
 	}{
-		{
-			name: "Prometheus Adapter Service Monitor",
-			getEndpoints: func(f *Factory) ([]monv1.Endpoint, error) {
-				pt, err := f.PrometheusAdapterServiceMonitor()
-				if err != nil {
-					return nil, err
-				}
-				return pt.Spec.Endpoints, nil
-			},
-		},
 		{
 			name: "Alermanager Service Monitor",
 			getEndpoints: func(f *Factory) ([]monv1.Endpoint, error) {
@@ -4769,20 +4492,6 @@ func TestPodDisruptionBudget(t *testing.T) {
 			name: "Alertmanager non-HA",
 			getPDB: func(f *Factory) (*policyv1.PodDisruptionBudget, error) {
 				return f.AlertmanagerPodDisruptionBudget()
-			},
-			ha: false,
-		},
-		{
-			name: "PrometheusAdapter HA",
-			getPDB: func(f *Factory) (*policyv1.PodDisruptionBudget, error) {
-				return f.PrometheusAdapterPodDisruptionBudget()
-			},
-			ha: true,
-		},
-		{
-			name: "PrometheusAdapter non-HA",
-			getPDB: func(f *Factory) (*policyv1.PodDisruptionBudget, error) {
-				return f.PrometheusAdapterPodDisruptionBudget()
 			},
 			ha: false,
 		},
