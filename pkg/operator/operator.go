@@ -168,7 +168,6 @@ type Operator struct {
 	telemetryMatches          []string
 	remoteWrite               bool
 	userWorkloadEnabled       bool
-	metricsServerEnabled      bool
 	collectionProfilesEnabled bool
 
 	lastKnowInfrastructureConfig *InfrastructureConfig
@@ -266,7 +265,6 @@ func New(
 		userWorkloadConfigMapName: userWorkloadConfigMapName,
 		remoteWrite:               remoteWrite,
 		userWorkloadEnabled:       false,
-		metricsServerEnabled:      false,
 		collectionProfilesEnabled: false,
 		namespace:                 namespace,
 		namespaceUserWorkload:     namespaceUserWorkload,
@@ -472,14 +470,9 @@ func New(
 		if err != nil {
 			return nil, err
 		}
-		o.metricsServerEnabled = featureGates.Enabled(features.FeatureGateMetricsServer)
 		o.collectionProfilesEnabled = featureGates.Enabled(features.FeatureGateMetricsCollectionProfiles)
 	case <-time.After(1 * time.Minute):
 		return nil, fmt.Errorf("timed out waiting for FeatureGate detection")
-	}
-
-	if o.metricsServerEnabled {
-		klog.Info("Metrics Server enabled")
 	}
 
 	// csrController runs a controller that requests a client TLS certificate
@@ -819,7 +812,7 @@ func (o *Operator) sync(ctx context.Context, key string) error {
 				newTaskSpec("NodeExporter", tasks.NewNodeExporterTask(o.client, factory)),
 				newTaskSpec("KubeStateMetrics", tasks.NewKubeStateMetricsTask(o.client, factory, *o.lastKnownVPACustomResourceDefinitionPresent)),
 				newTaskSpec("OpenshiftStateMetrics", tasks.NewOpenShiftStateMetricsTask(o.client, factory)),
-				newTaskSpec("MetricsServer", tasks.NewMetricsServerTask(ctx, o.namespace, o.client, o.metricsServerEnabled, factory, config)),
+				newTaskSpec("MetricsServer", tasks.NewMetricsServerTask(ctx, o.namespace, o.client, factory, config)),
 				newTaskSpec("TelemeterClient", tasks.NewTelemeterClientTask(o.client, factory, config)),
 				newTaskSpec("ThanosQuerier", tasks.NewThanosQuerierTask(o.client, factory, config)),
 				newTaskSpec("ControlPlaneComponents", tasks.NewControlPlaneTask(o.client, factory, config)),

@@ -30,18 +30,6 @@ import (
 	apiservicesv1 "k8s.io/kube-aggregator/pkg/apis/apiregistration/v1"
 )
 
-const MetricsServerFeatureGate string = "MetricsServer"
-
-func skipMetricsServerTests(t *testing.T) {
-	if !f.IsFeatureGateEnabled(t, MetricsServerFeatureGate) {
-		t.Skip("Skipping Metrics Server test")
-	}
-}
-
-func isAPIServicePointingToRightMetricsService(t *testing.T, metricsService *apiservicesv1.APIService) bool {
-	return metricsService.Spec.Service.Name == "metrics-server"
-}
-
 func isNodeInNodesList(node string, nodes []corev1.Node) bool {
 	for _, n := range nodes {
 		if n.Name == node {
@@ -242,7 +230,6 @@ func TestAggregatedMetricPermissions(t *testing.T) {
 }
 
 func TestMetricsServerRollout(t *testing.T) {
-	skipMetricsServerTests(t)
 	for _, test := range []scenario{
 		{
 			name:      "assert metrics-server deployment is rolled out",
@@ -265,18 +252,6 @@ func TestMetricsServerRollout(t *testing.T) {
 					expectContainerArg("--metric-resolution=15s", "metrics-server"),
 				},
 			),
-		},
-		{
-			name:      "assert prometheus-adapter service monitor is deleted",
-			assertion: f.AssertServiceMonitorDoesNotExist("prometheus-adapter", f.Ns),
-		},
-		{
-			name:      "assert prometheus-adapter service is deleted",
-			assertion: f.AssertServiceDoesNotExist("prometheus-adapter", f.Ns),
-		},
-		{
-			name:      "assert prometheus-adapter deployment is deleted",
-			assertion: f.AssertDeploymentDoesNotExist("prometheus-adapter", f.Ns),
 		},
 	} {
 		t.Run(test.name, test.assertion)

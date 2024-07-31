@@ -124,11 +124,9 @@ func TestTLSSecurityProfileConfiguration(t *testing.T) {
 			assertCorrectTLSConfiguration(t, "prometheus-k8s", "statefulset",
 				manifests.KubeRbacProxyTLSCipherSuitesFlag,
 				manifests.KubeRbacProxyMinTLSVersionFlag, tt.expectedCipherSuite, tt.expectedMinTLSVersion)
-			if f.IsFeatureGateEnabled(t, MetricsServerFeatureGate) {
-				assertCorrectTLSConfiguration(t, "metrics-server", "deployment",
-					manifests.MetricsServerTLSCipherSuitesFlag,
-					manifests.MetricsServerTLSMinTLSVersionFlag, tt.expectedCipherSuite, tt.expectedMinTLSVersion)
-			}
+			assertCorrectTLSConfiguration(t, "metrics-server", "deployment",
+				manifests.MetricsServerTLSCipherSuitesFlag,
+				manifests.MetricsServerTLSMinTLSVersionFlag, tt.expectedCipherSuite, tt.expectedMinTLSVersion)
 		})
 	}
 }

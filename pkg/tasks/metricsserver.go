@@ -13,17 +13,15 @@ import (
 
 type MetricsServerTask struct {
 	client    *client.Client
-	enabled   bool
 	ctx       context.Context
 	factory   *manifests.Factory
 	config    *manifests.Config
 	namespace string
 }
 
-func NewMetricsServerTask(ctx context.Context, namespace string, client *client.Client, metricsServerEnabled bool, factory *manifests.Factory, config *manifests.Config) *MetricsServerTask {
+func NewMetricsServerTask(ctx context.Context, namespace string, client *client.Client, factory *manifests.Factory, config *manifests.Config) *MetricsServerTask {
 	return &MetricsServerTask{
 		client:    client,
-		enabled:   metricsServerEnabled,
 		factory:   factory,
 		config:    config,
 		namespace: namespace,
@@ -32,13 +30,6 @@ func NewMetricsServerTask(ctx context.Context, namespace string, client *client.
 }
 
 func (t *MetricsServerTask) Run(ctx context.Context) error {
-	if t.enabled {
-		return t.create(ctx)
-	}
-	return nil
-}
-
-func (t *MetricsServerTask) create(ctx context.Context) error {
 	{
 		// TODO: This is a temporary workaround until the requirements for https://github.com/openshift/cluster-monitoring-operator/pull/2329
 		// are ready.
