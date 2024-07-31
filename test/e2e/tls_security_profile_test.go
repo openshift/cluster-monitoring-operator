@@ -38,6 +38,7 @@ func atLeastVersionTLS12(v string) string {
 }
 
 func TestTLSSecurityProfileConfiguration(t *testing.T) {
+	t.Skip("Changing apiserverConfig.Spec.TLSSecurityProfile now makes MCO rollout nodes which is disruptive for other tests. See https://issues.redhat.com/browse/MON-3959")
 	testCases := []struct {
 		name                  string
 		profile               *configv1.TLSSecurityProfile
