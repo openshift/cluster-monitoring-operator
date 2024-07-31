@@ -517,6 +517,8 @@ func (f *Factory) AlertmanagerUserWorkload() (*monv1.Alertmanager, error) {
 
 	for i, c := range a.Spec.Containers {
 		switch c.Name {
+		case "alertmanager":
+			f.injectProxyVariables(&a.Spec.Containers[i])
 		case "alertmanager-proxy", "tenancy-proxy", "kube-rbac-proxy-metric":
 			a.Spec.Containers[i].Image = f.config.Images.KubeRbacProxy
 			a.Spec.Containers[i].Args = f.setTLSSecurityConfiguration(c.Args, KubeRbacProxyTLSCipherSuitesFlag, KubeRbacProxyMinTLSVersionFlag)
@@ -557,26 +559,27 @@ func setupStartupProbe(a *monv1.Alertmanager) {
 		return
 	}
 
-	a.Spec.Containers = append(a.Spec.Containers,
-		v1.Container{
-			Name: "alertmanager",
-			StartupProbe: &v1.Probe{
-				ProbeHandler: v1.ProbeHandler{
-					Exec: &v1.ExecAction{
-						Command: []string{
-							"sh",
-							"-c",
-							"exec curl --fail http://localhost:9093/-/ready",
-						},
+	for i := range a.Spec.Containers {
+		if a.Spec.Containers[i].Name != "alertmanager" {
+			continue
+		}
+
+		a.Spec.Containers[i].StartupProbe = &v1.Probe{
+			ProbeHandler: v1.ProbeHandler{
+				Exec: &v1.ExecAction{
+					Command: []string{
+						"sh",
+						"-c",
+						"exec curl --fail http://localhost:9093/-/ready",
 					},
 				},
-				InitialDelaySeconds: 20,
-				PeriodSeconds:       10,
-				FailureThreshold:    40,
-				TimeoutSeconds:      3,
 			},
-		},
-	)
+			InitialDelaySeconds: 20,
+			PeriodSeconds:       10,
+			FailureThreshold:    40,
+			TimeoutSeconds:      3,
+		}
+	}
 }
 
 func (f *Factory) AlertmanagerMain() (*monv1.Alertmanager, error) {
@@ -646,6 +649,8 @@ func (f *Factory) AlertmanagerMain() (*monv1.Alertmanager, error) {
 
 	for i, c := range a.Spec.Containers {
 		switch c.Name {
+		case "alertmanager":
+			f.injectProxyVariables(&a.Spec.Containers[i])
 		case "kube-rbac-proxy", "kube-rbac-proxy-metric", "kube-rbac-proxy-web":
 			a.Spec.Containers[i].Image = f.config.Images.KubeRbacProxy
 			a.Spec.Containers[i].Args = f.setTLSSecurityConfiguration(c.Args, KubeRbacProxyTLSCipherSuitesFlag, KubeRbacProxyMinTLSVersionFlag)
