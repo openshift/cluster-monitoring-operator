@@ -1800,8 +1800,10 @@ func TestCreateOrUpdatePrometheus(t *testing.T) {
 				},
 			}
 
+			// Initialize the type registry for the fake client, and populate that with the necessary definition(s).
 			s := runtime.NewScheme()
 			_ = monv1.AddToScheme(s)
+
 			c := Client{
 				dclient:       dynamicFake.NewSimpleDynamicClient(s, prometheus.DeepCopy()),
 				eventRecorder: events.NewInMemoryRecorder("test-create-or-update-prometheus"),
@@ -1927,14 +1929,14 @@ func TestCreateOrUpdatePrometheus(t *testing.T) {
 			if err != nil {
 				t.Fatalf("unexpected error: %v", err)
 			}
-			if *didUpdate != testcase.shouldUpdate {
-				t.Fatalf("expected update: %v, got %v", testcase.shouldUpdate, *didUpdate)
+			if didUpdate != testcase.shouldUpdate {
+				t.Fatalf("expected update: %v, got %v", testcase.shouldUpdate, didUpdate)
 			}
 			existingPostUpdate, err := c.dclient.Resource(prometheusGVR).Namespace(testcase.prometheus.GetNamespace()).Get(context.Background(), testcase.prometheus.GetName(), metav1.GetOptions{})
 			if err != nil {
 				t.Fatalf("unexpected error: %v", err)
 			}
-			if *didUpdate && reflect.DeepEqual(existingPreUpdate, existingPostUpdate) {
+			if didUpdate && reflect.DeepEqual(existingPreUpdate, existingPostUpdate) {
 				t.Fatalf("expected update: %s", cmp.Diff(existingPreUpdate, existingPostUpdate))
 			}
 		})

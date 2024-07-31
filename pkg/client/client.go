@@ -25,22 +25,6 @@ import (
 	"strings"
 	"time"
 
-	"github.com/imdario/mergo"
-	configv1 "github.com/openshift/api/config/v1"
-	consolev1 "github.com/openshift/api/console/v1"
-	osmv1 "github.com/openshift/api/monitoring/v1"
-	routev1 "github.com/openshift/api/route/v1"
-	secv1 "github.com/openshift/api/security/v1"
-	openshiftconfigclientset "github.com/openshift/client-go/config/clientset/versioned"
-	openshiftconsoleclientset "github.com/openshift/client-go/console/clientset/versioned"
-	openshiftmonitoringclientset "github.com/openshift/client-go/monitoring/clientset/versioned"
-	openshiftoperatorclientset "github.com/openshift/client-go/operator/clientset/versioned"
-	openshiftrouteclientset "github.com/openshift/client-go/route/clientset/versioned"
-	openshiftsecurityclientset "github.com/openshift/client-go/security/clientset/versioned"
-	"github.com/openshift/library-go/pkg/operator/events"
-	"github.com/openshift/library-go/pkg/operator/resource/resourceapply"
-	monv1 "github.com/prometheus-operator/prometheus-operator/pkg/apis/monitoring/v1"
-	monitoring "github.com/prometheus-operator/prometheus-operator/pkg/client/versioned"
 	admissionv1 "k8s.io/api/admissionregistration/v1"
 	appsv1 "k8s.io/api/apps/v1"
 	v1 "k8s.io/api/core/v1"
@@ -68,6 +52,23 @@ import (
 	apiregistrationv1 "k8s.io/kube-aggregator/pkg/apis/apiregistration/v1"
 	aggregatorclient "k8s.io/kube-aggregator/pkg/client/clientset_generated/clientset"
 	"k8s.io/utils/ptr"
+
+	"github.com/imdario/mergo"
+	configv1 "github.com/openshift/api/config/v1"
+	consolev1 "github.com/openshift/api/console/v1"
+	osmv1 "github.com/openshift/api/monitoring/v1"
+	routev1 "github.com/openshift/api/route/v1"
+	secv1 "github.com/openshift/api/security/v1"
+	openshiftconfigclientset "github.com/openshift/client-go/config/clientset/versioned"
+	openshiftconsoleclientset "github.com/openshift/client-go/console/clientset/versioned"
+	openshiftmonitoringclientset "github.com/openshift/client-go/monitoring/clientset/versioned"
+	openshiftoperatorclientset "github.com/openshift/client-go/operator/clientset/versioned"
+	openshiftrouteclientset "github.com/openshift/client-go/route/clientset/versioned"
+	openshiftsecurityclientset "github.com/openshift/client-go/security/clientset/versioned"
+	"github.com/openshift/library-go/pkg/operator/events"
+	"github.com/openshift/library-go/pkg/operator/resource/resourceapply"
+	monv1 "github.com/prometheus-operator/prometheus-operator/pkg/apis/monitoring/v1"
+	monitoring "github.com/prometheus-operator/prometheus-operator/pkg/client/versioned"
 )
 
 const (
@@ -649,10 +650,10 @@ func (c *Client) GetAlertingRule(ctx context.Context, namespace, name string) (*
 	return c.osmclient.MonitoringV1().AlertingRules(namespace).Get(ctx, name, metav1.GetOptions{})
 }
 
-func (c *Client) CreateOrUpdatePrometheus(ctx context.Context, structuredRequiredPrometheus *monv1.Prometheus) (*bool, error) {
+func (c *Client) CreateOrUpdatePrometheus(ctx context.Context, structuredRequiredPrometheus *monv1.Prometheus) (bool, error) {
 	unstructuredRequiredPrometheusObject, err := runtime.DefaultUnstructuredConverter.ToUnstructured(structuredRequiredPrometheus)
 	if err != nil {
-		return nil, fmt.Errorf("converting Prometheus object to unstructured failed: %w", err)
+		return false, fmt.Errorf("converting Prometheus object to unstructured failed: %w", err)
 	}
 	unstructuredRequiredPrometheus := &unstructured.Unstructured{}
 	unstructuredRequiredPrometheus.SetUnstructuredContent(unstructuredRequiredPrometheusObject)
@@ -668,17 +669,24 @@ func (c *Client) CreateOrUpdatePrometheus(ctx context.Context, structuredRequire
 		Namespace(structuredRequiredPrometheus.GetNamespace()).
 		Get(ctx, structuredRequiredPrometheus.GetName(), metav1.GetOptions{})
 	if apierrors.IsNotFound(err) {
-		_, err = c.dclient.
-			Resource(prometheusGVR).
-			Namespace(structuredRequiredPrometheus.GetNamespace()).
-			Create(ctx, unstructuredRequiredPrometheus, metav1.CreateOptions{})
+		_, didUpdate, err := resourceapply.ApplyUnstructuredResourceImproved(
+			ctx,
+			c.dclient,
+			c.eventRecorder,
+			unstructuredRequiredPrometheus,
+			c.resourceCache,
+			prometheusGVR,
+			prometheusDefaultingFunc,
+			nil,
+		)
 		if err != nil {
-			return nil, fmt.Errorf("creating Prometheus object failed: %w", err)
+			return didUpdate, fmt.Errorf("creating Prometheus object failed: %w", err)
 		}
-		return ptr.To(true), nil
+
+		return true, nil
 	}
 	if err != nil {
-		return nil, fmt.Errorf("retrieving Prometheus object failed: %w", err)
+		return false, fmt.Errorf("retrieving Prometheus object failed: %w", err)
 	}
 	unstructuredRequiredPrometheusMetadataLabels := unstructuredRequiredPrometheus.GetLabels()
 	unstructuredRequiredPrometheusMetadataAnnotations := unstructuredRequiredPrometheus.GetAnnotations()
@@ -699,10 +707,10 @@ func (c *Client) CreateOrUpdatePrometheus(ctx context.Context, structuredRequire
 		nil,
 	)
 	if err != nil {
-		return &didUpdate, fmt.Errorf("updating Prometheus object failed: %w", err)
+		return didUpdate, fmt.Errorf("updating Prometheus object failed: %w", err)
 	}
 
-	return &didUpdate, nil
+	return didUpdate, nil
 }
 
 func prometheusDefaultingFunc(unstructuredPrometheus *unstructured.Unstructured) {
