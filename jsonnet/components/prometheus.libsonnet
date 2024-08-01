@@ -26,7 +26,7 @@ function(params)
       data: {},
     },
 
-    // OpenShift route to access the Prometheus api.
+    // OpenShift route to access to the Prometheus api.
     apiRoute: {
       apiVersion: 'v1',
       kind: 'Route',
@@ -53,7 +53,7 @@ function(params)
       },
     },
 
-    // OpenShift route to access the Prometheus federate endpoint.
+    // OpenShift route to access to the Prometheus federate endpoint.
     federateRoute: {
       apiVersion: 'v1',
       kind: 'Route',
@@ -103,7 +103,7 @@ function(params)
           |||
             Expose the Prometheus web server within the cluster on the following ports:
             * Port %d provides access to all the Prometheus endpoints. %s
-            * Port %d provides access the `/metrics` and `/federate` endpoints only. This port is for internal use, and no other usage is guaranteed.
+            * Port %d provides access to the `/metrics` and `/federate` endpoints only. This port is for internal use, and no other usage is guaranteed.
           ||| % [
             $.service.spec.ports[0].port,
             requiredClusterRoles(['cluster-monitoring-view'], true),
