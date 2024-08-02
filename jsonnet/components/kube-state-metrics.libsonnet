@@ -244,6 +244,7 @@ function(params)
                           ^kube_customresource_.+_labels_info$,
                         |||,
                         '--metric-labels-allowlist=pods=[*],nodes=[*],namespaces=[*],persistentvolumes=[*],persistentvolumeclaims=[*],poddisruptionbudgets=[*]',
+                        '--metric-annotations-allowlist=services=[loadbalancer.openstack.org/load-balancer-id]',
                       ],
                       securityContext: {},
                       resources: {
