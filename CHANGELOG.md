@@ -3,6 +3,7 @@
 ## 4.17
 
 - [#2409](https://github.com/openshift/cluster-monitoring-operator/issues/2409) Remove prometheus-adapter code from CMO
+- [#2428](https://github.com/openshift/cluster-monitoring-operator/issues/2428) Allow scrapping of OpenStack load-balancer-id
 
 ## 4.16
 
