@@ -240,7 +240,6 @@ function(params)
                         |||
                           --metric-denylist=
                           ^kube_secret_labels$,
-                          ^kube_.+_annotations$
                           ^kube_customresource_.+_annotations_info$,
                           ^kube_customresource_.+_labels_info$,
                         |||,
