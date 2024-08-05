@@ -396,7 +396,7 @@ function(params)
           // the scrape interval. This optmizes tsdb compression.
           // 15ms was chosen for being a conservative value given our default
           // scrape interval of 30s. Even for half the default value we only
-          // move scrape interval timestamps by <= 1% of their absolute
+          // move scrape interval timestamps by <= .1% of their absolute
           // length.
           {
             name: 'scrape.timestamp-tolerance',

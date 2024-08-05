@@ -368,6 +368,18 @@ function(params)
         scrapeConfigNamespaceSelector: null,
         listenLocal: true,
         priorityClassName: 'openshift-user-critical',
+        additionalArgs: [
+          // This aligns any scrape timestamps <= 15ms to the a multiple of
+          // the scrape interval. This optmizes tsdb compression.
+          // 15ms was chosen for being a conservative value given our default
+          // recommended scrape interval of 30s. This adds at most a .1% error
+          // to the timestamp if users pick half that interval.
+          // For tighter scrape intervals this error goes up.
+          {
+            name: 'scrape.timestamp-tolerance',
+            value: '15ms',
+          },
+        ],
         containers: [
           {
             name: 'kube-rbac-proxy-federate',
