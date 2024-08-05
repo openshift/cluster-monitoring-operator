@@ -27,6 +27,15 @@ spec:
         topologyKey: kubernetes.io/hostname
   automountServiceAccountToken: true
   containers:
+  - env:
+    - name: HTTP_PROXY
+      value: ""
+    - name: HTTPS_PROXY
+      value: ""
+    - name: NO_PROXY
+      value: ""
+    name: alertmanager
+    terminationMessagePolicy: FallbackToLogsOnError
   - args:
     - --secure-listen-address=0.0.0.0:9095
     - --upstream=http://127.0.0.1:9093

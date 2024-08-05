@@ -4820,3 +4820,72 @@ func TestHashStringMapData(t *testing.T) {
 		require.Equal(t, h, hashStringMap(cm.Data), "hashing not stable")
 	}
 }
+
+func TestAlertmanagerProxy(t *testing.T) {
+	for _, tc := range []struct {
+		proxyReader ProxyReader
+		assertFn    func(*testing.T, *v1.Container)
+	}{
+		{
+			proxyReader: &fakeProxyReader{},
+			assertFn: func(t *testing.T, c *v1.Container) {
+				t.Helper()
+
+				require.Len(t, c.Env, 3)
+				require.Equal(t, c.Env[0].Value, "")
+				require.Equal(t, c.Env[1].Value, "")
+				require.Equal(t, c.Env[2].Value, "")
+			},
+		},
+		{
+			proxyReader: &fakeProxyReader{
+				httpProxy:  "http://example.com:8080/",
+				httpsProxy: "https://example.com:8080/",
+				noProxy:    "local.example.com",
+			},
+			assertFn: func(t *testing.T, c *v1.Container) {
+				t.Helper()
+
+				require.Len(t, c.Env, 3)
+				require.Equal(t, c.Env[0].Name, "HTTP_PROXY")
+				require.Equal(t, c.Env[0].Value, "http://example.com:8080/")
+				require.Equal(t, c.Env[1].Name, "HTTPS_PROXY")
+				require.Equal(t, c.Env[1].Value, "https://example.com:8080/")
+				require.Equal(t, c.Env[2].Name, "NO_PROXY")
+				require.Equal(t, c.Env[2].Value, "local.example.com")
+			},
+		},
+	} {
+		t.Run("", func(t *testing.T) {
+			findContainer := func(am *monv1.Alertmanager) *v1.Container {
+				for _, c := range am.Spec.Containers {
+					if c.Name == "alertmanager" {
+						return &c
+					}
+				}
+
+				return nil
+			}
+
+			f := NewFactory("openshift-monitoring", "openshift-user-workload-monitoring", NewDefaultConfig(), defaultInfrastructureReader(), tc.proxyReader, NewAssets(assetsPath), &APIServerConfig{}, &configv1.Console{})
+
+			t.Run("main", func(t *testing.T) {
+				am, err := f.AlertmanagerMain()
+				require.NoError(t, err)
+
+				amc := findContainer(am)
+				require.NotNil(t, amc)
+				tc.assertFn(t, amc)
+			})
+
+			t.Run("user", func(t *testing.T) {
+				am, err := f.AlertmanagerUserWorkload()
+				require.NoError(t, err)
+
+				amc := findContainer(am)
+				require.NotNil(t, amc)
+				tc.assertFn(t, amc)
+			})
+		})
+	}
+}

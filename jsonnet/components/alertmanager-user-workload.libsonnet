@@ -233,6 +233,19 @@ function(params)
         },
         containers: [
           {
+            name: 'alertmanager',
+            env: [{
+              name: 'HTTP_PROXY',
+              value: '',
+            }, {
+              name: 'HTTPS_PROXY',
+              value: '',
+            }, {
+              name: 'NO_PROXY',
+              value: '',
+            }],
+          },
+          {
             name: 'alertmanager-proxy',
             image: cfg.kubeRbacProxyImage,
             resources: {
