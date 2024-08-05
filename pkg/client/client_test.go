@@ -1855,9 +1855,8 @@ func TestCreateOrUpdatePrometheus(t *testing.T) {
 		shouldUpdate bool
 	}{
 		{
-			description:  "initially, apply all default values to the existing prometheus",
-			prometheus:   initialPrometheus,
-			shouldUpdate: true,
+			description: "initially, apply all default values to the existing prometheus",
+			prometheus:  initialPrometheus,
 		},
 		{
 			description: "apply a default value to the existing prometheus",
@@ -1870,6 +1869,7 @@ func TestCreateOrUpdatePrometheus(t *testing.T) {
 					},
 				},
 			},
+			shouldUpdate: true,
 		},
 		{
 			description: "apply no value to the existing prometheus",
@@ -1877,6 +1877,7 @@ func TestCreateOrUpdatePrometheus(t *testing.T) {
 				TypeMeta:   initialPrometheus.TypeMeta,
 				ObjectMeta: initialPrometheus.ObjectMeta,
 			},
+			shouldUpdate: true,
 		},
 		{
 			description: "apply a non-default value to the existing prometheus",
@@ -2004,7 +2005,7 @@ func BenchmarkCreateOrUpdatePrometheus(b *testing.B) {
 			},
 		},
 		{
-			// Benchmark the custom-defined defaulting behavior.
+			// Benchmark the library-go `spec` behavior.
 			description: "apply the same default value to the existing prometheus",
 			prometheus: func() *monv1.Prometheus {
 				return &monv1.Prometheus{
@@ -2020,7 +2021,7 @@ func BenchmarkCreateOrUpdatePrometheus(b *testing.B) {
 			requiresInitialApply: true,
 		},
 		{
-			// Benchmark the caching behavior.
+			// Benchmark the library-go `metadata` behavior.
 			description: "apply the same custom label to the existing prometheus",
 			prometheus: func() *monv1.Prometheus {
 				return &monv1.Prometheus{

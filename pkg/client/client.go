@@ -25,6 +25,22 @@ import (
 	"strings"
 	"time"
 
+	"github.com/imdario/mergo"
+	configv1 "github.com/openshift/api/config/v1"
+	consolev1 "github.com/openshift/api/console/v1"
+	osmv1 "github.com/openshift/api/monitoring/v1"
+	routev1 "github.com/openshift/api/route/v1"
+	secv1 "github.com/openshift/api/security/v1"
+	openshiftconfigclientset "github.com/openshift/client-go/config/clientset/versioned"
+	openshiftconsoleclientset "github.com/openshift/client-go/console/clientset/versioned"
+	openshiftmonitoringclientset "github.com/openshift/client-go/monitoring/clientset/versioned"
+	openshiftoperatorclientset "github.com/openshift/client-go/operator/clientset/versioned"
+	openshiftrouteclientset "github.com/openshift/client-go/route/clientset/versioned"
+	openshiftsecurityclientset "github.com/openshift/client-go/security/clientset/versioned"
+	"github.com/openshift/library-go/pkg/operator/events"
+	"github.com/openshift/library-go/pkg/operator/resource/resourceapply"
+	monv1 "github.com/prometheus-operator/prometheus-operator/pkg/apis/monitoring/v1"
+	monitoring "github.com/prometheus-operator/prometheus-operator/pkg/client/versioned"
 	admissionv1 "k8s.io/api/admissionregistration/v1"
 	appsv1 "k8s.io/api/apps/v1"
 	v1 "k8s.io/api/core/v1"
@@ -52,23 +68,6 @@ import (
 	apiregistrationv1 "k8s.io/kube-aggregator/pkg/apis/apiregistration/v1"
 	aggregatorclient "k8s.io/kube-aggregator/pkg/client/clientset_generated/clientset"
 	"k8s.io/utils/ptr"
-
-	"github.com/imdario/mergo"
-	configv1 "github.com/openshift/api/config/v1"
-	consolev1 "github.com/openshift/api/console/v1"
-	osmv1 "github.com/openshift/api/monitoring/v1"
-	routev1 "github.com/openshift/api/route/v1"
-	secv1 "github.com/openshift/api/security/v1"
-	openshiftconfigclientset "github.com/openshift/client-go/config/clientset/versioned"
-	openshiftconsoleclientset "github.com/openshift/client-go/console/clientset/versioned"
-	openshiftmonitoringclientset "github.com/openshift/client-go/monitoring/clientset/versioned"
-	openshiftoperatorclientset "github.com/openshift/client-go/operator/clientset/versioned"
-	openshiftrouteclientset "github.com/openshift/client-go/route/clientset/versioned"
-	openshiftsecurityclientset "github.com/openshift/client-go/security/clientset/versioned"
-	"github.com/openshift/library-go/pkg/operator/events"
-	"github.com/openshift/library-go/pkg/operator/resource/resourceapply"
-	monv1 "github.com/prometheus-operator/prometheus-operator/pkg/apis/monitoring/v1"
-	monitoring "github.com/prometheus-operator/prometheus-operator/pkg/client/versioned"
 )
 
 const (
@@ -650,6 +649,9 @@ func (c *Client) GetAlertingRule(ctx context.Context, namespace, name string) (*
 	return c.osmclient.MonitoringV1().AlertingRules(namespace).Get(ctx, name, metav1.GetOptions{})
 }
 
+// NOTE: We don't use a defaulting function here, and resort only to the caching mechanism, since,
+// * defaults for Prometheus should be introduced from its operator level, and,
+// * the defaulting approach generally requires hardcoding the default values, which adds on to the maintenance overhead.
 func (c *Client) CreateOrUpdatePrometheus(ctx context.Context, structuredRequiredPrometheus *monv1.Prometheus) (bool, error) {
 	unstructuredRequiredPrometheusObject, err := runtime.DefaultUnstructuredConverter.ToUnstructured(structuredRequiredPrometheus)
 	if err != nil {
@@ -676,7 +678,7 @@ func (c *Client) CreateOrUpdatePrometheus(ctx context.Context, structuredRequire
 			unstructuredRequiredPrometheus,
 			c.resourceCache,
 			prometheusGVR,
-			prometheusDefaultingFunc,
+			nil,
 			nil,
 		)
 		if err != nil {
@@ -703,7 +705,7 @@ func (c *Client) CreateOrUpdatePrometheus(ctx context.Context, structuredRequire
 		unstructuredRequiredPrometheus,
 		c.resourceCache,
 		prometheusGVR,
-		prometheusDefaultingFunc,
+		nil,
 		nil,
 	)
 	if err != nil {
@@ -711,52 +713,6 @@ func (c *Client) CreateOrUpdatePrometheus(ctx context.Context, structuredRequire
 	}
 
 	return didUpdate, nil
-}
-
-func prometheusDefaultingFunc(unstructuredPrometheus *unstructured.Unstructured) {
-	// Cast to the corresponding structured representation.
-	structuredPrometheus := &monv1.Prometheus{}
-	if err := runtime.DefaultUnstructuredConverter.FromUnstructured(unstructuredPrometheus.UnstructuredContent(), structuredPrometheus); err != nil {
-		klog.ErrorS(err, "failed to convert unstructured to structured Prometheus spec")
-		return
-	}
-
-	// Set defaults.
-	if structuredPrometheus.Spec.CommonPrometheusFields.ScrapeInterval == "" {
-		structuredPrometheus.Spec.CommonPrometheusFields.ScrapeInterval = "30s"
-	}
-	if len(structuredPrometheus.Spec.CommonPrometheusFields.ExternalLabels) == 0 {
-		structuredPrometheus.Spec.CommonPrometheusFields.ExternalLabels = nil
-	}
-	if len(structuredPrometheus.Spec.CommonPrometheusFields.EnableFeatures) == 0 {
-		structuredPrometheus.Spec.CommonPrometheusFields.EnableFeatures = nil
-	}
-	for i, container := range structuredPrometheus.Spec.CommonPrometheusFields.Containers {
-		for j, port := range container.Ports {
-			if port.Protocol == "" {
-				structuredPrometheus.Spec.CommonPrometheusFields.Containers[i].Ports[j].Protocol = "TCP"
-			}
-		}
-	}
-	if structuredPrometheus.Spec.CommonPrometheusFields.PortName == "" {
-		structuredPrometheus.Spec.CommonPrometheusFields.PortName = "web"
-	}
-	if structuredPrometheus.Spec.Thanos == nil {
-		structuredPrometheus.Spec.Thanos = &monv1.ThanosSpec{}
-	}
-	if structuredPrometheus.Spec.Thanos.BlockDuration == "" {
-		structuredPrometheus.Spec.Thanos.BlockDuration = "2h"
-	}
-	if structuredPrometheus.Spec.EvaluationInterval == "" {
-		structuredPrometheus.Spec.EvaluationInterval = "30s"
-	}
-
-	// Convert back to the corresponding unstructured representation and inject.
-	var err error
-	unstructuredPrometheus.Object, err = runtime.DefaultUnstructuredConverter.ToUnstructured(structuredPrometheus)
-	if err != nil {
-		klog.ErrorS(err, "failed to convert structured to unstructured Prometheus")
-	}
 }
 
 func (c *Client) CreateOrUpdatePrometheusRule(ctx context.Context, p *monv1.PrometheusRule) error {

@@ -12,7 +12,7 @@ GOPROXY?=http://proxy.golang.org
 export GO111MODULE
 export GOPROXY
 
-# go pakages for unit tests, excluding e2e tests
+# go packages for unit tests, excluding e2e tests
 PKGS=$(shell go list ./... | grep -v /test/e2e)
 GOLANG_FILES:=$(shell find . -name \*.go -print)
 # NOTE: grep -v %.yaml is needed  because "%s-policy.yaml" is used
@@ -249,17 +249,21 @@ check-runbooks:
 # Testing #
 ###########
 
+.PHONY: bench
+bench:
+	go test -run NONE -bench ^Bench -benchmem $(PKGS)
+
 .PHONY: test
 test: test-unit test-rules test-e2e
 
 .PHONY: test-unit
 test-unit:
-	go test -race -short $(PKGS) -count=1
+	go test -run ^Test -race -short $(PKGS) -count=1
 
 .PHONY: test-e2e
 test-e2e: KUBECONFIG?=$(HOME)/.kube/config
 test-e2e:
-	go test -v -timeout=150m ./test/e2e/ --kubeconfig $(KUBECONFIG)
+	go test -run ^Test -v -timeout=150m ./test/e2e/ --kubeconfig $(KUBECONFIG)
 
 $(BIN_DIR):
 	mkdir -p $(BIN_DIR)
