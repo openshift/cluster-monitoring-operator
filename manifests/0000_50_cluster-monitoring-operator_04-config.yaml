@@ -825,7 +825,7 @@ data:
     #
     # owners: (@tracing-team)
     #
-    # Number of tempo instances managed or not by the tempo operator
+    # Number of Tempo instances per management state.
     - '{__name__="tempo_operator_tempostack_managed"}'
     #
     # owners: (@tracing-team)
