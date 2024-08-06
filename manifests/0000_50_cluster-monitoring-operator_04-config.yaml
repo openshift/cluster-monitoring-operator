@@ -820,7 +820,7 @@ data:
     #
     # owners: (@tracing-team)
     #
-    # Number of Tempo instances utilizing a specific backend storage type
+    # Number of Tempo instances per backend storage type.
     - '{__name__="tempo_operator_tempostack_storage_backend"}'
     #
     # owners: (@tracing-team)
