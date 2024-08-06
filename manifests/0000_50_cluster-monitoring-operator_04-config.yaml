@@ -830,7 +830,7 @@ data:
     #
     # owners: (@tracing-team)
     #
-    # Number of tempo instances with multitenancy enabled or disable and which type of multitenancy are using.
+    # Number of Tempo instances per multitenancy mode.
     - '{__name__="tempo_operator_tempostack_multi_tenancy"}'
     #
     # owners: (@tracing-team)
