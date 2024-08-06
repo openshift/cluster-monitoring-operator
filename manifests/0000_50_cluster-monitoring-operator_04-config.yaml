@@ -835,7 +835,7 @@ data:
     #
     # owners: (@tracing-team)
     #
-    # Number of jaeger instances used certain agent strategy
+    # Number of Tempo stacks with Jaeger UI enabled/disabled.
     - '{__name__="tempo_operator_tempostack_jaeger_ui"}'
     #
     # owners: (https://github.com/redhat-developer/application-services-metering-operator)
