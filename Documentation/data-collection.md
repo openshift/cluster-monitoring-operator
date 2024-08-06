@@ -1045,6 +1045,11 @@ data:
     # - sensor_id: unique ID identifying the Sensor instance.
     # - sensor_version: the product's full version.
     - '{__name__="rhacs:telemetry:rox_sensor_info"}'
+    #
+    # owners: (https://github.com/openshift/cluster-network-operator @openshift/networking)
+    #
+    # openshift:openshift_network_operator_ipsec_state:info shows the cluster ipsec status (Disabled, External, Full) and whether the legacy or new API was used to set the status
+    - '{__name__="openshift:openshift_network_operator_ipsec_state:info"}'
 kind: ConfigMap
 metadata:
   name: telemetry-config
