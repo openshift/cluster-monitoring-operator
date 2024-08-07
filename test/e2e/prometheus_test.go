@@ -30,6 +30,8 @@ import (
 )
 
 func TestPrometheusMetrics(t *testing.T) {
+	// The test is "read-only", safe to run in parallel with others.
+	t.Parallel()
 	expected := map[string]int{
 		"prometheus-operator":           1,
 		"prometheus-k8s":                2,
@@ -44,6 +46,7 @@ func TestPrometheusMetrics(t *testing.T) {
 
 	for service, metric := range expected {
 		t.Run(service, func(t *testing.T) {
+			t.Parallel()
 			f.ThanosQuerierClient.WaitForQueryReturn(
 				t, 10*time.Minute, fmt.Sprintf(`count(up{service="%s",namespace="openshift-monitoring"} == 1)`, service),
 				func(v float64) error {
@@ -63,6 +66,8 @@ func TestPrometheusMetrics(t *testing.T) {
 // consider whether the new default value is still suitable.
 // Refer to this link for some points that may need to be examined https://github.com/openshift/prometheus/pull/206#issuecomment-2182168575.
 func TestPrometheusGOGC(t *testing.T) {
+	// The test is "read-only", safe to run in parallel with others.
+	t.Parallel()
 	gogc := 75
 	f.ThanosQuerierClient.WaitForQueryReturn(
 		t, 5*time.Minute, `min(go_gc_gogc_percent{namespace="openshift-monitoring", service="prometheus-k8s", container="kube-rbac-proxy"})`, // kube-rbac-proxy exposes prometheus container's metrics.
@@ -77,6 +82,8 @@ func TestPrometheusGOGC(t *testing.T) {
 }
 
 func TestAntiAffinity(t *testing.T) {
+	// The test is "read-only", safe to run in parallel with others.
+	t.Parallel()
 	for _, tc := range []struct {
 		name     string
 		instance string

@@ -2,86 +2,57 @@ package e2e
 
 import (
 	"net/url"
-	"strings"
 	"testing"
 
-	v1 "k8s.io/api/core/v1"
+	"github.com/stretchr/testify/require"
 )
 
+// TestImageRegistryPods ensure that all the containers images in the Platform monitoring
+// ns are from the same registry than the CMO's image
 func TestImageRegistryPods(t *testing.T) {
-	var pods *v1.PodList
+	cmoImageRegistryIsUsedInNsAssert(t, f.Ns)
+}
 
-	// Get all pods in openshift-monitoring namespace.
-	var urlRegistry string
-	pods = f.MustGetPods(t, f.Ns)
+func cmoImageRegistryIsUsedInNsAssert(t *testing.T, ns string) func(t *testing.T) {
+	return func(t *testing.T) {
+		assertCMOImageRegistryIsUsed(t, ns)
+	}
+}
 
-	// use CMO image's registry as a reference for all other containers
-	for _, pod := range pods.Items {
-		if strings.Contains(pod.Name, "cluster-monitoring-operator") {
-			imageUrl, err := url.Parse("stubheader://" + pod.Spec.Containers[0].Image)
-			if err != nil {
-				t.Fatalf("Fail to decode host: %v", err)
-			}
-			urlRegistry = imageUrl.Host
-			break
+func assertCMOImageRegistryIsUsed(t *testing.T, ns string) {
+	getRegistry := func(t *testing.T, image string) string {
+		// This first attempt is needed; otherwise, we may blindly add a second scheme,
+		// and the initial one will be considered the hostname.
+		u, err := url.ParseRequestURI(image)
+		if err == nil {
+			return u.Host
 		}
+		// Maybe no scheme, add one.
+		u, err = url.ParseRequestURI("stubheader://" + image)
+		require.NoError(t, err)
+		return u.Host
 	}
 
-	if urlRegistry == "" {
-		t.Fatalf("CMO pod not found")
-	}
+	cmoPod := f.MustListPods(t, f.Ns, "app.kubernetes.io/name=cluster-monitoring-operator")
+	// Get all pods
+	pods := f.MustListPods(t, ns, "")
+	require.Greater(t, len(pods.Items), 1)
 
+	// Get CMO registry
+	var cmoRegistry string
+	for _, pod := range cmoPod.Items {
+		containers := pod.Spec.Containers
+		require.Len(t, containers, 1, "the check assumes only one container is present")
+		cmoRegistry = getRegistry(t, containers[0].Image)
+		break
+	}
+	require.NotEmpty(t, cmoRegistry)
+
+	// Check equality with the others'
 	for _, pod := range pods.Items {
-
 		for _, container := range pod.Spec.Containers {
-
-			// We consider the hostname part of image URL be the image registry
-			imageUrl, err := url.Parse("stubheader://" + container.Image)
-			if err != nil {
-				t.Fatalf("Fail to decode host: %v", err)
-			}
-
-			if imageUrl.Host != urlRegistry {
-				t.Fatalf("Pod %s Container %s registry %s differs from CMO registry %s", pod.Name, container.Name, imageUrl.Host, urlRegistry)
-			}
+			require.Equal(t, cmoRegistry, getRegistry(t, container.Image))
 		}
 
 	}
-
-	setupUserWorkloadAssetsWithTeardownHook(t, f)
-	uwmCM := f.BuildUserWorkloadConfigMap(t,
-		`prometheus:
-  enforcedTargetLimit: 10
-  volumeClaimTemplate:
-    spec:
-      resources:
-        requests:
-          storage: 2Gi
-`,
-	)
-	f.MustCreateOrUpdateConfigMap(t, uwmCM)
-	defer f.MustDeleteConfigMap(t, uwmCM)
-
-	f.AssertStatefulSetExistsAndRollout("prometheus-user-workload", f.UserWorkloadMonitoringNs)(t)
-	setupUserApplication(t, f)
-
-	pods = f.MustGetPods(t, f.UserWorkloadMonitoringNs)
-
-	for _, pod := range pods.Items {
-
-		for _, container := range pod.Spec.Containers {
-
-			// We consider the hostname part of image URL be the image registry
-			imageUrl, err := url.Parse("stubheader://" + container.Image)
-			if err != nil {
-				t.Fatalf("Fail to decode host: %v", err)
-			}
-
-			if imageUrl.Host != urlRegistry {
-				t.Fatalf("UWM Pod %s Container %s registry %s differs from CMO registry %s", pod.Name, container.Name, imageUrl.Host, urlRegistry)
-			}
-		}
-
-	}
-
 }
