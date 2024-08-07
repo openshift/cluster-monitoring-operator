@@ -175,6 +175,7 @@ spec:
   overrideHonorTimestamps: true
   podMetadata:
     annotations:
+      openshift.io/required-scc: nonroot-v2
       target.workload.openshift.io/management: '{"effect": "PreferredDuringScheduling"}'
     labels:
       app.kubernetes.io/component: prometheus

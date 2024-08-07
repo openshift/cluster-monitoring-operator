@@ -187,6 +187,7 @@ function(params)
           metadata: $.metadata(noName=true, noNamespace=true) + {
             annotations: {
               'target.workload.openshift.io/management': '{"effect": "PreferredDuringScheduling"}',
+              'openshift.io/required-scc': 'restricted-v2',
             },
           },
           spec: {
