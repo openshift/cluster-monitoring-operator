@@ -913,13 +913,22 @@ func (c *Client) DeleteSecret(ctx context.Context, s *v1.Secret) error {
 	return err
 }
 
+func wrapWithResource(kind string, name types.NamespacedName, err error) error {
+	return wrapWithResourcef(kind, name, "%w", err)
+}
+
+func wrapWithResourcef(kind string, name types.NamespacedName, format string, a ...any) error {
+	return fmt.Errorf("%s %q: %w", kind, name.String(), fmt.Errorf(format, a...))
+}
+
 // validatePrometheusResource is a helper method for ValidatePrometheus.
+// It returns true only when the Prometheus resource is available and reconciled.
 // NOTE: this function is refactored out of wait.Poll for testing
 func (c Client) validatePrometheusResource(ctx context.Context, prom types.NamespacedName) (bool, []error) {
 	p, err := c.mclient.MonitoringV1().Prometheuses(prom.Namespace).Get(ctx, prom.Name, metav1.GetOptions{})
 	if err != nil {
-		// failing to get Prometheus -> Degraded: Unknown & Unavailable: Unknown
-		klog.V(4).Info("validate prometheus failed to get prometheus: ", err)
+		err = wrapWithResourcef("Prometheus", prom, "failed to get: %w", err)
+		// Report Degraded=Unknown and Unavailable=Unknown if the API request failed.
 		return false, []error{
 			NewUnknownAvailabiltyError(err.Error()),
 			NewUnknownDegradedError(err.Error()),
@@ -928,8 +937,8 @@ func (c Client) validatePrometheusResource(ctx context.Context, prom types.Names
 
 	avail, err := getMonitoringCondition(p.Status.Conditions, monv1.Available)
 	if err != nil {
-		err = fmt.Errorf("prometheus: %w", err)
-		// failing to get Prometheus.Status.Condtion -> Degraded: Unknown & Unavailable: Unknown
+		// Report Degraded=Unknown and Unavailable=Unknown if the condition can't be found.
+		err = wrapWithResource("Prometheus", prom, err)
 		return false, []error{
 			NewUnknownAvailabiltyError(err.Error()),
 			NewUnknownDegradedError(err.Error()),
@@ -937,46 +946,46 @@ func (c Client) validatePrometheusResource(ctx context.Context, prom types.Names
 	}
 
 	if avail.Status == monv1.ConditionTrue {
-		// Prometheus is Available; check reconciled Condition as well
+		// Check the Reconciled condition.
 		reconciled, err := getMonitoringCondition(p.Status.Conditions, monv1.Reconciled)
 		if err != nil {
-			err = fmt.Errorf("prometheus: %w", err)
-			// failing to get Prometheus.Status.Condtion -> Degraded: Unknown
+			// Report Degraded=Unknown if the condition can't be found.
+			err = wrapWithResource("Prometheus", prom, err)
 			return false, []error{NewUnknownDegradedError(err.Error())}
-		} else if reconciled.Status != monv1.ConditionTrue {
-			klog.V(4).Info("validate prometheus failed reconciled condition: ", reconciled.Status)
-			msg := fmt.Sprintf("%s: %s", reconciled.Reason, reconciled.Message)
-			return false, []error{NewDegradedError(msg)}
 		}
 
-		// terminate if available & reconciled
+		if reconciled.Status != monv1.ConditionTrue {
+			err = wrapWithResourcef("Prometheus", prom, "%s: %s", reconciled.Reason, reconciled.Message)
+			return false, []error{NewDegradedError(err.Error())}
+		}
+
+		// At this point, Prometheus is Available=True and Reconciled=True, stop
+		// there.
 		return true, nil
 	}
 
-	// return reason for failure as state-errors - Degraded: True & Unavailable: True
-	// since prometheus is Unavailable
-
-	msg := fmt.Sprintf("%s: %s", avail.Reason, avail.Message)
-	errs := []error{NewDegradedError(msg)}
+	// Always report Degraded=True.
+	err = wrapWithResourcef("Prometheus", prom, "%s: %s", avail.Reason, avail.Message)
+	errs := []error{NewDegradedError(err.Error())}
 
 	if avail.Status == monv1.ConditionFalse {
-		// prometheus not available should result in a Degraded and Unavailable error
-		errs = append(errs, NewAvailabilityError(msg))
+		// Report Available=False too when Prometheus is Available=False.
+		errs = append(errs, NewAvailabilityError(err.Error()))
 	}
+
 	return false, errs
 }
 
-// ValidatePrometheus returns nil error if Prometheus is fully available.
-// Otherwise, it returns
-// Degraded(True) and Unavailable(True) if Prometheus is not running
-// Degraded(Unknown)  and Unavailable(Unknown) if it fails to retrieve Prometheus status
+// ValidatePrometheus returns a nil error if the Prometheus object is fully available.
+// Otherwise, it returns an aggregated error with one or multiple StateErrors.
 func (c *Client) ValidatePrometheus(ctx context.Context, promNsName types.NamespacedName) error {
 	validationErrors := []error{}
 
 	pollErr := Poll(ctx, func(ctx context.Context) (bool, error) {
-		stop, errs := c.validatePrometheusResource(ctx, promNsName)
-		validationErrors = errs
-		return stop, nil
+		var done bool
+		done, validationErrors = c.validatePrometheusResource(ctx, promNsName)
+
+		return done, nil
 	}, WithPollInterval(10*time.Second))
 
 	if pollErr != nil {
@@ -992,6 +1001,7 @@ func getMonitoringCondition(conditions []monv1.Condition, t monv1.ConditionType)
 			return c, nil
 		}
 	}
+
 	return monv1.Condition{}, fmt.Errorf("failed to find condition type %q", t)
 }
 
@@ -1052,6 +1062,7 @@ func (c *Client) WaitForAlertmanager(ctx context.Context, a *monv1.Alertmanager)
 	}, WithPollInterval(10*time.Second), WithLastError(&lastErr)); err != nil {
 		return fmt.Errorf("waiting for Alertmanager %s/%s: %w", a.GetNamespace(), a.GetName(), err)
 	}
+
 	return nil
 }
 
@@ -1080,6 +1091,7 @@ func (c *Client) WaitForThanosRuler(ctx context.Context, t *monv1.ThanosRuler) e
 	}, WithPollInterval(10*time.Second), WithLastError(&lastErr)); err != nil {
 		return fmt.Errorf("waiting for Thanos Ruler %s/%s: %w", t.GetNamespace(), t.GetName(), err)
 	}
+
 	return nil
 }
 
@@ -1150,26 +1162,31 @@ func (c *Client) WaitForDeploymentRollout(ctx context.Context, dep *appsv1.Deplo
 			klog.V(4).ErrorS(err, "WaitForDeploymentRollout: failed to get Deployment")
 			return false, nil
 		}
+
 		if d.Generation > d.Status.ObservedGeneration {
 			lastErr = fmt.Errorf("current generation %d, observed generation %d",
 				d.Generation, d.Status.ObservedGeneration)
 			return false, nil
 		}
+
 		if d.Status.UpdatedReplicas != d.Status.Replicas {
 			lastErr = fmt.Errorf("the number of pods targeted by the deployment (%d pods) is different "+
 				"from the number of pods targeted by the deployment that have the desired template spec (%d pods)",
 				d.Status.Replicas, d.Status.UpdatedReplicas)
 			return false, nil
 		}
+
 		if d.Status.UnavailableReplicas != 0 {
 			lastErr = fmt.Errorf("got %d unavailable replicas",
 				d.Status.UnavailableReplicas)
 			return false, nil
 		}
+
 		return true, nil
 	}, WithLastError(&lastErr)); err != nil {
 		return fmt.Errorf("waiting for DeploymentRollout of %s/%s: %w", dep.GetNamespace(), dep.GetName(), err)
 	}
+
 	return nil
 }
 
@@ -1344,6 +1361,7 @@ func (c *Client) WaitForRouteReady(ctx context.Context, r *routev1.Route) (strin
 	}, WithLastError(&lastErr)); err != nil {
 		return host, fmt.Errorf("waiting for route %s/%s: %w", r.GetNamespace(), r.GetName(), err)
 	}
+
 	return host, nil
 }
 
@@ -1439,6 +1457,7 @@ func (c *Client) WaitForDaemonSetRollout(ctx context.Context, ds *appsv1.DaemonS
 	}, WithLastError(&lastErr)); err != nil {
 		return fmt.Errorf("waiting for DaemonSetRollout of %s/%s: %w", ds.GetNamespace(), ds.GetName(), err)
 	}
+
 	return nil
 }
 
@@ -1840,20 +1859,42 @@ func WithLastError(e *error) func(o *pollOptions) {
 	}
 }
 
-// Poll is a wrapper around wait.PollUntilContextTimeout that allows adding the passed lastError into
-// the final error if set by the condition, adding more context to the "context deadline exceeded" error.
+// Poll is a wrapper around wait.PollUntilContextTimeout that allows adding the
+// passed lastError into the final error if set by the condition, adding more
+// context to the "context deadline exceeded" error.
+// By design the condition function receives a context which is NOT canceled
+// when the poll operation times out.
 func Poll(ctx context.Context, condition wait.ConditionWithContextFunc, options ...func(o *pollOptions)) error {
-	opts := pollOptions{timeout: 5 * time.Minute, interval: time.Second}
+	opts := pollOptions{
+		timeout:  5 * time.Minute,
+		interval: time.Second,
+	}
 	for _, o := range options {
 		o(&opts)
 	}
 
-	if err := wait.PollUntilContextTimeout(ctx, opts.interval, opts.timeout, false, condition); err != nil {
+	var (
+		conditionErr error
+		done         bool
+	)
+	if err := wait.PollUntilContextTimeout(ctx, opts.interval, opts.timeout, false, func(_ context.Context) (bool, error) {
+		// Don't use the context passed to the condition function to avoid
+		// errors when the condition function calls the API server.
+		done, conditionErr = condition(ctx)
+
+		return done, conditionErr
+	}); err != nil {
 		// Add the last error when available and relevant.
 		if opts.lastError != nil && *opts.lastError != nil && !errors.Is(*opts.lastError, err) {
-			err = fmt.Errorf("%w: %w", err, *opts.lastError)
+			return fmt.Errorf("%w: %w", err, *opts.lastError)
 		}
+
+		if !errors.Is(err, conditionErr) {
+			err = fmt.Errorf("%w: %w", err, conditionErr)
+		}
+
 		return err
 	}
+
 	return nil
 }
