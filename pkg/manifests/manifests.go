@@ -289,7 +289,6 @@ var (
 	ControlPlaneKubeletMinimalServiceMonitor = "control-plane/minimal-service-monitor-kubelet.yaml"
 
 	MonitoringPlugin                    = "monitoring-plugin/console-plugin.yaml"
-	MonitoringPluginConfigMap           = "monitoring-plugin/config-map.yaml"
 	MonitoringPluginDeployment          = "monitoring-plugin/deployment.yaml"
 	MonitoringPluginDeploymentContainer = "monitoring-plugin"
 	MonitoringPluginServiceAccount      = "monitoring-plugin/service-account.yaml"
@@ -2822,10 +2821,6 @@ func (f *Factory) MonitoringPluginServiceAccount() (*v1.ServiceAccount, error) {
 
 func (f *Factory) MonitoringPluginService() (*v1.Service, error) {
 	return f.NewService(f.assets.MustNewAssetSlice(MonitoringPluginService))
-}
-
-func (f *Factory) MonitoringPluginConfigMap() (*v1.ConfigMap, error) {
-	return f.NewConfigMap(f.assets.MustNewAssetSlice(MonitoringPluginConfigMap))
 }
 
 func (f *Factory) ThanosQuerierPodDisruptionBudget() (*policyv1.PodDisruptionBudget, error) {

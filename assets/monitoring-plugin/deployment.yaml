@@ -45,22 +45,12 @@ spec:
             topologyKey: kubernetes.io/hostname
       automountServiceAccountToken: false
       containers:
-      - command:
-        - /bin/sh
-        - -c
-        - |
-          if echo "$POD_IP" | grep -qE '^([0-9]{1,3}\.){3}[0-9]{1,3}$'; then
-            LISTEN_ADDRESS_PORT_REPLACED_AT_RUNTIME="9443"
-          else
-            LISTEN_ADDRESS_PORT_REPLACED_AT_RUNTIME="[::]:9443"
-          fi
-          sed "s/LISTEN_ADDRESS_PORT_REPLACED_AT_RUNTIME/$LISTEN_ADDRESS_PORT_REPLACED_AT_RUNTIME/g" /etc/nginx/nginx.conf > /tmp/nginx.conf
-          exec nginx -c /tmp/nginx.conf -g 'daemon off;'
-        env:
-        - name: POD_IP
-          valueFrom:
-            fieldRef:
-              fieldPath: status.podIP
+      - args:
+        - -static-path=/opt/app-root/web/dist
+        - -cert=/var/cert/tls.crt
+        - -key=/var/cert/tls.key
+        command:
+        - /opt/app-root/plugin-backend
         image: quay.io/openshift/origin-monitoring-plugin:1.0.0
         imagePullPolicy: IfNotPresent
         name: monitoring-plugin
@@ -81,10 +71,6 @@ spec:
         - mountPath: /var/cert
           name: monitoring-plugin-cert
           readOnly: true
-        - mountPath: /etc/nginx/nginx.conf
-          name: nginx-conf
-          readOnly: true
-          subPath: nginx.conf
       dnsPolicy: ClusterFirst
       nodeSelector:
         kubernetes.io/os: linux
@@ -95,10 +81,6 @@ spec:
         seccompProfile:
           type: RuntimeDefault
       volumes:
-      - configMap:
-          defaultMode: 420
-          name: monitoring-plugin
-        name: nginx-conf
       - name: monitoring-plugin-cert
         secret:
           defaultMode: 420

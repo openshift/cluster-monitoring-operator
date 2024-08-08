@@ -10,32 +10,15 @@ function(params)
     'app.kubernetes.io/managed-by': 'cluster-monitoring-operator',
   } + cfg.commonLabels;
 
-  local nginxPort = 9443;
-  local nginxPortName = 'https';
+  local monitoringPluginPort = 9443;
+  local monitoringPluginPortName = 'https';
 
   local tlsSecret = 'monitoring-plugin-cert';
   local tlsVolumeName = 'monitoring-plugin-cert';
+
   local tlsMountPath = '/var/cert';
-  local nginxConf = |||
-    error_log /dev/stdout info;
-    events {}
-    http {
-      include            /etc/nginx/mime.types;
-      default_type       application/octet-stream;
-      keepalive_timeout  65;
-      server {
-        listen              LISTEN_ADDRESS_PORT_REPLACED_AT_RUNTIME ssl;
-        ssl_certificate     %(tlsPath)s/tls.crt;
-        ssl_certificate_key %(tlsPath)s/tls.key;
-        root                /usr/share/nginx/html;
-      }
-    }
-  ||| % { tlsPath: tlsMountPath, nginxPort: nginxPort };
-
-  local nginxConfigMap = pluginName;
-  local nginxCMVolName = 'nginx-conf';
-  local nginxConfMountPath = '/etc/nginx/nginx.conf';
-
+  local tlsCertPath = tlsMountPath + '/tls.crt';
+  local tlsKeyPath = tlsMountPath + '/tls.key';
 
   {
     _config+:: {
@@ -87,16 +70,6 @@ function(params)
       },
     },
 
-    // resources
-    configMap: {
-      apiVersion: 'v1',
-      kind: 'ConfigMap',
-      metadata: $.metadata(),
-      data: {
-        'nginx.conf': nginxConf,
-      },
-    },
-
     consolePlugin: {
       apiVersion: 'console.openshift.io/v1',
       kind: 'ConsolePlugin',
@@ -109,7 +82,7 @@ function(params)
             basePath: '/',
             name: $._config.name,
             namespace: $._config.namespace,
-            port: nginxPort,
+            port: monitoringPluginPort,
           },
         },
       },
@@ -199,7 +172,7 @@ function(params)
                 image: $._config.image,
                 imagePullPolicy: 'IfNotPresent',
                 ports: [
-                  { containerPort: nginxPort, name: nginxPortName },
+                  { containerPort: monitoringPluginPort, name: monitoringPluginPortName },
                 ],
                 resources: {
                   requests: { cpu: '10m', memory: '50Mi' },
@@ -212,30 +185,14 @@ function(params)
                 },
                 volumeMounts: [
                   $.volumeMount(tlsVolumeName, tlsMountPath),
-                  $.volumeMount(nginxCMVolName, nginxConfMountPath, 'nginx.conf'),
                 ],
-                env: [
-                  {
-                    name: 'POD_IP',
-                    valueFrom: {
-                      fieldRef: {
-                        fieldPath: 'status.podIP',
-                      },
-                    },
-                  },
+                args: [
+                  '-static-path=/opt/app-root/web/dist',
+                  '-cert=' + tlsCertPath,
+                  '-key=' + tlsKeyPath,
                 ],
                 command: [
-                  '/bin/sh',
-                  '-c',
-                  |||
-                    if echo "$POD_IP" | grep -qE '^([0-9]{1,3}\.){3}[0-9]{1,3}$'; then
-                      LISTEN_ADDRESS_PORT_REPLACED_AT_RUNTIME="9443"
-                    else
-                      LISTEN_ADDRESS_PORT_REPLACED_AT_RUNTIME="[::]:9443"
-                    fi
-                    sed "s/LISTEN_ADDRESS_PORT_REPLACED_AT_RUNTIME/$LISTEN_ADDRESS_PORT_REPLACED_AT_RUNTIME/g" /etc/nginx/nginx.conf > /tmp/nginx.conf
-                    exec nginx -c /tmp/nginx.conf -g 'daemon off;'
-                  |||,
+                  '/opt/app-root/plugin-backend',
                 ],
               },  // monitoring-plugin container
             ],  // containers
@@ -249,7 +206,6 @@ function(params)
               seccompProfile: { type: 'RuntimeDefault' },
             },
             volumes: [
-              $.configMapVolume(nginxCMVolName, nginxConfigMap),
               $.secretVolume(tlsVolumeName, tlsSecret),
             ],
           },  // spec
