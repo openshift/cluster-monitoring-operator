@@ -71,17 +71,6 @@ func (t *MonitoringPluginTask) Run(ctx context.Context) error {
 		}
 	}
 
-	{ // config map
-		cm, err := t.factory.MonitoringPluginConfigMap()
-		if err != nil {
-			return fmt.Errorf("initializing Console Plugin ConfigMap failed: %w", err)
-		}
-
-		if err = t.client.CreateOrUpdateConfigMap(ctx, cm); err != nil {
-			return fmt.Errorf("reconciling Console Plugin ConfigMap failed: %w", err)
-		}
-	}
-
 	{ // service acccount
 		sa, err := t.factory.MonitoringPluginServiceAccount()
 		if err != nil {
