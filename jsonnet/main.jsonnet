@@ -122,6 +122,13 @@ local inCluster =
         kubeRbacProxyImage: $.values.common.images.kubeRbacProxy,
         promLabelProxyImage: $.values.common.images.promLabelProxy,
         config: {
+          // When a cluster-wide proxy is used, CMO injects the needed
+          // environment variables into the Alertmanager container.
+          global+: {
+            http_config+: {
+              proxy_from_environment: true,
+            },
+          },
           inhibit_rules: [{
             source_matchers: ['severity = critical'],
             target_matchers: ['severity =~ warning|info'],
@@ -444,6 +451,13 @@ local userWorkload =
         kubeRbacProxyImage: $.values.common.images.kubeRbacProxy,
         promLabelProxyImage: $.values.common.images.promLabelProxy,
         config: {
+          // When a cluster-wide proxy is used, CMO injects the needed
+          // environment variables into the Alertmanager container.
+          global+: {
+            http_config+: {
+              proxy_from_environment: true,
+            },
+          },
           route: {
             group_by: ['namespace'],
             receiver: 'Default',
