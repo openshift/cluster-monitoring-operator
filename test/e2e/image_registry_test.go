@@ -63,7 +63,9 @@ func TestImageRegistryPods(t *testing.T) {
 	defer f.MustDeleteConfigMap(t, uwmCM)
 
 	f.AssertStatefulSetExistsAndRollout("prometheus-user-workload", f.UserWorkloadMonitoringNs)(t)
-	setupUserApplication(t, f)
+	if err := deployUserApplication(f); err != nil {
+		t.Fatal(err)
+	}
 
 	pods = f.MustGetPods(t, f.UserWorkloadMonitoringNs)
 

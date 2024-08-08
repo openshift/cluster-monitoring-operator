@@ -4,7 +4,6 @@ import (
 	"context"
 	"fmt"
 	"testing"
-	"time"
 
 	"github.com/openshift/cluster-monitoring-operator/test/e2e/framework"
 	monitoringv1 "github.com/prometheus-operator/prometheus-operator/pkg/apis/monitoring/v1"
@@ -14,10 +13,12 @@ import (
 	apierrors "k8s.io/apimachinery/pkg/api/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/util/intstr"
+	"k8s.io/utils/ptr"
 )
 
 const (
 	userWorkloadTestNs = "user-workload-test"
+	notEnforcedNs      = "namespace-not-enforced"
 )
 
 var (
@@ -64,32 +65,10 @@ func tearDownUserWorkloadAssets(t *testing.T, f *framework.Framework) {
 	f.AssertStatefulsetDoesNotExist("prometheus-user-workload", f.UserWorkloadMonitoringNs)(t)
 }
 
-// setupUserApplication is idempotent and deploys the sample app and resources in UserWorkloadTestNs
-func setupUserApplication(t *testing.T, f *framework.Framework) {
-	t.Helper()
-	deployUserApplication(t, f)
-	createPrometheusAlertmanagerInUserNamespace(t, f)
-}
-
-// tearDownUserApplication deletes the UserWorkloadTestNs and waits for deletion
-func tearDownUserApplication(t *testing.T, f *framework.Framework) {
-	// check if its deleted and return if true
-	err := framework.Poll(time.Second, 5*time.Minute, func() error {
-		return f.OperatorClient.DeleteIfExists(ctx, userWorkloadTestNs)
-	})
-
-	if err != nil {
-		t.Fatal(err)
-	}
-
-	f.AssertNamespaceDoesNotExist(userWorkloadTestNs)(t)
-}
-
-func createUWMTestNsIfNotExist(t *testing.T, f *framework.Framework) error {
-	t.Helper()
+func createNamespaceIfNotExist(f *framework.Framework, ns string) error {
 	_, err := f.KubeClient.CoreV1().Namespaces().Create(ctx, &v1.Namespace{
 		ObjectMeta: metav1.ObjectMeta{
-			Name: userWorkloadTestNs,
+			Name: ns,
 			Labels: map[string]string{
 				framework.E2eTestLabelName: framework.E2eTestLabelValue,
 			},
@@ -99,14 +78,13 @@ func createUWMTestNsIfNotExist(t *testing.T, f *framework.Framework) error {
 		return err
 	}
 
-	f.AssertNamespaceExists(userWorkloadTestNs)(t)
 	return nil
 }
 
-func deployUserApplication(t *testing.T, f *framework.Framework) error {
-	t.Helper()
-	if err := createUWMTestNsIfNotExist(t, f); err != nil {
-		return err
+// deployUserApplication is idempotent and deploys the sample app and resources in UserWorkloadTestNs
+func deployUserApplication(f *framework.Framework) error {
+	if err := createNamespaceIfNotExist(f, userWorkloadTestNs); err != nil {
+		return fmt.Errorf("namespace %s: %w", userWorkloadTestNs, err)
 	}
 
 	app, err := f.KubeClient.AppsV1().Deployments(userWorkloadTestNs).Create(ctx, &appsv1.Deployment{
@@ -141,8 +119,15 @@ func deployUserApplication(t *testing.T, f *framework.Framework) error {
 			},
 		},
 	}, metav1.CreateOptions{})
-	if err != nil && !apierrors.IsAlreadyExists(err) {
-		return err
+	if err != nil {
+		if !apierrors.IsAlreadyExists(err) {
+			return err
+		}
+	} else {
+		err = f.OperatorClient.WaitForDeploymentRollout(ctx, app)
+		if err != nil {
+			return err
+		}
 	}
 
 	_, err = f.KubeClient.CoreV1().Services(userWorkloadTestNs).Create(ctx, &v1.Service{
@@ -254,15 +239,70 @@ func deployUserApplication(t *testing.T, f *framework.Framework) error {
 		return err
 	}
 
-	err = f.OperatorClient.WaitForDeploymentRollout(ctx, app)
-	if err != nil {
-		return err
-	}
 	return nil
 }
 
-func createPrometheusAlertmanagerInUserNamespace(t *testing.T, f *framework.Framework) error {
-	t.Helper()
+// deployGlobalRules configures 2 PrometheusRule objects (1 for Thanos Ruler, 1
+// for Prometheus) for which the namespace label shouldn't be enforced (at
+// least initially).
+func deployGlobalRules(f *framework.Framework) error {
+	if err := createNamespaceIfNotExist(f, notEnforcedNs); err != nil {
+		return fmt.Errorf("namespace %s: %w", notEnforcedNs, err)
+	}
+
+	pr := &monitoringv1.PrometheusRule{
+		ObjectMeta: metav1.ObjectMeta{
+			Name: "global",
+			Labels: map[string]string{
+				framework.E2eTestLabelName: framework.E2eTestLabelValue,
+			},
+		},
+		Spec: monitoringv1.PrometheusRuleSpec{
+			Groups: []monitoringv1.RuleGroup{
+				{
+					Name:     "example",
+					Interval: ptr.To(monitoringv1.Duration("1s")),
+					Rules: []monitoringv1.Rule{
+						{
+							Record: "test:pods:count",
+							Expr:   intstr.FromString(fmt.Sprintf(`count(kube_pod_info{namespace="%s"})`, userWorkloadTestNs)),
+							Labels: map[string]string{
+								"_source": "thanos-ruler",
+							},
+						},
+					},
+				},
+			},
+		},
+	}
+
+	_, err := f.MonitoringClient.PrometheusRules(notEnforcedNs).Create(ctx, pr, metav1.CreateOptions{})
+	if err != nil && !apierrors.IsAlreadyExists(err) {
+		return err
+	}
+
+	pr.Name = "global-leaf"
+	pr.Labels["openshift.io/prometheus-rule-evaluation-scope"] = "leaf-prometheus"
+	// Use the `up` metric for the rule deployed on the user-workload
+	// Prometheus since it can't query for `kube_pod_info`.
+	pr.Spec.Groups[0].Rules = []monitoringv1.Rule{
+		{
+			Record: "test:up:count",
+			Expr:   intstr.FromString(fmt.Sprintf(`count(up{namespace="%s"})`, userWorkloadTestNs)),
+			Labels: map[string]string{
+				"_source": "prometheus",
+			},
+		},
+	}
+	_, err = f.MonitoringClient.PrometheusRules(notEnforcedNs).Create(ctx, pr, metav1.CreateOptions{})
+	if err != nil && !apierrors.IsAlreadyExists(err) {
+		return err
+	}
+
+	return nil
+}
+
+func createPrometheusAlertmanagerInUserNamespace(f *framework.Framework) error {
 	_, err := f.MonitoringClient.Alertmanagers(userWorkloadTestNs).Create(ctx, &monitoringv1.Alertmanager{
 		ObjectMeta: metav1.ObjectMeta{
 			Name: "not-to-be-reconciled",
@@ -294,6 +334,7 @@ func createPrometheusAlertmanagerInUserNamespace(t *testing.T, f *framework.Fram
 	if err != nil && !apierrors.IsAlreadyExists(err) {
 		return err
 	}
+
 	return nil
 }
 

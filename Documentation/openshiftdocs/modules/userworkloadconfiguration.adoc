@@ -23,6 +23,8 @@ The `UserWorkloadConfiguration` resource defines the settings responsible for us
 
 |thanosRuler|*link:thanosrulerconfig.adoc[ThanosRulerConfig]|Defines the settings for the Thanos Ruler component in user workload monitoring.
 
+|namespacesWithoutLabelEnforcement|[]string|Defines the list of namespaces for which Prometheus and Thanos Ruler in user-defined monitoring don't enforce the `namespace` label value in `PrometheusRule` objects.\n\nIt allows to define recording and alerting rules that can query across multiple projects instead of deploying identical `PrometheusRule` objects in each user project.\n\nTo make the resulting alerts and metrics visible to project users, the query expressions should return a `namespace` label with a non-empty value.
+
 |===
 
 link:../index.adoc[Back to TOC]

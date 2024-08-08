@@ -514,6 +514,7 @@ function(params)
                   '--label=namespace',
                   '--enable-label-apis',
                   '--error-on-replace',
+                  '--rules-with-active-alerts',
                 ],
                 resources: {
                   requests: {
