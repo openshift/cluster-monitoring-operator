@@ -75,6 +75,9 @@ var (
 		Subject:    &pkix.Name{CommonName: "system:serviceaccount:openshift-monitoring:prometheus-k8s"},
 		SignerName: certapiv1.KubeAPIServerClientSignerName,
 	}
+
+	// To identify "invalid UWM config only" failures
+	ErrUserWorkloadInvalidConfiguration = fmt.Errorf("invalid UWM configuration")
 )
 
 // NewDefaultInfrastructureConfig returns a default InfrastructureConfig.
@@ -167,7 +170,6 @@ type Operator struct {
 	images                    map[string]string
 	telemetryMatches          []string
 	remoteWrite               bool
-	userWorkloadEnabled       bool
 	collectionProfilesEnabled bool
 
 	lastKnowInfrastructureConfig *InfrastructureConfig
@@ -264,7 +266,6 @@ func New(
 		configMapName:             configMapName,
 		userWorkloadConfigMapName: userWorkloadConfigMapName,
 		remoteWrite:               remoteWrite,
-		userWorkloadEnabled:       false,
 		collectionProfilesEnabled: false,
 		namespace:                 namespace,
 		namespaceUserWorkload:     namespaceUserWorkload,
@@ -748,7 +749,11 @@ func newUWMTaskSpec(targetName string, task tasks.Task) *tasks.TaskSpec {
 func (o *Operator) sync(ctx context.Context, key string) error {
 	config, err := o.Config(ctx, key)
 	if err != nil {
-		o.reportFailed(ctx, newRunReportForError("InvalidConfiguration", err))
+		reason := "InvalidConfiguration"
+		if errors.Is(err, ErrUserWorkloadInvalidConfiguration) {
+			reason = "UserWorkloadInvalidConfiguration"
+		}
+		o.reportFailed(ctx, newRunReportForError(reason, err))
 		return err
 	}
 	config.SetImages(o.images)
@@ -1022,10 +1027,9 @@ func (o *Operator) Config(ctx context.Context, key string) (*manifests.Config, e
 	if *c.ClusterMonitoringConfiguration.UserWorkloadEnabled {
 		c.UserWorkloadConfiguration, err = o.loadUserWorkloadConfig(ctx)
 		if err != nil {
-			return nil, err
+			return nil, fmt.Errorf("%w: %w", ErrUserWorkloadInvalidConfiguration, err)
 		}
 	}
-	o.userWorkloadEnabled = *c.ClusterMonitoringConfiguration.UserWorkloadEnabled
 
 	err = c.LoadEnforcedBodySizeLimit(o.client, ctx)
 	if err != nil {
