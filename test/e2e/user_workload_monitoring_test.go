@@ -28,6 +28,7 @@ import (
 
 	"github.com/Jeffail/gabs"
 
+	configv1 "github.com/openshift/api/config/v1"
 	monitoringv1 "github.com/prometheus-operator/prometheus-operator/pkg/apis/monitoring/v1"
 	appsv1 "k8s.io/api/apps/v1"
 	v1 "k8s.io/api/core/v1"
@@ -43,6 +44,34 @@ import (
 type scenario struct {
 	name      string
 	assertion func(*testing.T)
+}
+
+func TestUserWorkloadMonitoringInvalidConfig(t *testing.T) {
+	// Deploy an invalid UWM config
+	uwmCM := v1.ConfigMap{
+		ObjectMeta: metav1.ObjectMeta{
+			Name:      framework.UserWorkloadMonitorConfigMapName,
+			Namespace: f.UserWorkloadMonitoringNs,
+			Labels: map[string]string{
+				framework.E2eTestLabelName: framework.E2eTestLabelValue,
+			},
+		},
+		Data: map[string]string{
+			"config.yaml": `invalid config`,
+		},
+	}
+	f.MustCreateOrUpdateConfigMap(t, &uwmCM)
+	defer f.MustDeleteConfigMap(t, &uwmCM)
+
+	// Enable UWM
+	cm := getUserWorkloadEnabledConfigMap(t, f)
+	f.MustCreateOrUpdateConfigMap(t, cm)
+	defer f.MustDeleteConfigMap(t, cm)
+
+	f.AssertOperatorCondition(configv1.OperatorDegraded, configv1.ConditionTrue)(t)
+	f.AssertOperatorCondition(configv1.OperatorAvailable, configv1.ConditionFalse)(t)
+	f.AssertOperatorConditionReason(configv1.OperatorDegraded, "UserWorkloadInvalidConfiguration")
+	f.AssertOperatorConditionReason(configv1.OperatorAvailable, "UserWorkloadInvalidConfiguration")
 }
 
 func TestUserWorkloadMonitoringMetrics(t *testing.T) {
