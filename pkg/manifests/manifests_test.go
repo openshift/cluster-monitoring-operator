@@ -1438,30 +1438,30 @@ func TestPrometheusK8sRemoteWriteProxy(t *testing.T) {
 	for _, tc := range []struct {
 		name                        string
 		proxyReader                 ProxyReader
-		expectedRemoteWriteProxyURL string
+		expectedRemoteWriteProxyURL *string
 	}{
 		{
 			name:                        "no proxy",
 			proxyReader:                 &fakeProxyReader{},
-			expectedRemoteWriteProxyURL: "",
+			expectedRemoteWriteProxyURL: nil,
 		},
 
 		{
 			name:                        "HTTP proxy",
 			proxyReader:                 &fakeProxyReader{httpProxy: "http://my-proxy"},
-			expectedRemoteWriteProxyURL: "http://my-proxy",
+			expectedRemoteWriteProxyURL: ptr.To("http://my-proxy"),
 		},
 
 		{
 			name:                        "HTTPS proxy",
 			proxyReader:                 &fakeProxyReader{httpsProxy: "https://my-secured-proxy"},
-			expectedRemoteWriteProxyURL: "https://my-secured-proxy",
+			expectedRemoteWriteProxyURL: ptr.To("https://my-secured-proxy"),
 		},
 
 		{
 			name:                        "HTTP & HTTPS proxy",
 			proxyReader:                 &fakeProxyReader{httpProxy: "http://my-proxy", httpsProxy: "https://my-secured-proxy"},
-			expectedRemoteWriteProxyURL: "https://my-secured-proxy",
+			expectedRemoteWriteProxyURL: ptr.To("https://my-secured-proxy"),
 		},
 	} {
 		t.Run(tc.name, func(t *testing.T) {
@@ -1474,14 +1474,12 @@ func TestPrometheusK8sRemoteWriteProxy(t *testing.T) {
 				t.Fatal(err)
 			}
 
-			var got string
-			for _, rw := range p.Spec.RemoteWrite {
-				got = rw.ProxyURL
-				break
+			if len(p.Spec.RemoteWrite) != 1 {
+				t.Fatalf("expecting 1 remote write entry, got %d", len(p.Spec.RemoteWrite))
 			}
 
-			if !reflect.DeepEqual(got, tc.expectedRemoteWriteProxyURL) {
-				t.Errorf("want remote write proxy URL %v, got %v", tc.expectedRemoteWriteProxyURL, got)
+			if !reflect.DeepEqual(p.Spec.RemoteWrite[0].ProxyConfig.ProxyURL, tc.expectedRemoteWriteProxyURL) {
+				t.Fatalf("want remote write proxy URL %v, got %v", tc.expectedRemoteWriteProxyURL, p.Spec.RemoteWrite[0].ProxyConfig.ProxyURL)
 			}
 		})
 	}

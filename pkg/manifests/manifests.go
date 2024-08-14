@@ -1425,10 +1425,10 @@ func (f *Factory) PrometheusK8s(grpcTLS *v1.Secret, telemetrySecret *v1.Secret) 
 		rw := &p.Spec.RemoteWrite[k]
 
 		if f.proxy.HTTPProxy() != "" {
-			rw.ProxyURL = f.proxy.HTTPProxy()
+			rw.ProxyURL = ptr.To(f.proxy.HTTPProxy())
 		}
 		if f.proxy.HTTPSProxy() != "" {
-			rw.ProxyURL = f.proxy.HTTPSProxy()
+			rw.ProxyURL = ptr.To(f.proxy.HTTPSProxy())
 		}
 	}
 
@@ -1498,7 +1498,7 @@ func setupAlerting(p *monv1.Prometheus, svcName, svcNamespace string) {
 	eps := p.Spec.Alerting.Alertmanagers[0]
 
 	eps.Name = svcName
-	eps.Namespace = svcNamespace
+	eps.Namespace = ptr.To(svcNamespace)
 	eps.TLSConfig.ServerName = ptr.To(fmt.Sprintf("%s.%s.svc", svcName, svcNamespace))
 
 	p.Spec.Alerting.Alertmanagers = []monv1.AlertmanagerEndpoints{eps}
@@ -3383,10 +3383,12 @@ func addRemoteWriteConfigs(clusterID string, rw []monv1.RemoteWriteSpec, rwTarge
 			BasicAuth:           target.BasicAuth,
 			BearerTokenFile:     target.BearerTokenFile,
 			Sigv4:               target.Sigv4,
-			ProxyURL:            target.ProxyURL,
 			MetadataConfig:      target.MetadataConfig,
 			OAuth2:              target.OAuth2,
 			SendExemplars:       target.SendExemplars,
+		}
+		if target.ProxyURL != "" {
+			rwConf.ProxyConfig.ProxyURL = ptr.To(target.ProxyURL)
 		}
 		if target.TLSConfig != nil {
 			rwConf.TLSConfig = &monv1.TLSConfig{
