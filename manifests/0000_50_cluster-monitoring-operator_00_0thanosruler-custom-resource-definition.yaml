@@ -7,7 +7,7 @@ metadata:
     include.release.openshift.io/ibm-cloud-managed: "true"
     include.release.openshift.io/self-managed-high-availability: "true"
     include.release.openshift.io/single-node-developer: "true"
-    operator.prometheus.io/version: 0.75.1
+    operator.prometheus.io/version: 0.76.0
   labels:
     app.kubernetes.io/managed-by: cluster-version-operator
     app.kubernetes.io/part-of: openshift-monitoring
@@ -55,7 +55,14 @@ spec:
     name: v1
     schema:
       openAPIV3Schema:
-        description: ThanosRuler defines a ThanosRuler deployment.
+        description: |-
+          The `ThanosRuler` custom resource definition (CRD) defines a desired [Thanos Ruler](https://github.com/thanos-io/thanos/blob/main/docs/components/rule.md) setup to run in a Kubernetes cluster.
+
+
+          A `ThanosRuler` instance requires at least one compatible Prometheus API endpoint (either Thanos Querier or Prometheus services).
+
+
+          The resource defines via label and namespace selectors which `PrometheusRule` objects should be associated to the deployed Thanos Ruler instances.
         properties:
           apiVersion:
             description: |-
@@ -2647,6 +2654,30 @@ spec:
                     - key
                     type: object
                     x-kubernetes-map-type: atomic
+                  maxVersion:
+                    description: |-
+                      Maximum acceptable TLS version.
+
+
+                      It requires Prometheus >= v2.41.0.
+                    enum:
+                    - TLS10
+                    - TLS11
+                    - TLS12
+                    - TLS13
+                    type: string
+                  minVersion:
+                    description: |-
+                      Minimum acceptable TLS version.
+
+
+                      It requires Prometheus >= v2.35.0.
+                    enum:
+                    - TLS10
+                    - TLS11
+                    - TLS12
+                    - TLS13
+                    type: string
                   serverName:
                     description: Used to verify the hostname for the targets.
                     type: string
