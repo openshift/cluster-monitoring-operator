@@ -5,8 +5,6 @@ data:
     "kind": "Policy"
     "metadata":
       "name": "Metadata"
-    "omitStages":
-    - "RequestReceived"
     "rules":
     - "level": "Metadata"
   none-profile.yaml: |-
