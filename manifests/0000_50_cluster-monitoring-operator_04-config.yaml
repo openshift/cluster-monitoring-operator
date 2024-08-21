@@ -836,7 +836,7 @@ data:
     # owners: (@tracing-team)
     #
     # Number of Tempo stacks with Jaeger UI enabled/disabled.
-    - '{__name__="enabled:tempo_operator_tempostack_jaeger_ui:sum"}'
+    - '{__name__="enabled:tempo_operator_tempostack_jaeger_ui:sum",enabled="true|false"}'
     #
     # owners: (https://github.com/redhat-developer/application-services-metering-operator)
     #
