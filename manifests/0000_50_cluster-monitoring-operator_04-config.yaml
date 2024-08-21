@@ -826,7 +826,7 @@ data:
     # owners: (@tracing-team)
     #
     # Number of Tempo instances per management state.
-    - '{__name__="state:tempo_operator_tempostack_managed:sum"}'
+    - '{__name__="state:tempo_operator_tempostack_managed:sum",state=~"Managed|Unmanaged"}'
     #
     # owners: (@tracing-team)
     #
