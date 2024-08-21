@@ -831,7 +831,7 @@ data:
     # owners: (@tracing-team)
     #
     # Number of Tempo instances per multitenancy mode.
-    - '{__name__="type:tempo_operator_tempostack_multi_tenancy:sum"}'
+    - '{__name__="type:tempo_operator_tempostack_multi_tenancy:sum",type=~"enabled|disabled"}'
     #
     # owners: (@tracing-team)
     #
