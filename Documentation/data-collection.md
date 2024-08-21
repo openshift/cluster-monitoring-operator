@@ -1157,4 +1157,4 @@ metadata:
 
 These attributes provide a snapshot of the health, usage, and size of a cluster. From this we can determine the functionality of the framework components. This information helps Red Hat to identify correlations between issues experienced across many OpenShift 4 clusters that have similar environmental characteristics. This enables Red Hat to rapidly develop changes in OpenShift 4 to improve software resilience and customer experience.
 
-In some situations it might be necessary to opt out of remote health reporting. For more information on this topic, please see [Opting out of remote health reporting](https://docs.openshift.com/container-platform/4.5/support/remote_health_monitoring/opting-out-of-remote-health-reporting.html) in the OpenShift Container Platform 4 documentation.
+In some situations it might be necessary to opt out of remote health reporting. For more information on this topic, please see [Opting out of remote health reporting](https://docs.openshift.com/container-platform/latest/support/remote_health_monitoring/opting-out-of-remote-health-reporting.html) in the OpenShift Container Platform 4 documentation.
