@@ -821,7 +821,7 @@ data:
     # owners: (@tracing-team)
     #
     # Number of Tempo instances per backend storage type.
-    - '{__name__="type:tempo_operator_tempostack_storage_backend:sum"}'
+    - '{__name__="type:tempo_operator_tempostack_storage_backend:sum",type=~"azure|gcs|s3"}'
     #
     # owners: (@tracing-team)
     #
