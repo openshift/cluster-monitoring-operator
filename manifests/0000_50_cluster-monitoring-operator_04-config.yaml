@@ -821,22 +821,22 @@ data:
     # owners: (@tracing-team)
     #
     # Number of Tempo instances per backend storage type.
-    - '{__name__="tempo_operator_tempostack_storage_backend"}'
+    - '{__name__="type:tempo_operator_tempostack_storage_backend:sum"}'
     #
     # owners: (@tracing-team)
     #
     # Number of Tempo instances per management state.
-    - '{__name__="tempo_operator_tempostack_managed"}'
+    - '{__name__="state:tempo_operator_tempostack_managed:sum"}'
     #
     # owners: (@tracing-team)
     #
     # Number of Tempo instances per multitenancy mode.
-    - '{__name__="tempo_operator_tempostack_multi_tenancy"}'
+    - '{__name__="type:tempo_operator_tempostack_multi_tenancy:sum"}'
     #
     # owners: (@tracing-team)
     #
     # Number of Tempo stacks with Jaeger UI enabled/disabled.
-    - '{__name__="tempo_operator_tempostack_jaeger_ui"}'
+    - '{__name__="enabled:tempo_operator_tempostack_jaeger_ui:sum"}'
     #
     # owners: (https://github.com/redhat-developer/application-services-metering-operator)
     #
