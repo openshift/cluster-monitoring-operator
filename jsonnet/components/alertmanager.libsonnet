@@ -4,6 +4,7 @@ local alertmanager = import 'github.com/prometheus-operator/kube-prometheus/json
 local generateCertInjection = import '../utils/generate-certificate-injection.libsonnet';
 local generateSecret = import '../utils/generate-secret.libsonnet';
 local withDescription = (import '../utils/add-annotations.libsonnet').withDescription;
+local testFilePlaceholder = (import '../utils/add-annotations.libsonnet').testFilePlaceholder;
 local requiredRoles = (import '../utils/add-annotations.libsonnet').requiredRoles;
 local requiredClusterRoles = (import '../utils/add-annotations.libsonnet').requiredClusterRoles;
 
@@ -68,11 +69,13 @@ function(params)
           |||
             Expose the Alertmanager web server within the cluster on the following ports:
             * Port %d provides access to all the Alertmanager endpoints. %s
+            %s
             * Port %d provides access to the Alertmanager endpoints restricted to a given project. %s
             * Port %d provides access to the `/metrics` endpoint only. This port is for internal use, and no other usage is guaranteed.
           ||| % [
             $.service.spec.ports[0].port,
             requiredRoles([['monitoring-alertmanager-view', 'for read-only operations'], 'monitoring-alertmanager-edit'], 'openshift-monitoring'),
+            testFilePlaceholder('openshift-monitoring', 'alertmanager-main', $.service.spec.ports[0].port),
             $.service.spec.ports[1].port,
             requiredClusterRoles(['monitoring-rules-edit', 'monitoring-edit'], false, ''),
             $.service.spec.ports[2].port,

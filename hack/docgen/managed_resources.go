@@ -8,13 +8,15 @@ import (
 	"strings"
 	"text/template"
 
+	"github.com/openshift/cluster-monitoring-operator/pkg/manifests"
+	"github.com/openshift/cluster-monitoring-operator/test/e2e/test_command"
 	"k8s.io/apimachinery/pkg/apis/meta/v1/unstructured"
 	"k8s.io/apimachinery/pkg/util/sets"
 	k8syaml "sigs.k8s.io/yaml"
-)
 
-const (
-	descriptionAnnotation = "openshift.io/description"
+	"bufio"
+
+	"gopkg.in/yaml.v3"
 )
 
 type docTemplate struct {
@@ -156,9 +158,14 @@ func PrintManagedResources(format string) error {
 			continue
 		}
 
-		desc, found := a[descriptionAnnotation]
+		desc, found := a[manifests.DescriptionAnnotation]
 		if !found {
 			continue
+		}
+
+		desc, err = substitutePlaceholdersInDescription(desc, format)
+		if err != nil {
+			return err
 		}
 
 		resourcesByKind[o.GetKind()] = append(
@@ -208,4 +215,44 @@ func printDoc(dt docTemplate, m map[string][]resource) error {
 	}
 
 	return nil
+}
+
+// substitutePlaceholdersInDescription replaces the tested example placeholder by its content.
+func substitutePlaceholdersInDescription(desc, format string) (string, error) {
+	var lines []string
+	scanner := bufio.NewScanner(strings.NewReader(desc))
+	for scanner.Scan() {
+		line := scanner.Text()
+		if !strings.HasPrefix(line, manifests.TestFilePlacehoderPrefix) {
+			lines = append(lines, line)
+			continue
+		}
+		fileName := strings.TrimPrefix(line, manifests.TestFilePlacehoderPrefix)
+		file, err := os.Open(filepath.Join("test", "e2e", "test_command", "scripts", fileName))
+		if err != nil {
+			return "", err
+		}
+		defer file.Close()
+
+		var suite test_command.Suite
+		decoder := yaml.NewDecoder(file)
+		decoder.KnownFields(true)
+		err = decoder.Decode(&suite)
+		if err != nil {
+			return "", err
+		}
+
+		// Replace the line with the file content
+		var content string
+		if format == asciiDocsFormat {
+			content = suite.StringAscii()
+		} else {
+			content = suite.StringMarkdown()
+		}
+		lines = append(lines, content)
+	}
+	if err := scanner.Err(); err != nil {
+		return "", err
+	}
+	return strings.Join(lines, "\n"), nil
 }

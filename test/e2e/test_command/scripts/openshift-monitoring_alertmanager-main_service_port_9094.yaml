@@ -1,0 +1,62 @@
+tests:
+- header: >-
+    # monitoring-alertmanager-view grants read permissions.
+  setUp:
+    - run: "oc project openshift-monitoring"
+    - run: "oc create serviceaccount am-ro-client"
+    - run: >-
+        oc adm policy add-role-to-user monitoring-alertmanager-view \
+          --role-namespace=openshift-monitoring --rolebinding-name=am-ro-client \
+          --serviceaccount=am-ro-client
+    - run: "oc create token am-ro-client"
+      toEnvVar: TOKEN
+      # TODO: use Route's status.
+    - run: "oc get route alertmanager-main -n openshift-monitoring -ojsonpath={.spec.host}"
+      toEnvVar: ROUTE
+  checks:
+    - run: >
+        curl -H "Authorization: Bearer $TOKEN" -k --fail-with-body "https://$ROUTE/api/v2/alerts?filter=alertname=Watchdog"
+  tearDown:
+    - run: >-
+        oc adm policy remove-role-from-user monitoring-alertmanager-view \
+          --role-namespace=openshift-monitoring --rolebinding-name=am-ro-client \
+          --serviceaccount=am-ro-client
+    - run: "oc delete serviceaccount am-ro-client"
+    - run: "oc project default"
+- header: >-
+    # monitoring-alertmanager-edit grants edit permissions.
+  setUp:
+    - run: "oc project openshift-monitoring"
+    - run: "oc create serviceaccount am-rw-client"
+    - run: >-
+        oc adm policy add-role-to-user monitoring-alertmanager-edit \
+          --role-namespace=openshift-monitoring --rolebinding-name=am-rw-client \
+          --serviceaccount=am-rw-client
+    - run: "oc create token am-rw-client"
+      toEnvVar: TOKEN
+    - run: "oc get route alertmanager-main -n openshift-monitoring -ojsonpath={.spec.host}"
+      toEnvVar: ROUTE
+  checks:
+    - run: >
+        curl -X POST -H "Authorization: Bearer $TOKEN" -H "Content-Type: application/json" \
+          -d '{
+            "matchers": [
+              {
+                "name": "alertname",
+                "value": "MyTestAlert",
+                "isRegex": false
+              }
+            ],
+            "startsAt": "2044-01-01T00:00:00Z",
+            "endsAt": "2044-01-01T00:00:01Z",
+            "createdBy": "am-rw-client",
+            "comment": "Silence test"
+          }' \
+          -k --fail-with-body "https://$ROUTE/api/v2/silences"
+  tearDown:
+    - run: >-
+        oc adm policy remove-role-from-user monitoring-alertmanager-edit \
+          --role-namespace=openshift-monitoring --rolebinding-name=am-rw-client \
+          --serviceaccount=am-rw-client
+    - run: "oc delete serviceaccount am-rw-client"
+    - run: "oc project default"

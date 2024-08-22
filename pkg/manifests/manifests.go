@@ -75,6 +75,9 @@ const (
 
 	// --enable-feature=exemplar-storage: https://prometheus.io/docs/prometheus/latest/feature_flags/#exemplars-storage
 	EnableFeatureExemplarStorageString = "exemplar-storage"
+
+	DescriptionAnnotation    = "openshift.io/description"
+	TestFilePlacehoderPrefix = "xx_omitted_before_deploy__test_file_name:"
 )
 
 var (
@@ -2513,11 +2516,23 @@ func (f *Factory) NewPodDisruptionBudget(manifest []byte) (*policyv1.PodDisrupti
 	return &pdb, nil
 }
 
+// descriptionWithoutPlaceholder omit tested examples placehoders from the description annotation,
+// those should only be visible in the docs.
+func descriptionWithoutPlaceholder(desc string) string {
+	re := regexp.MustCompile(fmt.Sprintf("(?m)\n^%s.*$", TestFilePlacehoderPrefix))
+	return re.ReplaceAllString(desc, "")
+}
+
 func (f *Factory) NewService(manifest []byte) (*v1.Service, error) {
 	s := v1.Service{}
 	err := decodeYAML(manifest, &s)
 	if err != nil {
 		return nil, err
+	}
+
+	desc, ok := s.Annotations[DescriptionAnnotation]
+	if ok {
+		s.Annotations[DescriptionAnnotation] = descriptionWithoutPlaceholder(desc)
 	}
 
 	return &s, nil
@@ -2625,10 +2640,6 @@ func (f *Factory) NewServiceAccount(manifest []byte) (*v1.ServiceAccount, error)
 func (f *Factory) NewPrometheus(manifest []byte) (*monv1.Prometheus, error) {
 	p := monv1.Prometheus{}
 	err := decodeYAML(manifest, &p)
-	if err != nil {
-		return nil, err
-	}
-
 	if err != nil {
 		return nil, err
 	}
