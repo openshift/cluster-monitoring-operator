@@ -1,5 +1,9 @@
 # Note: This CHANGELOG is only for the monitoring team to track all monitoring related changes. Please see OpenShift release notes for official changes.
 
+## 4.17
+
+- [#2409](https://github.com/openshift/cluster-monitoring-operator/issues/2409) Remove prometheus-adapter code from CMO
+
 ## 4.16
 
 - [#2302](https://github.com/openshift/cluster-monitoring-operator/issues/2302) Enable feature `extra-scrape-metrics` in Prometheus user-workload

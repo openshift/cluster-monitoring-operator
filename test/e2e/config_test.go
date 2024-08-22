@@ -57,6 +57,8 @@ func TestClusterMonitoringOperatorConfiguration(t *testing.T) {
 	t.Log("asserting that CMO goes degraded after an invalid configuration is pushed")
 	f.AssertOperatorCondition(configv1.OperatorDegraded, configv1.ConditionTrue)(t)
 	f.AssertOperatorCondition(configv1.OperatorAvailable, configv1.ConditionFalse)(t)
+	f.AssertOperatorConditionReason(configv1.OperatorDegraded, "InvalidConfiguration")
+	f.AssertOperatorConditionReason(configv1.OperatorAvailable, "InvalidConfiguration")
 	// Check that the previous setup hasn't been reverted
 	f.AssertStatefulsetExists("prometheus-user-workload", f.UserWorkloadMonitoringNs)(t)
 
@@ -484,38 +486,6 @@ func TestTelemeterClientSecret(t *testing.T) {
 			f.AssertValueInSecretEquals(oldS.GetName(), oldS.GetNamespace(), "token", string(oldS.Data["token"]))
 			f.AssertValueInSecretEquals(oldS.GetName(), oldS.GetNamespace(), "salt", string(oldS.Data["salt"]))
 		})
-	}
-}
-
-func TestClusterMonitorK8sPromAdapterConfig(t *testing.T) {
-	skipPrometheusAdapterTests(t)
-	const (
-		deploymentName = "prometheus-adapter"
-	)
-
-	data := `k8sPrometheusAdapter:
-  tolerations:
-    - operator: "Exists"
-`
-	f.MustCreateOrUpdateConfigMap(t, f.BuildCMOConfigMap(t, data))
-
-	for _, tc := range []scenario{
-		{
-			name:      "test the prometheus-adapter deployment is rolled out",
-			assertion: f.AssertDeploymentExistsAndRollout(deploymentName, f.Ns),
-		},
-		{
-			name: "assert pod configuration is as expected",
-			assertion: f.AssertPodConfiguration(
-				f.Ns,
-				"app.kubernetes.io/component=metrics-adapter",
-				[]framework.PodAssertion{
-					expectCatchAllToleration(),
-				},
-			),
-		},
-	} {
-		t.Run(tc.name, tc.assertion)
 	}
 }
 

@@ -37,6 +37,7 @@ import (
 	securityv1 "github.com/openshift/api/security/v1"
 	"github.com/openshift/library-go/pkg/crypto"
 	monv1 "github.com/prometheus-operator/prometheus-operator/pkg/apis/monitoring/v1"
+	"golang.org/x/net/http/httpproxy"
 	yaml2 "gopkg.in/yaml.v2"
 	admissionv1 "k8s.io/api/admissionregistration/v1"
 	appsv1 "k8s.io/api/apps/v1"
@@ -181,23 +182,6 @@ var (
 	PrometheusUserWorkloadConfigMap                           = "prometheus-user-workload/config-map.yaml"
 	PrometheusUserWorkloadFederateRoute                       = "prometheus-user-workload/federate-route.yaml"
 
-	PrometheusAdapterAPIService                  = "prometheus-adapter/api-service.yaml"
-	PrometheusAdapterClusterRole                 = "prometheus-adapter/cluster-role.yaml"
-	PrometheusAdapterClusterRoleBinding          = "prometheus-adapter/cluster-role-binding.yaml"
-	PrometheusAdapterClusterRoleBindingDelegator = "prometheus-adapter/cluster-role-binding-delegator.yaml"
-	PrometheusAdapterClusterRoleBindingView      = "prometheus-adapter/cluster-role-binding-view.yaml"
-	PrometheusAdapterClusterRoleServerResources  = "prometheus-adapter/cluster-role-server-resources.yaml"
-	PrometheusAdapterConfigMap                   = "prometheus-adapter/config-map.yaml"
-	PrometheusAdapterConfigMapPrometheus         = "prometheus-adapter/configmap-prometheus.yaml"
-	PrometheusAdapterConfigMapAuditPolicy        = "prometheus-adapter/configmap-audit-profiles.yaml"
-	PrometheusAdapterDeployment                  = "prometheus-adapter/deployment.yaml"
-	PrometheusAdapterPodDisruptionBudget         = "prometheus-adapter/pod-disruption-budget.yaml"
-	PrometheusAdapterRoleBindingAuthReader       = "prometheus-adapter/role-binding-auth-reader.yaml"
-	PrometheusAdapterService                     = "prometheus-adapter/service.yaml"
-	PrometheusAdapterServiceMonitor              = "prometheus-adapter/service-monitor.yaml"
-	PrometheusAdapterMinimalServiceMonitor       = "prometheus-adapter/minimal-service-monitor.yaml"
-	PrometheusAdapterServiceAccount              = "prometheus-adapter/service-account.yaml"
-
 	MetricsServerAPIService                      = "metrics-server/api-service.yaml"
 	MetricsServerServiceAccount                  = "metrics-server/service-account.yaml"
 	MetricsServerClusterRole                     = "metrics-server/cluster-role.yaml"
@@ -319,8 +303,6 @@ var (
 	PrometheusOperatorAlertmanagerInstanceNamespacesFlag = "--alertmanager-instance-namespaces="
 	PrometheusOperatorWebTLSCipherSuitesFlag             = "--web.tls-cipher-suites="
 	PrometheusOperatorWebTLSMinTLSVersionFlag            = "--web.tls-min-version="
-	PrometheusAdapterTLSCipherSuitesFlag                 = "--tls-cipher-suites="
-	PrometheusAdapterTLSMinTLSVersionFlag                = "--tls-min-version="
 	MetricsServerTLSCipherSuitesFlag                     = "--tls-cipher-suites="
 	MetricsServerTLSMinTLSVersionFlag                    = "--tls-min-version="
 	KubeRbacProxyTLSCipherSuitesFlag                     = "--tls-cipher-suites="
@@ -536,6 +518,8 @@ func (f *Factory) AlertmanagerUserWorkload() (*monv1.Alertmanager, error) {
 
 	for i, c := range a.Spec.Containers {
 		switch c.Name {
+		case "alertmanager":
+			f.injectProxyVariables(&a.Spec.Containers[i])
 		case "alertmanager-proxy", "tenancy-proxy", "kube-rbac-proxy-metric":
 			a.Spec.Containers[i].Image = f.config.Images.KubeRbacProxy
 			a.Spec.Containers[i].Args = f.setTLSSecurityConfiguration(c.Args, KubeRbacProxyTLSCipherSuitesFlag, KubeRbacProxyMinTLSVersionFlag)
@@ -576,26 +560,27 @@ func setupStartupProbe(a *monv1.Alertmanager) {
 		return
 	}
 
-	a.Spec.Containers = append(a.Spec.Containers,
-		v1.Container{
-			Name: "alertmanager",
-			StartupProbe: &v1.Probe{
-				ProbeHandler: v1.ProbeHandler{
-					Exec: &v1.ExecAction{
-						Command: []string{
-							"sh",
-							"-c",
-							"exec curl --fail http://localhost:9093/-/ready",
-						},
+	for i := range a.Spec.Containers {
+		if a.Spec.Containers[i].Name != "alertmanager" {
+			continue
+		}
+
+		a.Spec.Containers[i].StartupProbe = &v1.Probe{
+			ProbeHandler: v1.ProbeHandler{
+				Exec: &v1.ExecAction{
+					Command: []string{
+						"sh",
+						"-c",
+						"exec curl --fail http://localhost:9093/-/ready",
 					},
 				},
-				InitialDelaySeconds: 20,
-				PeriodSeconds:       10,
-				FailureThreshold:    40,
-				TimeoutSeconds:      3,
 			},
-		},
-	)
+			InitialDelaySeconds: 20,
+			PeriodSeconds:       10,
+			FailureThreshold:    40,
+			TimeoutSeconds:      3,
+		}
+	}
 }
 
 func (f *Factory) AlertmanagerMain() (*monv1.Alertmanager, error) {
@@ -665,6 +650,8 @@ func (f *Factory) AlertmanagerMain() (*monv1.Alertmanager, error) {
 
 	for i, c := range a.Spec.Containers {
 		switch c.Name {
+		case "alertmanager":
+			f.injectProxyVariables(&a.Spec.Containers[i])
 		case "kube-rbac-proxy", "kube-rbac-proxy-metric", "kube-rbac-proxy-web":
 			a.Spec.Containers[i].Image = f.config.Images.KubeRbacProxy
 			a.Spec.Containers[i].Args = f.setTLSSecurityConfiguration(c.Args, KubeRbacProxyTLSCipherSuitesFlag, KubeRbacProxyMinTLSVersionFlag)
@@ -1438,12 +1425,41 @@ func (f *Factory) PrometheusK8s(grpcTLS *v1.Secret, telemetrySecret *v1.Secret) 
 	for k := range p.Spec.RemoteWrite {
 		rw := &p.Spec.RemoteWrite[k]
 
+		var tmpRWProxyURL *string
 		if f.proxy.HTTPProxy() != "" {
-			rw.ProxyURL = f.proxy.HTTPProxy()
+			tmpRWProxyURL = ptr.To(f.proxy.HTTPProxy())
 		}
 		if f.proxy.HTTPSProxy() != "" {
-			rw.ProxyURL = f.proxy.HTTPSProxy()
+			tmpRWProxyURL = ptr.To(f.proxy.HTTPSProxy())
 		}
+
+		// Fixes: https://issues.redhat.com/browse/OCPBUGS-38289
+		// The code is condensed here to simplify backporting.
+		// This is a temporary workaround because the NoProxy field isn't exported on the Prometheus CRD in older versions.
+		// If the cluster proxy or remoteWrite config change, this code will re-run, ensuring no stale state.
+		// The httpproxy package used here is the same as used by Prometheus, which helps with consistency.
+
+		// proxy URL is not to be set/overwritten in here, nothing to do.
+		if tmpRWProxyURL == nil {
+			continue
+		}
+		// Suppose that CMO has set the proxy URL.
+		proxyConfig := &httpproxy.Config{
+			HTTPProxy:  *tmpRWProxyURL,
+			HTTPSProxy: *tmpRWProxyURL,
+			NoProxy:    f.proxy.NoProxy(),
+		}
+		proxyFunc := proxyConfig.ProxyFunc()
+		// Ignore errors here.
+		u, _ := url.Parse(rw.URL)
+		// Check if the endpoint URL will be using that proxy URL.
+		proxyURL, err := proxyFunc(u)
+		if err == nil && proxyURL == nil {
+			// Proxing will not be used, no need to set it.
+			continue
+		}
+		// The proxy will be used, set it.
+		rw.ProxyURL = tmpRWProxyURL
 	}
 
 	if f.config.Images.Thanos != "" {
@@ -1512,7 +1528,7 @@ func setupAlerting(p *monv1.Prometheus, svcName, svcNamespace string) {
 	eps := p.Spec.Alerting.Alertmanagers[0]
 
 	eps.Name = svcName
-	eps.Namespace = svcNamespace
+	eps.Namespace = ptr.To(svcNamespace)
 	eps.TLSConfig.ServerName = ptr.To(fmt.Sprintf("%s.%s.svc", svcName, svcNamespace))
 
 	p.Spec.Alerting.Alertmanagers = []monv1.AlertmanagerEndpoints{eps}
@@ -1800,46 +1816,6 @@ func (f *Factory) PrometheusUserWorkloadPrometheusServiceMonitor() (*monv1.Servi
 	return f.NewServiceMonitor(f.assets.MustNewAssetSlice(PrometheusUserWorkloadPrometheusServiceMonitor))
 }
 
-func (f *Factory) PrometheusAdapterClusterRole() (*rbacv1.ClusterRole, error) {
-	return f.NewClusterRole(f.assets.MustNewAssetSlice(PrometheusAdapterClusterRole))
-}
-
-func (f *Factory) PrometheusAdapterClusterRoleServerResources() (*rbacv1.ClusterRole, error) {
-	return f.NewClusterRole(f.assets.MustNewAssetSlice(PrometheusAdapterClusterRoleServerResources))
-}
-
-func (f *Factory) PrometheusAdapterClusterRoleBinding() (*rbacv1.ClusterRoleBinding, error) {
-	return f.NewClusterRoleBinding(f.assets.MustNewAssetSlice(PrometheusAdapterClusterRoleBinding))
-}
-
-func (f *Factory) PrometheusAdapterClusterRoleBindingDelegator() (*rbacv1.ClusterRoleBinding, error) {
-	return f.NewClusterRoleBinding(f.assets.MustNewAssetSlice(PrometheusAdapterClusterRoleBindingDelegator))
-}
-
-func (f *Factory) PrometheusAdapterClusterRoleBindingView() (*rbacv1.ClusterRoleBinding, error) {
-	return f.NewClusterRoleBinding(f.assets.MustNewAssetSlice(PrometheusAdapterClusterRoleBindingView))
-}
-
-func (f *Factory) PrometheusAdapterRoleBindingAuthReader() (*rbacv1.RoleBinding, error) {
-	return f.NewRoleBinding(f.assets.MustNewAssetSlice(PrometheusAdapterRoleBindingAuthReader))
-}
-
-func (f *Factory) PrometheusAdapterServiceAccount() (*v1.ServiceAccount, error) {
-	return f.NewServiceAccount(f.assets.MustNewAssetSlice(PrometheusAdapterServiceAccount))
-}
-
-func (f *Factory) PrometheusAdapterConfigMap() (*v1.ConfigMap, error) {
-	return f.NewConfigMap(f.assets.MustNewAssetSlice(PrometheusAdapterConfigMap))
-}
-
-func (f *Factory) PrometheusAdapterConfigMapAuditPolicy() (*v1.ConfigMap, error) {
-	return f.NewConfigMap(f.assets.MustNewAssetSlice(PrometheusAdapterConfigMapAuditPolicy))
-}
-
-func (f *Factory) PrometheusAdapterConfigMapPrometheus() (*v1.ConfigMap, error) {
-	return f.NewConfigMap(f.assets.MustNewAssetSlice(PrometheusAdapterConfigMapPrometheus))
-}
-
 func validateAuditProfile(profile auditv1.Level) error {
 	// Refer: audit rules: https://kubernetes.io/docs/tasks/debug-application-cluster/audit/#audit-policy
 	// for valid log levels
@@ -1854,181 +1830,6 @@ func validateAuditProfile(profile auditv1.Level) error {
 		// a wrong profile name is a Config validation Error
 		return fmt.Errorf("%w - adapter audit profile: %s", ErrConfigValidation, profile)
 	}
-}
-
-func (f *Factory) PrometheusAdapterDeployment(apiAuthSecretName string, requestheader map[string]string) (*appsv1.Deployment, error) {
-	dep, err := f.NewDeployment(f.assets.MustNewAssetSlice(PrometheusAdapterDeployment))
-	if err != nil {
-		return nil, err
-	}
-
-	spec := dep.Spec.Template.Spec
-
-	spec.Containers[0].Image = f.config.Images.K8sPrometheusAdapter
-
-	if f.config.ClusterMonitoringConfiguration.K8sPrometheusAdapter == nil {
-		f.config.ClusterMonitoringConfiguration.K8sPrometheusAdapter = &K8sPrometheusAdapter{}
-	}
-
-	if f.config.ClusterMonitoringConfiguration.K8sPrometheusAdapter.Audit == nil {
-		f.config.ClusterMonitoringConfiguration.K8sPrometheusAdapter.Audit = &Audit{}
-	}
-
-	if f.config.ClusterMonitoringConfiguration.K8sPrometheusAdapter.Audit.Profile == "" {
-		f.config.ClusterMonitoringConfiguration.K8sPrometheusAdapter.Audit.Profile = auditv1.LevelMetadata
-	}
-
-	config := f.config.ClusterMonitoringConfiguration.K8sPrometheusAdapter
-	if config != nil && len(config.NodeSelector) > 0 {
-		spec.NodeSelector = config.NodeSelector
-	}
-
-	if config != nil && len(config.Tolerations) > 0 {
-		spec.Tolerations = config.Tolerations
-	}
-
-	if len(f.config.ClusterMonitoringConfiguration.K8sPrometheusAdapter.TopologySpreadConstraints) > 0 {
-		spec.TopologySpreadConstraints =
-			f.config.ClusterMonitoringConfiguration.K8sPrometheusAdapter.TopologySpreadConstraints
-	}
-	dep.Namespace = f.namespace
-
-	r := newErrMapReader(requestheader)
-
-	var (
-		requestheaderAllowedNames       = strings.Join(r.slice("requestheader-allowed-names"), ",")
-		requestheaderExtraHeadersPrefix = strings.Join(r.slice("requestheader-extra-headers-prefix"), ",")
-		requestheaderGroupHeaders       = strings.Join(r.slice("requestheader-group-headers"), ",")
-		requestheaderUsernameHeaders    = strings.Join(r.slice("requestheader-username-headers"), ",")
-	)
-
-	if r.Error() != nil {
-		return nil, fmt.Errorf("value not found in extension api server authentication configmap: %w", r.err)
-	}
-
-	spec.Containers[0].Args = append(spec.Containers[0].Args,
-		"--client-ca-file=/etc/tls/private/client-ca-file",
-		"--requestheader-client-ca-file=/etc/tls/private/requestheader-client-ca-file",
-		"--requestheader-allowed-names="+requestheaderAllowedNames,
-		"--requestheader-extra-headers-prefix="+requestheaderExtraHeadersPrefix,
-		"--requestheader-group-headers="+requestheaderGroupHeaders,
-		"--requestheader-username-headers="+requestheaderUsernameHeaders,
-		"--tls-cert-file=/etc/tls/private/tls.crt",
-		"--tls-private-key-file=/etc/tls/private/tls.key",
-	)
-
-	spec.Containers[0].VolumeMounts = append(spec.Containers[0].VolumeMounts,
-		v1.VolumeMount{
-			Name:      "tls",
-			ReadOnly:  true,
-			MountPath: "/etc/tls/private",
-		},
-	)
-
-	if err := validateAuditProfile(config.Audit.Profile); err != nil {
-		return nil, err
-	}
-
-	profile := strings.ToLower(string(config.Audit.Profile))
-	spec.Containers[0].Args = append(spec.Containers[0].Args,
-		fmt.Sprintf("--audit-policy-file=/etc/audit/%s-profile.yaml", profile),
-		"--audit-log-path=/var/log/adapter/audit.log",
-		"--audit-log-maxsize=100", // 100 MB
-		"--audit-log-maxbackup=5", // limit space consumed by restricting backups
-		"--audit-log-compress=true",
-	)
-
-	spec.Volumes = append(spec.Volumes,
-		v1.Volume{
-			Name: "tls",
-			VolumeSource: v1.VolumeSource{
-				Secret: &v1.SecretVolumeSource{
-					SecretName: apiAuthSecretName,
-				},
-			},
-		},
-	)
-
-	spec.Containers[0].Args = f.setTLSSecurityConfiguration(spec.Containers[0].Args,
-		PrometheusAdapterTLSCipherSuitesFlag, PrometheusAdapterTLSMinTLSVersionFlag)
-
-	if f.config.ClusterMonitoringConfiguration.K8sPrometheusAdapter.Resources != nil {
-		spec.Containers[0].Resources = *f.config.ClusterMonitoringConfiguration.K8sPrometheusAdapter.Resources
-	}
-
-	dep.Spec.Template.Spec = spec
-
-	return dep, nil
-}
-
-func (f *Factory) PrometheusAdapterPodDisruptionBudget() (*policyv1.PodDisruptionBudget, error) {
-	return f.NewPodDisruptionBudget(f.assets.MustNewAssetSlice(PrometheusAdapterPodDisruptionBudget))
-}
-
-func (f *Factory) PrometheusAdapterService() (*v1.Service, error) {
-	return f.NewService(f.assets.MustNewAssetSlice(PrometheusAdapterService))
-}
-
-func (f *Factory) PrometheusAdapterServiceMonitors() ([]*monv1.ServiceMonitor, error) {
-	return serviceMonitors(f.config.CollectionProfilesFeatureGateEnabled, f.PrometheusAdapterServiceMonitor, f.PrometheusAdapterMinimalServiceMonitor)
-}
-
-func (f *Factory) PrometheusAdapterServiceMonitor() (*monv1.ServiceMonitor, error) {
-	return f.NewServiceMonitor(f.assets.MustNewAssetSlice(PrometheusAdapterServiceMonitor))
-}
-
-func (f *Factory) PrometheusAdapterMinimalServiceMonitor() (*monv1.ServiceMonitor, error) {
-	return f.NewServiceMonitor(f.assets.MustNewAssetSlice(PrometheusAdapterMinimalServiceMonitor))
-}
-
-func (f *Factory) PrometheusAdapterSecret(tlsSecret *v1.Secret, apiAuthConfigmap *v1.ConfigMap) (*v1.Secret, error) {
-	data := make(map[string]string)
-
-	for k, v := range tlsSecret.Data {
-		data[k] = string(v)
-	}
-
-	for k, v := range apiAuthConfigmap.Data {
-		data[k] = v
-	}
-
-	r := newErrMapReader(data)
-
-	var (
-		clientCA              = r.value("client-ca-file")
-		requestheaderClientCA = r.value("requestheader-client-ca-file")
-		tlsCA                 = r.value("tls.crt")
-		tlsKey                = r.value("tls.key")
-	)
-
-	if r.Error() != nil {
-		return nil, fmt.Errorf("value not found in extension api server authentication configmap: %w", r.err)
-	}
-
-	h := fnv.New64()
-	h.Write([]byte(clientCA + requestheaderClientCA + tlsCA + tlsKey))
-	hash := strconv.FormatUint(h.Sum64(), 32)
-
-	return &v1.Secret{
-		ObjectMeta: metav1.ObjectMeta{
-			Namespace: f.namespace,
-			Name:      fmt.Sprintf("prometheus-adapter-%s", hash),
-			Labels: map[string]string{
-				"monitoring.openshift.io/name": "prometheus-adapter",
-				"monitoring.openshift.io/hash": hash,
-			},
-		},
-		Data: map[string][]byte{
-			"client-ca-file":               []byte(clientCA),
-			"requestheader-client-ca-file": []byte(requestheaderClientCA),
-			"tls.crt":                      []byte(tlsCA),
-			"tls.key":                      []byte(tlsKey),
-		},
-	}, nil
-}
-
-func (f *Factory) PrometheusAdapterAPIService() (*apiregistrationv1.APIService, error) {
-	return f.NewAPIService(f.assets.MustNewAssetSlice(PrometheusAdapterAPIService))
 }
 
 func (f *Factory) MetricsServerConfigMapAuditPolicy() (*v1.ConfigMap, error) {
@@ -3612,10 +3413,12 @@ func addRemoteWriteConfigs(clusterID string, rw []monv1.RemoteWriteSpec, rwTarge
 			BasicAuth:           target.BasicAuth,
 			BearerTokenFile:     target.BearerTokenFile,
 			Sigv4:               target.Sigv4,
-			ProxyURL:            target.ProxyURL,
 			MetadataConfig:      target.MetadataConfig,
 			OAuth2:              target.OAuth2,
 			SendExemplars:       target.SendExemplars,
+		}
+		if target.ProxyURL != "" {
+			rwConf.ProxyConfig.ProxyURL = ptr.To(target.ProxyURL)
 		}
 		if target.TLSConfig != nil {
 			rwConf.TLSConfig = &monv1.TLSConfig{

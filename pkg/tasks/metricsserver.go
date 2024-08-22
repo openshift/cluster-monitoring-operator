@@ -4,7 +4,6 @@ import (
 	"context"
 	"fmt"
 
-	appsv1 "k8s.io/api/apps/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/types"
 
@@ -14,17 +13,15 @@ import (
 
 type MetricsServerTask struct {
 	client    *client.Client
-	enabled   bool
 	ctx       context.Context
 	factory   *manifests.Factory
 	config    *manifests.Config
 	namespace string
 }
 
-func NewMetricsServerTask(ctx context.Context, namespace string, client *client.Client, metricsServerEnabled bool, factory *manifests.Factory, config *manifests.Config) *MetricsServerTask {
+func NewMetricsServerTask(ctx context.Context, namespace string, client *client.Client, factory *manifests.Factory, config *manifests.Config) *MetricsServerTask {
 	return &MetricsServerTask{
 		client:    client,
-		enabled:   metricsServerEnabled,
 		factory:   factory,
 		config:    config,
 		namespace: namespace,
@@ -33,13 +30,6 @@ func NewMetricsServerTask(ctx context.Context, namespace string, client *client.
 }
 
 func (t *MetricsServerTask) Run(ctx context.Context) error {
-	if t.enabled {
-		return t.create(ctx)
-	}
-	return nil
-}
-
-func (t *MetricsServerTask) create(ctx context.Context) error {
 	{
 		// TODO: This is a temporary workaround until the requirements for https://github.com/openshift/cluster-monitoring-operator/pull/2329
 		// are ready.
@@ -252,61 +242,6 @@ func (t *MetricsServerTask) create(ctx context.Context) error {
 		}
 	}
 
-	return t.removePrometheusAdapterResources(ctx)
-}
-
-func (t *MetricsServerTask) removePrometheusAdapterResources(ctx context.Context) error {
-	pa := NewPrometheusAdapterTask(ctx, t.namespace, t.client, false, t.factory, t.config)
-	d := &appsv1.Deployment{
-		ObjectMeta: metav1.ObjectMeta{
-			Name:      "prometheus-adapter",
-			Namespace: t.namespace,
-		},
-	}
-
-	{
-		pdb, err := pa.factory.PrometheusAdapterPodDisruptionBudget()
-		if err != nil {
-			return fmt.Errorf("initializing PrometheusAdapter PodDisruptionBudget failed: %w", err)
-		}
-
-		if pdb != nil {
-			err = pa.client.DeletePodDisruptionBudget(ctx, pdb)
-			if err != nil {
-				return fmt.Errorf("deleting PrometheusAdapter PodDisruptionBudget failed: %w", err)
-			}
-		}
-	}
-	{
-		sm, err := pa.factory.PrometheusAdapterServiceMonitor()
-		if err != nil {
-			return fmt.Errorf("initializing PrometheusAdapter ServiceMonitors failed: %w", err)
-		}
-
-		err = pa.client.DeleteServiceMonitor(ctx, sm)
-		if err != nil {
-			return fmt.Errorf("deleting %s/%s ServiceMonitor failed: %w", sm.Namespace, sm.Name, err)
-		}
-	}
-	{
-		s, err := pa.factory.PrometheusAdapterService()
-		if err != nil {
-			return fmt.Errorf("initializing PrometheusAdapter Service failed: %w", err)
-		}
-
-		err = pa.client.DeleteService(ctx, s)
-		if err != nil {
-			return fmt.Errorf("deleting PrometheusAdapter Service failed: %w", err)
-		}
-	}
-	{
-		err := pa.client.DeleteDeployment(ctx, d)
-		if err != nil {
-			return fmt.Errorf("deleting PrometheusAdapter Deployment failed: %w", err)
-		}
-	}
-
-	// TODO(slashpai): Add steps to remove other resources if any
 	return nil
 }
 

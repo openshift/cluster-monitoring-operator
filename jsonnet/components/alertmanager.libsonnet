@@ -271,6 +271,19 @@ function(params)
         automountServiceAccountToken: true,
         containers: [
           {
+            name: 'alertmanager',
+            env: [{
+              name: 'HTTP_PROXY',
+              value: '',
+            }, {
+              name: 'HTTPS_PROXY',
+              value: '',
+            }, {
+              name: 'NO_PROXY',
+              value: '',
+            }],
+          },
+          {
             name: 'kube-rbac-proxy-web',
             image: cfg.kubeRbacProxyImage,
             resources: {

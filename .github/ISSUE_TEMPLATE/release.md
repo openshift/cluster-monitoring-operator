@@ -16,7 +16,7 @@ about: Create release checklist
 - [ ] update downstream backport of [openshift/prometheus-operator](https://github.com/openshift/prometheus-operator)
 - [ ] update downstream backport of [openshift/kube-state-metrics](https://github.com/openshift/kube-state-metrics)
 - [ ] update downstream backport of [openshift/kube-rbac-proxy](https://github.com/openshift/kube-rbac-proxy)
-- [ ] update downstream backport of [openshift/k8s-prometheus-adapter](https://github.com/openshift/k8s-prometheus-adapter)
+- [ ] update downstream backport of [openshift/kubernetes-metrics-server](https://github.com/openshift/kubernetes-metrics-server)
 
 ## Jsonnet dependencies
 

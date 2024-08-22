@@ -126,7 +126,6 @@ func (c Config) GetThanosRulerAlertmanagerConfigs() []AdditionalAlertmanagerConf
 }
 
 type Images struct {
-	K8sPrometheusAdapter               string
 	MetricsServer                      string
 	PromLabelProxy                     string
 	PrometheusOperatorAdmissionWebhook string
@@ -275,7 +274,6 @@ func (c *Config) applyDefaults() {
 	if c.ClusterMonitoringConfiguration.MetricsServerConfig.Audit.Profile == "" {
 		c.ClusterMonitoringConfiguration.MetricsServerConfig.Audit.Profile = auditv1.LevelMetadata
 	}
-
 	if c.ClusterMonitoringConfiguration.PrometheusK8sConfig.CollectionProfile == "" {
 		c.ClusterMonitoringConfiguration.PrometheusK8sConfig.CollectionProfile = FullCollectionProfile
 	}
@@ -321,7 +319,6 @@ func (c *Config) SetImages(images map[string]string) {
 	c.Images.KubeRbacProxy = images["kube-rbac-proxy"]
 	c.Images.TelemeterClient = images["telemeter-client"]
 	c.Images.PromLabelProxy = images["prom-label-proxy"]
-	c.Images.K8sPrometheusAdapter = images["k8s-prometheus-adapter"]
 	c.Images.MetricsServer = images["kube-metrics-server"]
 	c.Images.OpenShiftStateMetrics = images["openshift-state-metrics"]
 	c.Images.Thanos = images["thanos"]

@@ -75,6 +75,9 @@ var (
 		Subject:    &pkix.Name{CommonName: "system:serviceaccount:openshift-monitoring:prometheus-k8s"},
 		SignerName: certapiv1.KubeAPIServerClientSignerName,
 	}
+
+	// To identify "invalid UWM config only" failures
+	ErrUserWorkloadInvalidConfiguration = fmt.Errorf("invalid UWM configuration")
 )
 
 // NewDefaultInfrastructureConfig returns a default InfrastructureConfig.
@@ -147,7 +150,6 @@ const (
 	// see https://github.com/kubernetes/apiserver/blob/b571c70e6e823fd78910c3f5b9be895a756f4cbb/pkg/server/options/authentication.go#L239
 	apiAuthenticationConfigMap    = "kube-system/extension-apiserver-authentication"
 	kubeletServingCAConfigMap     = "openshift-config-managed/kubelet-serving-ca"
-	prometheusAdapterTLSSecret    = "openshift-monitoring/prometheus-adapter-tls"
 	telemeterCABundleConfigMap    = "openshift-monitoring/telemeter-trusted-ca-bundle"
 	alertmanagerCABundleConfigMap = "openshift-monitoring/alertmanager-trusted-ca-bundle"
 	grpcTLS                       = "openshift-monitoring/grpc-tls"
@@ -168,8 +170,6 @@ type Operator struct {
 	images                    map[string]string
 	telemetryMatches          []string
 	remoteWrite               bool
-	userWorkloadEnabled       bool
-	metricsServerEnabled      bool
 	collectionProfilesEnabled bool
 
 	lastKnowInfrastructureConfig *InfrastructureConfig
@@ -266,8 +266,6 @@ func New(
 		configMapName:             configMapName,
 		userWorkloadConfigMapName: userWorkloadConfigMapName,
 		remoteWrite:               remoteWrite,
-		userWorkloadEnabled:       false,
-		metricsServerEnabled:      false,
 		collectionProfilesEnabled: false,
 		namespace:                 namespace,
 		namespaceUserWorkload:     namespaceUserWorkload,
@@ -473,14 +471,9 @@ func New(
 		if err != nil {
 			return nil, err
 		}
-		o.metricsServerEnabled = featureGates.Enabled(features.FeatureGateMetricsServer)
 		o.collectionProfilesEnabled = featureGates.Enabled(features.FeatureGateMetricsCollectionProfiles)
 	case <-time.After(1 * time.Minute):
 		return nil, fmt.Errorf("timed out waiting for FeatureGate detection")
-	}
-
-	if o.metricsServerEnabled {
-		klog.Info("Metrics Server enabled")
 	}
 
 	// csrController runs a controller that requests a client TLS certificate
@@ -667,7 +660,6 @@ func (o *Operator) handleEvent(obj interface{}) {
 	case cmoConfigMap:
 	case apiAuthenticationConfigMap:
 	case kubeletServingCAConfigMap:
-	case prometheusAdapterTLSSecret:
 	case telemeterCABundleConfigMap:
 	case alertmanagerCABundleConfigMap:
 	case grpcTLS:
@@ -757,7 +749,11 @@ func newUWMTaskSpec(targetName string, task tasks.Task) *tasks.TaskSpec {
 func (o *Operator) sync(ctx context.Context, key string) error {
 	config, err := o.Config(ctx, key)
 	if err != nil {
-		o.reportFailed(ctx, newRunReportForError("InvalidConfiguration", err))
+		reason := "InvalidConfiguration"
+		if errors.Is(err, ErrUserWorkloadInvalidConfiguration) {
+			reason = "UserWorkloadInvalidConfiguration"
+		}
+		o.reportFailed(ctx, newRunReportForError(reason, err))
 		return err
 	}
 	config.SetImages(o.images)
@@ -821,8 +817,7 @@ func (o *Operator) sync(ctx context.Context, key string) error {
 				newTaskSpec("NodeExporter", tasks.NewNodeExporterTask(o.client, factory)),
 				newTaskSpec("KubeStateMetrics", tasks.NewKubeStateMetricsTask(o.client, factory, *o.lastKnownVPACustomResourceDefinitionPresent)),
 				newTaskSpec("OpenshiftStateMetrics", tasks.NewOpenShiftStateMetricsTask(o.client, factory)),
-				newTaskSpec("PrometheusAdapter", tasks.NewPrometheusAdapterTask(ctx, o.namespace, o.client, !o.metricsServerEnabled, factory, config)),
-				newTaskSpec("MetricsServer", tasks.NewMetricsServerTask(ctx, o.namespace, o.client, o.metricsServerEnabled, factory, config)),
+				newTaskSpec("MetricsServer", tasks.NewMetricsServerTask(ctx, o.namespace, o.client, factory, config)),
 				newTaskSpec("TelemeterClient", tasks.NewTelemeterClientTask(o.client, factory, config)),
 				newTaskSpec("ThanosQuerier", tasks.NewThanosQuerierTask(o.client, factory, config)),
 				newTaskSpec("ControlPlaneComponents", tasks.NewControlPlaneTask(o.client, factory, config)),
@@ -1032,10 +1027,9 @@ func (o *Operator) Config(ctx context.Context, key string) (*manifests.Config, e
 	if *c.ClusterMonitoringConfiguration.UserWorkloadEnabled {
 		c.UserWorkloadConfiguration, err = o.loadUserWorkloadConfig(ctx)
 		if err != nil {
-			return nil, err
+			return nil, fmt.Errorf("%w: %w", ErrUserWorkloadInvalidConfiguration, err)
 		}
 	}
-	o.userWorkloadEnabled = *c.ClusterMonitoringConfiguration.UserWorkloadEnabled
 
 	err = c.LoadEnforcedBodySizeLimit(o.client, ctx)
 	if err != nil {

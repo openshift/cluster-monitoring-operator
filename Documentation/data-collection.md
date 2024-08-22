@@ -990,6 +990,16 @@ data:
     # platform:hypershift_nodepools:max is the total number of nodepools managed by the hypershift operator by cluster platform
     - '{__name__="platform:hypershift_nodepools:max"}'
     #
+    # owners: (@openshift/team-hypershift-maintainers)
+    #
+    # cluster_name:hypershift_nodepools_size:sum is the total number of desired nodepool replicas managed by the hypershift operator per HostedCluster identified by `the cluster_name` and `exported_namespace` labels.
+    - '{__name__="cluster_name:hypershift_nodepools_size:sum"}'
+    #
+    # owners: (@openshift/team-hypershift-maintainers)
+    #
+    # cluster_name:hypershift_nodepools_available_replicas:sum is the actual number of available nodepool replicas managed by the hypershift operator per HostedCluster identified by `the cluster_name` and `exported_namespace` labels.
+    - '{__name__="cluster_name:hypershift_nodepools_available_replicas:sum"}'
+    #
     # owners: (https://github.com/red-hat-storage/mcg-osd-deployer, Data Federation team)
     #
     # Number of unhealthy Object Bucket Claims in addon's namespace.

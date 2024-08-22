@@ -397,46 +397,6 @@ func TestUnconfiguredManifests(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	_, err = f.PrometheusAdapterClusterRole()
-	if err != nil {
-		t.Fatal(err)
-	}
-
-	_, err = f.PrometheusAdapterClusterRoleServerResources()
-	if err != nil {
-		t.Fatal(err)
-	}
-
-	_, err = f.PrometheusAdapterClusterRoleBinding()
-	if err != nil {
-		t.Fatal(err)
-	}
-
-	_, err = f.PrometheusAdapterClusterRoleBindingDelegator()
-	if err != nil {
-		t.Fatal(err)
-	}
-
-	_, err = f.PrometheusAdapterRoleBindingAuthReader()
-	if err != nil {
-		t.Fatal(err)
-	}
-
-	_, err = f.PrometheusAdapterServiceAccount()
-	if err != nil {
-		t.Fatal(err)
-	}
-
-	_, err = f.PrometheusAdapterConfigMap()
-	if err != nil {
-		t.Fatal(err)
-	}
-
-	_, err = f.PrometheusAdapterConfigMapPrometheus()
-	if err != nil {
-		t.Fatal(err)
-	}
-
 	_, err = f.PrometheusOperatorUserWorkloadServiceMonitor()
 	if err != nil {
 		t.Fatal(err)
@@ -520,50 +480,6 @@ func TestUnconfiguredManifests(t *testing.T) {
 	}
 
 	_, err = f.PrometheusUserWorkloadPrometheusServiceMonitor()
-	if err != nil {
-		t.Fatal(err)
-	}
-
-	tlsSecret := &v1.Secret{
-		Data: map[string][]byte{
-			"tls.crt": []byte("foo"),
-			"tls.key": []byte("bar"),
-		},
-	}
-
-	apiAuthConfigmap := &v1.ConfigMap{
-		Data: map[string]string{
-			"client-ca-file":               "foo",
-			"requestheader-client-ca-file": "bar",
-		},
-	}
-
-	_, err = f.PrometheusAdapterSecret(tlsSecret, apiAuthConfigmap)
-	if err != nil {
-		t.Fatal(err)
-	}
-
-	_, err = f.PrometheusAdapterDeployment("foo", map[string]string{
-		"requestheader-allowed-names":        "",
-		"requestheader-extra-headers-prefix": "",
-		"requestheader-group-headers":        "",
-		"requestheader-username-headers":     "",
-	})
-	if err != nil {
-		t.Fatal(err)
-	}
-
-	_, err = f.PrometheusAdapterService()
-	if err != nil {
-		t.Fatal(err)
-	}
-
-	_, err = f.PrometheusAdapterServiceMonitor()
-	if err != nil {
-		t.Fatal(err)
-	}
-
-	_, err = f.PrometheusAdapterAPIService()
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -1508,48 +1424,108 @@ func TestRemoteWriteAuthorizationConfig(t *testing.T) {
 }
 
 func TestPrometheusK8sRemoteWriteProxy(t *testing.T) {
-	config := func() *Config {
+	config := func(remoteURL string) *Config {
 		c, err := NewConfigFromString("", false)
 		if err != nil {
 			t.Fatal(err)
 		}
 
-		c.ClusterMonitoringConfiguration.PrometheusK8sConfig.RemoteWrite = []RemoteWriteSpec{{URL: "http://custom"}}
-
+		c.ClusterMonitoringConfiguration.PrometheusK8sConfig.RemoteWrite = []RemoteWriteSpec{{URL: remoteURL}}
 		return c
 	}
 
 	for _, tc := range []struct {
 		name                        string
+		remoteURL                   string
 		proxyReader                 ProxyReader
-		expectedRemoteWriteProxyURL string
+		expectedRemoteWriteProxyURL *string
 	}{
 		{
-			name:                        "no proxy",
+			name:                        "proxy not set",
+			remoteURL:                   "http://custom.foo.bar",
 			proxyReader:                 &fakeProxyReader{},
-			expectedRemoteWriteProxyURL: "",
+			expectedRemoteWriteProxyURL: nil,
 		},
 
 		{
 			name:                        "HTTP proxy",
+			remoteURL:                   "http://custom.foo.bar",
 			proxyReader:                 &fakeProxyReader{httpProxy: "http://my-proxy"},
-			expectedRemoteWriteProxyURL: "http://my-proxy",
+			expectedRemoteWriteProxyURL: ptr.To("http://my-proxy"),
+		},
+
+		{
+			name:                        "HTTP proxy wrong scheme",
+			remoteURL:                   "https://custom.foo.bar",
+			proxyReader:                 &fakeProxyReader{httpProxy: "http://my-proxy"},
+			expectedRemoteWriteProxyURL: ptr.To("http://my-proxy"),
+		},
+
+		{
+			name:                        "HTTP proxy with noProxy set",
+			remoteURL:                   "http://custom.foo.bar",
+			proxyReader:                 &fakeProxyReader{httpProxy: "http://my-proxy", noProxy: ".baz"},
+			expectedRemoteWriteProxyURL: ptr.To("http://my-proxy"),
+		},
+
+		{
+			name:                        "HTTP proxy should be ignored due to noProxy ",
+			remoteURL:                   "http://custom.foo.bar",
+			proxyReader:                 &fakeProxyReader{httpProxy: "http://my-proxy", noProxy: ".foo.bar"},
+			expectedRemoteWriteProxyURL: nil,
 		},
 
 		{
 			name:                        "HTTPS proxy",
+			remoteURL:                   "https://custom.foo.bar",
 			proxyReader:                 &fakeProxyReader{httpsProxy: "https://my-secured-proxy"},
-			expectedRemoteWriteProxyURL: "https://my-secured-proxy",
+			expectedRemoteWriteProxyURL: ptr.To("https://my-secured-proxy"),
+		},
+
+		{
+			name:                        "HTTPS proxy wrong scheme",
+			remoteURL:                   "http://custom.foo.bar",
+			proxyReader:                 &fakeProxyReader{httpsProxy: "https://my-secured-proxy"},
+			expectedRemoteWriteProxyURL: ptr.To("https://my-secured-proxy"),
+		},
+
+		{
+			name:                        "HTTPS proxy with noProxy set",
+			remoteURL:                   "https://custom.foo.bar",
+			proxyReader:                 &fakeProxyReader{httpsProxy: "https://my-secured-proxy", noProxy: ".fox.daz"},
+			expectedRemoteWriteProxyURL: ptr.To("https://my-secured-proxy"),
+		},
+
+		{
+			name:                        "HTTPS proxy should be ignored due to noProxy",
+			remoteURL:                   "https://custom.foo.bar",
+			proxyReader:                 &fakeProxyReader{httpsProxy: "https://my-secured-proxy", noProxy: ".foo.bar"},
+			expectedRemoteWriteProxyURL: nil,
 		},
 
 		{
 			name:                        "HTTP & HTTPS proxy",
+			remoteURL:                   "http://custom.foo.bar",
 			proxyReader:                 &fakeProxyReader{httpProxy: "http://my-proxy", httpsProxy: "https://my-secured-proxy"},
-			expectedRemoteWriteProxyURL: "https://my-secured-proxy",
+			expectedRemoteWriteProxyURL: ptr.To("https://my-secured-proxy"),
+		},
+
+		{
+			name:                        "HTTP & HTTPS proxy with noProxy set",
+			remoteURL:                   "http://custom.foo.bar",
+			proxyReader:                 &fakeProxyReader{httpProxy: "http://my-proxy", httpsProxy: "https://my-secured-proxy", noProxy: ".fox.daz"},
+			expectedRemoteWriteProxyURL: ptr.To("https://my-secured-proxy"),
+		},
+
+		{
+			name:                        "HTTP & HTTPS proxy should be ignored due to noProxy",
+			remoteURL:                   "http://custom.foo.bar",
+			proxyReader:                 &fakeProxyReader{httpProxy: "http://my-proxy", httpsProxy: "https://my-secured-proxy", noProxy: ".foo.bar"},
+			expectedRemoteWriteProxyURL: nil,
 		},
 	} {
 		t.Run(tc.name, func(t *testing.T) {
-			f := NewFactory("openshift-monitoring", "openshift-user-workload-monitoring", config(), defaultInfrastructureReader(), tc.proxyReader, NewAssets(assetsPath), &APIServerConfig{}, &configv1.Console{})
+			f := NewFactory("openshift-monitoring", "openshift-user-workload-monitoring", config(tc.remoteURL), defaultInfrastructureReader(), tc.proxyReader, NewAssets(assetsPath), &APIServerConfig{}, &configv1.Console{})
 			p, err := f.PrometheusK8s(
 				&v1.Secret{ObjectMeta: metav1.ObjectMeta{Name: "foo"}},
 				nil,
@@ -1558,14 +1534,12 @@ func TestPrometheusK8sRemoteWriteProxy(t *testing.T) {
 				t.Fatal(err)
 			}
 
-			var got string
-			for _, rw := range p.Spec.RemoteWrite {
-				got = rw.ProxyURL
-				break
+			if len(p.Spec.RemoteWrite) != 1 {
+				t.Fatalf("expecting 1 remote write entry, got %d", len(p.Spec.RemoteWrite))
 			}
 
-			if !reflect.DeepEqual(got, tc.expectedRemoteWriteProxyURL) {
-				t.Errorf("want remote write proxy URL %v, got %v", tc.expectedRemoteWriteProxyURL, got)
+			if !reflect.DeepEqual(p.Spec.RemoteWrite[0].ProxyConfig.ProxyURL, tc.expectedRemoteWriteProxyURL) {
+				t.Fatalf("want remote write proxy URL %v, got %v", tc.expectedRemoteWriteProxyURL, p.Spec.RemoteWrite[0].ProxyConfig.ProxyURL)
 			}
 		})
 	}
@@ -2585,108 +2559,6 @@ func TestThanosRulerAdditionalAlertManagerConfigsSecret(t *testing.T) {
 	}
 }
 
-func TestK8sPrometheusAdapterAuditLog(t *testing.T) {
-	argsForProfile := func(profile string) []string {
-		return []string{
-			fmt.Sprintf("--audit-policy-file=/etc/audit/%s-profile.yaml", profile),
-			"--audit-log-path=/var/log/adapter/audit.log",
-			"--audit-log-maxsize=100",
-			"--audit-log-maxbackup=5",
-			"--audit-log-compress=true",
-		}
-	}
-
-	tt := []struct {
-		scenario string
-		config   string
-		args     []string
-		err      error
-	}{{
-		scenario: "no config",
-		config:   ``,
-		args:     argsForProfile("metadata"),
-	}, {
-		scenario: "no adapter config",
-		config:   `k8sPrometheusAdapter: `,
-		args:     argsForProfile("metadata"),
-	}, {
-		scenario: "no audit config",
-		config: `
-k8sPrometheusAdapter:
-  audit: {} `,
-		args: argsForProfile("metadata"),
-	}, {
-		scenario: "Request",
-		config: `
-k8sPrometheusAdapter:
-  audit:
-    profile: Request
-`,
-		args: argsForProfile("request"),
-	}, {
-		scenario: "RequestResponse",
-		config: `
-k8sPrometheusAdapter:
-  audit:
-    profile: RequestResponse
-`,
-		args: argsForProfile("requestresponse"),
-	}, {
-		scenario: "None",
-		config: `
-  k8sPrometheusAdapter:
-    audit:
-     profile: None
-`,
-		args: argsForProfile("none"),
-	}, {
-		scenario: "no audit config",
-		config: `
-  k8sPrometheusAdapter:
-    audit:
-      profile: Foobar  # should generate an error
-`,
-		err: ErrConfigValidation,
-	}}
-
-	for _, test := range tt {
-		t.Run(test.scenario, func(t *testing.T) {
-			c, err := NewConfigFromString(test.config, false)
-			if err != nil {
-				t.Logf("%s\n\n", test.config)
-				t.Fatal(err)
-			}
-
-			f := NewFactory("openshift-monitoring", "openshift-user-workload-monitoring", c, defaultInfrastructureReader(), &fakeProxyReader{}, NewAssets(assetsPath), &APIServerConfig{}, &configv1.Console{})
-
-			d, err := f.PrometheusAdapterDeployment("foo", map[string]string{
-				"requestheader-allowed-names":        "",
-				"requestheader-extra-headers-prefix": "",
-				"requestheader-group-headers":        "",
-				"requestheader-username-headers":     "",
-			})
-
-			if test.err != nil || err != nil {
-				// fail only if the error isn't what is expected
-				if !errors.Is(err, test.err) {
-					t.Fatalf("Expected error %q but got %q", test.err, err)
-				}
-				return
-			}
-
-			adapterArgs := d.Spec.Template.Spec.Containers[0].Args
-			auditArgs := []string{}
-			for _, arg := range adapterArgs {
-				if strings.HasPrefix(arg, "--audit-") {
-					auditArgs = append(auditArgs, arg)
-				}
-			}
-			assertDeepEqual(t, test.args, auditArgs,
-				"k8s-prometheus-adapter audit is not configured correctly")
-		})
-	}
-}
-
 func assertDeepEqual(t *testing.T, expected, got interface{}, msg string) {
 	if !reflect.DeepEqual(expected, got) {
 		t.Fatalf(`%s
@@ -2696,71 +2568,6 @@ got:
 expected:
 	%#+v
 	`, msg, got, expected)
-	}
-}
-
-func TestK8sPrometheusAdapterConfiguration(t *testing.T) {
-	config := `
-k8sPrometheusAdapter:
-  resources:
-    requests:
-      cpu: 100m
-      memory: 100Mi
-    limits:
-      cpu: 200m
-      memory: 200Mi
-  nodeSelector:
-    test: value
-  topologySpreadConstraints:
-  - maxSkew: 1
-    topologyKey: type
-    whenUnsatisfiable: DoNotSchedule
-    labelSelector:
-      matchLabels:
-        foo: bar`
-
-	c, err := NewConfigFromString(config, false)
-	if err != nil {
-		t.Fatal(err)
-	}
-	c.SetImages(map[string]string{
-		"k8s-prometheus-adapter": "docker.io/openshift/origin-k8s-prometheus-adapter:latest",
-	})
-
-	f := NewFactory("openshift-monitoring", "openshift-user-workload-monitoring", c, defaultInfrastructureReader(), &fakeProxyReader{}, NewAssets(assetsPath), &APIServerConfig{}, &configv1.Console{})
-	d, err := f.PrometheusAdapterDeployment("foo", map[string]string{
-		"requestheader-allowed-names":        "",
-		"requestheader-extra-headers-prefix": "",
-		"requestheader-group-headers":        "",
-		"requestheader-username-headers":     "",
-	})
-	if err != nil {
-		t.Fatal(err)
-	}
-
-	if d.Spec.Template.Spec.Containers[0].Image != "docker.io/openshift/origin-k8s-prometheus-adapter:latest" {
-		t.Fatal("k8s-prometheus-adapter image is not configured correctly")
-	}
-
-	if d.Spec.Template.Spec.TopologySpreadConstraints[0].MaxSkew != 1 {
-		t.Fatal("k8s-prometheus-adapter topology spread constraints MaxSkew not configured correctly")
-	}
-
-	if d.Spec.Template.Spec.TopologySpreadConstraints[0].WhenUnsatisfiable != "DoNotSchedule" {
-		t.Fatal("k8s-prometheus-adapter topology spread constraints WhenUnsatisfiable not configured correctly")
-	}
-
-	for _, container := range d.Spec.Template.Spec.Containers {
-		if container.Name == "k8s-prometheus-adapter" {
-			if !reflect.DeepEqual(container.Resources, *f.config.ClusterMonitoringConfiguration.K8sPrometheusAdapter.Resources) {
-				t.Fatal("k8s-prometheus-adapter resources are not configured correctly")
-			}
-		}
-	}
-
-	expected := map[string]string{"test": "value"}
-	if !reflect.DeepEqual(d.Spec.Template.Spec.NodeSelector, expected) {
-		t.Fatalf("k8s-prometheus-adapter nodeSelector is not configured correctly\n\ngot:\n\n%#+v\n\nexpected:\n\n%#+v\n", d.Spec.Template.Spec.NodeSelector, expected)
 	}
 }
 
@@ -4571,22 +4378,6 @@ func TestNonHighlyAvailableInfrastructure(t *testing.T) {
 				return spec{*t.Spec.Replicas, t.Spec.Affinity}, nil
 			},
 		},
-		{
-			name: "Prometheus adapter",
-			getSpec: func(f *Factory) (spec, error) {
-				p, err := f.PrometheusAdapterDeployment("foo",
-					map[string]string{
-						"requestheader-allowed-names":        "",
-						"requestheader-extra-headers-prefix": "",
-						"requestheader-group-headers":        "",
-						"requestheader-username-headers":     "",
-					})
-				if err != nil {
-					return spec{}, err
-				}
-				return spec{*p.Spec.Replicas, p.Spec.Template.Spec.Affinity}, nil
-			},
-		},
 	}
 
 	for _, tc := range tests {
@@ -4611,16 +4402,6 @@ func TestNonHighlyAvailableInfrastructureServiceMonitors(t *testing.T) {
 		name         string
 		getEndpoints func(f *Factory) ([]monv1.Endpoint, error)
 	}{
-		{
-			name: "Prometheus Adapter Service Monitor",
-			getEndpoints: func(f *Factory) ([]monv1.Endpoint, error) {
-				pt, err := f.PrometheusAdapterServiceMonitor()
-				if err != nil {
-					return nil, err
-				}
-				return pt.Spec.Endpoints, nil
-			},
-		},
 		{
 			name: "Alermanager Service Monitor",
 			getEndpoints: func(f *Factory) ([]monv1.Endpoint, error) {
@@ -4769,20 +4550,6 @@ func TestPodDisruptionBudget(t *testing.T) {
 			name: "Alertmanager non-HA",
 			getPDB: func(f *Factory) (*policyv1.PodDisruptionBudget, error) {
 				return f.AlertmanagerPodDisruptionBudget()
-			},
-			ha: false,
-		},
-		{
-			name: "PrometheusAdapter HA",
-			getPDB: func(f *Factory) (*policyv1.PodDisruptionBudget, error) {
-				return f.PrometheusAdapterPodDisruptionBudget()
-			},
-			ha: true,
-		},
-		{
-			name: "PrometheusAdapter non-HA",
-			getPDB: func(f *Factory) (*policyv1.PodDisruptionBudget, error) {
-				return f.PrometheusAdapterPodDisruptionBudget()
 			},
 			ha: false,
 		},
@@ -5109,5 +4876,74 @@ func TestHashStringMapData(t *testing.T) {
 	h := hashStringMap(cm.Data)
 	for i := 0; i < 100; i++ {
 		require.Equal(t, h, hashStringMap(cm.Data), "hashing not stable")
+	}
+}
+
+func TestAlertmanagerProxy(t *testing.T) {
+	for _, tc := range []struct {
+		proxyReader ProxyReader
+		assertFn    func(*testing.T, *v1.Container)
+	}{
+		{
+			proxyReader: &fakeProxyReader{},
+			assertFn: func(t *testing.T, c *v1.Container) {
+				t.Helper()
+
+				require.Len(t, c.Env, 3)
+				require.Equal(t, c.Env[0].Value, "")
+				require.Equal(t, c.Env[1].Value, "")
+				require.Equal(t, c.Env[2].Value, "")
+			},
+		},
+		{
+			proxyReader: &fakeProxyReader{
+				httpProxy:  "http://example.com:8080/",
+				httpsProxy: "https://example.com:8080/",
+				noProxy:    "local.example.com",
+			},
+			assertFn: func(t *testing.T, c *v1.Container) {
+				t.Helper()
+
+				require.Len(t, c.Env, 3)
+				require.Equal(t, c.Env[0].Name, "HTTP_PROXY")
+				require.Equal(t, c.Env[0].Value, "http://example.com:8080/")
+				require.Equal(t, c.Env[1].Name, "HTTPS_PROXY")
+				require.Equal(t, c.Env[1].Value, "https://example.com:8080/")
+				require.Equal(t, c.Env[2].Name, "NO_PROXY")
+				require.Equal(t, c.Env[2].Value, "local.example.com")
+			},
+		},
+	} {
+		t.Run("", func(t *testing.T) {
+			findContainer := func(am *monv1.Alertmanager) *v1.Container {
+				for _, c := range am.Spec.Containers {
+					if c.Name == "alertmanager" {
+						return &c
+					}
+				}
+
+				return nil
+			}
+
+			f := NewFactory("openshift-monitoring", "openshift-user-workload-monitoring", NewDefaultConfig(), defaultInfrastructureReader(), tc.proxyReader, NewAssets(assetsPath), &APIServerConfig{}, &configv1.Console{})
+
+			t.Run("main", func(t *testing.T) {
+				am, err := f.AlertmanagerMain()
+				require.NoError(t, err)
+
+				amc := findContainer(am)
+				require.NotNil(t, amc)
+				tc.assertFn(t, amc)
+			})
+
+			t.Run("user", func(t *testing.T) {
+				am, err := f.AlertmanagerUserWorkload()
+				require.NoError(t, err)
+
+				amc := findContainer(am)
+				require.NotNil(t, amc)
+				tc.assertFn(t, amc)
+			})
+		})
 	}
 }
