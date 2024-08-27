@@ -826,6 +826,26 @@ data:
     # Number of jaeger instances used certain agent strategy
     - '{__name__="jaeger_operator_instances_agent_strategies"}'
     #
+    # owners: (@tracing-team)
+    #
+    # Number of Tempo instances per backend storage type.
+    - '{__name__="type:tempo_operator_tempostack_storage_backend:sum",type=~"azure|gcs|s3"}'
+    #
+    # owners: (@tracing-team)
+    #
+    # Number of Tempo instances per management state.
+    - '{__name__="state:tempo_operator_tempostack_managed:sum",state=~"Managed|Unmanaged"}'
+    #
+    # owners: (@tracing-team)
+    #
+    # Number of Tempo instances per multitenancy mode.
+    - '{__name__="type:tempo_operator_tempostack_multi_tenancy:sum",type=~"enabled|disabled"}'
+    #
+    # owners: (@tracing-team)
+    #
+    # Number of Tempo stacks with Jaeger UI enabled/disabled.
+    - '{__name__="enabled:tempo_operator_tempostack_jaeger_ui:sum",enabled="true|false"}'
+    #
     # owners: (https://github.com/redhat-developer/application-services-metering-operator)
     #
     # The current amount of CPU used by Application Services products, aggregated by product name.
