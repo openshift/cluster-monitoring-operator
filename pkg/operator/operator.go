@@ -1064,7 +1064,7 @@ func (o *Operator) Config(ctx context.Context, key string) (*manifests.Config, e
 // version can be computed, the link will point to the documentation for that
 // version, else it will point to latest documentation.
 func (o Operator) storageNotConfiguredMessage() string {
-	const docURL = "https://docs.openshift.com/container-platform/%s/monitoring/configuring-the-monitoring-stack.html"
+	const docURL = "https://docs.openshift.com/container-platform/%s/observability/monitoring/configuring-the-monitoring-stack.html"
 
 	latestDocMsg := client.StorageNotConfiguredMessage + fmt.Sprintf(docURL, "latest")
 
