@@ -174,6 +174,13 @@ function(params)
                 ports: [
                   { containerPort: monitoringPluginPort, name: monitoringPluginPortName },
                 ],
+                readinessProbe: {
+                  httpGet: {
+                    path: '/health',
+                    port: 'https',
+                    scheme: 'HTTPS',
+                  },
+                },
                 resources: {
                   requests: { cpu: '10m', memory: '50Mi' },
                 },

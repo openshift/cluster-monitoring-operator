@@ -57,6 +57,11 @@ spec:
         ports:
         - containerPort: 9443
           name: https
+        readinessProbe:
+          httpGet:
+            path: /health
+            port: https
+            scheme: HTTPS
         resources:
           requests:
             cpu: 10m
