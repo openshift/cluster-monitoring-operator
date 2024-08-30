@@ -46,6 +46,7 @@ spec:
       automountServiceAccountToken: false
       containers:
       - args:
+        - -config-path=/opt/app-root/web/dist
         - -static-path=/opt/app-root/web/dist
         - -cert=/var/cert/tls.crt
         - -key=/var/cert/tls.key
