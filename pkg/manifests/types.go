@@ -758,7 +758,7 @@ type RemoteWriteSpec struct {
 	// Defines OAuth2 authentication settings for the remote write endpoint.
 	OAuth2 *monv1.OAuth2 `json:"oauth2,omitempty"`
 	// Defines an optional proxy URL.
-	// It is superseded by the cluster-wide proxy, if enabled.
+	// It is superseded by the cluster-wide proxy when it is enabled, prioritizing the HTTPS proxy.
 	ProxyURL string `json:"proxyUrl,omitempty"`
 	// Allows tuning configuration for remote write queue parameters.
 	QueueConfig *monv1.QueueConfig `json:"queueConfig,omitempty"`

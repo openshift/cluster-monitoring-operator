@@ -522,7 +522,7 @@ The `RemoteWriteSpec` resource defines the settings for remote write storage.
 | metadataConfig | *[monv1.MetadataConfig](https://github.com/prometheus-operator/prometheus-operator/blob/v0.76.0/Documentation/api.md#metadataconfig) | Defines settings for sending series metadata to remote write storage. |
 | name | string | Defines the name of the remote write queue. This name is used in metrics and logging to differentiate queues. If specified, this name must be unique. |
 | oauth2 | *monv1.OAuth2 | Defines OAuth2 authentication settings for the remote write endpoint. |
-| proxyUrl | string | Defines an optional proxy URL. It is superseded by the cluster-wide proxy, if enabled. |
+| proxyUrl | string | Defines an optional proxy URL. It is superseded by the cluster-wide proxy when it is enabled, prioritizing the HTTPS proxy. |
 | queueConfig | *[monv1.QueueConfig](https://github.com/prometheus-operator/prometheus-operator/blob/v0.76.0/Documentation/api.md#queueconfig) | Allows tuning configuration for remote write queue parameters. |
 | remoteTimeout | string | Defines the timeout value for requests to the remote write endpoint. |
 | sendExemplars | *bool | Enables sending exemplars via remote write. When enabled, Prometheus is configured to store a maximum of 100,000 exemplars in memory. Note that this setting only applies to user-defined monitoring. It is not applicable to default in-cluster monitoring. |
