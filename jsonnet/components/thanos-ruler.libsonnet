@@ -389,8 +389,8 @@ function(params)
         },
         enforcedNamespaceLabel: 'namespace',
         listenLocal: true,
-        ruleSelector: {
-          matchExpressions:
+        ruleSelector: cfg.resourceSelector {
+          matchExpressions+:
             [
               {
                 key: 'openshift.io/prometheus-rule-evaluation-scope',
