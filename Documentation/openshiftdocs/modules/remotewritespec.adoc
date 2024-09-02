@@ -35,7 +35,7 @@ link:prometheusrestrictedconfig.adoc[PrometheusRestrictedConfig]
 
 |oauth2|*monv1.OAuth2|Defines OAuth2 authentication settings for the remote write endpoint.
 
-|proxyUrl|string|Defines an optional proxy URL. It is superseded by the cluster-wide proxy when it is enabled, prioritizing the HTTPS proxy.
+|proxyUrl|string|Defines an optional proxy URL. If the cluster-wide proxy is enabled, it replaces the proxyUrl setting. The cluster-wide proxy supports both HTTP and HTTPS proxies, with HTTPS taking precedence.
 
 |queueConfig|*monv1.QueueConfig|Allows tuning configuration for remote write queue parameters.
 

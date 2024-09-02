@@ -1448,6 +1448,9 @@ func (f *Factory) PrometheusK8s(grpcTLS *v1.Secret, telemetrySecret *v1.Secret) 
 		if f.proxy.HTTPSProxy() != "" {
 			rw.ProxyURL = ptr.To(f.proxy.HTTPSProxy())
 		}
+		if f.proxy.NoProxy() != "" {
+			rw.NoProxy = ptr.To(f.proxy.NoProxy())
+		}
 	}
 
 	if f.config.Images.Thanos != "" {

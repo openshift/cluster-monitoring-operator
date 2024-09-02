@@ -1426,12 +1426,8 @@ func TestRemoteWriteAuthorizationConfig(t *testing.T) {
 func TestPrometheusK8sRemoteWriteProxy(t *testing.T) {
 	config := func() *Config {
 		c, err := NewConfigFromString("", false)
-		if err != nil {
-			t.Fatal(err)
-		}
-
+		require.NoError(t, err)
 		c.ClusterMonitoringConfiguration.PrometheusK8sConfig.RemoteWrite = []RemoteWriteSpec{{URL: "http://custom"}}
-
 		return c
 	}
 
@@ -1439,29 +1435,44 @@ func TestPrometheusK8sRemoteWriteProxy(t *testing.T) {
 		name                        string
 		proxyReader                 ProxyReader
 		expectedRemoteWriteProxyURL *string
+		expectedRemoteWriteNoProxy  *string
 	}{
 		{
-			name:                        "no proxy",
-			proxyReader:                 &fakeProxyReader{},
-			expectedRemoteWriteProxyURL: nil,
+			name:        "no proxy",
+			proxyReader: &fakeProxyReader{},
 		},
-
 		{
 			name:                        "HTTP proxy",
 			proxyReader:                 &fakeProxyReader{httpProxy: "http://my-proxy"},
 			expectedRemoteWriteProxyURL: ptr.To("http://my-proxy"),
 		},
-
+		{
+			name:                        "HTTP proxy & noProxy",
+			proxyReader:                 &fakeProxyReader{httpProxy: "http://my-proxy", noProxy: ".foo.bar,.svc.localhost"},
+			expectedRemoteWriteProxyURL: ptr.To("http://my-proxy"),
+			expectedRemoteWriteNoProxy:  ptr.To(".foo.bar,.svc.localhost"),
+		},
 		{
 			name:                        "HTTPS proxy",
 			proxyReader:                 &fakeProxyReader{httpsProxy: "https://my-secured-proxy"},
 			expectedRemoteWriteProxyURL: ptr.To("https://my-secured-proxy"),
 		},
-
+		{
+			name:                        "HTTPS proxy & noProxy",
+			proxyReader:                 &fakeProxyReader{httpsProxy: "https://my-secured-proxy", noProxy: ".us-east-2.compute.internal,10.0.0.0/16"},
+			expectedRemoteWriteProxyURL: ptr.To("https://my-secured-proxy"),
+			expectedRemoteWriteNoProxy:  ptr.To(".us-east-2.compute.internal,10.0.0.0/16"),
+		},
 		{
 			name:                        "HTTP & HTTPS proxy",
 			proxyReader:                 &fakeProxyReader{httpProxy: "http://my-proxy", httpsProxy: "https://my-secured-proxy"},
 			expectedRemoteWriteProxyURL: ptr.To("https://my-secured-proxy"),
+		},
+		{
+			name:                        "HTTP & HTTPS proxy & noProxy",
+			proxyReader:                 &fakeProxyReader{httpProxy: "http://my-proxy", httpsProxy: "https://my-secured-proxy", noProxy: ".foo.bar,.sv.localhost"},
+			expectedRemoteWriteProxyURL: ptr.To("https://my-secured-proxy"),
+			expectedRemoteWriteNoProxy:  ptr.To(".foo.bar,.sv.localhost"),
 		},
 	} {
 		t.Run(tc.name, func(t *testing.T) {
@@ -1470,17 +1481,10 @@ func TestPrometheusK8sRemoteWriteProxy(t *testing.T) {
 				&v1.Secret{ObjectMeta: metav1.ObjectMeta{Name: "foo"}},
 				nil,
 			)
-			if err != nil {
-				t.Fatal(err)
-			}
-
-			if len(p.Spec.RemoteWrite) != 1 {
-				t.Fatalf("expecting 1 remote write entry, got %d", len(p.Spec.RemoteWrite))
-			}
-
-			if !reflect.DeepEqual(p.Spec.RemoteWrite[0].ProxyConfig.ProxyURL, tc.expectedRemoteWriteProxyURL) {
-				t.Fatalf("want remote write proxy URL %v, got %v", tc.expectedRemoteWriteProxyURL, p.Spec.RemoteWrite[0].ProxyConfig.ProxyURL)
-			}
+			require.NoError(t, err)
+			require.Len(t, p.Spec.RemoteWrite, 1)
+			require.Equal(t, tc.expectedRemoteWriteProxyURL, p.Spec.RemoteWrite[0].ProxyConfig.ProxyURL)
+			require.Equal(t, tc.expectedRemoteWriteNoProxy, p.Spec.RemoteWrite[0].ProxyConfig.NoProxy)
 		})
 	}
 }
