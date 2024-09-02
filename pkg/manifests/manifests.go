@@ -37,6 +37,7 @@ import (
 	securityv1 "github.com/openshift/api/security/v1"
 	"github.com/openshift/library-go/pkg/crypto"
 	monv1 "github.com/prometheus-operator/prometheus-operator/pkg/apis/monitoring/v1"
+	"golang.org/x/net/http/httpproxy"
 	yaml2 "gopkg.in/yaml.v2"
 	admissionv1 "k8s.io/api/admissionregistration/v1"
 	appsv1 "k8s.io/api/apps/v1"
@@ -1438,12 +1439,41 @@ func (f *Factory) PrometheusK8s(grpcTLS *v1.Secret, telemetrySecret *v1.Secret) 
 	for k := range p.Spec.RemoteWrite {
 		rw := &p.Spec.RemoteWrite[k]
 
+		var tmpRWProxyURL string
 		if f.proxy.HTTPProxy() != "" {
-			rw.ProxyURL = f.proxy.HTTPProxy()
+			tmpRWProxyURL = f.proxy.HTTPProxy()
 		}
 		if f.proxy.HTTPSProxy() != "" {
-			rw.ProxyURL = f.proxy.HTTPSProxy()
+			tmpRWProxyURL = f.proxy.HTTPSProxy()
 		}
+
+		// Fixes: https://issues.redhat.com/browse/OCPBUGS-38289
+		// The code is condensed here to simplify backporting.
+		// This is a temporary workaround because the NoProxy field isn't exported on the Prometheus CRD in older versions.
+		// If the cluster proxy or remoteWrite config change, this code will re-run, ensuring no stale state.
+		// The httpproxy package used here is the same as used by Prometheus, which helps with consistency.
+
+		// proxy URL is not to be set/overwritten in here, nothing to do.
+		if tmpRWProxyURL == "" {
+			continue
+		}
+		// Suppose that CMO has set the proxy URL.
+		proxyConfig := &httpproxy.Config{
+			HTTPProxy:  tmpRWProxyURL,
+			HTTPSProxy: tmpRWProxyURL,
+			NoProxy:    f.proxy.NoProxy(),
+		}
+		proxyFunc := proxyConfig.ProxyFunc()
+		// Ignore errors here.
+		u, _ := url.Parse(rw.URL)
+		// Check if the endpoint URL will be using that proxy URL.
+		proxyURL, err := proxyFunc(u)
+		if err == nil && proxyURL == nil {
+			// Proxing will not be used, no need to set it.
+			continue
+		}
+		// The proxy will be used, set it.
+		rw.ProxyURL = tmpRWProxyURL
 	}
 
 	if f.config.Images.Thanos != "" {
