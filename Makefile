@@ -1,5 +1,6 @@
 SHELL=/usr/bin/env bash -o pipefail
 
+
 GO_PKG=github.com/openshift/cluster-monitoring-operator
 REPO?=quay.io/openshift/cluster-monitoring-operator
 TAG?=$(shell git rev-parse --short HEAD)
