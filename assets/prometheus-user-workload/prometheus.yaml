@@ -204,7 +204,12 @@ spec:
       operator: NotIn
       values:
       - "false"
-  podMonitorSelector: {}
+  podMonitorSelector:
+    matchExpressions:
+    - key: openshift.io/user-monitoring
+      operator: NotIn
+      values:
+      - "false"
   priorityClassName: openshift-user-critical
   probeNamespaceSelector:
     matchExpressions:
@@ -216,7 +221,12 @@ spec:
       operator: NotIn
       values:
       - "false"
-  probeSelector: {}
+  probeSelector:
+    matchExpressions:
+    - key: openshift.io/user-monitoring
+      operator: NotIn
+      values:
+      - "false"
   replicas: 2
   resources:
     requests:
@@ -233,8 +243,15 @@ spec:
       values:
       - "false"
   ruleSelector:
-    matchLabels:
-      openshift.io/prometheus-rule-evaluation-scope: leaf-prometheus
+    matchExpressions:
+    - key: openshift.io/user-monitoring
+      operator: NotIn
+      values:
+      - "false"
+    - key: openshift.io/prometheus-rule-evaluation-scope
+      operator: In
+      values:
+      - leaf-prometheus
   scrapeConfigNamespaceSelector: null
   scrapeConfigSelector: null
   secrets:
@@ -259,7 +276,12 @@ spec:
       operator: NotIn
       values:
       - "false"
-  serviceMonitorSelector: {}
+  serviceMonitorSelector:
+    matchExpressions:
+    - key: openshift.io/user-monitoring
+      operator: NotIn
+      values:
+      - "false"
   thanos:
     image: quay.io/thanos/thanos:v0.36.1
     resources:
