@@ -522,7 +522,7 @@ The `RemoteWriteSpec` resource defines the settings for remote write storage.
 | metadataConfig | *[monv1.MetadataConfig](https://github.com/prometheus-operator/prometheus-operator/blob/v0.66.0/Documentation/api.md#metadataconfig) | Defines settings for sending series metadata to remote write storage. |
 | name | string | Defines the name of the remote write queue. This name is used in metrics and logging to differentiate queues. If specified, this name must be unique. |
 | oauth2 | *monv1.OAuth2 | Defines OAuth2 authentication settings for the remote write endpoint. |
-| proxyUrl | string | Defines an optional proxy URL. |
+| proxyUrl | string | Defines an optional proxy URL. It is superseded by the cluster-wide proxy, if enabled. |
 | queueConfig | *[monv1.QueueConfig](https://github.com/prometheus-operator/prometheus-operator/blob/v0.66.0/Documentation/api.md#queueconfig) | Allows tuning configuration for remote write queue parameters. |
 | remoteTimeout | string | Defines the timeout value for requests to the remote write endpoint. |
 | sigv4 | *monv1.Sigv4 | Defines AWS Signature Version 4 authentication settings. |
