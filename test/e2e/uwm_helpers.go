@@ -17,7 +17,8 @@ import (
 )
 
 const (
-	userWorkloadTestNs = "user-workload-test"
+	userWorkloadTestNs     = "user-workload-test"
+	serviceMonitorTestName = "prometheus-example-monitor"
 )
 
 var (
@@ -171,9 +172,9 @@ func deployUserApplication(t *testing.T, f *framework.Framework) error {
 
 	_, err = f.MonitoringClient.ServiceMonitors(userWorkloadTestNs).Create(ctx, &monitoringv1.ServiceMonitor{
 		ObjectMeta: metav1.ObjectMeta{
-			Name: "prometheus-example-monitor",
+			Name: serviceMonitorTestName,
 			Labels: map[string]string{
-				"k8s-app":                  "prometheus-example-monitor",
+				"k8s-app":                  serviceMonitorTestName,
 				framework.E2eTestLabelName: framework.E2eTestLabelValue,
 			},
 		},
