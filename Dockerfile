@@ -1,12 +1,12 @@
 # When bumping the Go version, don't forget to update the configuration of the
 # CI jobs in openshift/release.
-FROM registry.ci.openshift.org/ocp/builder:rhel-9-golang-1.22-openshift-4.17 AS builder
+FROM registry.ci.openshift.org/ocp/builder:rhel-9-golang-1.22-openshift-4.18 AS builder
 WORKDIR /go/src/github.com/openshift/cluster-monitoring-operator
 COPY . .
 ENV GOFLAGS="-mod=vendor"
 RUN make operator-no-deps
 
-FROM registry.ci.openshift.org/ocp/4.17:base-rhel9
+FROM registry.ci.openshift.org/ocp/4.18:base-rhel9
 LABEL io.k8s.display-name="OpenShift cluster-monitoring-operator" \
       io.k8s.description="This is a component of OpenShift and manages the lifecycle of the Prometheus based cluster monitoring stack." \
       io.openshift.tags="openshift" \
