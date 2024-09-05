@@ -36,6 +36,15 @@ local commonConfig = {
       'openshift.io/cluster-monitoring': 'true',
     },
   },
+  userWorkloadMonitoringResourceSelector: {
+    matchExpressions: [
+      {
+        key: 'openshift.io/user-monitoring',
+        operator: 'NotIn',
+        values: ['false'],
+      },
+    ],
+  },
   userWorkloadMonitoringNamespaceSelector: {
     matchExpressions: [
       {
@@ -326,6 +335,7 @@ local inCluster =
           'app.kubernetes.io/name': 'thanos-ruler',
           'thanos-ruler': 'user-workload',
         },
+        resourceSelector: $.values.common.userWorkloadMonitoringResourceSelector,
         namespaceSelector: $.values.common.userWorkloadMonitoringNamespaceSelector,
         commonLabels+: $.values.common.commonLabels,
         kubeRbacProxyImage: $.values.common.images.kubeRbacProxy,
@@ -478,6 +488,7 @@ local userWorkload =
           requests: { memory: '30Mi', cpu: '6m' },
         },
         namespaces: [$.values.common.namespaceUserWorkload],
+        resourceSelector: $.values.common.userWorkloadMonitoringResourceSelector,
         namespaceSelector: $.values.common.userWorkloadMonitoringNamespaceSelector,
         thanos: inCluster.values.prometheus.thanos,
         tlsCipherSuites: $.values.common.tlsCipherSuites,
