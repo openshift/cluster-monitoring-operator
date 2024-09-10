@@ -261,6 +261,12 @@ data:
     # cluster:vmi_request_cpu_cores:sum is the total number of CPU cores requested by pods of VMIs.
     - '{__name__="cluster:vmi_request_cpu_cores:sum"}'
     #
+    # owners: (https://github.com/kubev2v/forklift)
+    #
+    # cluster:mtv_migrations_status_total:max is the total number of VM migrations running on the cluster,
+    # labeled with {status}, {provider}, {mode}, and {target}.
+    - '{__name__="cluster:mtv_migrations_status_total:max"}'
+    #
     # owners: (@openshift/openshift-team-monitoring, @smarterclayton)
     #
     # node_role_os_version_machine:cpu_capacity_cores:sum is the total number
