@@ -38,7 +38,9 @@ func TestUserWorkloadThanosRulerWithAdditionalAlertmanagers(t *testing.T) {
 			scenarios: []scenario{
 				{"assert thanos ruler rollout", assertThanosRulerDeployment},
 				{"create additional alertmanager", createAlertmanager},
-				{"create alerting rule that always fires", createPrometheusRule},
+				{"create alerting rule that always fires", func(t *testing.T) {
+					createPrometheusRuleWithAlert(t, "default", "always-firing-alert", "AlwaysFiring")
+				}},
 				{"verify alertmanager received the alert", verifyAlertmanagerAlertReceived},
 			},
 		},
@@ -81,12 +83,12 @@ func createAlertmanager(t *testing.T) {
 	}
 }
 
-func createPrometheusRule(t *testing.T) {
+func createPrometheusRuleWithAlert(t *testing.T, namespace, name, alertName string) {
 	ctx := context.Background()
 	if err := f.OperatorClient.CreateOrUpdatePrometheusRule(ctx, &monitoringv1.PrometheusRule{
 		ObjectMeta: metav1.ObjectMeta{
-			Name:      "non-monitoring-prometheus-rules",
-			Namespace: "default",
+			Name:      name,
+			Namespace: namespace,
 			Labels: map[string]string{
 				framework.E2eTestLabelName: framework.E2eTestLabelValue,
 			},
@@ -97,7 +99,7 @@ func createPrometheusRule(t *testing.T) {
 					Name: "test-group",
 					Rules: []monitoringv1.Rule{
 						{
-							Alert: "AdditionalTestAlertRule",
+							Alert: alertName,
 							Expr:  intstr.FromString("vector(1)"),
 						},
 					},

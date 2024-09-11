@@ -76,7 +76,7 @@ func setupUserApplication(t *testing.T, f *framework.Framework) {
 func tearDownUserApplication(t *testing.T, f *framework.Framework) {
 	// check if its deleted and return if true
 	err := framework.Poll(time.Second, 5*time.Minute, func() error {
-		return f.OperatorClient.DeleteIfExists(ctx, userWorkloadTestNs)
+		return f.DeleteNamespace(t, userWorkloadTestNs)
 	})
 
 	if err != nil {

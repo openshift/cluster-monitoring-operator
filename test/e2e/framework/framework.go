@@ -755,3 +755,13 @@ func (f *Framework) CreateNamespace(namespace string) (CleanUpFunc, error) {
 		return f.KubeClient.CoreV1().Namespaces().Delete(ctx, ns.Name, metav1.DeleteOptions{})
 	}, nil
 }
+
+func (f *Framework) DeleteNamespace(t *testing.T, nsName string) error {
+	t.Helper()
+
+	err := f.KubeClient.CoreV1().Namespaces().Delete(ctx, nsName, metav1.DeleteOptions{})
+	if err != nil && !apierrors.IsNotFound(err) {
+		return fmt.Errorf("deleting Namespace object failed: %w", err)
+	}
+	return nil
+}
