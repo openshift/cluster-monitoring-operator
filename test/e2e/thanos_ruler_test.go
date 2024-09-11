@@ -41,13 +41,12 @@ func TestUserWorkloadThanosRulerWithAdditionalAlertmanagers(t *testing.T) {
 				{"create alerting rule that always fires", func(t *testing.T) {
 					createPrometheusRuleWithAlert(t, "default", "always-firing-alert", "AlwaysFiring")
 				}},
-				{"verify alertmanager received the alert", verifyAlertmanagerAlertReceived},
+				{"verify alertmanager received the alert", verifyAlertmanagerReceivedAlerts},
 			},
 		},
 	}
 
 	for _, tt := range testCases {
-		tt := tt
 		t.Run(tt.name, func(t *testing.T) {
 			for _, scenario := range tt.scenarios {
 				t.Run(scenario.name, scenario.assertion)
@@ -111,15 +110,13 @@ func createPrometheusRuleWithAlert(t *testing.T, namespace, name, alertName stri
 	}
 }
 
-func verifyAlertmanagerAlertReceived(t *testing.T) {
-
-	host, cleanUp, err := f.ForwardPort(t, f.Ns, "alertmanager-operated", 9093)
-	if err != nil {
-		t.Fatal(err)
-	}
-	t.Cleanup(cleanUp)
-
-	err = framework.Poll(time.Second, 5*time.Minute, func() error {
+func verifyAlertmanagerReceivedAlerts(t *testing.T) {
+	err := framework.Poll(time.Second, 5*time.Minute, func() error {
+		host, cleanUp, err := f.ForwardPort(t, f.Ns, "alertmanager-operated", 9093)
+		if err != nil {
+			return err
+		}
+		t.Cleanup(cleanUp)
 		resp, err := http.Get(fmt.Sprintf("http://%s/api/v2/alerts", host))
 		if err != nil {
 			return err
