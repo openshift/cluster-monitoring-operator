@@ -10,58 +10,68 @@ import (
 
 	"github.com/openshift/cluster-monitoring-operator/test/e2e/framework"
 	monitoringv1 "github.com/prometheus-operator/prometheus-operator/pkg/apis/monitoring/v1"
+	"github.com/stretchr/testify/require"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/util/intstr"
 )
 
 func TestUserWorkloadThanosRulerWithAdditionalAlertmanagers(t *testing.T) {
 	setupUserWorkloadAssetsWithTeardownHook(t, f)
+
+	// Ensure there is no existing alertmanager in f.UserWorkloadMonitoringNs as we're using
+	// the common alertmanager-operated service.
+	alertmanagers, err := f.MonitoringClient.Alertmanagers(f.UserWorkloadMonitoringNs).List(context.Background(), metav1.ListOptions{})
+	require.NoError(t, err)
+	require.Len(t, alertmanagers.Items, 0)
+
+	// Deploy the additional alertmanager in f.UserWorkloadMonitoringNs.
+	addAlertmanagerName := "test-additional-alertmanager"
+	addAlertmanagerService := "alertmanager-operated"
+
+	createAlertmanager(t, f.UserWorkloadMonitoringNs, addAlertmanagerName)
+	t.Cleanup(func() {
+		deleteAlertmanager(t, f.UserWorkloadMonitoringNs, addAlertmanagerName)
+	})
+
+	// Wire it.
 	uwmCM := f.BuildUserWorkloadConfigMap(t,
-		`thanosRuler:
+		fmt.Sprintf(`thanosRuler:
   additionalAlertmanagerConfigs:
   - scheme: http
     apiVersion: v2
-    staticConfigs: ["dnssrv+_web._tcp.alertmanager-operated.openshift-user-workload-monitoring.svc"]
-`,
-	)
+    staticConfigs: ["dnssrv+_web._tcp.%s.%s.svc"]
+`, addAlertmanagerService, f.UserWorkloadMonitoringNs))
 	f.MustCreateOrUpdateConfigMap(t, uwmCM)
-	t.Cleanup(func() {
-		deleteAlertmanager(t)
-	})
 
-	testCases := []struct {
-		name      string
-		scenarios []scenario
+	for _, check := range []struct {
+		name string
+		f    func(*testing.T)
 	}{
 		{
-			name: "Test enabling and disabling additional alertmanager configs",
-			scenarios: []scenario{
-				{"assert thanos ruler rollout", assertThanosRulerDeployment},
-				{"create additional alertmanager", createAlertmanager},
-				{"create alerting rule that always fires", func(t *testing.T) {
-					createPrometheusRuleWithAlert(t, "default", "always-firing-alert", "AlwaysFiring")
-				}},
-				{"verify alertmanager received the alert", verifyAlertmanagerReceivedAlerts},
+			name: "assert thanos ruler rollout",
+			f:    assertThanosRulerDeployment,
+		},
+		{
+			name: "create UWM alerting rule that always fires and verify the additional alertmanager received the alert",
+			f: func(t *testing.T) {
+				createPrometheusRuleWithAlert(t, "default", "always-firing-alert", "AlwaysFiring")
+				verifyAlertmanagerReceivedAlerts(t, f.UserWorkloadMonitoringNs, addAlertmanagerService)
 			},
 		},
-	}
-
-	for _, tt := range testCases {
-		t.Run(tt.name, func(t *testing.T) {
-			for _, scenario := range tt.scenarios {
-				t.Run(scenario.name, scenario.assertion)
-			}
+	} {
+		t.Run(check.name, func(t *testing.T) {
+			check.f(t)
 		})
 	}
 }
 
-func createAlertmanager(t *testing.T) {
+func createAlertmanager(t *testing.T, namespace, name string) {
 	ctx := context.Background()
 	replicas := int32(1)
-	additionalAlertmanager := monitoringv1.Alertmanager{
+	alertmanager := monitoringv1.Alertmanager{
 		ObjectMeta: metav1.ObjectMeta{
-			Name:      "alertmanager-e2e-test",
-			Namespace: f.UserWorkloadMonitoringNs,
+			Name:      name,
+			Namespace: namespace,
 			Labels: map[string]string{
 				framework.E2eTestLabelName: framework.E2eTestLabelValue,
 			},
@@ -73,18 +83,18 @@ func createAlertmanager(t *testing.T) {
 			Replicas: &replicas,
 		},
 	}
-	if err := f.OperatorClient.CreateOrUpdateAlertmanager(ctx, &additionalAlertmanager); err != nil {
-		t.Fatal(err)
-	}
+	require.NoError(t, f.OperatorClient.CreateOrUpdateAlertmanager(ctx, &alertmanager))
+	require.NoError(t, f.OperatorClient.WaitForAlertmanager(ctx, &alertmanager))
+}
 
-	if err := f.OperatorClient.WaitForAlertmanager(ctx, &additionalAlertmanager); err != nil {
-		t.Fatal(err)
-	}
+func deleteAlertmanager(t *testing.T, namespace, name string) {
+	amClient := f.MonitoringClient.Alertmanagers(namespace)
+	require.NoError(t, amClient.Delete(context.Background(), name, metav1.DeleteOptions{}))
 }
 
 func createPrometheusRuleWithAlert(t *testing.T, namespace, name, alertName string) {
 	ctx := context.Background()
-	if err := f.OperatorClient.CreateOrUpdatePrometheusRule(ctx, &monitoringv1.PrometheusRule{
+	err := f.OperatorClient.CreateOrUpdatePrometheusRule(ctx, &monitoringv1.PrometheusRule{
 		ObjectMeta: metav1.ObjectMeta{
 			Name:      name,
 			Namespace: namespace,
@@ -105,14 +115,13 @@ func createPrometheusRuleWithAlert(t *testing.T, namespace, name, alertName stri
 				},
 			},
 		},
-	}); err != nil {
-		t.Fatal(err)
-	}
+	})
+	require.NoError(t, err)
 }
 
-func verifyAlertmanagerReceivedAlerts(t *testing.T) {
+func verifyAlertmanagerReceivedAlerts(t *testing.T, namespace, svc string) {
 	err := framework.Poll(time.Second, 5*time.Minute, func() error {
-		host, cleanUp, err := f.ForwardPort(t, f.Ns, "alertmanager-operated", 9093)
+		host, cleanUp, err := f.ForwardPort(t, namespace, svc, 9093)
 		if err != nil {
 			return err
 		}
@@ -131,14 +140,5 @@ func verifyAlertmanagerReceivedAlerts(t *testing.T) {
 		}
 		return nil
 	})
-	if err != nil {
-		t.Fatal(err)
-	}
-}
-
-func deleteAlertmanager(t *testing.T) {
-	amClient := f.MonitoringClient.Alertmanagers(f.UserWorkloadMonitoringNs)
-	if err := amClient.Delete(context.Background(), "alertmanager-e2e-test", metav1.DeleteOptions{}); err != nil {
-		t.Fatal(err)
-	}
+	require.NoError(t, err)
 }
