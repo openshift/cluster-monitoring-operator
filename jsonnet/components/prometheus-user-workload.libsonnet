@@ -297,8 +297,8 @@ function(params)
         },
       },
       spec+: {
-        // Enable experimental additional scrape metrics feature
-        enableFeatures+: ['extra-scrape-metrics'],
+        // Enable experimental additional scrape metrics and delayed compaction features.
+        enableFeatures+: ['extra-scrape-metrics', 'delayed-compaction'],
         overrideHonorTimestamps: true,
         overrideHonorLabels: true,
         ignoreNamespaceSelectors: true,
