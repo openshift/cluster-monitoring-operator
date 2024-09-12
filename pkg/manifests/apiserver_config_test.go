@@ -140,7 +140,6 @@ func TestGetTLSCiphers(t *testing.T) {
 	}
 
 	for _, tt := range testCases {
-		tt := tt
 		t.Run(tt.name, func(t *testing.T) {
 			actualCiphers := tt.config.TLSCiphers()
 			if !reflect.DeepEqual(tt.expectedCiphers, actualCiphers) {

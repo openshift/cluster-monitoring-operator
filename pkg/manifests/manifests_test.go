@@ -2204,7 +2204,6 @@ func TestPrometheusK8sAdditionalAlertManagerConfigsSecret(t *testing.T) {
 	}
 
 	for _, tt := range testCases {
-		tt := tt
 		t.Run(tt.name, func(t *testing.T) {
 			c, err := NewConfigFromString(tt.config, false)
 			if err != nil {
@@ -2524,7 +2523,6 @@ func TestThanosRulerAdditionalAlertManagerConfigsSecret(t *testing.T) {
 	}
 
 	for _, tt := range testCases {
-		tt := tt
 		t.Run(tt.name, func(t *testing.T) {
 			c, err := NewConfigFromString(tt.config, false)
 			if err != nil {
