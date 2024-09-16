@@ -275,6 +275,7 @@ func TestClusterMonitorPrometheusK8Config(t *testing.T) {
 					expectMatchingRequests(podName, containerName, mem, cpu),
 					// Set by default.
 					expectContainerArg("--scrape.timestamp-tolerance=15ms", containerName),
+					expectContainerArg("--enable-feature=delayed-compaction", containerName),
 					// Set via the config above.
 					expectContainerArg("--log.level=debug", containerName),
 					expectContainerArg("--storage.tsdb.retention.time=10h", containerName),
@@ -630,7 +631,7 @@ func TestUserWorkloadMonitorPrometheusK8Config(t *testing.T) {
 					expectCatchAllToleration(),
 					expectMatchingRequests(podName, containerName, mem, cpu),
 					// Set by default.
-					expectContainerArg("--enable-feature=extra-scrape-metrics,exemplar-storage", containerName),
+					expectContainerArg("--enable-feature=extra-scrape-metrics,delayed-compaction,exemplar-storage", containerName),
 					// Set via the config above.
 					expectContainerArg("--log.level=debug", containerName),
 					expectContainerArg("--storage.tsdb.retention.time=10h", containerName),

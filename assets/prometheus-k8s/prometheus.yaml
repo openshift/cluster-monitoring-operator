@@ -159,7 +159,8 @@ spec:
     volumeMounts:
     - mountPath: /etc/pki/ca-trust/extracted/pem/
       name: prometheus-trusted-ca-bundle
-  enableFeatures: []
+  enableFeatures:
+  - delayed-compaction
   externalLabels: {}
   externalURL: https://prometheus-k8s.openshift-monitoring.svc:9091
   image: quay.io/prometheus/prometheus:v2.54.1
