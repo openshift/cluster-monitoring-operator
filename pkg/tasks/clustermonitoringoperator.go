@@ -48,6 +48,7 @@ func (t *ClusterMonitoringOperatorTask) Run(ctx context.Context) error {
 	for name, crf := range map[string]func() (*rbacv1.ClusterRole, error){
 		"cluster-monitoring-view":          t.factory.ClusterMonitoringClusterRoleView,
 		"system:aggregated-metrics-reader": t.factory.ClusterMonitoringClusterRoleAggregatedMetricsReader,
+		"pod-metrics-reader":               t.factory.ClusterMonitoringClusterRolePodMetricsReader,
 		"monitoring-rules-edit":            t.factory.ClusterMonitoringRulesEditClusterRole,
 		"monitoring-rules-view":            t.factory.ClusterMonitoringRulesViewClusterRole,
 		"monitoring-edit":                  t.factory.ClusterMonitoringEditClusterRole,

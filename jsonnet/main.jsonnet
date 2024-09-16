@@ -406,6 +406,7 @@ local inCluster =
                 inCluster.clusterMonitoringOperator.clusterRoleView.rules +
                 inCluster.clusterMonitoringOperator.userWorkloadConfigEditRole.rules +
                 inCluster.clusterMonitoringOperator.clusterRoleAggregatedMetricsReader.rules +
+                inCluster.clusterMonitoringOperator.clusterRolePodMetricsReader.rules +
                 inCluster.kubeStateMetrics.clusterRole.rules +
                 inCluster.nodeExporter.clusterRole.rules +
                 inCluster.openshiftStateMetrics.clusterRole.rules +

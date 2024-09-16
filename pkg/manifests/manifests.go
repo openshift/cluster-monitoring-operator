@@ -224,6 +224,7 @@ var (
 	ClusterMonitoringOperatorServiceMonitor                = "cluster-monitoring-operator/service-monitor.yaml"
 	ClusterMonitoringClusterRoleView                       = "cluster-monitoring-operator/cluster-role-view.yaml"
 	ClusterMonitoringClusterRoleAggregatedMetricsReader    = "cluster-monitoring-operator/cluster-role-aggregated-metrics-reader.yaml"
+	ClusterMonitoringClusterRolePodMetricsReader           = "cluster-monitoring-operator/cluster-role-pod-metrics-reader.yaml"
 	ClusterMonitoringAlertmanagerViewRole                  = "cluster-monitoring-operator/monitoring-alertmanager-view-role.yaml"
 	ClusterMonitoringAlertmanagerEditRole                  = "cluster-monitoring-operator/monitoring-alertmanager-edit-role.yaml"
 	ClusterMonitoringApiReaderRole                         = "cluster-monitoring-operator/cluster-monitoring-api-role.yaml"
@@ -2396,6 +2397,10 @@ func (f *Factory) ClusterMonitoringClusterRoleView() (*rbacv1.ClusterRole, error
 
 func (f *Factory) ClusterMonitoringClusterRoleAggregatedMetricsReader() (*rbacv1.ClusterRole, error) {
 	return f.NewClusterRole(f.assets.MustNewAssetSlice(ClusterMonitoringClusterRoleAggregatedMetricsReader))
+}
+
+func (f *Factory) ClusterMonitoringClusterRolePodMetricsReader() (*rbacv1.ClusterRole, error) {
+	return f.NewClusterRole(f.assets.MustNewAssetSlice(ClusterMonitoringClusterRolePodMetricsReader))
 }
 
 func (f *Factory) ClusterMonitoringRulesEditClusterRole() (*rbacv1.ClusterRole, error) {

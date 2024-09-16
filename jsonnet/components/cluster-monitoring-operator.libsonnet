@@ -2,7 +2,6 @@ local metrics = import 'github.com/openshift/telemeter/jsonnet/telemeter/metrics
 
 local cmoRules = import './../rules.libsonnet';
 local kubePrometheus = import 'github.com/prometheus-operator/kube-prometheus/jsonnet/kube-prometheus/components/mixin/custom.libsonnet';
-local metricsAdapter = import 'github.com/prometheus-operator/kube-prometheus/jsonnet/kube-prometheus/components/prometheus-adapter.libsonnet';
 
 local defaults = {
   local defaults = self,
@@ -21,20 +20,32 @@ function(params) {
   local cmo = self,
   local cfg = defaults + params,
 
-  local clusterRoleAggregatedMetricsReader = metricsAdapter(cfg).clusterRoleAggregatedMetricsReader,
-
   '0alertingrulesCustomResourceDefinition': import './../crds/alertingrules-custom-resource-definition.json',
   '0alertrelabelconfigsCustomResourceDefinition': import './../crds/alertrelabelconfigs-custom-resource-definition.json',
 
-  clusterRoleAggregatedMetricsReader: clusterRoleAggregatedMetricsReader {
-    metadata+: {
-      labels+: {
+  // system:aggregated-metrics-reader is an aggregated ClusterRole which allows
+  // to query the Kubernetes resource metrics API for pods and nodes.
+  clusterRoleAggregatedMetricsReader: {
+    apiVersion: 'rbac.authorization.k8s.io/v1',
+    kind: 'ClusterRole',
+    metadata: {
+      name: 'system:aggregated-metrics-reader',
+      labels: cfg.commonLabels {
+        'rbac.authorization.k8s.io/aggregate-to-admin': 'true',
+        'rbac.authorization.k8s.io/aggregate-to-edit': 'true',
+        'rbac.authorization.k8s.io/aggregate-to-view': 'true',
+        'rbac.authorization.k8s.io/aggregate-to-cluster-reader': 'true',
         'app.kubernetes.io/name': cfg.name,
         'app.kubernetes.io/component': 'metrics-adapter',
-        'rbac.authorization.k8s.io/aggregate-to-cluster-reader': 'true',
       },
     },
+    rules: [{
+      apiGroups: ['metrics.k8s.io'],
+      resources: ['pods', 'nodes'],
+      verbs: ['get', 'list', 'watch'],
+    }],
   },
+
 
   prometheusRule: {
     apiVersion: 'monitoring.coreos.com/v1',
@@ -380,6 +391,26 @@ function(params) {
         verbs: ['get', 'create', 'update'],
       },
     ],
+  },
+
+  // pod-metrics-reader is a ClusterRole which can be bound using a RoleBinding
+  // to query platform and application metrics (both GET and POST requests) for
+  // the namespace against port 9092 of the Thanos Querier service.
+  clusterRolePodMetricsReader: {
+    apiVersion: 'rbac.authorization.k8s.io/v1',
+    kind: 'ClusterRole',
+    metadata: {
+      name: 'pod-metrics-reader',
+      labels: cfg.commonLabels {
+        'app.kubernetes.io/name': cfg.name,
+        'app.kubernetes.io/component': 'metrics-adapter',
+      },
+    },
+    rules: [{
+      apiGroups: ['metrics.k8s.io'],
+      resources: ['pods'],
+      verbs: ['get', 'create'],
+    }],
   },
 
   // This role enables read/write access to the platform Alertmanager API
