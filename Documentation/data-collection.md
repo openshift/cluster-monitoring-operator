@@ -147,8 +147,12 @@ data:
     # incentive to improve per cluster alerting for the purposes of preventing
     # upgrades from failing for end users.
     #
+    # Only alerts with valid severity label values are sent. The values are
+    # defined by
+    # https://github.com/openshift/enhancements/blob/master/enhancements/monitoring/alerting-consistency.md
+    #
     # consumers: (@openshift/openshift-team-olm, @openshift/openshift-team-cluster-manager)
-    - '{__name__="ALERTS",alertstate="firing"}'
+    - '{__name__="ALERTS",alertstate="firing",severity=~"critical|warning|info|none"}'
     #
     # owners: (@openshift/ops)
     #
