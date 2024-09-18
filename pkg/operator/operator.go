@@ -228,7 +228,7 @@ func New(
 	if err != nil {
 		return nil, fmt.Errorf("creating kubernetes clientset client: %w", err)
 	}
-	controllerRef, err := events.GetControllerReferenceForCurrentPod(context.TODO(), kclient, namespace, nil)
+	controllerRef, err := events.GetControllerReferenceForCurrentPod(ctx, kclient, namespace, nil)
 	if err != nil {
 		klog.Warningf("unable to get owner reference (falling back to namespace): %v", err)
 	}
