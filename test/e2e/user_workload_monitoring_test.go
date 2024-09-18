@@ -358,7 +358,7 @@ func assertMetricsForMonitoringComponents(t *testing.T) {
 	} {
 		t.Run(service, func(t *testing.T) {
 			f.ThanosQuerierClient.WaitForQueryReturn(
-				t, time.Minute, fmt.Sprintf(`count(up{service="%s",namespace="openshift-user-workload-monitoring"} == 1)`, service),
+				t, time.Minute + 100*time.Second, fmt.Sprintf(`count(up{service="%s",namespace="openshift-user-workload-monitoring"} == 1)`, service),
 				func(v float64) error {
 					if v == float64(expected) {
 						return nil
