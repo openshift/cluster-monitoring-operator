@@ -85,6 +85,9 @@ function(params)
             port: monitoringPluginPort,
           },
         },
+        i18n: {
+          loadType: 'Preload',
+        },
       },
     },
 
