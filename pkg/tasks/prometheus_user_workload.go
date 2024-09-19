@@ -312,12 +312,6 @@ func (t *PrometheusUserWorkloadTask) create(ctx context.Context) error {
 		}
 	}
 
-	// TODO(simonpasquier): remove this step after OCP 4.17 is released.
-	err = t.client.DeleteHashedConfigMap(ctx, "openshift-user-workload-monitoring", "prometheus-user-workload", "")
-	if err != nil {
-		return fmt.Errorf("deleting UserWorkload trusted CA Bundle ConfigMap failed: %w", err)
-	}
-
 	return nil
 }
 

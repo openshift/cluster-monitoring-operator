@@ -191,12 +191,6 @@ func (t *AlertmanagerUserWorkloadTask) create(ctx context.Context) error {
 		return fmt.Errorf("reconciling Alertmanager User Workload ServiceMonitor failed: %w", err)
 	}
 
-	// TODO(simonpasquier): remove this step after OCP 4.17 is released.
-	err = t.client.DeleteHashedConfigMap(ctx, "openshift-user-workload-monitoring", "alertmanager-trusted-ca-bundle", "")
-	if err != nil {
-		return fmt.Errorf("deleting all hashed Alertmanager User Workload trusted CA bundle ConfigMap failed: %w", err)
-	}
-
 	return nil
 }
 
