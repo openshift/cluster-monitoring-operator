@@ -176,28 +176,22 @@ local inCluster =
         prometheusName: $.values.common.prometheusName,
         local allDashboards =
           $.nodeExporter.mixin.grafanaDashboards +
-          $.prometheus.mixin.grafanaDashboards +
-          $.controlPlane.mixin.grafanaDashboards,
-        // Allow-listing dashboards that are going into the product. List needs to be sorted for std.setMember to work
+          $.prometheus.mixin.grafanaDashboards,
+
+        // Allow-listing dashboards that are going into the product. The list
+        // needs to be sorted for std.setMember to work.
         local includeDashboards = std.set([
-          'cluster-total.json',
-          'k8s-resources-cluster.json',
-          'k8s-resources-namespace.json',
-          'k8s-resources-node.json',
-          'k8s-resources-pod.json',
-          'k8s-resources-workload.json',
-          'k8s-resources-workloads-namespace.json',
-          'namespace-by-pod.json',
+          // node-exporter dashboards.
           'node-cluster-rsrc-use.json',
           'node-rsrc-use.json',
-          'pod-total.json',
+          // Prometheus dashboard.
           'prometheus.json',
         ]),
-        // This step is to delete row with titles 'Storage IO - Distribution(Containers)'
-        // and 'Storage IO - Distribution' from 'k8s-resources-pod.json' dashboard since
-        // Prometheus doesn't collect the per-container fs metrics
         local filteredDashboards = {
-          'k8s-resources-pod.json': ['Storage IO - Distribution(Containers)', 'Storage IO - Distribution'],
+          // This map specifies the rows to exclude from upstream dashboards.
+          // The format is:
+          //
+          // 'dashboard-name.json': ['Excluded Row 1', 'Excluded Row 2', ...],
         },
         local filterDashboard(dashboard, excludedRowTitles) = dashboard { rows: std.filter(function(row) !std.member(excludedRowTitles, row.title), dashboard.rows) },
         dashboards: {
