@@ -4,15 +4,6 @@
     {
       "source": {
         "git": {
-          "remote": "https://github.com/etcd-io/etcd",
-          "subdir": "contrib/mixin"
-        }
-      },
-      "version": "main"
-    },
-    {
-      "source": {
-        "git": {
           "remote": "https://github.com/prometheus-operator/kube-prometheus",
           "subdir": "jsonnet/kube-prometheus"
         }

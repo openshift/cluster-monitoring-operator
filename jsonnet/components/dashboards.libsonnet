@@ -149,33 +149,16 @@ function(params)
           local name = d.metadata.name;
           if std.startsWith(name, 'grafana-') then
             [
-              // Strip the "grafana-" from all dashboard configmaps.
+              // Strip the "grafana-" prefix from all configmap names.
               d {
                 metadata+: {
                   name: if std.startsWith(name, 'grafana-') then std.substr(name, std.length('grafana-'), std.length(name)) else name,
                 },
               },
-              // Tell CVO to remove the old dashboard configmaps prefixed by "grafana-".
-              // It can be removed after OCP 4.16 branch is cut.
-              // See https://issues.redhat.com/browse/OCPBUGS-18326.
-              {
-                apiVersion: 'v1',
-                kind: 'ConfigMap',
-                metadata: {
-                  name: name,
-                  namespace: d.metadata.namespace,
-                  annotations: {
-                    'release.openshift.io/delete': 'true',
-                  },
-                },
-              },
             ]
           else
             [d],
-        std.filterMap(
-          // etcd dashboard is deployed by cluster-etcd-operator
-          // PR: https://github.com/openshift/cluster-etcd-operator/pull/837
-          function(d) d.metadata.name != 'grafana-dashboard-etcd',
+        std.map(
           function(d)
             d {
               metadata+: {
