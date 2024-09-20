@@ -177,12 +177,10 @@ local inCluster =
         local allDashboards =
           $.nodeExporter.mixin.grafanaDashboards +
           $.prometheus.mixin.grafanaDashboards +
-          $.controlPlane.mixin.grafanaDashboards +
-          $.controlPlane.etcdMixin.grafanaDashboards,
+          $.controlPlane.mixin.grafanaDashboards,
         // Allow-listing dashboards that are going into the product. List needs to be sorted for std.setMember to work
         local includeDashboards = std.set([
           'cluster-total.json',
-          'etcd.json',
           'k8s-resources-cluster.json',
           'k8s-resources-namespace.json',
           'k8s-resources-node.json',
