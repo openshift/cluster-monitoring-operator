@@ -48,7 +48,7 @@ const (
 type RuleController struct {
 	version          string
 	client           *client.Client
-	queue            workqueue.RateLimitingInterface
+	queue            workqueue.TypedRateLimitingInterface[string]
 	promRuleInformer cache.SharedIndexInformer
 	ruleInformer     cache.SharedIndexInformer
 }
@@ -73,9 +73,9 @@ func NewRuleController(ctx context.Context, client *client.Client, version strin
 		cache.Indexers{},
 	)
 
-	queue := workqueue.NewNamedRateLimitingQueue(
-		workqueue.NewItemExponentialFailureRateLimiter(queueBaseDelay, queueMaxDelay),
-		"alerting-rules",
+	queue := workqueue.NewTypedRateLimitingQueueWithConfig[string](
+		workqueue.NewTypedItemExponentialFailureRateLimiter[string](queueBaseDelay, queueMaxDelay),
+		workqueue.TypedRateLimitingQueueConfig[string]{Name: "alerting-rules"},
 	)
 
 	rc := &RuleController{
@@ -228,8 +228,8 @@ func (rc *RuleController) processNextWorkItem(ctx context.Context) bool {
 
 	defer rc.queue.Done(key)
 
-	if err := rc.sync(ctx, key.(string)); err != nil {
-		utilruntime.HandleError(fmt.Errorf("Error syncing AlertingRule (%s): %w", key.(string), err))
+	if err := rc.sync(ctx, key); err != nil {
+		utilruntime.HandleError(fmt.Errorf("Error syncing AlertingRule (%s): %w", key, err))
 
 		// Re-queue failed sync.
 		rc.queue.AddRateLimited(key)
@@ -237,7 +237,7 @@ func (rc *RuleController) processNextWorkItem(ctx context.Context) bool {
 		return true
 	}
 
-	klog.V(4).Infof("AlertingRule successfully synced: %s", key.(string))
+	klog.V(4).Infof("AlertingRule successfully synced: %s", key)
 	rc.queue.Forget(key) // Reset rate-limiting.
 
 	return true

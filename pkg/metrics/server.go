@@ -98,7 +98,7 @@ func (s *Server) Run(ctx context.Context) error {
 	}
 
 	go func() {
-		if err := server.PrepareRun().Run(ctx.Done()); err != nil {
+		if err := server.PrepareRun().RunWithContext(ctx); err != nil {
 			klog.Fatal(err)
 		}
 		klog.Info("server exited")
