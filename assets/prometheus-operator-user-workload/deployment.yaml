@@ -33,6 +33,8 @@ spec:
       containers:
       - args:
         - --prometheus-config-reloader=quay.io/prometheus-operator/prometheus-config-reloader:v0.77.1
+        - --kubelet-endpoints=true
+        - --kubelet-endpointslice=false
         - --prometheus-instance-namespaces=openshift-user-workload-monitoring
         - --alertmanager-instance-namespaces=openshift-user-workload-monitoring
         - --thanos-ruler-instance-namespaces=openshift-user-workload-monitoring
