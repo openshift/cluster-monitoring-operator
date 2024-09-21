@@ -865,7 +865,7 @@ data:
     #
     # owners: (@tracing-team)
     #
-    # Number of OpenTelemetry collectors deployed usign certain deployment type
+    # Number of OpenTelemetry collectors deployed using certain deployment type
     - '{__name__="type:opentelemetry_collector_info:sum",type="deployment|daemonset|sidecar|statefulset"}'
     #
     # owners: (https://github.com/redhat-developer/application-services-metering-operator)
