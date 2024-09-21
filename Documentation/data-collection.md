@@ -852,7 +852,7 @@ data:
     #
     # owners: (@tracing-team)
     #
-    # Number of OpenTelemetry collectors used certain receiver type
+    # Number of OpenTelemetry collectors using certain receiver types.
     - '{__name__="type:opentelemetry_collector_receivers:sum",type="jaegerreceiver|hostmetricsreceiver|opencensusreceiver|prometheusreceiver|zipkinreceiver|kafkareceiver|filelogreceiver|journaldreceiver|k8seventsreceiver|kubeletstatsreceiver|k8sclusterreceiver|k8sobjectsreceiver"}'
     #
     # owners: (@tracing-team)
