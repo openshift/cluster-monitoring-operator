@@ -199,6 +199,7 @@ func TestUserWorkloadMonitoringOptOut(t *testing.T) {
 		f    func(*testing.T)
 	}{
 		{"assert namespace opt out removes appropriate targets", assertNamespaceOptOut},
+		{"assert service monitor opt out removes appropriate targets", assertServiceMonitorOptOut},
 	} {
 		t.Run(scenario.name, scenario.f)
 	}
@@ -1408,7 +1409,7 @@ func assertGRPCTLSRotation(t *testing.T) {
 func assertNamespaceOptOut(t *testing.T) {
 	ctx := context.Background()
 
-	serviceMonitorJobName := "serviceMonitor/user-workload-test/prometheus-example-monitor/0"
+	serviceMonitorJobName := fmt.Sprintf("serviceMonitor/%s/%s/0", userWorkloadTestNs, serviceMonitorTestName)
 
 	// Ensure the target for the example ServiceMonitor exists.
 	f.ThanosQuerierClient.WaitForTargetsReturn(t, 5*time.Minute, func(body []byte) error {
@@ -1450,6 +1451,61 @@ func assertNamespaceOptOut(t *testing.T) {
 	ns.SetLabels(labels)
 
 	_, err = f.KubeClient.CoreV1().Namespaces().Update(ctx, ns, metav1.UpdateOptions{})
+	if err != nil {
+		t.Fatalf("Failed to remove user-monitoring opt-out label: %v", err)
+	}
+
+	// Ensure the target for the example ServiceMonitor is recreated.
+	f.ThanosQuerierClient.WaitForTargetsReturn(t, 5*time.Minute, func(body []byte) error {
+		return getActiveTarget(body, serviceMonitorJobName)
+	})
+}
+
+func assertServiceMonitorOptOut(t *testing.T) {
+	ctx := context.Background()
+
+	serviceMonitorJobName := fmt.Sprintf("serviceMonitor/%s/%s/0", userWorkloadTestNs, serviceMonitorTestName)
+
+	// Ensure the target for the example ServiceMonitor exists.
+	f.ThanosQuerierClient.WaitForTargetsReturn(t, 5*time.Minute, func(body []byte) error {
+		return getActiveTarget(body, serviceMonitorJobName)
+	})
+
+	// Add opt-out label to service monitor.
+	sm, err := f.MonitoringClient.ServiceMonitors(userWorkloadTestNs).Get(ctx, serviceMonitorTestName, metav1.GetOptions{})
+	if err != nil {
+		t.Fatalf("Failed to fetch user-workload service monitor: %v", err)
+	}
+
+	labels := sm.GetLabels()
+	labels["openshift.io/user-monitoring"] = "false"
+	sm.SetLabels(labels)
+
+	_, err = f.MonitoringClient.ServiceMonitors(userWorkloadTestNs).Update(ctx, sm, metav1.UpdateOptions{})
+	if err != nil {
+		t.Fatalf("Failed to apply user-monitoring opt-out label: %v", err)
+	}
+
+	// Ensure the target for the example ServiceMonitor is removed.
+	f.ThanosQuerierClient.WaitForTargetsReturn(t, 5*time.Minute, func(body []byte) error {
+		if err := getActiveTarget(body, serviceMonitorJobName); err == nil {
+			return fmt.Errorf("target '%s' exists, but should not", serviceMonitorJobName)
+		}
+
+		return nil
+	})
+
+	// Remove opt-out label from namespace.
+	sm, err = f.MonitoringClient.ServiceMonitors(userWorkloadTestNs).Get(ctx, serviceMonitorTestName, metav1.GetOptions{})
+	if err != nil {
+		t.Fatalf("Failed to fetch user-workload service monitor: %v", err)
+	}
+
+	labels = sm.GetLabels()
+	delete(labels, "openshift.io/user-monitoring")
+	sm.SetLabels(labels)
+
+	_, err = f.MonitoringClient.ServiceMonitors(userWorkloadTestNs).Update(ctx, sm, metav1.UpdateOptions{})
 	if err != nil {
 		t.Fatalf("Failed to remove user-monitoring opt-out label: %v", err)
 	}

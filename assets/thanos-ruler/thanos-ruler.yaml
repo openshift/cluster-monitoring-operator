@@ -44,7 +44,7 @@ spec:
     - --config-file=/etc/kube-rbac-proxy/config.yaml
     - --tls-cert-file=/etc/tls/private/tls.crt
     - --tls-private-key-file=/etc/tls/private/tls.key
-    image: quay.io/brancz/kube-rbac-proxy:v0.17.1
+    image: quay.io/brancz/kube-rbac-proxy:v0.18.1
     name: kube-rbac-proxy-web
     ports:
     - containerPort: 9091
@@ -74,7 +74,7 @@ spec:
     - --tls-private-key-file=/etc/tls/private/tls.key
     - --client-ca-file=/etc/tls/client/client-ca.crt
     - --allow-paths=/metrics
-    image: quay.io/brancz/kube-rbac-proxy:v0.17.1
+    image: quay.io/brancz/kube-rbac-proxy:v0.18.1
     name: kube-rbac-proxy-metrics
     ports:
     - containerPort: 9092
@@ -129,6 +129,10 @@ spec:
       - "false"
   ruleSelector:
     matchExpressions:
+    - key: openshift.io/user-monitoring
+      operator: NotIn
+      values:
+      - "false"
     - key: openshift.io/prometheus-rule-evaluation-scope
       operator: NotIn
       values:

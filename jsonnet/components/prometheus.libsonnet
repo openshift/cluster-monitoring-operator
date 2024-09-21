@@ -333,6 +333,8 @@ function(params)
         },
       },
       spec+: {
+        // Enable experimental delayed compaction feature.
+        enableFeatures+: ['delayed-compaction'],
         alerting+: {
           alertmanagers:
             std.map(

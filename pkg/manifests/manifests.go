@@ -63,6 +63,9 @@ const (
 
 	nodeSelectorMaster = "node-role.kubernetes.io/master"
 
+	userMonitoringLabel    = "openshift.io/user-monitoring"
+	clusterMonitoringLabel = "openshift.io/cluster-monitoring"
+
 	platformAlertmanagerService     = "alertmanager-main"
 	userWorkloadAlertmanagerService = "alertmanager-user-workload"
 
@@ -289,7 +292,6 @@ var (
 	ControlPlaneKubeletMinimalServiceMonitor = "control-plane/minimal-service-monitor-kubelet.yaml"
 
 	MonitoringPlugin                    = "monitoring-plugin/console-plugin.yaml"
-	MonitoringPluginConfigMap           = "monitoring-plugin/config-map.yaml"
 	MonitoringPluginDeployment          = "monitoring-plugin/deployment.yaml"
 	MonitoringPluginDeploymentContainer = "monitoring-plugin"
 	MonitoringPluginServiceAccount      = "monitoring-plugin/service-account.yaml"
@@ -477,17 +479,24 @@ func (f *Factory) AlertmanagerUserWorkload() (*monv1.Alertmanager, error) {
 	a.Spec.Secrets = append(a.Spec.Secrets, alertmanagerConfig.Secrets...)
 
 	if alertmanagerConfig.EnableAlertmanagerConfig {
-		a.Spec.AlertmanagerConfigSelector = &metav1.LabelSelector{}
-
+		a.Spec.AlertmanagerConfigSelector = &metav1.LabelSelector{
+			MatchExpressions: []metav1.LabelSelectorRequirement{
+				{
+					Key:      userMonitoringLabel,
+					Operator: metav1.LabelSelectorOpNotIn,
+					Values:   []string{"false"},
+				},
+			},
+		}
 		a.Spec.AlertmanagerConfigNamespaceSelector = &metav1.LabelSelector{
 			MatchExpressions: []metav1.LabelSelectorRequirement{
 				{
-					Key:      "openshift.io/cluster-monitoring",
+					Key:      clusterMonitoringLabel,
 					Operator: metav1.LabelSelectorOpNotIn,
 					Values:   []string{"true"},
 				},
 				{
-					Key:      "openshift.io/user-monitoring",
+					Key:      userMonitoringLabel,
 					Operator: metav1.LabelSelectorOpNotIn,
 					Values:   []string{"false"},
 				},
@@ -609,17 +618,25 @@ func (f *Factory) AlertmanagerMain() (*monv1.Alertmanager, error) {
 
 	if f.config.ClusterMonitoringConfiguration.AlertmanagerMainConfig.EnableUserAlertManagerConfig &&
 		!f.config.UserWorkloadConfiguration.Alertmanager.Enabled {
-		a.Spec.AlertmanagerConfigSelector = &metav1.LabelSelector{}
+		a.Spec.AlertmanagerConfigSelector = &metav1.LabelSelector{
+			MatchExpressions: []metav1.LabelSelectorRequirement{
+				{
+					Key:      userMonitoringLabel,
+					Operator: metav1.LabelSelectorOpNotIn,
+					Values:   []string{"false"},
+				},
+			},
+		}
 
 		a.Spec.AlertmanagerConfigNamespaceSelector = &metav1.LabelSelector{
 			MatchExpressions: []metav1.LabelSelectorRequirement{
 				{
-					Key:      "openshift.io/cluster-monitoring",
+					Key:      clusterMonitoringLabel,
 					Operator: metav1.LabelSelectorOpNotIn,
 					Values:   []string{"true"},
 				},
 				{
-					Key:      "openshift.io/user-monitoring",
+					Key:      userMonitoringLabel,
 					Operator: metav1.LabelSelectorOpNotIn,
 					Values:   []string{"false"},
 				},
@@ -2822,10 +2839,6 @@ func (f *Factory) MonitoringPluginServiceAccount() (*v1.ServiceAccount, error) {
 
 func (f *Factory) MonitoringPluginService() (*v1.Service, error) {
 	return f.NewService(f.assets.MustNewAssetSlice(MonitoringPluginService))
-}
-
-func (f *Factory) MonitoringPluginConfigMap() (*v1.ConfigMap, error) {
-	return f.NewConfigMap(f.assets.MustNewAssetSlice(MonitoringPluginConfigMap))
 }
 
 func (f *Factory) ThanosQuerierPodDisruptionBudget() (*policyv1.PodDisruptionBudget, error) {

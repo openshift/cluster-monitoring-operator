@@ -54,7 +54,7 @@ spec:
     - --tls-private-key-file=/etc/tls/private/tls.key
     - --client-ca-file=/etc/tls/client/client-ca.crt
     - --tls-cipher-suites=TLS_ECDHE_RSA_WITH_AES_128_GCM_SHA256,TLS_ECDHE_ECDSA_WITH_AES_128_GCM_SHA256,TLS_ECDHE_RSA_WITH_AES_256_GCM_SHA384,TLS_ECDHE_ECDSA_WITH_AES_256_GCM_SHA384,TLS_ECDHE_RSA_WITH_CHACHA20_POLY1305,TLS_ECDHE_ECDSA_WITH_CHACHA20_POLY1305
-    image: quay.io/brancz/kube-rbac-proxy:v0.17.1
+    image: quay.io/brancz/kube-rbac-proxy:v0.18.1
     name: kube-rbac-proxy-federate
     ports:
     - containerPort: 9092
@@ -86,7 +86,7 @@ spec:
     - --tls-private-key-file=/etc/tls/private/tls.key
     - --client-ca-file=/etc/tls/client/client-ca.crt
     - --tls-cipher-suites=TLS_ECDHE_RSA_WITH_AES_128_GCM_SHA256,TLS_ECDHE_ECDSA_WITH_AES_128_GCM_SHA256,TLS_ECDHE_RSA_WITH_AES_256_GCM_SHA384,TLS_ECDHE_ECDSA_WITH_AES_256_GCM_SHA384,TLS_ECDHE_RSA_WITH_CHACHA20_POLY1305,TLS_ECDHE_ECDSA_WITH_CHACHA20_POLY1305
-    image: quay.io/brancz/kube-rbac-proxy:v0.17.1
+    image: quay.io/brancz/kube-rbac-proxy:v0.18.1
     name: kube-rbac-proxy-metrics
     ports:
     - containerPort: 9091
@@ -123,7 +123,7 @@ spec:
       valueFrom:
         fieldRef:
           fieldPath: status.podIP
-    image: quay.io/brancz/kube-rbac-proxy:v0.17.1
+    image: quay.io/brancz/kube-rbac-proxy:v0.18.1
     name: kube-rbac-proxy-thanos
     ports:
     - containerPort: 10903
@@ -175,6 +175,7 @@ spec:
       name: prometheus-user-workload-trusted-ca-bundle
   enableFeatures:
   - extra-scrape-metrics
+  - delayed-compaction
   enforcedNamespaceLabel: namespace
   externalLabels: {}
   ignoreNamespaceSelectors: true
@@ -204,7 +205,12 @@ spec:
       operator: NotIn
       values:
       - "false"
-  podMonitorSelector: {}
+  podMonitorSelector:
+    matchExpressions:
+    - key: openshift.io/user-monitoring
+      operator: NotIn
+      values:
+      - "false"
   priorityClassName: openshift-user-critical
   probeNamespaceSelector:
     matchExpressions:
@@ -216,7 +222,12 @@ spec:
       operator: NotIn
       values:
       - "false"
-  probeSelector: {}
+  probeSelector:
+    matchExpressions:
+    - key: openshift.io/user-monitoring
+      operator: NotIn
+      values:
+      - "false"
   replicas: 2
   resources:
     requests:
@@ -233,8 +244,15 @@ spec:
       values:
       - "false"
   ruleSelector:
-    matchLabels:
-      openshift.io/prometheus-rule-evaluation-scope: leaf-prometheus
+    matchExpressions:
+    - key: openshift.io/user-monitoring
+      operator: NotIn
+      values:
+      - "false"
+    - key: openshift.io/prometheus-rule-evaluation-scope
+      operator: In
+      values:
+      - leaf-prometheus
   scrapeConfigNamespaceSelector: null
   scrapeConfigSelector: null
   secrets:
@@ -259,7 +277,12 @@ spec:
       operator: NotIn
       values:
       - "false"
-  serviceMonitorSelector: {}
+  serviceMonitorSelector:
+    matchExpressions:
+    - key: openshift.io/user-monitoring
+      operator: NotIn
+      values:
+      - "false"
   thanos:
     image: quay.io/thanos/thanos:v0.36.1
     resources:

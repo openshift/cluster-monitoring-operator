@@ -38,14 +38,15 @@ func TestUserWorkloadThanosRulerWithAdditionalAlertmanagers(t *testing.T) {
 			scenarios: []scenario{
 				{"assert thanos ruler rollout", assertThanosRulerDeployment},
 				{"create additional alertmanager", createAlertmanager},
-				{"create alerting rule that always fires", createPrometheusRule},
-				{"verify alertmanager received the alert", verifyAlertmanagerAlertReceived},
+				{"create alerting rule that always fires", func(t *testing.T) {
+					createPrometheusRuleWithAlert(t, "default", "always-firing-alert", "AlwaysFiring")
+				}},
+				{"verify alertmanager received the alert", verifyAlertmanagerReceivedAlerts},
 			},
 		},
 	}
 
 	for _, tt := range testCases {
-		tt := tt
 		t.Run(tt.name, func(t *testing.T) {
 			for _, scenario := range tt.scenarios {
 				t.Run(scenario.name, scenario.assertion)
@@ -81,12 +82,12 @@ func createAlertmanager(t *testing.T) {
 	}
 }
 
-func createPrometheusRule(t *testing.T) {
+func createPrometheusRuleWithAlert(t *testing.T, namespace, name, alertName string) {
 	ctx := context.Background()
 	if err := f.OperatorClient.CreateOrUpdatePrometheusRule(ctx, &monitoringv1.PrometheusRule{
 		ObjectMeta: metav1.ObjectMeta{
-			Name:      "non-monitoring-prometheus-rules",
-			Namespace: "default",
+			Name:      name,
+			Namespace: namespace,
 			Labels: map[string]string{
 				framework.E2eTestLabelName: framework.E2eTestLabelValue,
 			},
@@ -97,7 +98,7 @@ func createPrometheusRule(t *testing.T) {
 					Name: "test-group",
 					Rules: []monitoringv1.Rule{
 						{
-							Alert: "AdditionalTestAlertRule",
+							Alert: alertName,
 							Expr:  intstr.FromString("vector(1)"),
 						},
 					},
@@ -109,15 +110,13 @@ func createPrometheusRule(t *testing.T) {
 	}
 }
 
-func verifyAlertmanagerAlertReceived(t *testing.T) {
-
-	host, cleanUp, err := f.ForwardPort(t, f.Ns, "alertmanager-operated", 9093)
-	if err != nil {
-		t.Fatal(err)
-	}
-	t.Cleanup(cleanUp)
-
-	err = framework.Poll(time.Second, 5*time.Minute, func() error {
+func verifyAlertmanagerReceivedAlerts(t *testing.T) {
+	err := framework.Poll(time.Second, 5*time.Minute, func() error {
+		host, cleanUp, err := f.ForwardPort(t, f.Ns, "alertmanager-operated", 9093)
+		if err != nil {
+			return err
+		}
+		t.Cleanup(cleanUp)
 		resp, err := http.Get(fmt.Sprintf("http://%s/api/v2/alerts", host))
 		if err != nil {
 			return err

@@ -36,6 +36,15 @@ local commonConfig = {
       'openshift.io/cluster-monitoring': 'true',
     },
   },
+  userWorkloadMonitoringResourceSelector: {
+    matchExpressions: [
+      {
+        key: 'openshift.io/user-monitoring',
+        operator: 'NotIn',
+        values: ['false'],
+      },
+    ],
+  },
   userWorkloadMonitoringNamespaceSelector: {
     matchExpressions: [
       {
@@ -168,12 +177,10 @@ local inCluster =
         local allDashboards =
           $.nodeExporter.mixin.grafanaDashboards +
           $.prometheus.mixin.grafanaDashboards +
-          $.controlPlane.mixin.grafanaDashboards +
-          $.controlPlane.etcdMixin.grafanaDashboards,
+          $.controlPlane.mixin.grafanaDashboards,
         // Allow-listing dashboards that are going into the product. List needs to be sorted for std.setMember to work
         local includeDashboards = std.set([
           'cluster-total.json',
-          'etcd.json',
           'k8s-resources-cluster.json',
           'k8s-resources-namespace.json',
           'k8s-resources-node.json',
@@ -326,6 +333,7 @@ local inCluster =
           'app.kubernetes.io/name': 'thanos-ruler',
           'thanos-ruler': 'user-workload',
         },
+        resourceSelector: $.values.common.userWorkloadMonitoringResourceSelector,
         namespaceSelector: $.values.common.userWorkloadMonitoringNamespaceSelector,
         commonLabels+: $.values.common.commonLabels,
         kubeRbacProxyImage: $.values.common.images.kubeRbacProxy,
@@ -478,6 +486,7 @@ local userWorkload =
           requests: { memory: '30Mi', cpu: '6m' },
         },
         namespaces: [$.values.common.namespaceUserWorkload],
+        resourceSelector: $.values.common.userWorkloadMonitoringResourceSelector,
         namespaceSelector: $.values.common.userWorkloadMonitoringNamespaceSelector,
         thanos: inCluster.values.prometheus.thanos,
         tlsCipherSuites: $.values.common.tlsCipherSuites,

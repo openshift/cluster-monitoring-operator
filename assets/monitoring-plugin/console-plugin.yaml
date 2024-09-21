@@ -16,3 +16,5 @@ spec:
       port: 9443
     type: Service
   displayName: monitoring-plugin
+  i18n:
+    loadType: Preload

@@ -18,6 +18,8 @@ import (
 	"context"
 	"fmt"
 
+	v1 "k8s.io/api/core/v1"
+	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/types"
 	"k8s.io/klog/v2"
 
@@ -72,13 +74,15 @@ func (t *MonitoringPluginTask) Run(ctx context.Context) error {
 	}
 
 	{ // config map
-		cm, err := t.factory.MonitoringPluginConfigMap()
-		if err != nil {
-			return fmt.Errorf("initializing Console Plugin ConfigMap failed: %w", err)
-		}
-
-		if err = t.client.CreateOrUpdateConfigMap(ctx, cm); err != nil {
-			return fmt.Errorf("reconciling Console Plugin ConfigMap failed: %w", err)
+		// Deletes the config map if it exists as it is not required anymore.
+		// This can be removed in 4.19 release. see https://issues.redhat.com/browse/OU-515
+		if err := t.client.DeleteConfigMap(ctx, &v1.ConfigMap{
+			ObjectMeta: metav1.ObjectMeta{
+				Namespace: "openshift-monitoring",
+				Name:      "monitoring-plugin",
+			},
+		}); err != nil {
+			return fmt.Errorf("deleting Console Plugin ConfigMap failed: %w", err)
 		}
 	}
 

@@ -16,14 +16,19 @@ package e2e
 
 import (
 	"context"
+	"crypto/tls"
 	"errors"
 	"fmt"
+	"io"
+	"net/http"
 	"testing"
 	"time"
 
+	"github.com/Jeffail/gabs"
 	configv1 "github.com/openshift/api/config/v1"
 	"github.com/openshift/cluster-monitoring-operator/pkg/client"
 	"github.com/openshift/cluster-monitoring-operator/test/e2e/framework"
+	"github.com/stretchr/testify/require"
 
 	v1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
@@ -270,6 +275,7 @@ func TestClusterMonitorPrometheusK8Config(t *testing.T) {
 					expectMatchingRequests(podName, containerName, mem, cpu),
 					// Set by default.
 					expectContainerArg("--scrape.timestamp-tolerance=15ms", containerName),
+					expectContainerArg("--enable-feature=delayed-compaction", containerName),
 					// Set via the config above.
 					expectContainerArg("--log.level=debug", containerName),
 					expectContainerArg("--storage.tsdb.retention.time=10h", containerName),
@@ -625,7 +631,7 @@ func TestUserWorkloadMonitorPrometheusK8Config(t *testing.T) {
 					expectCatchAllToleration(),
 					expectMatchingRequests(podName, containerName, mem, cpu),
 					// Set by default.
-					expectContainerArg("--enable-feature=extra-scrape-metrics,exemplar-storage", containerName),
+					expectContainerArg("--enable-feature=extra-scrape-metrics,delayed-compaction,exemplar-storage", containerName),
 					// Set via the config above.
 					expectContainerArg("--log.level=debug", containerName),
 					expectContainerArg("--storage.tsdb.retention.time=10h", containerName),
@@ -727,6 +733,48 @@ func TestUserWorkloadMonitorThanosRulerConfig(t *testing.T) {
 	}
 }
 
+// checkMonitorConsolePluginReachable makes sure that one of the pods at least can serve /plugin-manifest.json
+func checkMonitorConsolePluginReachable(t *testing.T, pluginName string) {
+	err := framework.Poll(time.Second, 5*time.Minute, func() error {
+		host, cleanUp, err := f.ForwardPort(t, f.Ns, pluginName, 9443)
+		if err != nil {
+			t.Fatal(err)
+		}
+		defer cleanUp()
+
+		client := &http.Client{
+			Transport: &http.Transport{
+				TLSClientConfig: &tls.Config{InsecureSkipVerify: true},
+			},
+		}
+		resp, err := client.Get(fmt.Sprintf("https://%s/plugin-manifest.json", host))
+		if err != nil {
+			return err
+		}
+		defer resp.Body.Close()
+
+		b, err := io.ReadAll(resp.Body)
+		if err != nil {
+			return fmt.Errorf("fail to read response body: %w", err)
+		}
+
+		if resp.StatusCode != http.StatusOK {
+			return fmt.Errorf("expected status %d, got %d (%q)", resp.StatusCode, http.StatusOK, framework.ClampMax(b))
+		}
+
+		res, err := gabs.ParseJSON(b)
+		if err != nil {
+			return err
+		}
+		name, ok := res.Path("name").Data().(string)
+		if !ok || name != pluginName {
+			return fmt.Errorf("expected plugin name to be %q, got %q", pluginName, name)
+		}
+		return nil
+	})
+	require.NoError(t, err)
+}
+
 func TestClusterMonitorConsolePlugin(t *testing.T) {
 	const (
 		deploymentName = "monitoring-plugin"
@@ -736,8 +784,9 @@ func TestClusterMonitorConsolePlugin(t *testing.T) {
 		containerName  = "monitoring-plugin"
 	)
 
-	// ensure console-plugin is running before the change
-	f.AssertDeploymentExistsAndRollout(deploymentName, f.Ns)
+	// ensure console-plugin is running and reachable before the change
+	f.AssertDeploymentExistsAndRollout(deploymentName, f.Ns)(t)
+	checkMonitorConsolePluginReachable(t, deploymentName)
 
 	data := fmt.Sprintf(`
 monitoringPlugin:
@@ -767,6 +816,10 @@ monitoringPlugin:
 					expectMatchingRequests("*", containerName, mem, cpu),
 				},
 			),
+		},
+		{
+			name:      "assert one of the pods can serve /plugin-manifest.json",
+			assertion: func(t *testing.T) { checkMonitorConsolePluginReachable(t, deploymentName) },
 		},
 	} {
 		t.Run(tc.name, tc.assertion)

@@ -2204,7 +2204,6 @@ func TestPrometheusK8sAdditionalAlertManagerConfigsSecret(t *testing.T) {
 	}
 
 	for _, tt := range testCases {
-		tt := tt
 		t.Run(tt.name, func(t *testing.T) {
 			c, err := NewConfigFromString(tt.config, false)
 			if err != nil {
@@ -2524,7 +2523,6 @@ func TestThanosRulerAdditionalAlertManagerConfigsSecret(t *testing.T) {
 	}
 
 	for _, tt := range testCases {
-		tt := tt
 		t.Run(tt.name, func(t *testing.T) {
 			c, err := NewConfigFromString(tt.config, false)
 			if err != nil {
@@ -3085,7 +3083,17 @@ ingress:
 			t.Fatal("expected 'alertmanagerConfigSelector' to configure selector")
 		}
 
-		if !reflect.DeepEqual(a.Spec.AlertmanagerConfigSelector, &metav1.LabelSelector{}) {
+		if !reflect.DeepEqual(
+			a.Spec.AlertmanagerConfigSelector,
+			&metav1.LabelSelector{
+				MatchExpressions: []metav1.LabelSelectorRequirement{
+					{
+						Key:      userMonitoringLabel,
+						Operator: metav1.LabelSelectorOpNotIn,
+						Values:   []string{"false"},
+					},
+				},
+			}) {
 			t.Fatal("expected match all alertmanagerConfigSelector")
 		}
 
@@ -3098,13 +3106,13 @@ ingress:
 		}
 
 		expectPlatformOptIn := metav1.LabelSelectorRequirement{
-			Key:      "openshift.io/cluster-monitoring",
+			Key:      clusterMonitoringLabel,
 			Operator: metav1.LabelSelectorOpNotIn,
 			Values:   []string{"true"},
 		}
 
 		expectUWMOptIn := metav1.LabelSelectorRequirement{
-			Key:      "openshift.io/user-monitoring",
+			Key:      userMonitoringLabel,
 			Operator: metav1.LabelSelectorOpNotIn,
 			Values:   []string{"false"},
 		}

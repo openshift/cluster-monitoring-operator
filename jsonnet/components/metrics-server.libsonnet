@@ -199,6 +199,9 @@ function(params) {
                 '--tls-cert-file=/etc/tls/private/tls.crt',
                 '--tls-private-key-file=/etc/tls/private/tls.key',
                 '--tls-cipher-suites=' + cfg.tlsCipherSuites,
+                '--shutdown-send-retry-after=true',
+                // wait long enough for the readiness probe's failure threshold to be breached
+                '--shutdown-delay-duration=150s',
               ],
               imagePullPolicy: 'IfNotPresent',
               livenessProbe: {
@@ -268,6 +271,7 @@ function(params) {
           },
           priorityClassName: 'system-cluster-critical',
           serviceAccountName: 'metrics-server',
+          terminationGracePeriodSeconds: 170,
           volumes: [
             {
               name: 'secret-metrics-client-certs',
