@@ -850,6 +850,36 @@ data:
     # Number of Tempo stacks with Jaeger UI enabled/disabled.
     - '{__name__="enabled:tempo_operator_tempostack_jaeger_ui:sum",enabled="true|false"}'
     #
+    # owners: (@tracing-team)
+    #
+    # Number of OpenTelemetry collectors using certain receiver types.
+    - '{__name__="type:opentelemetry_collector_receivers:sum",type="jaegerreceiver|hostmetricsreceiver|opencensusreceiver|prometheusreceiver|zipkinreceiver|kafkareceiver|filelogreceiver|journaldreceiver|k8seventsreceiver|kubeletstatsreceiver|k8sclusterreceiver|k8sobjectsreceiver"}'
+    #
+    # owners: (@tracing-team)
+    #
+    # Number of OpenTelemetry collectors used certain exporter type
+    - '{__name__="type:opentelemetry_collector_exporters:sum",type="debugexporter|loggingexporter|otlpexporter|otlphttpexporter|prometheusexporter|lokiexporter|kafkaexporter|awscloudwatchlogsexporter|loadbalancingexporter"}'
+    #
+    # owners: (@tracing-team)
+    #
+    # Number of OpenTelemetry collectors used certain processor type
+    - '{__name__="type:opentelemetry_collector_processors:sum",type="batchprocessor|memorylimiterprocessor|attributesprocessor|resourceprocessor|spanprocessor|k8sattributesprocessor|resourcedetectionprocessor|filterprocessor|routingprocessor|cumulativetodeltaprocessor|groupbyattrsprocessor"}'
+    #
+    # owners: (@tracing-team)
+    #
+    # Number of OpenTelemetry collectors used certain extension type
+    - '{__name__="type:opentelemetry_collector_extensions:sum",type="zpagesextension|ballastextension|memorylimiterextension|jaegerremotesampling|healthcheckextension|pprofextension|oauth2clientauthextension|oidcauthextension|bearertokenauthextension|filestorage"}'
+    #
+    # owners: (@tracing-team)
+    #
+    # Number of OpenTelemetry collectors used certain connector type
+    - '{__name__="type:opentelemetry_collector_connectors:sum",type="spanmetricsconnector|forwardconnector"}'
+    #
+    # owners: (@tracing-team)
+    #
+    # Number of OpenTelemetry collectors deployed using certain deployment type
+    - '{__name__="type:opentelemetry_collector_info:sum",type="deployment|daemonset|sidecar|statefulset"}'
+    #
     # owners: (https://github.com/redhat-developer/application-services-metering-operator)
     #
     # The current amount of CPU used by Application Services products, aggregated by product name.
