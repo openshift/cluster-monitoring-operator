@@ -78,7 +78,7 @@ type Framework struct {
 	SchedulingClient      *schedulingv1client.SchedulingV1Client
 	APIExtensionsClient   *apiextensionsclient.Clientset
 	VPAClient             *vpaclient.AutoscalingV1Client
-	kubeConfigPath        string
+	KubeConfigPath        string
 
 	OpenShiftMonitoringClient    openshiftmonitoringclientset.Interface
 	MonitoringClient             *monClient.MonitoringV1Client
@@ -178,7 +178,7 @@ func New(kubeConfigPath string) (*Framework, CleanUpFunc, error) {
 		MonitoringBetaClient:      mBetaClient,
 		Ns:                        namespaceName,
 		UserWorkloadMonitoringNs:  userWorkloadNamespaceName,
-		kubeConfigPath:            kubeConfigPath,
+		KubeConfigPath:            kubeConfigPath,
 		SchedulingClient:          schedulingClient,
 		OpenShiftMonitoringClient: osmClient,
 		APIExtensionsClient:       apiExtensionsClient,
@@ -588,7 +588,7 @@ func (f *Framework) ForwardPort(t *testing.T, ns, svc string, port int) (string,
 
 	ctx, cancel := context.WithCancel(context.Background())
 	// Taken from github.com/openshift/origin/test/extended/etcd/etcd_test_runner.go
-	cmd := exec.CommandContext(ctx, "oc", "port-forward", fmt.Sprintf("service/%s", svc), fmt.Sprintf(":%d", port), "-n", ns, "--kubeconfig", f.kubeConfigPath)
+	cmd := exec.CommandContext(ctx, "oc", "port-forward", fmt.Sprintf("service/%s", svc), fmt.Sprintf(":%d", port), "-n", ns, "--kubeconfig", f.KubeConfigPath)
 
 	cleanUp := func() {
 		cancel()
