@@ -352,16 +352,20 @@ function(params)
           $.kubeRbacProxyFederateSecret.metadata.name,
         ],
         configMaps: ['serving-certs-ca-bundle', 'metrics-client-ca'],
-        probeSelector: {},
+        probeSelector: cfg.resourceSelector,
         probeNamespaceSelector: cfg.namespaceSelector,
-        podMonitorSelector: {},
+        podMonitorSelector: cfg.resourceSelector,
         podMonitorNamespaceSelector: cfg.namespaceSelector,
-        serviceMonitorSelector: {},
+        serviceMonitorSelector: cfg.resourceSelector,
         serviceMonitorNamespaceSelector: cfg.namespaceSelector,
-        ruleSelector: {
-          matchLabels: {
-            'openshift.io/prometheus-rule-evaluation-scope': 'leaf-prometheus',
-          },
+        ruleSelector: cfg.resourceSelector {
+          matchExpressions+: [
+            {
+              key: 'openshift.io/prometheus-rule-evaluation-scope',
+              operator: 'In',
+              values: ['leaf-prometheus'],
+            },
+          ],
         },
         ruleNamespaceSelector: cfg.namespaceSelector,
         scrapeConfigSelector: null,
