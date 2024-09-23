@@ -24,6 +24,7 @@ import (
 	"github.com/openshift/library-go/pkg/config/serving"
 	"k8s.io/apiserver/pkg/authorization/union"
 	genericapiserver "k8s.io/apiserver/pkg/server"
+	"k8s.io/apiserver/pkg/util/version"
 	"k8s.io/client-go/kubernetes"
 	"k8s.io/client-go/rest"
 	"k8s.io/klog/v2"
@@ -92,13 +93,15 @@ func (s *Server) Run(ctx context.Context) error {
 		serverConfig.Authorization.Authorizer,
 	)
 
+	serverConfig.EffectiveVersion = version.DefaultBuildEffectiveVersion()
+
 	server, err = serverConfig.Complete(nil).New(s.name, genericapiserver.NewEmptyDelegate())
 	if err != nil {
 		return err
 	}
 
 	go func() {
-		if err := server.PrepareRun().Run(ctx.Done()); err != nil {
+		if err := server.PrepareRun().RunWithContext(ctx); err != nil {
 			klog.Fatal(err)
 		}
 		klog.Info("server exited")

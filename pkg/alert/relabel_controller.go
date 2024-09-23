@@ -52,7 +52,7 @@ var defaultRelabelConfig = &osmv1.RelabelConfig{
 // RelabelConfigController is a controller for AlertRelabelConfig resources.
 type RelabelConfigController struct {
 	client                *client.Client
-	queue                 workqueue.RateLimitingInterface
+	queue                 workqueue.TypedRateLimitingInterface[string]
 	relabelConfigInformer cache.SharedIndexInformer
 	secretInformer        cache.SharedIndexInformer
 }
@@ -78,9 +78,9 @@ func NewRelabelConfigController(ctx context.Context, client *client.Client) (*Re
 		cache.Indexers{},
 	)
 
-	queue := workqueue.NewNamedRateLimitingQueue(
-		workqueue.NewItemExponentialFailureRateLimiter(queueBaseDelay, queueMaxDelay),
-		"alert-relabel-configs",
+	queue := workqueue.NewTypedRateLimitingQueueWithConfig[string](
+		workqueue.NewTypedItemExponentialFailureRateLimiter[string](queueBaseDelay, queueMaxDelay),
+		workqueue.TypedRateLimitingQueueConfig[string]{Name: "alert-relabel-configs"},
 	)
 
 	controller := &RelabelConfigController{
@@ -181,8 +181,8 @@ func (c *RelabelConfigController) processNextWorkItem(ctx context.Context) bool 
 
 	defer c.queue.Done(key)
 
-	if err := c.sync(ctx, key.(string)); err != nil {
-		utilruntime.HandleError(fmt.Errorf("Error syncing AlertRelabelConfig (%s): %w", key.(string), err))
+	if err := c.sync(ctx, key); err != nil {
+		utilruntime.HandleError(fmt.Errorf("Error syncing AlertRelabelConfig (%s): %w", key, err))
 
 		// Re-queue failed sync.
 		c.queue.AddRateLimited(key)
@@ -190,7 +190,7 @@ func (c *RelabelConfigController) processNextWorkItem(ctx context.Context) bool 
 		return true
 	}
 
-	klog.V(4).Infof("AlertRelabelConfig successfully synced: %s", key.(string))
+	klog.V(4).Infof("AlertRelabelConfig successfully synced: %s", key)
 	c.queue.Forget(key) // Reset rate-limiting.
 
 	return true

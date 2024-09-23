@@ -184,7 +184,7 @@ type Operator struct {
 	informerFactories    []informers.SharedInformerFactory
 	controllersToRunFunc []func(ctx context.Context, workers int)
 
-	queue workqueue.RateLimitingInterface
+	queue workqueue.TypedRateLimitingInterface[string]
 
 	failedReconcileAttempts int
 
@@ -270,13 +270,16 @@ func New(
 		namespace:                 namespace,
 		namespaceUserWorkload:     namespaceUserWorkload,
 		client:                    c,
-		queue:                     workqueue.NewNamedRateLimitingQueue(workqueue.NewItemExponentialFailureRateLimiter(50*time.Millisecond, 3*time.Minute), "cluster-monitoring"),
-		informers:                 make([]cache.SharedIndexInformer, 0),
-		assets:                    a,
-		informerFactories:         make([]informers.SharedInformerFactory, 0),
-		controllersToRunFunc:      make([]func(context.Context, int), 0),
-		ruleController:            ruleController,
-		relabelController:         relabelController,
+		queue: workqueue.NewTypedRateLimitingQueueWithConfig[string](
+			workqueue.NewTypedItemExponentialFailureRateLimiter[string](50*time.Millisecond, 3*time.Minute),
+			workqueue.TypedRateLimitingQueueConfig[string]{Name: "cluster-monitoring"},
+		),
+		informers:            make([]cache.SharedIndexInformer, 0),
+		assets:               a,
+		informerFactories:    make([]informers.SharedInformerFactory, 0),
+		controllersToRunFunc: make([]func(context.Context, int), 0),
+		ruleController:       ruleController,
+		relabelController:    relabelController,
 	}
 
 	informer := cache.NewSharedIndexInformer(
@@ -691,7 +694,7 @@ func (o *Operator) processNextWorkItem(ctx context.Context) bool {
 	defer o.queue.Done(key)
 
 	metrics.ReconcileAttempts.Inc()
-	err := o.sync(ctx, key.(string))
+	err := o.sync(ctx, key)
 	if err == nil {
 		metrics.ReconcileStatus.Set(1)
 		o.queue.Forget(key)
