@@ -132,27 +132,6 @@ spec:
       insecureSkipVerify: false
       keyFile: /etc/prometheus/secrets/metrics-client-certs/tls.key
   - bearerTokenFile: ""
-    honorLabels: true
-    interval: 5s
-    path: /metrics/slis
-    port: https-metrics
-    relabelings:
-    - action: replace
-      sourceLabels:
-      - __metrics_path__
-      targetLabel: metrics_path
-    - action: drop
-      regex: process_start_time_seconds
-      sourceLabels:
-      - __name__
-    scheme: https
-    scrapeTimeout: 30s
-    tlsConfig:
-      caFile: /etc/prometheus/configmaps/kubelet-serving-ca-bundle/ca-bundle.crt
-      certFile: /etc/prometheus/secrets/metrics-client-certs/tls.crt
-      insecureSkipVerify: false
-      keyFile: /etc/prometheus/secrets/metrics-client-certs/tls.key
-  - bearerTokenFile: ""
     interval: 30s
     port: https-metrics
     relabelings:
