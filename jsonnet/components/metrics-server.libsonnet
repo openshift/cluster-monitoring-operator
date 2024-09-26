@@ -202,6 +202,7 @@ function(params) {
                 '--shutdown-send-retry-after=true',
                 // wait long enough for the readiness probe's failure threshold to be breached
                 '--shutdown-delay-duration=150s',
+                '--disable-http2-serving=true',
               ],
               imagePullPolicy: 'IfNotPresent',
               livenessProbe: {
