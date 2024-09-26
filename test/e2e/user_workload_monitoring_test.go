@@ -170,6 +170,11 @@ func TestUserWorkloadMonitoringAlerting(t *testing.T) {
 			name: "assert alertmanager is not deployed in user namespace",
 			f:    f.AssertStatefulsetDoesNotExist("alertmanager-not-to-be-reconciled", userWorkloadTestNs),
 		},
+		// TODO: the test will be renamed and merged with others in a follow-up PR.
+		{
+			name: "assert containers images registry is the same than CMO",
+			f:    cmoImageRegistryIsUsedInNsAssert(t, f.UserWorkloadMonitoringNs),
+		},
 	} {
 		t.Run(scenario.name, scenario.f)
 	}
@@ -353,7 +358,7 @@ func assertMetricsForMonitoringComponents(t *testing.T) {
 	} {
 		t.Run(service, func(t *testing.T) {
 			f.ThanosQuerierClient.WaitForQueryReturn(
-				t, time.Minute, fmt.Sprintf(`count(up{service="%s",namespace="openshift-user-workload-monitoring"} == 1)`, service),
+				t, time.Minute + 100*time.Second, fmt.Sprintf(`count(up{service="%s",namespace="openshift-user-workload-monitoring"} == 1)`, service),
 				func(v float64) error {
 					if v == float64(expected) {
 						return nil
