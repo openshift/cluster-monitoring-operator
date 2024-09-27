@@ -366,6 +366,7 @@ func assertMetricsForMonitoringComponents(t *testing.T) {
 	}
 }
 
+
 func assertAlertmanagerInstancesDiscovered(expectedInstances int) func(_ *testing.T) {
 	return func(t *testing.T) {
 		query := `max by (job) (prometheus_notifications_alertmanagers_discovered{job="prometheus-user-workload"})`
