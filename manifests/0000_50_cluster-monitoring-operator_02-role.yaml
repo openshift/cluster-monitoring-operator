@@ -465,6 +465,7 @@ rules:
   - get
 - nonResourceURLs:
   - /metrics
+  - /metrics/slis
   verbs:
   - get
 - apiGroups:
