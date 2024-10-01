@@ -1424,123 +1424,67 @@ func TestRemoteWriteAuthorizationConfig(t *testing.T) {
 }
 
 func TestPrometheusK8sRemoteWriteProxy(t *testing.T) {
-	config := func(remoteURL string) *Config {
+	config := func() *Config {
 		c, err := NewConfigFromString("", false)
-		if err != nil {
-			t.Fatal(err)
-		}
-
-		c.ClusterMonitoringConfiguration.PrometheusK8sConfig.RemoteWrite = []RemoteWriteSpec{{URL: remoteURL}}
+		require.NoError(t, err)
+		c.ClusterMonitoringConfiguration.PrometheusK8sConfig.RemoteWrite = []RemoteWriteSpec{{URL: "http://custom"}}
 		return c
 	}
 
 	for _, tc := range []struct {
 		name                        string
-		remoteURL                   string
 		proxyReader                 ProxyReader
 		expectedRemoteWriteProxyURL *string
+		expectedRemoteWriteNoProxy  *string
 	}{
 		{
-			name:                        "proxy not set",
-			remoteURL:                   "http://custom.foo.bar",
-			proxyReader:                 &fakeProxyReader{},
-			expectedRemoteWriteProxyURL: nil,
+			name:        "no proxy",
+			proxyReader: &fakeProxyReader{},
 		},
-
 		{
 			name:                        "HTTP proxy",
-			remoteURL:                   "http://custom.foo.bar",
 			proxyReader:                 &fakeProxyReader{httpProxy: "http://my-proxy"},
 			expectedRemoteWriteProxyURL: ptr.To("http://my-proxy"),
 		},
-
 		{
-			name:                        "HTTP proxy wrong scheme",
-			remoteURL:                   "https://custom.foo.bar",
-			proxyReader:                 &fakeProxyReader{httpProxy: "http://my-proxy"},
+			name:                        "HTTP proxy & noProxy",
+			proxyReader:                 &fakeProxyReader{httpProxy: "http://my-proxy", noProxy: ".foo.bar,.svc.localhost"},
 			expectedRemoteWriteProxyURL: ptr.To("http://my-proxy"),
+			expectedRemoteWriteNoProxy:  ptr.To(".foo.bar,.svc.localhost"),
 		},
-
-		{
-			name:                        "HTTP proxy with noProxy set",
-			remoteURL:                   "http://custom.foo.bar",
-			proxyReader:                 &fakeProxyReader{httpProxy: "http://my-proxy", noProxy: ".baz"},
-			expectedRemoteWriteProxyURL: ptr.To("http://my-proxy"),
-		},
-
-		{
-			name:                        "HTTP proxy should be ignored due to noProxy ",
-			remoteURL:                   "http://custom.foo.bar",
-			proxyReader:                 &fakeProxyReader{httpProxy: "http://my-proxy", noProxy: ".foo.bar"},
-			expectedRemoteWriteProxyURL: nil,
-		},
-
 		{
 			name:                        "HTTPS proxy",
-			remoteURL:                   "https://custom.foo.bar",
 			proxyReader:                 &fakeProxyReader{httpsProxy: "https://my-secured-proxy"},
 			expectedRemoteWriteProxyURL: ptr.To("https://my-secured-proxy"),
 		},
-
 		{
-			name:                        "HTTPS proxy wrong scheme",
-			remoteURL:                   "http://custom.foo.bar",
-			proxyReader:                 &fakeProxyReader{httpsProxy: "https://my-secured-proxy"},
+			name:                        "HTTPS proxy & noProxy",
+			proxyReader:                 &fakeProxyReader{httpsProxy: "https://my-secured-proxy", noProxy: ".us-east-2.compute.internal,10.0.0.0/16"},
 			expectedRemoteWriteProxyURL: ptr.To("https://my-secured-proxy"),
+			expectedRemoteWriteNoProxy:  ptr.To(".us-east-2.compute.internal,10.0.0.0/16"),
 		},
-
-		{
-			name:                        "HTTPS proxy with noProxy set",
-			remoteURL:                   "https://custom.foo.bar",
-			proxyReader:                 &fakeProxyReader{httpsProxy: "https://my-secured-proxy", noProxy: ".fox.daz"},
-			expectedRemoteWriteProxyURL: ptr.To("https://my-secured-proxy"),
-		},
-
-		{
-			name:                        "HTTPS proxy should be ignored due to noProxy",
-			remoteURL:                   "https://custom.foo.bar",
-			proxyReader:                 &fakeProxyReader{httpsProxy: "https://my-secured-proxy", noProxy: ".foo.bar"},
-			expectedRemoteWriteProxyURL: nil,
-		},
-
 		{
 			name:                        "HTTP & HTTPS proxy",
-			remoteURL:                   "http://custom.foo.bar",
 			proxyReader:                 &fakeProxyReader{httpProxy: "http://my-proxy", httpsProxy: "https://my-secured-proxy"},
 			expectedRemoteWriteProxyURL: ptr.To("https://my-secured-proxy"),
 		},
-
 		{
-			name:                        "HTTP & HTTPS proxy with noProxy set",
-			remoteURL:                   "http://custom.foo.bar",
-			proxyReader:                 &fakeProxyReader{httpProxy: "http://my-proxy", httpsProxy: "https://my-secured-proxy", noProxy: ".fox.daz"},
+			name:                        "HTTP & HTTPS proxy & noProxy",
+			proxyReader:                 &fakeProxyReader{httpProxy: "http://my-proxy", httpsProxy: "https://my-secured-proxy", noProxy: ".foo.bar,.sv.localhost"},
 			expectedRemoteWriteProxyURL: ptr.To("https://my-secured-proxy"),
-		},
-
-		{
-			name:                        "HTTP & HTTPS proxy should be ignored due to noProxy",
-			remoteURL:                   "http://custom.foo.bar",
-			proxyReader:                 &fakeProxyReader{httpProxy: "http://my-proxy", httpsProxy: "https://my-secured-proxy", noProxy: ".foo.bar"},
-			expectedRemoteWriteProxyURL: nil,
+			expectedRemoteWriteNoProxy:  ptr.To(".foo.bar,.sv.localhost"),
 		},
 	} {
 		t.Run(tc.name, func(t *testing.T) {
-			f := NewFactory("openshift-monitoring", "openshift-user-workload-monitoring", config(tc.remoteURL), defaultInfrastructureReader(), tc.proxyReader, NewAssets(assetsPath), &APIServerConfig{}, &configv1.Console{})
+			f := NewFactory("openshift-monitoring", "openshift-user-workload-monitoring", config(), defaultInfrastructureReader(), tc.proxyReader, NewAssets(assetsPath), &APIServerConfig{}, &configv1.Console{})
 			p, err := f.PrometheusK8s(
 				&v1.Secret{ObjectMeta: metav1.ObjectMeta{Name: "foo"}},
 				nil,
 			)
-			if err != nil {
-				t.Fatal(err)
-			}
-
-			if len(p.Spec.RemoteWrite) != 1 {
-				t.Fatalf("expecting 1 remote write entry, got %d", len(p.Spec.RemoteWrite))
-			}
-
-			if !reflect.DeepEqual(p.Spec.RemoteWrite[0].ProxyConfig.ProxyURL, tc.expectedRemoteWriteProxyURL) {
-				t.Fatalf("want remote write proxy URL %v, got %v", tc.expectedRemoteWriteProxyURL, p.Spec.RemoteWrite[0].ProxyConfig.ProxyURL)
-			}
+			require.NoError(t, err)
+			require.Len(t, p.Spec.RemoteWrite, 1)
+			require.Equal(t, tc.expectedRemoteWriteProxyURL, p.Spec.RemoteWrite[0].ProxyConfig.ProxyURL)
+			require.Equal(t, tc.expectedRemoteWriteNoProxy, p.Spec.RemoteWrite[0].ProxyConfig.NoProxy)
 		})
 	}
 }
