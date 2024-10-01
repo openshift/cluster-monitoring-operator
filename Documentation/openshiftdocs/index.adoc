@@ -67,4 +67,5 @@ The configuration file itself is always defined under the `config.yaml` key in t
 * link:modules/telemeterclientconfig.adoc[TelemeterClientConfig]
 * link:modules/thanosquerierconfig.adoc[ThanosQuerierConfig]
 * link:modules/thanosrulerconfig.adoc[ThanosRulerConfig]
+* link:modules/userworkloadconfig.adoc[UserWorkloadConfig]
 * link:modules/userworkloadconfiguration.adoc[UserWorkloadConfiguration]

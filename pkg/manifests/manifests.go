@@ -36,6 +36,7 @@ import (
 	routev1 "github.com/openshift/api/route/v1"
 	securityv1 "github.com/openshift/api/security/v1"
 	"github.com/openshift/library-go/pkg/crypto"
+	mon "github.com/prometheus-operator/prometheus-operator/pkg/apis/monitoring"
 	monv1 "github.com/prometheus-operator/prometheus-operator/pkg/apis/monitoring/v1"
 	yaml2 "gopkg.in/yaml.v2"
 	admissionv1 "k8s.io/api/admissionregistration/v1"
@@ -1796,7 +1797,26 @@ func (f *Factory) PrometheusUserWorkload(grpcTLS *v1.Secret) (*monv1.Prometheus,
 		p.Spec.Secrets = append(p.Spec.Secrets, getAdditionalAlertmanagerSecrets(alertManagerConfigs)...)
 	}
 
+	p.Spec.ExcludedFromEnforcement = f.excludedFromEnforcement()
+
 	return p, nil
+}
+
+func (f *Factory) excludedFromEnforcement() []monv1.ObjectReference {
+	if !*f.config.ClusterMonitoringConfiguration.UserWorkload.RulesWithoutLabelEnforcementAllowed {
+		return nil
+	}
+
+	refs := make([]monv1.ObjectReference, 0, len(f.config.UserWorkloadConfiguration.NamespacesWithoutLabelEnforcement))
+	for _, ns := range f.config.UserWorkloadConfiguration.NamespacesWithoutLabelEnforcement {
+		refs = append(refs, monv1.ObjectReference{
+			Group:     mon.GroupName,
+			Resource:  mon.PrometheusRuleName,
+			Namespace: ns,
+		})
+	}
+
+	return refs
 }
 
 func (f *Factory) PrometheusK8sPrometheusServiceMonitor() (*monv1.ServiceMonitor, error) {
@@ -3209,6 +3229,8 @@ func (f *Factory) ThanosRulerCustomResource(
 		return nil, err
 	}
 	t.Spec.AlertQueryURL = alertGeneratorURL
+
+	t.Spec.ExcludedFromEnforcement = f.excludedFromEnforcement()
 
 	t.Namespace = f.namespaceUserWorkload
 
