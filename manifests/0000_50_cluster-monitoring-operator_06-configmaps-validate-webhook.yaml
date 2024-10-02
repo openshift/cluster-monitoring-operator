@@ -1,0 +1,49 @@
+apiVersion: admissionregistration.k8s.io/v1
+kind: ValidatingWebhookConfiguration
+metadata:
+  annotations:
+    service.beta.openshift.io/inject-cabundle: "true"
+    include.release.openshift.io/hypershift: "true"
+    include.release.openshift.io/ibm-cloud-managed: "true"
+    include.release.openshift.io/self-managed-high-availability: "true"
+    include.release.openshift.io/single-node-developer: "true"
+  labels:
+    app.kubernetes.io/managed-by: cluster-version-operator
+    app.kubernetes.io/part-of: openshift-monitoring
+  name: monitoringconfigmaps.openshift.io
+webhooks:
+- admissionReviewVersions:
+  - v1
+  clientConfig:
+    service:
+      name: cluster-monitoring-operator
+      namespace: openshift-monitoring
+      path: /validate-webhook/monitoringconfigmaps
+      port: 8443
+  failurePolicy: Ignore
+  name: monitoringconfigmaps.openshift.io
+  namespaceSelector:
+    matchExpressions:
+      - key: kubernetes.io/metadata.name
+        operator: In
+        values: ["openshift-monitoring","openshift-user-workload-monitoring"]
+  matchConditions:
+    - name: 'monitoringconfigmaps'
+      expression: '(request.namespace == "openshift-monitoring" && request.name == "cluster-monitoring-config")
+        || (request.namespace == "openshift-user-workload-monitoring" && request.name
+        == "user-workload-monitoring-config")'
+    - name: 'not-skipped'
+      expression: '!has(object.metadata.labels)
+        || !("monitoringconfigmaps.openshift.io/skip-validate-webhook" in object.metadata.labels)
+        || object.metadata.labels["monitoringconfigmaps.openshift.io/skip-validate-webhook"] != "true"'
+  rules:
+  - apiGroups: [""]
+    apiVersions: ["v1"]
+    operations:
+    - CREATE
+    - UPDATE
+    resources:
+    - configmaps
+    scope: Namespaced
+  sideEffects: None
+  timeoutSeconds: 5

@@ -170,7 +170,7 @@ type Operator struct {
 	images                    map[string]string
 	telemetryMatches          []string
 	remoteWrite               bool
-	collectionProfilesEnabled bool
+	CollectionProfilesEnabled bool
 
 	lastKnowInfrastructureConfig *InfrastructureConfig
 	lastKnowProxyConfig          *ProxyConfig
@@ -266,7 +266,7 @@ func New(
 		configMapName:             configMapName,
 		userWorkloadConfigMapName: userWorkloadConfigMapName,
 		remoteWrite:               remoteWrite,
-		collectionProfilesEnabled: false,
+		CollectionProfilesEnabled: false,
 		namespace:                 namespace,
 		namespaceUserWorkload:     namespaceUserWorkload,
 		client:                    c,
@@ -474,7 +474,7 @@ func New(
 		if err != nil {
 			return nil, err
 		}
-		o.collectionProfilesEnabled = featureGates.Enabled(features.FeatureGateMetricsCollectionProfiles)
+		o.CollectionProfilesEnabled = featureGates.Enabled(features.FeatureGateMetricsCollectionProfiles)
 	case <-time.After(1 * time.Minute):
 		return nil, fmt.Errorf("timed out waiting for FeatureGate detection")
 	}
@@ -972,19 +972,7 @@ func (o *Operator) loadUserWorkloadConfig(ctx context.Context) (*manifests.UserW
 		return nil, fmt.Errorf("the User Workload Monitoring %q ConfigMap could not be loaded: %w", cmKey, err)
 	}
 
-	const configKey = "config.yaml"
-	configContent, found := userCM.Data[configKey]
-	if !found {
-		klog.Warningf("No %q key found in User Workload Monitoring %q ConfigMap. Using defaults.", configKey, cmKey)
-		return manifests.NewDefaultUserWorkloadMonitoringConfig(), nil
-	}
-
-	uwc, err := manifests.NewUserConfigFromString(configContent)
-	if err != nil {
-		klog.Warningf("Error creating User Workload Configuration from %q key in the %q ConfigMap. Error: %v", configKey, cmKey, err)
-		return nil, fmt.Errorf("the User Workload Configuration from %q key in the %q ConfigMap could not be parsed: %w", configKey, cmKey, err)
-	}
-	return uwc, nil
+	return manifests.NewUserConfigFromConfigMap(userCM)
 }
 
 func (o *Operator) loadConfig(key string) (*manifests.Config, error) {
@@ -999,18 +987,7 @@ func (o *Operator) loadConfig(key string) (*manifests.Config, error) {
 	}
 
 	cmap := obj.(*v1.ConfigMap)
-	configContent, found := cmap.Data["config.yaml"]
-
-	if !found {
-		return nil, errors.New("the Cluster Monitoring ConfigMap doesn't contain a 'config.yaml' key")
-	}
-
-	cParsed, err := manifests.NewConfigFromString(configContent, o.collectionProfilesEnabled)
-	if err != nil {
-		return nil, fmt.Errorf("the Cluster Monitoring ConfigMap could not be parsed: %w", err)
-	}
-
-	return cParsed, nil
+	return manifests.NewConfigFromConfigMap(cmap, o.CollectionProfilesEnabled)
 }
 
 func (o *Operator) Config(ctx context.Context, key string) (*manifests.Config, error) {

@@ -15,11 +15,9 @@
 package manifests
 
 import (
-	"bytes"
 	"context"
 	"encoding/json"
 	"fmt"
-	"io"
 	"math"
 	"slices"
 	"strings"
@@ -47,6 +45,8 @@ const (
 	// A value of Prometheusk8s.enforceBodySizeLimit,
 	// meaning the limit will be automatically calculated based on cluster capacity.
 	automaticBodySizeLimit = "automatic"
+
+	configKey = "config.yaml"
 )
 
 type Config struct {
@@ -189,13 +189,14 @@ func (cps CollectionProfiles) String() string {
 	return sb.String()
 }
 
-func NewConfig(content io.Reader, collectionProfilesFeatureGateEnabled bool) (*Config, error) {
+func NewConfig(content []byte, collectionProfilesFeatureGateEnabled bool) (*Config, error) {
 	c := Config{CollectionProfilesFeatureGateEnabled: collectionProfilesFeatureGateEnabled}
 	cmc := defaultClusterMonitoringConfiguration()
-	err := k8syaml.NewYAMLOrJSONDecoder(content, 4096).Decode(&cmc)
+	err := k8syaml.UnmarshalStrict(content, &cmc)
 	if err != nil {
 		return nil, err
 	}
+
 	c.ClusterMonitoringConfiguration = &cmc
 	c.applyDefaults()
 	c.UserWorkloadConfiguration = NewDefaultUserWorkloadMonitoringConfig()
@@ -488,7 +489,21 @@ func NewConfigFromString(content string, collectionProfilesFeatureGateEnabled bo
 		return NewDefaultConfig(), nil
 	}
 
-	return NewConfig(bytes.NewBuffer([]byte(content)), collectionProfilesFeatureGateEnabled)
+	return NewConfig([]byte(content), collectionProfilesFeatureGateEnabled)
+}
+
+func NewConfigFromConfigMap(c *v1.ConfigMap, collectionProfilesFeatureGateEnabled bool) (*Config, error) {
+	configContent, found := c.Data[configKey]
+
+	if !found {
+		return nil, fmt.Errorf("the configmap does not contain the %q key", configKey)
+	}
+
+	cParsed, err := NewConfigFromString(configContent, collectionProfilesFeatureGateEnabled)
+	if err != nil {
+		return nil, fmt.Errorf("the monitoring configuration in %q could not be parsed: %w", configKey, err)
+	}
+	return cParsed, nil
 }
 
 func NewDefaultConfig() *Config {
@@ -520,14 +535,28 @@ func NewUserConfigFromString(content string) (*UserWorkloadConfiguration, error)
 		return NewDefaultUserWorkloadMonitoringConfig(), nil
 	}
 	u := &UserWorkloadConfiguration{}
-	err := k8syaml.NewYAMLOrJSONDecoder(bytes.NewBuffer([]byte(content)), 100).Decode(&u)
+	err := k8syaml.UnmarshalStrict([]byte(content), &u)
 	if err != nil {
 		return nil, err
 	}
 
 	u.applyDefaults()
-
 	return u, nil
+}
+
+func NewUserConfigFromConfigMap(c *v1.ConfigMap) (*UserWorkloadConfiguration, error) {
+	configContent, found := c.Data[configKey]
+
+	if !found {
+		klog.Warningf("the user workload monitoring configmap does not contain the %q key", configKey)
+		return NewDefaultUserWorkloadMonitoringConfig(), nil
+	}
+
+	uwc, err := NewUserConfigFromString(configContent)
+	if err != nil {
+		return nil, fmt.Errorf("the user workload monitoring configuration in %q could not be parsed: %w", configKey, err)
+	}
+	return uwc, nil
 }
 
 func NewDefaultUserWorkloadMonitoringConfig() *UserWorkloadConfiguration {
