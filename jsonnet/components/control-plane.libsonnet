@@ -84,7 +84,7 @@ function(params)
               else
                 {}
             ,
-            super.endpoints,
+            [e for e in super.endpoints if std.get(e, 'path', '') != '/metrics/slis'],
           ) +
           // Collect metrics from CRI-O.
           [{
