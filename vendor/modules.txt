@@ -303,8 +303,8 @@ github.com/jpillora/backoff
 # github.com/json-iterator/go v1.1.12
 ## explicit; go 1.12
 github.com/json-iterator/go
-# github.com/klauspost/compress v1.17.9
-## explicit; go 1.20
+# github.com/klauspost/compress v1.17.10
+## explicit; go 1.21
 github.com/klauspost/compress
 github.com/klauspost/compress/fse
 github.com/klauspost/compress/huff0
@@ -518,7 +518,7 @@ github.com/prometheus-operator/prometheus-operator/pkg/client/versioned/typed/mo
 # github.com/prometheus/alertmanager v0.27.0
 ## explicit; go 1.21
 github.com/prometheus/alertmanager/api/v2/models
-# github.com/prometheus/client_golang v1.20.0
+# github.com/prometheus/client_golang v1.20.4
 ## explicit; go 1.20
 github.com/prometheus/client_golang/internal/github.com/golang/gddo/httputil
 github.com/prometheus/client_golang/internal/github.com/golang/gddo/httputil/header
@@ -532,8 +532,8 @@ github.com/prometheus/client_golang/prometheus/testutil/promlint/validations
 # github.com/prometheus/client_model v0.6.1
 ## explicit; go 1.19
 github.com/prometheus/client_model/go
-# github.com/prometheus/common v0.59.1
-## explicit; go 1.20
+# github.com/prometheus/common v0.60.0
+## explicit; go 1.21
 github.com/prometheus/common/config
 github.com/prometheus/common/expfmt
 github.com/prometheus/common/model
@@ -698,7 +698,7 @@ go.uber.org/zap/internal/pool
 go.uber.org/zap/internal/stacktrace
 go.uber.org/zap/zapcore
 go.uber.org/zap/zapgrpc
-# golang.org/x/crypto v0.27.0
+# golang.org/x/crypto v0.28.0
 ## explicit; go 1.20
 golang.org/x/crypto/cryptobyte
 golang.org/x/crypto/cryptobyte/asn1
@@ -709,11 +709,11 @@ golang.org/x/crypto/nacl/secretbox
 golang.org/x/crypto/pkcs12
 golang.org/x/crypto/pkcs12/internal/rc2
 golang.org/x/crypto/salsa20/salsa
-# golang.org/x/exp v0.0.0-20240719175910-8a7402abbf56
-## explicit; go 1.20
+# golang.org/x/exp v0.0.0-20241004190924-225e2abe05e6
+## explicit; go 1.22.0
 golang.org/x/exp/constraints
 golang.org/x/exp/slices
-# golang.org/x/net v0.29.0
+# golang.org/x/net v0.30.0
 ## explicit; go 1.18
 golang.org/x/net/context
 golang.org/x/net/http/httpguts
@@ -724,7 +724,7 @@ golang.org/x/net/idna
 golang.org/x/net/internal/timeseries
 golang.org/x/net/trace
 golang.org/x/net/websocket
-# golang.org/x/oauth2 v0.22.0
+# golang.org/x/oauth2 v0.23.0
 ## explicit; go 1.18
 golang.org/x/oauth2
 golang.org/x/oauth2/clientcredentials
@@ -733,17 +733,17 @@ golang.org/x/oauth2/internal
 ## explicit; go 1.18
 golang.org/x/sync/errgroup
 golang.org/x/sync/singleflight
-# golang.org/x/sys v0.25.0
+# golang.org/x/sys v0.26.0
 ## explicit; go 1.18
 golang.org/x/sys/cpu
 golang.org/x/sys/plan9
 golang.org/x/sys/unix
 golang.org/x/sys/windows
 golang.org/x/sys/windows/registry
-# golang.org/x/term v0.24.0
+# golang.org/x/term v0.25.0
 ## explicit; go 1.18
 golang.org/x/term
-# golang.org/x/text v0.18.0
+# golang.org/x/text v0.19.0
 ## explicit; go 1.18
 golang.org/x/text/cases
 golang.org/x/text/feature/plural
@@ -763,9 +763,12 @@ golang.org/x/text/transform
 golang.org/x/text/unicode/bidi
 golang.org/x/text/unicode/norm
 golang.org/x/text/width
-# golang.org/x/time v0.6.0
+# golang.org/x/time v0.7.0
 ## explicit; go 1.18
 golang.org/x/time/rate
+# gomodules.xyz/jsonpatch/v2 v2.4.0
+## explicit; go 1.20
+gomodules.xyz/jsonpatch/v2
 # google.golang.org/genproto v0.0.0-20240227224415-6ceb2ff114de
 ## explicit; go 1.19
 # google.golang.org/genproto/googleapis/api v0.0.0-20240711142825-46eb208f015d
@@ -1502,6 +1505,8 @@ k8s.io/client-go/tools/clientcmd/api/latest
 k8s.io/client-go/tools/clientcmd/api/v1
 k8s.io/client-go/tools/events
 k8s.io/client-go/tools/internal/events
+k8s.io/client-go/tools/leaderelection
+k8s.io/client-go/tools/leaderelection/resourcelock
 k8s.io/client-go/tools/metrics
 k8s.io/client-go/tools/pager
 k8s.io/client-go/tools/record
@@ -1562,7 +1567,7 @@ k8s.io/kube-aggregator/pkg/client/clientset_generated/clientset
 k8s.io/kube-aggregator/pkg/client/clientset_generated/clientset/scheme
 k8s.io/kube-aggregator/pkg/client/clientset_generated/clientset/typed/apiregistration/v1
 k8s.io/kube-aggregator/pkg/client/clientset_generated/clientset/typed/apiregistration/v1beta1
-# k8s.io/kube-openapi v0.0.0-20240808142205-8e686545bdb8
+# k8s.io/kube-openapi v0.0.0-20240903163716-9e1beecbcb38
 ## explicit; go 1.20
 k8s.io/kube-openapi/pkg/builder
 k8s.io/kube-openapi/pkg/builder3
@@ -1612,9 +1617,14 @@ sigs.k8s.io/apiserver-network-proxy/konnectivity-client/pkg/client
 sigs.k8s.io/apiserver-network-proxy/konnectivity-client/pkg/client/metrics
 sigs.k8s.io/apiserver-network-proxy/konnectivity-client/pkg/common/metrics
 sigs.k8s.io/apiserver-network-proxy/konnectivity-client/proto/client
-# sigs.k8s.io/controller-runtime v0.18.5
+# sigs.k8s.io/controller-runtime v0.19.0
 ## explicit; go 1.22.0
 sigs.k8s.io/controller-runtime/pkg/conversion
+sigs.k8s.io/controller-runtime/pkg/log
+sigs.k8s.io/controller-runtime/pkg/metrics
+sigs.k8s.io/controller-runtime/pkg/webhook/admission
+sigs.k8s.io/controller-runtime/pkg/webhook/admission/metrics
+sigs.k8s.io/controller-runtime/pkg/webhook/internal/metrics
 # sigs.k8s.io/json v0.0.0-20221116044647-bc3834ca7abd
 ## explicit; go 1.18
 sigs.k8s.io/json
