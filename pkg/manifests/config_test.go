@@ -25,54 +25,220 @@ import (
 	"github.com/stretchr/testify/require"
 )
 
-func TestConfigParsing(t *testing.T) {
-	f, err := os.Open("testdata/cluster-monitoring-configmap.yaml")
-	if err != nil {
-		t.Fatal(err)
-	}
-	c, err := NewConfig(f, false)
-	if err != nil {
-		t.Fatal(err)
+func TestNewConfigFromString(t *testing.T) {
+	tcs := []struct {
+		name         string
+		configString func() string
+		shouldFail   bool
+		configCheck  func(*Config)
+	}{
+		{
+			name: "yaml from file",
+			configString: func() string {
+				data, err := os.ReadFile("testdata/cluster-monitoring-config.yaml")
+				require.NoError(t, err)
+				return string(data)
+			},
+			configCheck: func(c *Config) {
+				require.NotNil(t, c.ClusterMonitoringConfiguration.AlertmanagerMainConfig.VolumeClaimTemplate)
+			},
+		},
+		{
+			name: "json string",
+			configString: func() string {
+				return `{"prometheusK8s": {}}`
+			},
+		},
+		{
+			name: "json string with unknown root field",
+			configString: func() string {
+				return `{"prometheusK8ss": {}}`
+			},
+			shouldFail: true,
+		},
+		{
+			name: "json string with unknown field",
+			configString: func() string {
+				return `{"prometheusK8s": {"unknown": "bar"}}`
+			},
+			shouldFail: true,
+		},
+		{
+			name: "json string with duplicated field",
+			// users should be aware of this as unmarshalling would only take one part into account.
+			configString: func() string {
+				return `{"prometheusK8s": {"foo": {}}, "prometheusK8s": {"bar": {}}}`
+			},
+			shouldFail: true,
+		},
+		{
+			name: "empty json string",
+			configString: func() string {
+				return `{}`
+			},
+		},
+		{
+			name: "yaml string",
+			configString: func() string {
+				return `metricsServer:`
+			},
+		},
+		{
+			name: "yaml string with unknown root field",
+			configString: func() string {
+				return `metricsServe:`
+			},
+			shouldFail: true,
+		},
+		{
+			name: "yaml string with unknown field",
+			configString: func() string {
+				return `
+metricsServer:
+  unknown:`
+			},
+			shouldFail: true,
+		},
+		{
+			name: "yaml string with duplicated field",
+			configString: func() string {
+				return `
+metricsServer:
+  foo:
+metricsServer:
+  bar:`
+			},
+			shouldFail: true,
+		},
+		{
+			name: "empty yaml string",
+			configString: func() string {
+				return ``
+			},
+		},
 	}
 
-	if c.ClusterMonitoringConfiguration.AlertmanagerMainConfig.VolumeClaimTemplate == nil {
-		t.Fatal("config parsing failed: AlertmanagerMainConfig VolumeClaimTemplate was not parsed correctly")
+	for _, tc := range tcs {
+		t.Run(tc.name, func(t *testing.T) {
+			c, err := NewConfigFromString(tc.configString(), false)
+			if tc.shouldFail {
+				require.Error(t, err)
+				return
+			}
+			require.NoError(t, err)
+			if tc.configCheck != nil {
+				tc.configCheck(c)
+			}
+		})
 	}
 }
 
-func TestNewUserConfigFromStringParsing(t *testing.T) {
-	c, err := os.ReadFile("testdata/user-workload-configmap.yaml")
-	if err != nil {
-		t.Fatal(err)
+func TestNewUserConfigFromString(t *testing.T) {
+	tcs := []struct {
+		name         string
+		configString func() string
+		shouldFail   bool
+		configCheck  func(*UserWorkloadConfiguration)
+	}{
+		{
+			name: "yaml from file",
+			configString: func() string {
+				data, err := os.ReadFile("testdata/user-workload-monitoring-config.yaml")
+				require.NoError(t, err)
+				return string(data)
+			},
+			configCheck: func(uwmc *UserWorkloadConfiguration) {
+				require.NotNil(t, uwmc.Prometheus.Retention)
+				require.NotNil(t, uwmc.ThanosRuler.Resources)
+			},
+		},
+		{
+			name: "json string",
+			configString: func() string {
+				return `{"thanosRuler": {}}`
+			},
+		},
+		{
+			name: "json string with unknown root field",
+			configString: func() string {
+				return `{"unknown": {}}`
+			},
+			shouldFail: true,
+		},
+		{
+			name: "json string with unknown field",
+			configString: func() string {
+				return `{"prometheusOperator": {"unknown": "bar"}}`
+			},
+			shouldFail: true,
+		},
+		{
+			name: "json string with duplicated field",
+			// users should be aware of this as unmarshalling would only take one part into account.
+			configString: func() string {
+				return `{"prometheus": {"foo": {}}, "prometheus": {"bar": {}}}`
+			},
+			shouldFail: true,
+		},
+		{
+			name: "empty json string",
+			configString: func() string {
+				return `{}`
+			},
+		},
+		{
+			name: "yaml string",
+			configString: func() string {
+				return `thanosRuler:`
+			},
+		},
+		{
+			name: "yaml string with unknown root field",
+			configString: func() string {
+				return `unknown:`
+			},
+			shouldFail: true,
+		},
+		{
+			name: "yaml string with unknown field",
+			configString: func() string {
+				return `
+prometheusOperator:
+  unknown:`
+			},
+			shouldFail: true,
+		},
+		{
+			name: "yaml string with duplicated field",
+			configString: func() string {
+				return `
+thanosRuler:
+  foo:
+thanosRuler:
+  bar:`
+			},
+			shouldFail: true,
+		},
+		{
+			name: "empty yaml string",
+			configString: func() string {
+				return ``
+			},
+		},
 	}
 
-	uwmc, err := NewUserConfigFromString(string(c))
-	if err != nil {
-		t.Fatal(err)
-	}
-
-	if uwmc.PrometheusOperator == nil {
-		t.Fatal("config parsing failed: Prometheus Operator was not parsed correctly")
-	}
-	if uwmc.Prometheus == nil {
-		t.Fatal("config parsing failed: Prometheus was not parsed correctly")
-	}
-	if uwmc.ThanosRuler == nil {
-		t.Fatal("config parsing failed: Thanos was not parsed correctly")
-	}
-}
-
-func TestEmptyConfigIsValid(t *testing.T) {
-	_, err := NewConfigFromString("", false)
-	if err != nil {
-		t.Fatal(err)
-	}
-}
-
-func TestEmptyUserConfigIsValid(t *testing.T) {
-	_, err := NewUserConfigFromString("")
-	if err != nil {
-		t.Fatal(err)
+	for _, tc := range tcs {
+		t.Run(tc.name, func(t *testing.T) {
+			c, err := NewUserConfigFromString(tc.configString())
+			if tc.shouldFail {
+				require.Error(t, err)
+				return
+			}
+			require.NoError(t, err)
+			if tc.configCheck != nil {
+				tc.configCheck(c)
+			}
+		})
 	}
 }
 
