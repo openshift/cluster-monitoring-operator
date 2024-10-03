@@ -4,7 +4,8 @@ Red Hat values our customers' experience and privacy. It is important to us that
 
 OpenShift 4 clusters send anonymized telemetry back to Red Hat about the following attributes. The telemetry is gathered by referencing your cluster ID and pull secret:
 
-[embedmd]:# (../manifests/0000_50_cluster-monitoring-operator_04-config.yaml)
+[embedmd]: # '../manifests/0000_50_cluster-monitoring-operator_04-config.yaml'
+
 ```yaml
 # This configmap is used by the cluster monitoring operator to configure the
 # telemeter client which is in charge of reading the metrics from the
@@ -758,7 +759,7 @@ data:
     # owners: (https://github.com/orgs/stolostron/teams/search-admin, @acm-observability-search)
     #
     # acm_console_page_count:sum counts the total number of visits for each page in ACM console.
-    - '{__name__="acm_console_page_count:sum", page=~"overview-classic|overview-fleet|search|search-details|clusters|application|governance"}'
+    - '{__name__="acm_console_page_count:sum", page=~"overview-fleet|search|search-details|clusters|virtual-machines|application|governance"}'
     #
     # owners: (@openshift/storage)
     #
@@ -1203,10 +1204,10 @@ metadata:
   name: telemetry-config
   namespace: openshift-monitoring
   annotations:
-    include.release.openshift.io/hypershift: "true"
-    include.release.openshift.io/ibm-cloud-managed: "true"
-    include.release.openshift.io/self-managed-high-availability: "true"
-    include.release.openshift.io/single-node-developer: "true"
+    include.release.openshift.io/hypershift: 'true'
+    include.release.openshift.io/ibm-cloud-managed: 'true'
+    include.release.openshift.io/self-managed-high-availability: 'true'
+    include.release.openshift.io/single-node-developer: 'true'
 ```
 
 These attributes provide a snapshot of the health, usage, and size of a cluster. From this we can determine the functionality of the framework components. This information helps Red Hat to identify correlations between issues experienced across many OpenShift 4 clusters that have similar environmental characteristics. This enables Red Hat to rapidly develop changes in OpenShift 4 to improve software resilience and customer experience.
