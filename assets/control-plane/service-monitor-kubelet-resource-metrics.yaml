@@ -10,6 +10,8 @@ metadata:
   name: kubelet-resource-metrics
   namespace: openshift-monitoring
 spec:
+  attachMetadata:
+    node: true
   endpoints:
   - bearerTokenFile: ""
     honorLabels: true
