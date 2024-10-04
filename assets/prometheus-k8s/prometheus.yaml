@@ -196,6 +196,13 @@ spec:
     matchLabels:
       openshift.io/cluster-monitoring: "true"
   ruleSelector: {}
+  scrapeClasses:
+  - name: tls-client-certificate-auth
+    tlsConfig:
+      caFile: /etc/prometheus/configmaps/serving-certs-ca-bundle/service-ca.crt
+      certFile: /etc/prometheus/secrets/metrics-client-certs/tls.crt
+      insecureSkipVerify: false
+      keyFile: /etc/prometheus/secrets/metrics-client-certs/tls.key
   scrapeConfigNamespaceSelector: null
   scrapeConfigSelector: null
   secrets:
