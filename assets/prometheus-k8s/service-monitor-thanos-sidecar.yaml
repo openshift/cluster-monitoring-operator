@@ -22,6 +22,7 @@ spec:
       insecureSkipVerify: false
       keyFile: /etc/prometheus/secrets/metrics-client-certs/tls.key
       serverName: prometheus-k8s-thanos-sidecar.openshift-monitoring.svc
+  scrapeClass: tls-client-certificate-auth
   selector:
     matchLabels:
       app.kubernetes.io/component: thanos-sidecar
