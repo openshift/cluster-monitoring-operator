@@ -58,14 +58,13 @@
       "version": "main"
     },
     {
-      "name": "kubernetes-mixin is pinned because newer versions are breaking MON-3837",
       "source": {
         "git": {
           "remote": "https://github.com/kubernetes-monitoring/kubernetes-mixin.git",
           "subdir": ""
         }
       },
-      "version": "b247371d1780f530587a8d9dd04ccb19ea970ba0"
+      "version": "cb72d737459a655e7575c09f7859815ae3690981"
     }
   ],
   "legacyImports": true
