@@ -17,11 +17,31 @@ package client
 import (
 	"context"
 	"fmt"
+	"math/rand"
 	"reflect"
+	"strconv"
 	"sync"
 	"testing"
 	"time"
 
+	admissionv1 "k8s.io/api/admissionregistration/v1"
+	appsv1 "k8s.io/api/apps/v1"
+	v1 "k8s.io/api/core/v1"
+	rbacv1 "k8s.io/api/rbac/v1"
+	apierrors "k8s.io/apimachinery/pkg/api/errors"
+	"k8s.io/apimachinery/pkg/api/resource"
+	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	"k8s.io/apimachinery/pkg/apis/meta/v1/unstructured"
+	"k8s.io/apimachinery/pkg/runtime"
+	"k8s.io/apimachinery/pkg/types"
+	"k8s.io/apimachinery/pkg/util/intstr"
+	"k8s.io/apimachinery/pkg/util/wait"
+	"k8s.io/apimachinery/pkg/watch"
+	dynamicFake "k8s.io/client-go/dynamic/fake"
+	"k8s.io/client-go/kubernetes/fake"
+	"k8s.io/utils/ptr"
+
+	"github.com/google/go-cmp/cmp"
 	routev1 "github.com/openshift/api/route/v1"
 	secv1 "github.com/openshift/api/security/v1"
 	osrfake "github.com/openshift/client-go/route/clientset/versioned/fake"
@@ -31,17 +51,6 @@ import (
 	monv1 "github.com/prometheus-operator/prometheus-operator/pkg/apis/monitoring/v1"
 	monfake "github.com/prometheus-operator/prometheus-operator/pkg/client/versioned/fake"
 	"github.com/stretchr/testify/require"
-	admissionv1 "k8s.io/api/admissionregistration/v1"
-	appsv1 "k8s.io/api/apps/v1"
-	v1 "k8s.io/api/core/v1"
-	rbacv1 "k8s.io/api/rbac/v1"
-	"k8s.io/apimachinery/pkg/api/resource"
-	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
-	"k8s.io/apimachinery/pkg/types"
-	"k8s.io/apimachinery/pkg/util/intstr"
-	"k8s.io/apimachinery/pkg/util/wait"
-	"k8s.io/client-go/kubernetes/fake"
-	"k8s.io/utils/ptr"
 )
 
 const (
@@ -1780,6 +1789,10 @@ func TestCreateOrUpdatePrometheus(t *testing.T) {
 	for _, tc := range testCases {
 		t.Run(tc.name, func(st *testing.T) {
 			prometheus := &monv1.Prometheus{
+				TypeMeta: metav1.TypeMeta{
+					Kind:       "Prometheus",
+					APIVersion: "monitoring.coreos.com/v1",
+				},
 				ObjectMeta: metav1.ObjectMeta{
 					Name:        "k8s",
 					Namespace:   ns,
@@ -1788,32 +1801,277 @@ func TestCreateOrUpdatePrometheus(t *testing.T) {
 				},
 			}
 
+			// Initialize the type registry for the fake client, and populate that with the necessary definition(s).
+			s := runtime.NewScheme()
+			_ = monv1.AddToScheme(s)
+
 			c := Client{
-				mclient: monfake.NewSimpleClientset(prometheus.DeepCopy()),
+				dclient:       dynamicFake.NewSimpleDynamicClient(s, prometheus.DeepCopy()),
+				eventRecorder: events.NewInMemoryRecorder("test-create-or-update-prometheus"),
 			}
-			if _, err := c.mclient.MonitoringV1().Prometheuses(ns).Get(ctx, prometheus.GetName(), metav1.GetOptions{}); err != nil {
+			if _, err := c.dclient.Resource(monv1.SchemeGroupVersion.WithResource("prometheuses")).Namespace(ns).Get(ctx, prometheus.GetName(), metav1.GetOptions{}); err != nil {
 				t.Fatal(err)
 			}
 
 			prometheus.SetLabels(tc.updatedLabels)
 			prometheus.SetAnnotations(tc.updatedAnnotations)
-			if err := c.CreateOrUpdatePrometheus(ctx, prometheus); err != nil {
+			if _, err := c.CreateOrUpdatePrometheus(ctx, prometheus); err != nil {
 				t.Fatal(err)
 			}
 
-			after, err := c.mclient.MonitoringV1().Prometheuses(ns).Get(ctx, prometheus.GetName(), metav1.GetOptions{})
+			after, err := c.dclient.Resource(monv1.SchemeGroupVersion.WithResource("prometheuses")).Namespace(ns).Get(ctx, prometheus.GetName(), metav1.GetOptions{})
 			if err != nil {
 				t.Fatal(err)
 			}
 
-			if !reflect.DeepEqual(tc.expectedAnnotations, after.Annotations) {
-				t.Errorf("expected annotations %q, got %q", tc.expectedAnnotations, after.Annotations)
+			if !reflect.DeepEqual(tc.expectedAnnotations, after.GetAnnotations()) {
+				t.Errorf("expected annotations %q, got %q", tc.expectedAnnotations, after.GetAnnotations())
 			}
-			if !reflect.DeepEqual(tc.expectedLabels, after.Labels) {
-				t.Errorf("expected labels %q, got %q", tc.expectedLabels, after.Labels)
+			if !reflect.DeepEqual(tc.expectedLabels, after.GetLabels()) {
+				t.Errorf("expected labels %q, got %q", tc.expectedLabels, after.GetLabels())
 			}
 		})
 	}
+
+	initialPrometheus := &monv1.Prometheus{
+		TypeMeta: metav1.TypeMeta{
+			Kind:       "Prometheus",
+			APIVersion: "monitoring.coreos.com/v1",
+		},
+		ObjectMeta: metav1.ObjectMeta{
+			Name:      "test-prometheus",
+			Namespace: "test-namespace",
+		},
+	}
+	prometheusGVR := initialPrometheus.GroupVersionKind().GroupVersion().WithResource("prometheuses")
+
+	c := &Client{}
+	c.dclient = dynamicFake.NewSimpleDynamicClient(runtime.NewScheme(), initialPrometheus.DeepCopy())
+	c.eventRecorder = events.NewInMemoryRecorder("create-or-update-prometheus-test")
+	c.resourceCache = resourceapply.NewResourceCache()
+
+	testcases := []struct {
+		description  string
+		prometheus   *monv1.Prometheus
+		shouldUpdate bool
+	}{
+		{
+			description: "initially, apply all default values to the existing prometheus",
+			prometheus:  initialPrometheus,
+		},
+		{
+			description: "apply a default value to the existing prometheus",
+			prometheus: &monv1.Prometheus{
+				TypeMeta:   initialPrometheus.TypeMeta,
+				ObjectMeta: initialPrometheus.ObjectMeta,
+				Spec: monv1.PrometheusSpec{
+					Thanos: &monv1.ThanosSpec{
+						BlockDuration: "2h",
+					},
+				},
+			},
+			shouldUpdate: true,
+		},
+		{
+			description: "apply no value to the existing prometheus",
+			prometheus: &monv1.Prometheus{
+				TypeMeta:   initialPrometheus.TypeMeta,
+				ObjectMeta: initialPrometheus.ObjectMeta,
+			},
+			shouldUpdate: true,
+		},
+		{
+			description: "apply a non-default value to the existing prometheus",
+			prometheus: &monv1.Prometheus{
+				TypeMeta:   initialPrometheus.TypeMeta,
+				ObjectMeta: initialPrometheus.ObjectMeta,
+				Spec: monv1.PrometheusSpec{
+					Thanos: &monv1.ThanosSpec{
+						BlockDuration: "3h",
+					},
+				},
+			},
+			shouldUpdate: true,
+		},
+		{
+			description: "apply a label to the existing prometheus",
+			prometheus: &monv1.Prometheus{
+				TypeMeta: initialPrometheus.TypeMeta,
+				ObjectMeta: metav1.ObjectMeta{
+					Name:      initialPrometheus.Name,
+					Namespace: initialPrometheus.Namespace,
+					Labels: map[string]string{
+						"app.kubernetes.io/name": "prometheus",
+					},
+				},
+			},
+			shouldUpdate: true,
+		},
+		{
+			description: "apply the same label to the existing prometheus",
+			prometheus: &monv1.Prometheus{
+				TypeMeta: initialPrometheus.TypeMeta,
+				ObjectMeta: metav1.ObjectMeta{
+					Name:      initialPrometheus.Name,
+					Namespace: initialPrometheus.Namespace,
+					Labels: map[string]string{
+						"app.kubernetes.io/name": "prometheus",
+					},
+				},
+			},
+		},
+	}
+	for _, testcase := range testcases {
+		t.Run(testcase.description, func(t *testing.T) {
+			existingPreUpdate, err := c.dclient.Resource(prometheusGVR).Namespace(testcase.prometheus.GetNamespace()).Get(context.Background(), testcase.prometheus.GetName(), metav1.GetOptions{})
+			if err != nil {
+				t.Fatalf("unexpected error: %v", err)
+			}
+			didUpdate, err := c.CreateOrUpdatePrometheus(context.Background(), testcase.prometheus)
+			if err != nil {
+				t.Fatalf("unexpected error: %v", err)
+			}
+			if didUpdate != testcase.shouldUpdate {
+				t.Fatalf("expected update: %v, got %v", testcase.shouldUpdate, didUpdate)
+			}
+			existingPostUpdate, err := c.dclient.Resource(prometheusGVR).Namespace(testcase.prometheus.GetNamespace()).Get(context.Background(), testcase.prometheus.GetName(), metav1.GetOptions{})
+			if err != nil {
+				t.Fatalf("unexpected error: %v", err)
+			}
+			if didUpdate && reflect.DeepEqual(existingPreUpdate, existingPostUpdate) {
+				t.Fatalf("expected update: %s", cmp.Diff(existingPreUpdate, existingPostUpdate))
+			}
+		})
+	}
+}
+
+func BenchmarkCreateOrUpdatePrometheus(b *testing.B) {
+	initialPrometheus := &monv1.Prometheus{
+		TypeMeta: metav1.TypeMeta{
+			Kind:       "Prometheus",
+			APIVersion: "monitoring.coreos.com/v1",
+		},
+		ObjectMeta: metav1.ObjectMeta{
+			Name:      "test-prometheus",
+			Namespace: "test-namespace",
+		},
+	}
+	prometheusGVR := initialPrometheus.GroupVersionKind().GroupVersion().WithResource("prometheuses")
+
+	c := &Client{}
+	c.dclient = dynamicFake.NewSimpleDynamicClient(runtime.NewScheme(), initialPrometheus.DeepCopy())
+	c.eventRecorder = events.NewInMemoryRecorder("create-or-update-prometheus-test")
+	c.resourceCache = resourceapply.NewResourceCache()
+
+	ctx, cancel := context.WithCancel(context.Background())
+	w, err := c.dclient.Resource(prometheusGVR).Namespace(initialPrometheus.GetNamespace()).Watch(ctx, metav1.ListOptions{})
+	if err != nil {
+		b.Fatalf("unexpected error: %v", err)
+	}
+	updateCounter := new(int)
+	go func(updateCounter *int) {
+		for {
+			select {
+			case <-ctx.Done():
+				return
+			case e := <-w.ResultChan():
+				if e.Type == watch.Modified || e.Type == watch.Added {
+					*updateCounter++
+				}
+			default:
+			}
+		}
+	}(updateCounter)
+
+	randomDuration := func() monv1.Duration {
+		return monv1.Duration(strconv.Itoa(rand.Intn(999) + 1))
+	}
+	benchmarks := []struct {
+		description          string
+		prometheus           func() *monv1.Prometheus
+		requiresInitialApply bool
+	}{
+		{
+			description: "apply random non-default values to the existing prometheus",
+			prometheus: func() *monv1.Prometheus {
+				return &monv1.Prometheus{
+					TypeMeta:   initialPrometheus.TypeMeta,
+					ObjectMeta: initialPrometheus.ObjectMeta,
+					Spec: monv1.PrometheusSpec{
+						Thanos: &monv1.ThanosSpec{
+							BlockDuration: randomDuration() + "h",
+						},
+					},
+				}
+			},
+		},
+		{
+			// Benchmark the library-go `spec` behavior.
+			description: "apply the same default value to the existing prometheus",
+			prometheus: func() *monv1.Prometheus {
+				return &monv1.Prometheus{
+					TypeMeta:   initialPrometheus.TypeMeta,
+					ObjectMeta: initialPrometheus.ObjectMeta,
+					Spec: monv1.PrometheusSpec{
+						Thanos: &monv1.ThanosSpec{
+							BlockDuration: "2h",
+						},
+					},
+				}
+			},
+			requiresInitialApply: true,
+		},
+		{
+			// Benchmark the library-go `metadata` behavior.
+			description: "apply the same custom label to the existing prometheus",
+			prometheus: func() *monv1.Prometheus {
+				return &monv1.Prometheus{
+					TypeMeta: initialPrometheus.TypeMeta,
+					ObjectMeta: metav1.ObjectMeta{
+						Name:      initialPrometheus.Name,
+						Namespace: initialPrometheus.Namespace,
+						Labels: map[string]string{
+							"app.kubernetes.io/name": "prometheus",
+						},
+					},
+				}
+			},
+			requiresInitialApply: true,
+		},
+	}
+	for _, benchmark := range benchmarks {
+		if benchmark.requiresInitialApply {
+			err = defaultingCreateOrUpdatePrometheus(ctx, c, initialPrometheus)
+			if err != nil {
+				b.Fatalf("unexpected error: %v", err)
+			}
+		}
+
+		b.Run("[library-go]"+benchmark.description, func(b *testing.B) {
+			*updateCounter = 0
+			for i := 0; i < 1_000; i++ {
+				err = defaultingCreateOrUpdatePrometheus(ctx, c, benchmark.prometheus())
+				if err != nil {
+					b.Fatalf("unexpected error: %v", err)
+				}
+			}
+			b.ReportMetric(float64(*updateCounter), "updates")
+		})
+
+		b.Run(benchmark.description, func(b *testing.B) {
+			*updateCounter = 0
+			for i := 0; i < 1_000; i++ {
+				err = nonDefaultingCreateOrUpdatePrometheus(ctx, c, benchmark.prometheus())
+				if err != nil {
+					b.Fatalf("unexpected error: %v", err)
+				}
+			}
+			b.ReportMetric(float64(*updateCounter), "updates")
+		})
+	}
+
+	w.Stop()
+	cancel()
 }
 
 func TestCreateOrUpdateAlertmanager(t *testing.T) {
@@ -2329,4 +2587,39 @@ func TestPollUntil(t *testing.T) {
 	cancelParentCtx3()
 	wg.Wait()
 	require.ErrorContains(t, pollErr, "context deadline exceeded")
+}
+
+func defaultingCreateOrUpdatePrometheus(ctx context.Context, c *Client, p *monv1.Prometheus) error {
+	_, err := c.CreateOrUpdatePrometheus(ctx, p)
+	return err
+}
+
+func nonDefaultingCreateOrUpdatePrometheus(ctx context.Context, c *Client, p *monv1.Prometheus) error {
+	var err error
+	unstructuredRequiredPrometheus := &unstructured.Unstructured{}
+	unstructuredRequiredPrometheus.Object, err = runtime.DefaultUnstructuredConverter.ToUnstructured(p)
+	if err != nil {
+		return fmt.Errorf("failed to convert structured to unstructured Prometheus: %w", err)
+	}
+	pclient := c.dclient.Resource(p.GroupVersionKind().GroupVersion().WithResource("prometheuses")).Namespace(p.GetNamespace())
+	existing, err := pclient.Get(ctx, p.GetName(), metav1.GetOptions{})
+	if apierrors.IsNotFound(err) {
+		_, err := pclient.Create(ctx, unstructuredRequiredPrometheus, metav1.CreateOptions{})
+		if err != nil {
+			return fmt.Errorf("creating Prometheus object failed: %w", err)
+		}
+		return nil
+	}
+	if err != nil {
+		return fmt.Errorf("retrieving Prometheus object failed: %w", err)
+	}
+
+	required := p.DeepCopy()
+	mergeMetadata(&required.ObjectMeta, p.ObjectMeta)
+	required.ResourceVersion = existing.GetResourceVersion()
+	_, err = pclient.Update(ctx, unstructuredRequiredPrometheus, metav1.UpdateOptions{})
+	if err != nil {
+		return fmt.Errorf("updating Prometheus object failed: %w", err)
+	}
+	return nil
 }
