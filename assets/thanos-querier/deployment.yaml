@@ -98,7 +98,7 @@ spec:
         - --tls-private-key-file=/etc/tls/private/tls.key
         - --tls-cipher-suites=TLS_ECDHE_RSA_WITH_AES_128_GCM_SHA256,TLS_ECDHE_ECDSA_WITH_AES_128_GCM_SHA256,TLS_ECDHE_RSA_WITH_AES_256_GCM_SHA384,TLS_ECDHE_ECDSA_WITH_AES_256_GCM_SHA384,TLS_ECDHE_RSA_WITH_CHACHA20_POLY1305,TLS_ECDHE_ECDSA_WITH_CHACHA20_POLY1305
         - --ignore-paths=/-/healthy,/-/ready
-        image: quay.io/brancz/kube-rbac-proxy:v0.18.1
+        image: quay.io/brancz/kube-rbac-proxy:v0.18.2
         livenessProbe:
           failureThreshold: 4
           httpGet:
@@ -142,7 +142,7 @@ spec:
         - --tls-private-key-file=/etc/tls/private/tls.key
         - --tls-cipher-suites=TLS_ECDHE_RSA_WITH_AES_128_GCM_SHA256,TLS_ECDHE_ECDSA_WITH_AES_128_GCM_SHA256,TLS_ECDHE_RSA_WITH_AES_256_GCM_SHA384,TLS_ECDHE_ECDSA_WITH_AES_256_GCM_SHA384,TLS_ECDHE_RSA_WITH_CHACHA20_POLY1305,TLS_ECDHE_ECDSA_WITH_CHACHA20_POLY1305
         - --allow-paths=/api/v1/query,/api/v1/query_range,/api/v1/labels,/api/v1/label/*/values,/api/v1/series
-        image: quay.io/brancz/kube-rbac-proxy:v0.18.1
+        image: quay.io/brancz/kube-rbac-proxy:v0.18.2
         name: kube-rbac-proxy
         ports:
         - containerPort: 9092
@@ -189,7 +189,7 @@ spec:
         - --tls-private-key-file=/etc/tls/private/tls.key
         - --tls-cipher-suites=TLS_ECDHE_RSA_WITH_AES_128_GCM_SHA256,TLS_ECDHE_ECDSA_WITH_AES_128_GCM_SHA256,TLS_ECDHE_RSA_WITH_AES_256_GCM_SHA384,TLS_ECDHE_ECDSA_WITH_AES_256_GCM_SHA384,TLS_ECDHE_RSA_WITH_CHACHA20_POLY1305,TLS_ECDHE_ECDSA_WITH_CHACHA20_POLY1305
         - --allow-paths=/api/v1/rules,/api/v1/alerts
-        image: quay.io/brancz/kube-rbac-proxy:v0.18.1
+        image: quay.io/brancz/kube-rbac-proxy:v0.18.2
         name: kube-rbac-proxy-rules
         ports:
         - containerPort: 9093
@@ -218,7 +218,7 @@ spec:
         - --tls-cipher-suites=TLS_ECDHE_RSA_WITH_AES_128_GCM_SHA256,TLS_ECDHE_ECDSA_WITH_AES_128_GCM_SHA256,TLS_ECDHE_RSA_WITH_AES_256_GCM_SHA384,TLS_ECDHE_ECDSA_WITH_AES_256_GCM_SHA384,TLS_ECDHE_RSA_WITH_CHACHA20_POLY1305,TLS_ECDHE_ECDSA_WITH_CHACHA20_POLY1305
         - --client-ca-file=/etc/tls/client/client-ca.crt
         - --allow-paths=/metrics
-        image: quay.io/brancz/kube-rbac-proxy:v0.18.1
+        image: quay.io/brancz/kube-rbac-proxy:v0.18.2
         name: kube-rbac-proxy-metrics
         ports:
         - containerPort: 9094
