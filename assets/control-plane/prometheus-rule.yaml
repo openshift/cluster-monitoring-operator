@@ -94,7 +94,7 @@ spec:
         summary: StatefulSet update has not been rolled out.
       expr: |
         (
-          max without (revision) (
+          max by(namespace, statefulset, job, cluster) (
             kube_statefulset_status_current_revision{namespace=~"(openshift-.*|kube-.*|default)",job="kube-state-metrics"}
               unless
             kube_statefulset_status_update_revision{namespace=~"(openshift-.*|kube-.*|default)",job="kube-state-metrics"}
@@ -232,7 +232,7 @@ spec:
         description: Cluster {{ $labels.cluster }} has overcommitted CPU resource requests for Pods by {{ $value }} CPU shares and cannot tolerate node failure.
         summary: Cluster has overcommitted CPU resource requests.
       expr: |
-        sum(namespace_cpu:kube_pod_container_resource_requests:sum{job="kube-state-metrics",}) by (cluster) - (sum(kube_node_status_allocatable{job="kube-state-metrics",resource="cpu"}) by (cluster) - max(kube_node_status_allocatable{job="kube-state-metrics",resource="cpu"}) by (cluster)) > 0
+        sum(namespace_cpu:kube_pod_container_resource_requests:sum{}) by (cluster) - (sum(kube_node_status_allocatable{job="kube-state-metrics",resource="cpu"}) by (cluster) - max(kube_node_status_allocatable{job="kube-state-metrics",resource="cpu"}) by (cluster)) > 0
         and
         (sum(kube_node_status_allocatable{job="kube-state-metrics",resource="cpu"}) by (cluster) - max(kube_node_status_allocatable{job="kube-state-metrics",resource="cpu"}) by (cluster)) > 0
       for: 10m
@@ -336,7 +336,7 @@ spec:
         description: The kubernetes apiserver has terminated {{ $value | humanizePercentage }} of its incoming requests.
         summary: The kubernetes apiserver has terminated {{ $value | humanizePercentage }} of its incoming requests.
       expr: |
-        sum(rate(apiserver_request_terminations_total{job="apiserver"}[10m]))  / (  sum(rate(apiserver_request_total{job="apiserver"}[10m])) + sum(rate(apiserver_request_terminations_total{job="apiserver"}[10m])) ) > 0.20
+        sum by(cluster) (rate(apiserver_request_terminations_total{job="apiserver"}[10m])) / ( sum by(cluster) (rate(apiserver_request_total{job="apiserver"}[10m])) + sum by(cluster) (rate(apiserver_request_terminations_total{job="apiserver"}[10m])) ) > 0.20
       for: 5m
       labels:
         severity: warning
@@ -477,7 +477,7 @@ spec:
           max by(cluster, namespace, pod, node) (kube_pod_info{node!=""})
         )
       record: node_namespace_pod_container:container_memory_swap
-  - name: k8s.rules.container_resource
+  - name: k8s.rules.container_memory_requests
     rules:
     - expr: |
         kube_pod_container_resource_requests{resource="memory",job="kube-state-metrics"}  * on (namespace, pod, cluster)
@@ -496,6 +496,8 @@ spec:
             )
         )
       record: namespace_memory:kube_pod_container_resource_requests:sum
+  - name: k8s.rules.container_cpu_requests
+    rules:
     - expr: |
         kube_pod_container_resource_requests{resource="cpu",job="kube-state-metrics"}  * on (namespace, pod, cluster)
         group_left() max by (namespace, pod, cluster) (
@@ -513,6 +515,8 @@ spec:
             )
         )
       record: namespace_cpu:kube_pod_container_resource_requests:sum
+  - name: k8s.rules.container_memory_limits
+    rules:
     - expr: |
         kube_pod_container_resource_limits{resource="memory",job="kube-state-metrics"}  * on (namespace, pod, cluster)
         group_left() max by (namespace, pod, cluster) (
@@ -530,6 +534,8 @@ spec:
             )
         )
       record: namespace_memory:kube_pod_container_resource_limits:sum
+  - name: k8s.rules.container_cpu_limits
+    rules:
     - expr: |
         kube_pod_container_resource_limits{resource="cpu",job="kube-state-metrics"}  * on (namespace, pod, cluster)
         group_left() max by (namespace, pod, cluster) (
