@@ -31,8 +31,8 @@ import (
 	"k8s.io/klog/v2"
 
 	"github.com/openshift/cluster-monitoring-operator/pkg/manifests"
-	"github.com/openshift/cluster-monitoring-operator/pkg/metrics"
 	cmo "github.com/openshift/cluster-monitoring-operator/pkg/operator"
+	"github.com/openshift/cluster-monitoring-operator/pkg/server"
 )
 
 type images map[string]string
@@ -201,12 +201,12 @@ func Main() int {
 
 	wg.Go(func() error { return o.Run(ctx) })
 
-	srv, err := metrics.NewServer("cluster-monitoring-operator", config, *kubeconfigPath, *certFile, *keyFile)
+	srv, err := server.NewServer("cluster-monitoring-operator", config, *kubeconfigPath, *certFile, *keyFile)
 	if err != nil {
 		fmt.Fprint(os.Stderr, err)
 		return 1
 	}
-	wg.Go(func() error { return srv.Run(ctx) })
+	wg.Go(func() error { return srv.Run(ctx, o.CollectionProfilesEnabled) })
 
 	term := make(chan os.Signal, 1)
 	signal.Notify(term, os.Interrupt, syscall.SIGTERM)

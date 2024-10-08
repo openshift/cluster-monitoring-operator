@@ -64,7 +64,7 @@ enableUserWorkload: true`,
 			name:   "user-workload-alertmanager",
 			config: `enableUserWorkload: true`,
 			userWorkloadConfig: `alertmanager:
-  enableUserAlertmanagerConfig: true
+  enableAlertmanagerConfig: true
   enabled: true`,
 			amName:      "user-workload",
 			amNamespace: f.UserWorkloadMonitoringNs,

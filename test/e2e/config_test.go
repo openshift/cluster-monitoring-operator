@@ -31,6 +31,7 @@ import (
 	"github.com/stretchr/testify/require"
 
 	v1 "k8s.io/api/core/v1"
+	apierrors "k8s.io/apimachinery/pkg/api/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
 
@@ -57,6 +58,13 @@ func TestClusterMonitoringOperatorConfiguration(t *testing.T) {
 			"config.yaml": `cannot be deserialized`,
 		},
 	}
+	err := f.OperatorClient.CreateOrUpdateConfigMap(ctx, cm)
+	// The CMO validate webhook shouldn't allow that.
+	require.True(t, apierrors.IsForbidden(err))
+
+	// If the change isn't caught by the validate webhook (here we explicitly skip it),
+	// CMO status will still reflect the failure.
+	cm.Labels["monitoringconfigmaps.openshift.io/skip-validate-webhook"] = "true"
 	f.MustCreateOrUpdateConfigMap(t, cm)
 
 	t.Log("asserting that CMO goes degraded after an invalid configuration is pushed")

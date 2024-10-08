@@ -12,23 +12,30 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-package metrics
+package server
 
 import (
 	"context"
+	"fmt"
+	"strings"
 
 	configv1 "github.com/openshift/api/config/v1"
 	operatorv1alpha1 "github.com/openshift/api/operator/v1alpha1"
 	"github.com/openshift/library-go/pkg/authorization/hardcodedauthorizer"
 	"github.com/openshift/library-go/pkg/config/configdefaults"
 	"github.com/openshift/library-go/pkg/config/serving"
+	"k8s.io/apiserver/pkg/authorization/authorizer"
 	"k8s.io/apiserver/pkg/authorization/union"
 	genericapiserver "k8s.io/apiserver/pkg/server"
 	"k8s.io/apiserver/pkg/util/version"
 	"k8s.io/client-go/kubernetes"
 	"k8s.io/client-go/rest"
 	"k8s.io/klog/v2"
+
+	"github.com/openshift/cluster-monitoring-operator/pkg/configvalidate"
 )
+
+const webhookPathPrefix = "/validate-webhook"
 
 type Server struct {
 	name              string
@@ -53,10 +60,10 @@ func NewServer(name string, config *rest.Config, kubeConfig, certFile, keyFile s
 	}, nil
 }
 
-// Run starts the HTTPS server exposing the Prometheus /metrics endpoint on port :8443.
+// Run starts the HTTPS server exposing the Prometheus /metrics and validate webhook endpoints on port :8443.
 // The server performs authn/authz as prescribed by
 // https://github.com/openshift/enhancements/blob/master/enhancements/monitoring/client-cert-scraping.md.
-func (s *Server) Run(ctx context.Context) error {
+func (s *Server) Run(ctx context.Context, collectionProfilesEnabled bool) error {
 	var server *genericapiserver.GenericAPIServer
 
 	servingInfo := configv1.HTTPServingInfo{}
@@ -90,6 +97,8 @@ func (s *Server) Run(ctx context.Context) error {
 		// prefix the authorizer with the permissions for metrics scraping which are well known.
 		// openshift RBAC policy will always allow this user to read metrics.
 		hardcodedauthorizer.NewHardCodedMetricsAuthorizer(),
+		// disable auth on the validate webhook paths.
+		&validateWebhookAuthorizer{},
 		serverConfig.Authorization.Authorizer,
 	)
 
@@ -99,6 +108,15 @@ func (s *Server) Run(ctx context.Context) error {
 	if err != nil {
 		return err
 	}
+
+	// This is a temporary measure until the CRD-based configuration is GA.
+	// Following tge fail-early paradigm makes configuration failures easily detectable by users.
+	// This will also aid in the transition to CRD by providing a preview of the future configuration process.
+	handler := configvalidate.MustNewConfigmapsValidatorHandler(collectionProfilesEnabled)
+	server.Handler.NonGoRestfulMux.Handle(
+		fmt.Sprintf("%s/monitoringconfigmaps", webhookPathPrefix),
+		*handler,
+	)
 
 	go func() {
 		if err := server.PrepareRun().RunWithContext(ctx); err != nil {
@@ -110,4 +128,16 @@ func (s *Server) Run(ctx context.Context) error {
 	<-ctx.Done()
 
 	return nil
+}
+
+type validateWebhookAuthorizer struct{}
+
+func (validateWebhookAuthorizer) Authorize(ctx context.Context, a authorizer.Attributes) (authorized authorizer.Decision, reason string, err error) {
+	if !a.IsResourceRequest() &&
+		a.GetVerb() == "post" &&
+		strings.HasPrefix(a.GetPath(), fmt.Sprintf("%s/", webhookPathPrefix)) {
+		return authorizer.DecisionAllow, "requesting webhook is allowed", nil
+	}
+
+	return authorizer.DecisionNoOpinion, "", nil
 }
