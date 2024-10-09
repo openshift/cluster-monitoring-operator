@@ -48,7 +48,7 @@ type scenario struct {
 
 func TestUserWorkloadMonitoringInvalidConfig(t *testing.T) {
 	// Deploy an invalid UWM config
-	uwmCM := v1.ConfigMap{
+	uwmCM := &v1.ConfigMap{
 		ObjectMeta: metav1.ObjectMeta{
 			Name:      framework.UserWorkloadMonitorConfigMapName,
 			Namespace: f.UserWorkloadMonitoringNs,
@@ -60,8 +60,8 @@ func TestUserWorkloadMonitoringInvalidConfig(t *testing.T) {
 			"config.yaml": `invalid config`,
 		},
 	}
-	f.MustCreateOrUpdateConfigMap(t, &uwmCM)
-	defer f.MustDeleteConfigMap(t, &uwmCM)
+	f.MustCreateOrUpdateConfigMap(t, uwmCM)
+	defer f.MustDeleteConfigMap(t, uwmCM)
 
 	// Enable UWM
 	cm := getUserWorkloadEnabledConfigMap(t, f)
