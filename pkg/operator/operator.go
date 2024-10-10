@@ -745,12 +745,28 @@ func newUWMTaskSpec(targetName string, task tasks.Task) *tasks.TaskSpec {
 	return tasks.NewTaskSpec(UWMTaskPrefix+targetName, task)
 }
 
-func (o *Operator) sync(ctx context.Context, key string) error {
-	config, err := o.Config(ctx, key)
+func (o *Operator) setUpgradeable(ctx context.Context, status configv1.ConditionStatus, message, reason string) {
+	err := o.client.StatusReporter().SetUpgradeable(ctx, status, message, reason)
 	if err != nil {
-		o.reportFailed(ctx, newRunReportForError("InvalidConfiguration", err))
+		klog.Errorf("error occurred while setting Upgradeable status: %v", err)
+	}
+}
+
+func (o *Operator) sync(ctx context.Context, key string) error {
+	config, warning, err := o.Config(ctx, key)
+
+	invalidConfigReason := "InvalidConfiguration"
+	if warning != nil {
+		message := fmt.Sprintf("%s. To learn more about available parameters, please consult the configuration reference %s", warning.Error(), o.linkToConfigReference())
+		o.setUpgradeable(ctx, configv1.ConditionFalse, message, invalidConfigReason)
+	} else {
+		o.setUpgradeable(ctx, configv1.ConditionTrue, "", "")
+	}
+	if err != nil {
+		o.reportFailed(ctx, newRunReportForError(invalidConfigReason, err))
 		return err
 	}
+
 	config.SetImages(o.images)
 	config.SetTelemetryMatches(o.telemetryMatches)
 	config.SetRemoteWrite(o.remoteWrite)
@@ -858,12 +874,6 @@ func (o *Operator) sync(ctx context.Context, key string) error {
 		klog.Errorf("error occurred while setting status to done: %v", err)
 	}
 
-	// CMO always reports Upgradeable=True.
-	err = o.client.StatusReporter().SetUpgradeable(ctx, configv1.ConditionTrue, "", "")
-	if err != nil {
-		klog.Errorf("error occurred while setting Upgradeable status: %v", err)
-	}
-
 	return nil
 }
 
@@ -951,68 +961,68 @@ func (o *Operator) loadConsoleConfig(ctx context.Context) (*configv1.Console, er
 	return o.lastKnownConsoleConfig, err
 }
 
-func (o *Operator) loadUserWorkloadConfig(ctx context.Context) (*manifests.UserWorkloadConfiguration, error) {
+func (o *Operator) loadUserWorkloadConfig(ctx context.Context) (*manifests.UserWorkloadConfiguration, manifests.InvalidConfigWarning, error) {
 	cmKey := fmt.Sprintf("%s/%s", o.namespaceUserWorkload, o.userWorkloadConfigMapName)
 
 	userCM, err := o.client.GetConfigmap(ctx, o.namespaceUserWorkload, o.userWorkloadConfigMapName)
 	if err != nil {
 		if apierrors.IsNotFound(err) {
 			klog.Warningf("User Workload Monitoring %q ConfigMap not found. Using defaults.", cmKey)
-			return manifests.NewDefaultUserWorkloadMonitoringConfig(), nil
+			return manifests.NewDefaultUserWorkloadMonitoringConfig(), nil, nil
 		}
 		klog.Warningf("Error loading User Workload Monitoring %q ConfigMap. Error: %v", cmKey, err)
-		return nil, fmt.Errorf("the User Workload Monitoring %q ConfigMap could not be loaded: %w", cmKey, err)
+		return nil, nil, fmt.Errorf("the User Workload Monitoring %q ConfigMap could not be loaded: %w", cmKey, err)
 	}
 
 	const configKey = "config.yaml"
 	configContent, found := userCM.Data[configKey]
 	if !found {
 		klog.Warningf("No %q key found in User Workload Monitoring %q ConfigMap. Using defaults.", configKey, cmKey)
-		return manifests.NewDefaultUserWorkloadMonitoringConfig(), nil
+		return manifests.NewDefaultUserWorkloadMonitoringConfig(), nil, nil
 	}
 
-	uwc, err := manifests.NewUserConfigFromString(configContent)
+	uwc, warning, err := manifests.NewUserConfigFromString(configContent)
 	if err != nil {
 		klog.Warningf("Error creating User Workload Configuration from %q key in the %q ConfigMap. Error: %v", configKey, cmKey, err)
-		return nil, fmt.Errorf("the User Workload Configuration from %q key in the %q ConfigMap could not be parsed: %w", configKey, cmKey, err)
+		return nil, warning, fmt.Errorf("the User Workload Configuration from %q key in the %q ConfigMap could not be parsed: %w", configKey, cmKey, err)
 	}
-	return uwc, nil
+	return uwc, warning, nil
 }
 
-func (o *Operator) loadConfig(key string) (*manifests.Config, error) {
+func (o *Operator) loadConfig(key string) (*manifests.Config, manifests.InvalidConfigWarning, error) {
 	obj, found, err := o.cmapInf.GetStore().GetByKey(key)
 	if err != nil {
-		return nil, fmt.Errorf("an error occurred when retrieving the Cluster Monitoring ConfigMap: %w", err)
+		return nil, nil, fmt.Errorf("an error occurred when retrieving the Cluster Monitoring ConfigMap: %w", err)
 	}
 
 	if !found {
 		klog.Warning("No Cluster Monitoring ConfigMap was found. Using defaults.")
-		return manifests.NewDefaultConfig(), nil
+		return manifests.NewDefaultConfig(), nil, nil
 	}
 
 	cmap := obj.(*v1.ConfigMap)
 	configContent, found := cmap.Data["config.yaml"]
 
 	if !found {
-		return nil, errors.New("the Cluster Monitoring ConfigMap doesn't contain a 'config.yaml' key")
+		return nil, nil, errors.New("the Cluster Monitoring ConfigMap doesn't contain a 'config.yaml' key")
 	}
 
-	cParsed, err := manifests.NewConfigFromString(configContent, o.collectionProfilesEnabled)
+	cParsed, warning, err := manifests.NewConfigFromString(configContent, o.collectionProfilesEnabled)
 	if err != nil {
-		return nil, fmt.Errorf("the Cluster Monitoring ConfigMap could not be parsed: %w", err)
+		return nil, warning, fmt.Errorf("the Cluster Monitoring ConfigMap could not be parsed: %w", err)
 	}
 
-	return cParsed, nil
+	return cParsed, warning, nil
 }
 
-func (o *Operator) Config(ctx context.Context, key string) (*manifests.Config, error) {
-	c, err := o.loadConfig(key)
+func (o *Operator) Config(ctx context.Context, key string) (*manifests.Config, manifests.InvalidConfigWarning, error) {
+	c, warning, err := o.loadConfig(key)
 	if err != nil {
-		return nil, err
+		return nil, warning, err
 	}
 	err = c.Precheck()
 	if err != nil {
-		return nil, err
+		return nil, warning, err
 	}
 
 	// Only use User Workload Monitoring ConfigMap from user ns and populate if
@@ -1020,9 +1030,11 @@ func (o *Operator) Config(ctx context.Context, key string) (*manifests.Config, e
 	// loadConfig() already initializes the structs with nil values for
 	// UserWorkloadConfiguration struct.
 	if *c.ClusterMonitoringConfiguration.UserWorkloadEnabled {
-		c.UserWorkloadConfiguration, err = o.loadUserWorkloadConfig(ctx)
+		var uwmWarning manifests.InvalidConfigWarning
+		c.UserWorkloadConfiguration, uwmWarning, err = o.loadUserWorkloadConfig(ctx)
+		warning = errors.Join(warning, uwmWarning)
 		if err != nil {
-			return nil, err
+			return nil, warning, err
 		}
 	}
 	o.userWorkloadEnabled = *c.ClusterMonitoringConfiguration.UserWorkloadEnabled
@@ -1051,7 +1063,29 @@ func (o *Operator) Config(ctx context.Context, key string) (*manifests.Config, e
 			klog.Warningf("Error loading token from API. Proceeding without it: %v", err)
 		}
 	}
-	return c, nil
+	return c, warning, nil
+}
+
+// linkToConfigReference returns empty string if the cluster version couldn't be identified.
+func (o Operator) linkToConfigReference() string {
+	v, err := o.getClusterVersion()
+	if err != nil {
+		return ""
+	}
+	return fmt.Sprintf("https://docs.redhat.com/documentation/openshift_container_platform/%d.%d/html/monitoring/config-map-reference-for-the-cluster-monitoring-operator", v.Major, v.Minor)
+}
+
+func (o Operator) getClusterVersion() (*semver.Version, error) {
+	cv, err := o.client.GetClusterVersion(context.Background(), "version")
+	if err != nil {
+		return nil, fmt.Errorf("failed to find the cluster version: %w", err)
+	}
+
+	v, err := semver.Make(cv.Status.Desired.Version)
+	if err != nil {
+		return nil, fmt.Errorf("failed to parse cluster version: %w", err)
+	}
+	return &v, nil
 }
 
 // storageNotConfiguredMessage returns the message to be set if a pvc has not
@@ -1066,15 +1100,9 @@ func (o Operator) storageNotConfiguredMessage() string {
 
 	// if cluster version cannot be obtained due to any failure, point to the
 	// latest documentation
-	cv, err := o.client.GetClusterVersion(context.Background(), "version")
+	v, err := o.getClusterVersion()
 	if err != nil {
-		klog.Warningf("failed to find the cluster version: %s", err)
-		return latestDocMsg
-	}
-
-	v, err := semver.Make(cv.Status.Desired.Version)
-	if err != nil {
-		klog.Warningf("failed to parse  cluster version: %s", err)
+		klog.Warning(err.Error())
 		return latestDocMsg
 	}
 
