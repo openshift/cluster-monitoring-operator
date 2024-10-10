@@ -37,12 +37,90 @@ import (
 	"k8s.io/apimachinery/pkg/util/wait"
 	"k8s.io/client-go/util/cert"
 
+	configv1 "github.com/openshift/api/config/v1"
 	"github.com/openshift/cluster-monitoring-operator/test/e2e/framework"
 )
 
 type scenario struct {
 	name      string
 	assertion func(*testing.T)
+}
+
+func TestUserWorkloadMonitoringInvalidConfig(t *testing.T) {
+	uwmCM := &v1.ConfigMap{
+		ObjectMeta: metav1.ObjectMeta{
+			Name:      framework.UserWorkloadMonitorConfigMapName,
+			Namespace: f.UserWorkloadMonitoringNs,
+			Labels: map[string]string{
+				framework.E2eTestLabelName: framework.E2eTestLabelValue,
+			},
+		},
+		Data: map[string]string{
+			"config.yaml": `cannot be deserialized`,
+		},
+	}
+	f.MustCreateOrUpdateConfigMap(t, uwmCM)
+	defer f.MustDeleteConfigMap(t, uwmCM)
+
+	// Enable UWM
+	cm := getUserWorkloadEnabledConfigMap(t, f)
+	f.MustCreateOrUpdateConfigMap(t, cm)
+	defer f.MustDeleteConfigMap(t, cm)
+
+	t.Log("invalid UWM configuration with malformed YAML/JSON")
+	f.AssertOperatorCondition(configv1.OperatorDegraded, configv1.ConditionTrue)(t)
+	f.AssertOperatorCondition(configv1.OperatorAvailable, configv1.ConditionFalse)(t)
+	// Even when an invalid configuration is caught by both unmarshallers, the operator is still set
+	// to Upgradeable=false, this keeps the logic simple and encourage users to fix their configs.
+	f.AssertOperatorCondition(configv1.OperatorUpgradeable, configv1.ConditionFalse)(t)
+	f.AssertOperatorConditionReason(configv1.OperatorUpgradeable, "InvalidConfiguration")(t)
+	f.AssertOperatorConditionMessageContains(configv1.OperatorUpgradeable, `configuration in the "openshift-user-workload-monitoring/user-workload-monitoring-config" ConfigMap is invalid and should be fixed`)(t)
+
+	t.Log("invalid UWM configuration with malformed YAML/JSON and invalid Platform configuration with unknown field")
+	cm = f.BuildCMOConfigMap(t, `enableUserWorkload: true
+unknownField: bar`)
+	f.MustCreateOrUpdateConfigMap(t, cm)
+	f.AssertOperatorCondition(configv1.OperatorDegraded, configv1.ConditionTrue)(t)
+	f.AssertOperatorCondition(configv1.OperatorAvailable, configv1.ConditionFalse)(t)
+	// Asserting that Upgradeable message mentions both invalid configs.
+	f.AssertOperatorCondition(configv1.OperatorUpgradeable, configv1.ConditionFalse)(t)
+	f.AssertOperatorConditionReason(configv1.OperatorUpgradeable, "InvalidConfiguration")(t)
+	f.AssertOperatorConditionMessageContains(configv1.OperatorUpgradeable, `configuration in the "openshift-monitoring/cluster-monitoring-config" ConfigMap is invalid and should be fixed`)(t)
+	f.AssertOperatorConditionMessageContains(configv1.OperatorUpgradeable, `configuration in the "openshift-user-workload-monitoring/user-workload-monitoring-config" ConfigMap is invalid and should be fixed`)(t)
+
+	t.Log("invalid UWM configuration with unknown field")
+	f.MustCreateOrUpdateConfigMap(t, getUserWorkloadEnabledConfigMap(t, f))
+	uwmCM.Data["config.yaml"] = `unknownField: bar`
+	f.MustCreateOrUpdateConfigMap(t, uwmCM)
+	// Asserting that CMO only goes Upgradeable=false as unknown fields are only caught by the strict unmarshaller.
+	f.AssertOperatorCondition(configv1.OperatorDegraded, configv1.ConditionFalse)(t)
+	f.AssertOperatorCondition(configv1.OperatorAvailable, configv1.ConditionTrue)(t)
+	f.AssertOperatorCondition(configv1.OperatorUpgradeable, configv1.ConditionFalse)(t)
+	f.AssertOperatorConditionReason(configv1.OperatorUpgradeable, "InvalidConfiguration")(t)
+	f.AssertOperatorConditionMessageContains(configv1.OperatorUpgradeable, `configuration in the "openshift-user-workload-monitoring/user-workload-monitoring-config" ConfigMap is invalid and should be fixed`)(t)
+
+	t.Log("both invalid configurations have unknown fields")
+	cm = f.BuildCMOConfigMap(t, `enableUserWorkload: true
+unknownField: bar`)
+	f.MustCreateOrUpdateConfigMap(t, cm)
+	f.AssertOperatorCondition(configv1.OperatorDegraded, configv1.ConditionFalse)(t)
+	f.AssertOperatorCondition(configv1.OperatorAvailable, configv1.ConditionTrue)(t)
+	// Asserting that Upgradeable message mentions both invalid configs.
+	f.AssertOperatorCondition(configv1.OperatorUpgradeable, configv1.ConditionFalse)(t)
+	f.AssertOperatorConditionReason(configv1.OperatorUpgradeable, "InvalidConfiguration")(t)
+	f.AssertOperatorConditionMessageContains(configv1.OperatorUpgradeable, `configuration in the "openshift-monitoring/cluster-monitoring-config" ConfigMap is invalid and should be fixed`)(t)
+	f.AssertOperatorConditionMessageContains(configv1.OperatorUpgradeable, `configuration in the "openshift-user-workload-monitoring/user-workload-monitoring-config" ConfigMap is invalid and should be fixed`)(t)
+
+	t.Log("restoring the initial configurations")
+	uwmCM.Data["config.yaml"] = ``
+	f.MustCreateOrUpdateConfigMap(t, uwmCM)
+	f.MustCreateOrUpdateConfigMap(t, getUserWorkloadEnabledConfigMap(t, f))
+	f.AssertOperatorCondition(configv1.OperatorDegraded, configv1.ConditionFalse)(t)
+	f.AssertOperatorCondition(configv1.OperatorAvailable, configv1.ConditionTrue)(t)
+	// Once the config is adjusted, the operator becomes Upgradeable.
+	f.AssertOperatorCondition(configv1.OperatorUpgradeable, configv1.ConditionFalse)(t)
+	f.AssertOperatorConditionReason(configv1.OperatorUpgradeable, "")(t)
+	f.AssertOperatorConditionMessage(configv1.OperatorUpgradeable, "")(t)
 }
 
 func TestUserWorkloadMonitoringMetrics(t *testing.T) {
