@@ -19,7 +19,6 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
-	"io"
 	"math"
 	"slices"
 	"strings"
@@ -46,7 +45,24 @@ const (
 	// A value of Prometheusk8s.enforceBodySizeLimit,
 	// meaning the limit will be automatically calculated based on cluster capacity.
 	automaticBodySizeLimit = "automatic"
+
+	clusterMonitorConfigMapName      = "openshift-monitoring/cluster-monitoring-config"
+	userWorkloadMonitorConfigMapName = "openshift-user-workload-monitoring/user-workload-monitoring-config"
 )
+
+// InvalidConfigWarning is just a disguised error.
+type InvalidConfigWarning error
+
+type UpgradeBlockingInvalidConfigWarning struct {
+	ConfigMap string
+	Err       error
+}
+
+func (e *UpgradeBlockingInvalidConfigWarning) Error() string {
+	return fmt.Sprintf("configuration within the %s ConfigMap is invalid and should be adjusted to make the operator Upgradeable again: %s", e.ConfigMap, e.Err)
+}
+
+var _ error = &UpgradeBlockingInvalidConfigWarning{}
 
 type Config struct {
 	Images                               *Images `json:"-"`
@@ -188,18 +204,27 @@ func (cps CollectionProfiles) String() string {
 	return sb.String()
 }
 
-func NewConfig(content io.Reader, collectionProfilesFeatureGateEnabled bool) (*Config, error) {
+func NewConfig(content []byte, collectionProfilesFeatureGateEnabled bool) (*Config, InvalidConfigWarning, error) {
 	c := Config{CollectionProfilesFeatureGateEnabled: collectionProfilesFeatureGateEnabled}
-	cmc := defaultClusterMonitoringConfiguration()
-	err := k8syaml.NewYAMLOrJSONDecoder(content, 4096).Decode(&cmc)
-	if err != nil {
-		return nil, err
+
+	var warning InvalidConfigWarning
+	strictUnmarshalCmc := defaultClusterMonitoringConfiguration()
+	strictUnmarshalErr := k8syaml.UnmarshalStrict(content, &strictUnmarshalCmc)
+	if strictUnmarshalErr != nil {
+		warning = &UpgradeBlockingInvalidConfigWarning{ConfigMap: clusterMonitorConfigMapName, Err: strictUnmarshalErr}
 	}
+
+	cmc := defaultClusterMonitoringConfiguration()
+	err := k8syaml.NewYAMLOrJSONDecoder(bytes.NewBuffer(content), 4096).Decode(&cmc)
+	if err != nil {
+		return nil, warning, err
+	}
+
 	c.ClusterMonitoringConfiguration = &cmc
 	c.applyDefaults()
 	c.UserWorkloadConfiguration = NewDefaultUserWorkloadMonitoringConfig()
 
-	return &c, nil
+	return &c, warning, nil
 }
 
 func defaultClusterMonitoringConfiguration() ClusterMonitoringConfiguration {
@@ -448,7 +473,7 @@ func (c *Config) Precheck() error {
 		d = 1
 	}
 	// Prometheus-Adapter is replaced with Metrics Server by default from 4.16
-	metrics.DeprecatedConfig.WithLabelValues("openshift-monitoring/cluster-monitoring-config", "k8sPrometheusAdapter", "4.16").Set(d)
+	metrics.DeprecatedConfig.WithLabelValues(clusterMonitorConfigMapName, "k8sPrometheusAdapter", "4.16").Set(d)
 	return nil
 }
 
@@ -470,12 +495,12 @@ func calculateBodySizeLimit(podCapacity int) string {
 // structure that facilitates programmatical checks of that configuration. The
 // content of the data structure might change if TechPreview is enabled (tp), as
 // some features are only meant for TechPreview.
-func NewConfigFromString(content string, collectionProfilesFeatureGateEnabled bool) (*Config, error) {
+func NewConfigFromString(content string, collectionProfilesFeatureGateEnabled bool) (*Config, InvalidConfigWarning, error) {
 	if content == "" {
-		return NewDefaultConfig(), nil
+		return NewDefaultConfig(), nil, nil
 	}
 
-	return NewConfig(bytes.NewBuffer([]byte(content)), collectionProfilesFeatureGateEnabled)
+	return NewConfig([]byte(content), collectionProfilesFeatureGateEnabled)
 }
 
 func NewDefaultConfig() *Config {
@@ -502,19 +527,26 @@ func (u *UserWorkloadConfiguration) applyDefaults() {
 	}
 }
 
-func NewUserConfigFromString(content string) (*UserWorkloadConfiguration, error) {
+func NewUserConfigFromString(content string) (*UserWorkloadConfiguration, InvalidConfigWarning, error) {
 	if content == "" {
-		return NewDefaultUserWorkloadMonitoringConfig(), nil
+		return NewDefaultUserWorkloadMonitoringConfig(), nil, nil
 	}
+
+	var warning InvalidConfigWarning
+	strictUnmarshalU := &UserWorkloadConfiguration{}
+	strictUnmarshalErr := k8syaml.UnmarshalStrict([]byte(content), &strictUnmarshalU)
+	if strictUnmarshalErr != nil {
+		warning = &UpgradeBlockingInvalidConfigWarning{ConfigMap: userWorkloadMonitorConfigMapName, Err: strictUnmarshalErr}
+	}
+
 	u := &UserWorkloadConfiguration{}
-	err := k8syaml.NewYAMLOrJSONDecoder(bytes.NewBuffer([]byte(content)), 100).Decode(&u)
+	err := k8syaml.NewYAMLOrJSONDecoder(bytes.NewBuffer([]byte(content)), 4096).Decode(&u)
 	if err != nil {
-		return nil, err
+		return nil, warning, err
 	}
 
 	u.applyDefaults()
-
-	return u, nil
+	return u, warning, err
 }
 
 func NewDefaultUserWorkloadMonitoringConfig() *UserWorkloadConfiguration {
