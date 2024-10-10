@@ -1,0 +1,18 @@
+prometheusOperator:
+  logLevel: debug
+prometheusK8s:
+  retention: 24h
+  resources:
+    requests:
+      cpu: 200m
+      memory: 2Gi
+alertmanagerMain:
+  volumeClaimTemplate:
+    spec:
+      resources:
+        requests:
+          storage: 15Gi
+  resources:
+    requests:
+      cpu: 20m
+      memory: 50Mi

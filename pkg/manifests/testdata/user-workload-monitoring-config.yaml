@@ -1,0 +1,11 @@
+prometheus:
+  retention: 24h
+  resources:
+    requests:
+      cpu: 200m
+      memory: 2Gi
+thanosRuler:
+  resources:
+    requests:
+      cpu: 20m
+      memory: 50Mi
