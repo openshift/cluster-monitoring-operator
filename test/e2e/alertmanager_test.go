@@ -19,15 +19,16 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
-	"github.com/go-openapi/strfmt"
-	"github.com/google/uuid"
 	"io"
-	"k8s.io/utils/ptr"
 	"net/http"
 	"reflect"
 	"slices"
 	"testing"
 	"time"
+
+	"github.com/go-openapi/strfmt"
+	"github.com/google/uuid"
+	"k8s.io/utils/ptr"
 
 	"github.com/Jeffail/gabs/v2"
 	statusv1 "github.com/openshift/api/config/v1"
@@ -52,10 +53,8 @@ func TestAlertmanagerTenancyAPI(t *testing.T) {
 		amNamespace        string
 	}{
 		{
-			name: "platform-alertmanager",
-			config: `alertmanagerMain:
-  enableUserAlertmanagerConfig: true
-enableUserWorkload: true`,
+			name:               "platform-alertmanager",
+			config:             "",
 			userWorkloadConfig: "",
 			amName:             "main",
 			amNamespace:        f.Ns,
@@ -64,7 +63,6 @@ enableUserWorkload: true`,
 			name:   "user-workload-alertmanager",
 			config: `enableUserWorkload: true`,
 			userWorkloadConfig: `alertmanager:
-  enableUserAlertmanagerConfig: true
   enabled: true`,
 			amName:      "user-workload",
 			amNamespace: f.UserWorkloadMonitoringNs,
