@@ -210,7 +210,6 @@ var (
 	PrometheusOperatorDeployment          = "prometheus-operator/deployment.yaml"
 	PrometheusOperatorService             = "prometheus-operator/service.yaml"
 	PrometheusOperatorServiceMonitor      = "prometheus-operator/service-monitor.yaml"
-	PrometheusOperatorCertsCABundle       = "prometheus-operator/operator-certs-ca-bundle.yaml"
 	PrometheusOperatorPrometheusRule      = "prometheus-operator/prometheus-rule.yaml"
 	PrometheusOperatorKubeRbacProxySecret = "prometheus-operator/kube-rbac-proxy-secret.yaml"
 
@@ -1240,10 +1239,6 @@ func (f *Factory) PrometheusK8sKubeletServingCABundle(data map[string]string) (*
 
 	c.Data = data
 	return c, nil
-}
-
-func (f *Factory) PrometheusOperatorCertsCABundle() (*v1.ConfigMap, error) {
-	return f.NewConfigMap(f.assets.MustNewAssetReader(PrometheusOperatorCertsCABundle))
 }
 
 func (f *Factory) PrometheusK8sThanosSidecarServiceMonitor() (*monv1.ServiceMonitor, error) {

@@ -175,14 +175,4 @@ function(params)
         ],
       },
     },
-
-    // TODO(simonpasquier): remove once 4.13 branch opens.
-    operatorCertsCaBundle: {
-      apiVersion: 'v1',
-      kind: 'ConfigMap',
-      metadata: {
-        name: 'operator-certs-ca-bundle',
-        namespace: params.namespace,
-      },
-    },
   }
