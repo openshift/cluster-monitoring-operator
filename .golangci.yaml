@@ -1,6 +1,6 @@
 run:
   timeout: 5m
-  tests: false
+  tests: true
   skip-dirs:
     - vendor
     - test
@@ -28,6 +28,31 @@ linters:
     - wastedassign
     - whitespace
     - gci
+
+issues:
+  exclude-rules:
+    - path: _test\.go
+      linters:
+        # The list of linters below is exhaustive with respect to the linters defined above, and as such, and linter
+        # that needs to be run on test files should be dropped from here.
+        - depguard
+        - errcheck
+        - errorlint
+        - bodyclose
+        - exportloopref
+        - gosimple
+        - ineffassign
+        - misspell
+        - nolintlint
+        - nosprintfhostport
+        - staticcheck
+        - tenv
+        - typecheck
+        - unconvert
+        - unused
+        - wastedassign
+        - whitespace
+        - gci
 
 linters-settings:
   depguard:

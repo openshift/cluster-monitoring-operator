@@ -2237,7 +2237,8 @@ func TestPollUntil(t *testing.T) {
 	require.ErrorContains(t, err, "context deadline exceeded")
 
 	// the parent context times out before poll times out.
-	parentCtx1, _ := context.WithTimeout(context.Background(), 10*time.Millisecond)
+	parentCtx1, cancel := context.WithTimeout(context.Background(), 10*time.Millisecond)
+	defer cancel()
 	err = Poll(parentCtx1, func(ctx context.Context) (bool, error) {
 		// This also ensures that when the parent context is Done, the condition context is cancelled as well.
 		select {
