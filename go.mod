@@ -14,6 +14,7 @@ require (
 	github.com/go-openapi/strfmt v0.23.0
 	github.com/google/uuid v1.6.0
 	github.com/imdario/mergo v0.3.16
+	github.com/mattn/go-shellwords v1.0.12
 	github.com/openshift/api v0.0.0-20240919193929-2669d1ebc910
 	github.com/openshift/client-go v0.0.0-20240528061634-b054aa794d87
 	github.com/openshift/library-go v0.0.0-20240619120114-0c65da30ad30

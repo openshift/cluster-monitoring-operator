@@ -4899,3 +4899,38 @@ func TestAlertmanagerProxy(t *testing.T) {
 		})
 	}
 }
+
+func TestDescriptionWithoutPlaceholder(t *testing.T) {
+	tests := []struct {
+		name     string
+		input    string
+		expected string
+	}{
+		{
+			name: "With placeholder",
+			input: `Expose blabla
+* Port 0000 blabla foo
+xx_omitted_before_deploy__test_file_name:foo.yaml
+* Port 1111 blabla bar
+xx_omitted_before_deploy__test_file_name:foo.yaml`,
+			expected: `Expose blabla
+* Port 0000 blabla foo
+* Port 1111 blabla bar`,
+		},
+		{
+			name: "Without placeholder",
+			input: `Expose blabla
+* Port 2222 blabla foo
+* Port 3333 blabla bar`,
+			expected: `Expose blabla
+* Port 2222 blabla foo
+* Port 3333 blabla bar`,
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			require.Equal(t, tt.expected, descriptionWithoutPlaceholder(tt.input))
+		})
+	}
+}

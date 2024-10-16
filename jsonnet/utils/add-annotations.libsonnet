@@ -54,6 +54,9 @@
     'openshift.io/description': std.rstripChars(s, '\n'),
   },
 
+  testFilePlaceholder(namespace, service, port):
+    'xx_omitted_before_deploy__test_file_name:%s_%s_service_port_%d.yaml' % [namespace, service, port],
+
   requiredRoles(roles, namespace=''):
     assert std.length(roles) > 0 : 'needs at least one role';
 
