@@ -38,12 +38,10 @@ spec:
       targetLabel: instance
     scheme: https
     tlsConfig:
-      caFile: /etc/prometheus/configmaps/serving-certs-ca-bundle/service-ca.crt
-      certFile: /etc/prometheus/secrets/metrics-client-certs/tls.crt
       insecureSkipVerify: false
-      keyFile: /etc/prometheus/secrets/metrics-client-certs/tls.key
       serverName: node-exporter.openshift-monitoring.svc
   jobLabel: app.kubernetes.io/name
+  scrapeClass: tls-client-certificate-auth
   selector:
     matchLabels:
       app.kubernetes.io/component: exporter

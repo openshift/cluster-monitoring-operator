@@ -130,13 +130,6 @@ function(params) {
         {
           port: 'https',
           scheme: 'https',
-          tlsConfig: {
-            certFile: '/etc/prometheus/secrets/metrics-client-certs/tls.crt',
-            keyFile: '/etc/prometheus/secrets/metrics-client-certs/tls.key',
-            insecureSkipVerify: false,
-            caFile: '/etc/prometheus/configmaps/serving-certs-ca-bundle/service-ca.crt',
-            serverName: std.format('%s.%s.svc', [cfg.name, cfg.namespace]),
-          },
           metricRelabelings: [
             // Drop metrics that come automatically from the Kubernetes
             // apiserver package but aren't interesting for the cluster

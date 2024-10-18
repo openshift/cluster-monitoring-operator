@@ -59,9 +59,7 @@ spec:
     scrapeTimeout: 30s
     tlsConfig:
       caFile: /etc/prometheus/configmaps/kubelet-serving-ca-bundle/ca-bundle.crt
-      certFile: /etc/prometheus/secrets/metrics-client-certs/tls.crt
       insecureSkipVerify: false
-      keyFile: /etc/prometheus/secrets/metrics-client-certs/tls.key
   - bearerTokenFile: ""
     honorLabels: true
     honorTimestamps: true
@@ -110,9 +108,7 @@ spec:
     scrapeTimeout: 30s
     tlsConfig:
       caFile: /etc/prometheus/configmaps/kubelet-serving-ca-bundle/ca-bundle.crt
-      certFile: /etc/prometheus/secrets/metrics-client-certs/tls.crt
       insecureSkipVerify: false
-      keyFile: /etc/prometheus/secrets/metrics-client-certs/tls.key
     trackTimestampsStaleness: true
   - bearerTokenFile: ""
     honorLabels: true
@@ -128,9 +124,7 @@ spec:
     scrapeTimeout: 30s
     tlsConfig:
       caFile: /etc/prometheus/configmaps/kubelet-serving-ca-bundle/ca-bundle.crt
-      certFile: /etc/prometheus/secrets/metrics-client-certs/tls.crt
       insecureSkipVerify: false
-      keyFile: /etc/prometheus/secrets/metrics-client-certs/tls.key
   - bearerTokenFile: ""
     interval: 30s
     port: https-metrics
@@ -156,13 +150,12 @@ spec:
     scheme: https
     tlsConfig:
       caFile: /etc/prometheus/configmaps/kubelet-serving-ca-bundle/ca-bundle.crt
-      certFile: /etc/prometheus/secrets/metrics-client-certs/tls.crt
       insecureSkipVerify: false
-      keyFile: /etc/prometheus/secrets/metrics-client-certs/tls.key
   jobLabel: k8s-app
   namespaceSelector:
     matchNames:
     - kube-system
+  scrapeClass: tls-client-certificate-auth
   selector:
     matchLabels:
       k8s-app: kubelet
