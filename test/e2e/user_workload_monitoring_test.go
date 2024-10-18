@@ -27,6 +27,7 @@ import (
 	"time"
 
 	"github.com/Jeffail/gabs"
+	"github.com/stretchr/testify/require"
 
 	configv1 "github.com/openshift/api/config/v1"
 	monitoringv1 "github.com/prometheus-operator/prometheus-operator/pkg/apis/monitoring/v1"
@@ -48,7 +49,7 @@ type scenario struct {
 
 func TestUserWorkloadMonitoringInvalidConfig(t *testing.T) {
 	// Deploy an invalid UWM config
-	uwmCM := v1.ConfigMap{
+	uwmCM := &v1.ConfigMap{
 		ObjectMeta: metav1.ObjectMeta{
 			Name:      framework.UserWorkloadMonitorConfigMapName,
 			Namespace: f.UserWorkloadMonitoringNs,
@@ -60,8 +61,15 @@ func TestUserWorkloadMonitoringInvalidConfig(t *testing.T) {
 			"config.yaml": `invalid config`,
 		},
 	}
-	f.MustCreateOrUpdateConfigMap(t, &uwmCM)
-	defer f.MustDeleteConfigMap(t, &uwmCM)
+	err := f.OperatorClient.CreateOrUpdateConfigMap(ctx, uwmCM)
+	// The CMO validate webhook shouldn't allow that.
+	require.True(t, apierrors.IsForbidden(err))
+
+	// If the change isn't caught by the validate webhook (here we explicitly skip it),
+	// CMO status will still reflect the failure.
+	uwmCM.Labels["monitoringconfigmaps.openshift.io/skip-validate-webhook"] = "true"
+	f.MustCreateOrUpdateConfigMap(t, uwmCM)
+	defer f.MustDeleteConfigMap(t, uwmCM)
 
 	// Enable UWM
 	cm := getUserWorkloadEnabledConfigMap(t, f)
