@@ -995,6 +995,7 @@ func (o *Operator) Config(ctx context.Context, key string) (*manifests.Config, e
 	if err != nil {
 		return nil, err
 	}
+
 	err = c.Precheck()
 	if err != nil {
 		return nil, err

@@ -24,6 +24,7 @@ import (
 
 	"github.com/alecthomas/units"
 	configv1 "github.com/openshift/api/config/v1"
+	"github.com/prometheus/common/model"
 	v1 "k8s.io/api/core/v1"
 	k8syaml "k8s.io/apimachinery/pkg/util/yaml"
 	auditv1 "k8s.io/apiserver/pkg/apis/audit/v1"
@@ -124,6 +125,35 @@ func (c Config) GetThanosRulerAlertmanagerConfigs() []AdditionalAlertmanagerConf
 	}
 
 	return alertmanagerConfigs
+}
+
+func scrapeIntervalLimits() (model.Duration, model.Duration) {
+	lowerLimit, _ := model.ParseDuration("5s")
+	upperLimit, _ := model.ParseDuration("5m")
+	return lowerLimit, upperLimit
+}
+
+func (u *UserWorkloadConfiguration) check() error {
+	if u == nil {
+		return nil
+	}
+
+	if u.Prometheus == nil || u.Prometheus.ScrapeInterval == "" {
+		return nil
+	}
+
+	scrapeInterval, err := model.ParseDuration(u.Prometheus.ScrapeInterval)
+
+	if err != nil {
+		return fmt.Errorf("invalid scrape interval value: %w", err)
+	}
+
+	allowedLowerLimit, allowedUpperLimit := scrapeIntervalLimits()
+
+	if (scrapeInterval < allowedLowerLimit) || (scrapeInterval > allowedUpperLimit) {
+		return fmt.Errorf("scrape interval value %q outside of the allowed range [%q, %q]", u.Prometheus.ScrapeInterval, allowedLowerLimit, allowedUpperLimit)
+	}
+	return nil
 }
 
 type Images struct {
@@ -541,6 +571,11 @@ func NewUserConfigFromString(content string) (*UserWorkloadConfiguration, error)
 	}
 
 	u.applyDefaults()
+
+	if err := u.check(); err != nil {
+		return nil, err
+	}
+
 	return u, nil
 }
 

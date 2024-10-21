@@ -1,5 +1,9 @@
 # Note: This CHANGELOG is only for the monitoring team to track all monitoring related changes. Please see OpenShift release notes for official changes.
 
+## 4.18
+
+- [#2503] (https://github.com/openshift/cluster-monitoring-operator/issues/2503) Expose `scrapeInterval` setting for UWM Prometheus.
+
 ## 4.17
 
 - [#2409](https://github.com/openshift/cluster-monitoring-operator/issues/2409) Remove prometheus-adapter code from CMO

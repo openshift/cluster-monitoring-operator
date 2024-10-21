@@ -30,7 +30,9 @@ import (
 	"github.com/openshift/cluster-monitoring-operator/test/e2e/framework"
 	"github.com/stretchr/testify/require"
 
+	monv1 "github.com/prometheus-operator/prometheus-operator/pkg/apis/monitoring/v1"
 	v1 "k8s.io/api/core/v1"
+
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
 
@@ -585,6 +587,7 @@ func TestUserWorkloadMonitorPrometheusK8Config(t *testing.T) {
 
 	uwmCM := f.BuildUserWorkloadConfigMap(t,
 		fmt.Sprintf(`prometheus:
+  scrapeInterval: 15s
   enforcedTargetLimit: 10
   enforcedLabelLimit: 500
   enforcedLabelNameLengthLimit: 50
@@ -670,6 +673,10 @@ func TestUserWorkloadMonitorPrometheusK8Config(t *testing.T) {
 		{
 			name:      "assert query log file value is set and correct",
 			assertion: assertQueryLogValueEquals(f.UserWorkloadMonitoringNs, crName, "/tmp/test.log"),
+		},
+		{
+			name:      "assert scrape interval is configured",
+			assertion: assertScrapeInterval("15s"),
 		},
 	} {
 		t.Run(tc.name, tc.assertion)
@@ -1024,6 +1031,30 @@ func assertRemoteWriteWasSet(namespace, crName, urlValue string) func(t *testing
 		})
 		if err != nil {
 			t.Fatal(err)
+		}
+	}
+}
+
+func assertScrapeInterval(scrapeInterval string) func(*testing.T) {
+	ctx := context.Background()
+	return func(t *testing.T) {
+		err := framework.Poll(time.Second, 5*time.Minute, func() error {
+			p, err := f.MonitoringClient.Prometheuses(f.UserWorkloadMonitoringNs).Get(ctx, "user-workload", metav1.GetOptions{})
+			if err != nil {
+				return err
+			}
+
+			if p.Spec.ScrapeInterval == "" {
+				return errors.New("scrapeInterval is not set")
+			} else if p.Spec.ScrapeInterval != monv1.Duration(scrapeInterval) {
+				return fmt.Errorf("expected scrapeInterval to be %s, but got %s", scrapeInterval, p.Spec.ScrapeInterval)
+			}
+
+			return nil
+		})
+
+		if err != nil {
+			t.Fatalf("Timed out waiting for scrapeInterval configuration: %v", err)
 		}
 	}
 }
