@@ -611,7 +611,7 @@ The `ThanosRulerConfig` resource defines configuration for the Thanos Ruler inst
 | logLevel | string | Defines the log level setting for Thanos Ruler. The possible values are `error`, `warn`, `info`, and `debug`. The default value is `info`. |
 | nodeSelector | map[string]string | Defines the nodes on which the Pods are scheduled. |
 | resources | *[v1.ResourceRequirements](https://kubernetes.io/docs/reference/generated/kubernetes-api/v1.30/#resourcerequirements-v1-core) | Defines resource requests and limits for the Thanos Ruler container. |
-| retention | string | Defines the duration for which Prometheus retains data. This definition must be specified using the following regular expression pattern: `[0-9]+(ms\|s\|m\|h\|d\|w\|y)` (ms = milliseconds, s= seconds,m = minutes, h = hours, d = days, w = weeks, y = years). The default value is `15d`. |
+| retention | string | Defines the duration for which Prometheus retains data. This definition must be specified using the following regular expression pattern: `[0-9]+(ms\|s\|m\|h\|d\|w\|y)` (ms = milliseconds, s= seconds,m = minutes, h = hours, d = days, w = weeks, y = years). The default value is `24h`. |
 | tolerations | [][v1.Toleration](https://kubernetes.io/docs/reference/generated/kubernetes-api/v1.30/#toleration-v1-core) | Defines tolerations for the pods. |
 | topologySpreadConstraints | []v1.TopologySpreadConstraint | Defines topology spread constraints for the pods. |
 | volumeClaimTemplate | *[monv1.EmbeddedPersistentVolumeClaim](https://github.com/prometheus-operator/prometheus-operator/blob/v0.74.0/Documentation/api.md#embeddedpersistentvolumeclaim) | Defines persistent storage for Thanos Ruler. Use this setting to configure the storage class and size of a volume. |
