@@ -25,54 +25,244 @@ import (
 	"github.com/stretchr/testify/require"
 )
 
-func TestConfigParsing(t *testing.T) {
-	f, err := os.Open("testdata/cluster-monitoring-configmap.yaml")
-	if err != nil {
-		t.Fatal(err)
-	}
-	c, err := NewConfig(f, false)
-	if err != nil {
-		t.Fatal(err)
+func TestNewConfigFromString(t *testing.T) {
+	tcs := []struct {
+		name         string
+		configString func() string
+		shouldWarn   bool
+		shouldErr    bool
+		configCheck  func(*Config)
+	}{
+		{
+			name: "yaml from file",
+			configString: func() string {
+				data, err := os.ReadFile("testdata/cluster-monitoring-config.yaml")
+				require.NoError(t, err)
+				return string(data)
+			},
+			configCheck: func(c *Config) {
+				require.NotNil(t, c.ClusterMonitoringConfiguration.AlertmanagerMainConfig.VolumeClaimTemplate)
+			},
+		},
+		{
+			name: "json string",
+			configString: func() string {
+				return `{"prometheusK8s": {}}`
+			},
+		},
+		{
+			name: "malformed json/yaml string",
+			configString: func() string {
+				return `foo`
+			},
+			shouldWarn: true,
+			shouldErr:  true,
+		},
+		{
+			name: "json string with unknown root field",
+			configString: func() string {
+				return `{"prometheusK8ss": {}}`
+			},
+			shouldWarn: true,
+		},
+		{
+			name: "json string with unknown field",
+			configString: func() string {
+				return `{"prometheusK8s": {"unknown": "bar"}}`
+			},
+			shouldWarn: true,
+		},
+		{
+			name: "json string with duplicated field",
+			// users should be aware of this as unmarshalling would only take one part into account.
+			configString: func() string {
+				return `{"prometheusK8s": {"foo": {}}, "prometheusK8s": {"bar": {}}}`
+			},
+			shouldWarn: true,
+		},
+		{
+			name: "empty json string",
+			configString: func() string {
+				return `{}`
+			},
+		},
+		{
+			name: "yaml string",
+			configString: func() string {
+				return `metricsServer:`
+			},
+		},
+		{
+			name: "yaml string with unknown root field",
+			configString: func() string {
+				return `metricsServe:`
+			},
+			shouldWarn: true,
+		},
+		{
+			name: "yaml string with unknown field",
+			configString: func() string {
+				return `
+metricsServer:
+  unknown:`
+			},
+			shouldWarn: true,
+		},
+		{
+			name: "yaml string with duplicated field",
+			configString: func() string {
+				return `
+metricsServer:
+  foo:
+metricsServer:
+  bar:`
+			},
+			shouldWarn: true,
+		},
+		{
+			name: "empty yaml string",
+			configString: func() string {
+				return ``
+			},
+		},
 	}
 
-	if c.ClusterMonitoringConfiguration.AlertmanagerMainConfig.VolumeClaimTemplate == nil {
-		t.Fatal("config parsing failed: AlertmanagerMainConfig VolumeClaimTemplate was not parsed correctly")
+	for _, tc := range tcs {
+		t.Run(tc.name, func(t *testing.T) {
+			c, warning, err := NewConfigFromString(tc.configString(), false)
+			if tc.shouldWarn {
+				require.NotNil(t, warning)
+			}
+			if tc.shouldErr {
+				require.Error(t, err)
+				return
+			}
+			require.NoError(t, err)
+			if tc.configCheck != nil {
+				tc.configCheck(c)
+			}
+		})
 	}
 }
 
-func TestNewUserConfigFromStringParsing(t *testing.T) {
-	c, err := os.ReadFile("testdata/user-workload-configmap.yaml")
-	if err != nil {
-		t.Fatal(err)
+func TestNewUserConfigFromString(t *testing.T) {
+	tcs := []struct {
+		name         string
+		configString func() string
+		shouldWarn   bool
+		shouldErr    bool
+		configCheck  func(*UserWorkloadConfiguration)
+	}{
+		{
+			name: "yaml from file",
+			configString: func() string {
+				data, err := os.ReadFile("testdata/user-workload-monitoring-config.yaml")
+				require.NoError(t, err)
+				return string(data)
+			},
+			configCheck: func(uwmc *UserWorkloadConfiguration) {
+				require.NotNil(t, uwmc.Prometheus.Retention)
+				require.NotNil(t, uwmc.ThanosRuler.Resources)
+			},
+		},
+		{
+			name: "json string",
+			configString: func() string {
+				return `{"thanosRuler": {}}`
+			},
+		},
+		{
+			name: "malformed json/yaml string",
+			configString: func() string {
+				return `foo`
+			},
+			shouldWarn: true,
+			shouldErr:  true,
+		},
+		{
+			name: "json string with unknown root field",
+			configString: func() string {
+				return `{"unknown": {}}`
+			},
+			shouldWarn: true,
+		},
+		{
+			name: "json string with unknown field",
+			configString: func() string {
+				return `{"prometheusOperator": {"unknown": "bar"}}`
+			},
+			shouldWarn: true,
+		},
+		{
+			name: "json string with duplicated field",
+			// users should be aware of this as unmarshalling would only take one part into account.
+			configString: func() string {
+				return `{"prometheus": {"foo": {}}, "prometheus": {"bar": {}}}`
+			},
+			shouldWarn: true,
+		},
+		{
+			name: "empty json string",
+			configString: func() string {
+				return `{}`
+			},
+		},
+		{
+			name: "yaml string",
+			configString: func() string {
+				return `thanosRuler:`
+			},
+		},
+		{
+			name: "yaml string with unknown root field",
+			configString: func() string {
+				return `unknown:`
+			},
+			shouldWarn: true,
+		},
+		{
+			name: "yaml string with unknown field",
+			configString: func() string {
+				return `
+prometheusOperator:
+  unknown:`
+			},
+			shouldWarn: true,
+		},
+		{
+			name: "yaml string with duplicated field",
+			configString: func() string {
+				return `
+thanosRuler:
+  foo:
+thanosRuler:
+  bar:`
+			},
+			shouldWarn: true,
+		},
+		{
+			name: "empty yaml string",
+			configString: func() string {
+				return ``
+			},
+		},
 	}
 
-	uwmc, err := NewUserConfigFromString(string(c))
-	if err != nil {
-		t.Fatal(err)
-	}
-
-	if uwmc.PrometheusOperator == nil {
-		t.Fatal("config parsing failed: Prometheus Operator was not parsed correctly")
-	}
-	if uwmc.Prometheus == nil {
-		t.Fatal("config parsing failed: Prometheus was not parsed correctly")
-	}
-	if uwmc.ThanosRuler == nil {
-		t.Fatal("config parsing failed: Thanos was not parsed correctly")
-	}
-}
-
-func TestEmptyConfigIsValid(t *testing.T) {
-	_, err := NewConfigFromString("", false)
-	if err != nil {
-		t.Fatal(err)
-	}
-}
-
-func TestEmptyUserConfigIsValid(t *testing.T) {
-	_, err := NewUserConfigFromString("")
-	if err != nil {
-		t.Fatal(err)
+	for _, tc := range tcs {
+		t.Run(tc.name, func(t *testing.T) {
+			c, warning, err := NewUserConfigFromString(tc.configString())
+			if tc.shouldWarn {
+				require.NotNil(t, warning)
+			}
+			if tc.shouldErr {
+				require.Error(t, err)
+				return
+			}
+			require.NoError(t, err)
+			if tc.configCheck != nil {
+				tc.configCheck(c)
+			}
+		})
 	}
 }
 
@@ -182,10 +372,9 @@ func TestHttpProxyConfig(t *testing.T) {
   noProxy: https://example.com
 `
 
-	c, err := NewConfigFromString(conf, false)
-	if err != nil {
-		t.Errorf("expected no error parsing config - %v", err)
-	}
+	c, warning, err := NewConfigFromString(conf, false)
+	require.NoError(t, err)
+	require.Nil(t, warning)
 
 	tests := []struct {
 		name   string
@@ -293,10 +482,9 @@ func TestLoadEnforcedBodySizeLimit(t *testing.T) {
 		},
 	} {
 		t.Run(tt.name, func(t *testing.T) {
-			c, err := NewConfigFromString(tt.config, false)
-			if err != nil {
-				t.Fatalf("config parsing error")
-			}
+			c, warning, err := NewConfigFromString(tt.config, false)
+			require.NoError(t, err)
+			require.Nil(t, warning)
 
 			err = c.LoadEnforcedBodySizeLimit(tt.pcr, context.Background())
 			if tt.expectError {
@@ -357,8 +545,9 @@ func TestCollectionProfilePreCheck(t *testing.T) {
 		},
 	} {
 		t.Run(tc.name, func(t *testing.T) {
-			c, err := NewConfigFromString(tc.config, true)
+			c, warning, err := NewConfigFromString(tc.config, true)
 			require.NoError(t, err)
+			require.Nil(t, warning)
 			err = c.Precheck()
 			if err != nil && tc.expectedError {
 				return
@@ -398,8 +587,9 @@ func TestDeprecatedConfig(t *testing.T) {
 		},
 	} {
 		t.Run(tc.name, func(t *testing.T) {
-			c, err := NewConfigFromString(tc.config, true)
+			c, warning, err := NewConfigFromString(tc.config, true)
 			require.NoError(t, err)
+			require.Nil(t, warning)
 			err = c.Precheck()
 			require.NoError(t, err)
 			require.Equal(t, tc.expectedMetricValue, prom_testutil.ToFloat64(metrics.DeprecatedConfig))
