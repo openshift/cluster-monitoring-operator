@@ -73,8 +73,6 @@ function(params)
       },
     },
 
-    // This changes the alertmanager to be scraped with TLS, authN and authZ,
-    // which are not present in kube-prometheus.
     serviceMonitor+: {
       spec+: {
         endpoints: [
@@ -82,11 +80,6 @@ function(params)
             port: 'metrics',
             interval: '30s',
             scheme: 'https',
-            tlsConfig: {
-              caFile: '/etc/prometheus/configmaps/serving-certs-ca-bundle/service-ca.crt',
-              certFile: '/etc/prometheus/secrets/metrics-client-certs/tls.crt',
-              keyFile: '/etc/prometheus/secrets/metrics-client-certs/tls.key',
-            },
           },
         ],
       },
