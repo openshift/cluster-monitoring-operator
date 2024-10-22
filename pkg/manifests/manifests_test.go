@@ -650,9 +650,6 @@ func TestPrometheusOperatorConfiguration(t *testing.T) {
 	c, err := NewConfigFromString(`prometheusOperator:
   nodeSelector:
     type: master
-  image: quay.io/test/prometheus-operator
-  prometheusConfigReloaderImage: quay.io/test/prometheus-config-reloader
-  configReloaderImage: quay.io/test/configmap-reload
   resources:
     requests:
       cpu: 100m
@@ -668,6 +665,7 @@ func TestPrometheusOperatorConfiguration(t *testing.T) {
         matchLabels:
           foo: bar
 `, false)
+	require.NoError(t, err)
 
 	c.SetImages(map[string]string{
 		"prometheus-operator":        "docker.io/openshift/origin-prometheus-operator:latest",
@@ -1521,8 +1519,6 @@ func TestPrometheusK8sConfiguration(t *testing.T) {
   remoteWrite:
   - url: "https://test.remotewrite.com/api/write"
   queryLogFile: /tmp/test
-ingress:
-  baseAddress: monitoring-demo.staging.core-os.net
 `, false)
 
 	if err != nil {
@@ -2897,7 +2893,6 @@ func TestAlertmanagerMainStartupProbe(t *testing.T) {
 func TestAlertmanagerMainConfiguration(t *testing.T) {
 	c, err := NewConfigFromString(`alertmanagerMain:
   logLevel: debug
-  baseImage: quay.io/test/alertmanager
   enableUserAlertmanagerConfig: true
   nodeSelector:
     type: worker
@@ -2926,8 +2921,6 @@ func TestAlertmanagerMainConfiguration(t *testing.T) {
       resources:
         requests:
           storage: 10Gi
-ingress:
-  baseAddress: monitoring-demo.staging.core-os.net
 `, false)
 	if err != nil {
 		t.Fatal(err)
