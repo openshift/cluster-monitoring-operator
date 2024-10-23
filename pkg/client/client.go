@@ -100,6 +100,9 @@ func NewForConfig(cfg *rest.Config, version string, namespace, userWorkloadNames
 	client := New(version, namespace, userWorkloadNamespace, options...)
 
 	if client.kclient == nil {
+		cfg = rest.CopyConfig(cfg)
+		cfg.AcceptContentTypes = "application/vnd.kubernetes.protobuf,application/json"
+		cfg.ContentType = "application/vnd.kubernetes.protobuf"
 		kclient, err := kubernetes.NewForConfig(cfg)
 		if err != nil {
 			return nil, fmt.Errorf("creating kubernetes clientset client: %w", err)
