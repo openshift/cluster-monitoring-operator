@@ -484,6 +484,7 @@ The `PrometheusRestrictedConfig` resource defines the settings for the Prometheu
 
 | Property | Type | Description |
 | -------- | ---- | ----------- |
+| scrapeInterval | string | Configures the default interval between consecutive scrapes in case the ServiceMonitor or PodMonitor resource does not specify any value. The default value is `30s`. |
 | additionalAlertmanagerConfigs | [][AdditionalAlertmanagerConfig](#additionalalertmanagerconfig) | Configures additional Alertmanager instances that receive alerts from the Prometheus component. By default, no additional Alertmanager instances are configured. |
 | enforcedLabelLimit | *uint64 | Specifies a per-scrape limit on the number of labels accepted for a sample. If the number of labels exceeds this limit after metric relabeling, the entire scrape is treated as failed. The default value is `0`, which means that no limit is set. |
 | enforcedLabelNameLengthLimit | *uint64 | Specifies a per-scrape limit on the length of a label name for a sample. If the length of a label name exceeds this limit after metric relabeling, the entire scrape is treated as failed. The default value is `0`, which means that no limit is set. |

@@ -24,6 +24,7 @@ import (
 
 	"github.com/alecthomas/units"
 	configv1 "github.com/openshift/api/config/v1"
+	"github.com/prometheus/common/model"
 	v1 "k8s.io/api/core/v1"
 	k8syaml "k8s.io/apimachinery/pkg/util/yaml"
 	auditv1 "k8s.io/apiserver/pkg/apis/audit/v1"
@@ -124,6 +125,27 @@ func (c Config) GetThanosRulerAlertmanagerConfigs() []AdditionalAlertmanagerConf
 	}
 
 	return alertmanagerConfigs
+}
+
+func (c Config) HasInvalidScrapeIntervalDuration() bool {
+	if c.ClusterMonitoringConfiguration == nil || c.UserWorkloadConfiguration == nil {
+		return false
+	}
+
+	if c.UserWorkloadConfiguration.Prometheus == nil || c.UserWorkloadConfiguration.Prometheus.ScrapeInterval == "" {
+		return false
+	}
+
+	scrapeInterval, err := model.ParseDuration(c.UserWorkloadConfiguration.Prometheus.ScrapeInterval)
+
+	if err != nil {
+		return true
+	}
+
+	allowedLowerLimit, _ := model.ParseDuration("5s")
+	allowedUpperLimit, _ := model.ParseDuration("5m")
+
+	return (scrapeInterval < allowedLowerLimit) || (scrapeInterval > allowedUpperLimit)
 }
 
 type Images struct {
@@ -437,6 +459,9 @@ func (c *Config) LoadEnforcedBodySizeLimit(pcr PodCapacityReader, ctx context.Co
 }
 
 func (c *Config) Precheck() error {
+	if c.HasInvalidScrapeIntervalDuration() {
+		return fmt.Errorf("%w: scrapeInterval specified should be between 5s and 5m", ErrUserWorkloadValidation)
+	}
 	if c.ClusterMonitoringConfiguration.PrometheusK8sConfig.CollectionProfile != FullCollectionProfile && !c.CollectionProfilesFeatureGateEnabled {
 		return fmt.Errorf("%w: collectionProfiles is currently a TechPreview feature behind the \"MetricsCollectionProfiles\" feature-gate, to be able to use a profile different from the default (\"full\") please enable it first", ErrConfigValidation)
 	}
