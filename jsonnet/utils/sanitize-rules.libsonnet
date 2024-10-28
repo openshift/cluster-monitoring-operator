@@ -498,6 +498,7 @@ local includeRunbooks = {
   PrometheusScrapeBodySizeLimitHit: openShiftRunbookCMO('PrometheusScrapeBodySizeLimitHit.md'),
   PrometheusTargetSyncFailure: openShiftRunbookCMO('PrometheusTargetSyncFailure.md'),
   TargetDown: openShiftRunbookCMO('TargetDown.md'),
+  TelemeterClientFailures: openShiftRunbookCMO('TelemeterClientFailures.md'),
   ThanosRuleQueueIsDroppingAlerts: openShiftRunbookCMO('ThanosRuleQueueIsDroppingAlerts.md'),
   ThanosRuleRuleEvaluationLatencyHigh: openShiftRunbookCMO('ThanosRuleRuleEvaluationLatencyHigh.md'),
 };
