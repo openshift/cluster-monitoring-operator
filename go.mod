@@ -150,3 +150,5 @@ require (
 	sigs.k8s.io/kube-storage-version-migrator v0.0.6-0.20230721195810-5c8923c5ff96 // indirect
 	sigs.k8s.io/structured-merge-diff/v4 v4.4.1 // indirect
 )
+
+replace k8s.io/client-go => github.com/vrutkovs/client-go v0.0.0-20241029114452-7f4b7d7b258d

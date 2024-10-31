@@ -1184,7 +1184,7 @@ k8s.io/autoscaler/vertical-pod-autoscaler/pkg/apis/autoscaling.k8s.io/v1beta2
 k8s.io/autoscaler/vertical-pod-autoscaler/pkg/apis/poc.autoscaling.k8s.io/v1alpha1
 k8s.io/autoscaler/vertical-pod-autoscaler/pkg/client/clientset/versioned/scheme
 k8s.io/autoscaler/vertical-pod-autoscaler/pkg/client/clientset/versioned/typed/autoscaling.k8s.io/v1
-# k8s.io/client-go v0.31.1
+# k8s.io/client-go v0.31.1 => github.com/vrutkovs/client-go v0.0.0-20241029114452-7f4b7d7b258d
 ## explicit; go 1.22.0
 k8s.io/client-go/applyconfigurations
 k8s.io/client-go/applyconfigurations/admissionregistration/v1
@@ -1633,3 +1633,4 @@ sigs.k8s.io/structured-merge-diff/v4/value
 ## explicit; go 1.12
 sigs.k8s.io/yaml
 sigs.k8s.io/yaml/goyaml.v2
+# k8s.io/client-go => github.com/vrutkovs/client-go v0.0.0-20241029114452-7f4b7d7b258d
