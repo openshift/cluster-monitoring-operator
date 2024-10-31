@@ -758,7 +758,7 @@ data:
     # owners: (https://github.com/orgs/stolostron/teams/search-admin, @acm-observability-search)
     #
     # acm_console_page_count:sum counts the total number of visits for each page in ACM console.
-    - '{__name__="acm_console_page_count:sum", page=~"overview-classic|overview-fleet|search|search-details|clusters|application|governance"}'
+    - '{__name__="acm_console_page_count:sum", page=~"overview-fleet|search|search-details|clusters|virtual-machines|application|governance"}'
     #
     # owners: (@openshift/storage)
     #
