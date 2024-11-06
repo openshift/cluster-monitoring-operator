@@ -2,7 +2,7 @@
 
 package v1
 
-// ConsoleSampleSpecApplyConfiguration represents an declarative configuration of the ConsoleSampleSpec type for use
+// ConsoleSampleSpecApplyConfiguration represents a declarative configuration of the ConsoleSampleSpec type for use
 // with apply.
 type ConsoleSampleSpecApplyConfiguration struct {
 	Title       *string                                `json:"title,omitempty"`
@@ -15,7 +15,7 @@ type ConsoleSampleSpecApplyConfiguration struct {
 	Source      *ConsoleSampleSourceApplyConfiguration `json:"source,omitempty"`
 }
 
-// ConsoleSampleSpecApplyConfiguration constructs an declarative configuration of the ConsoleSampleSpec type for use with
+// ConsoleSampleSpecApplyConfiguration constructs a declarative configuration of the ConsoleSampleSpec type for use with
 // apply.
 func ConsoleSampleSpec() *ConsoleSampleSpecApplyConfiguration {
 	return &ConsoleSampleSpecApplyConfiguration{}

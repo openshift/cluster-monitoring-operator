@@ -2,13 +2,13 @@
 
 package v1
 
-// ConsoleSampleGitImportSourceServiceApplyConfiguration represents an declarative configuration of the ConsoleSampleGitImportSourceService type for use
+// ConsoleSampleGitImportSourceServiceApplyConfiguration represents a declarative configuration of the ConsoleSampleGitImportSourceService type for use
 // with apply.
 type ConsoleSampleGitImportSourceServiceApplyConfiguration struct {
 	TargetPort *int32 `json:"targetPort,omitempty"`
 }
 
-// ConsoleSampleGitImportSourceServiceApplyConfiguration constructs an declarative configuration of the ConsoleSampleGitImportSourceService type for use with
+// ConsoleSampleGitImportSourceServiceApplyConfiguration constructs a declarative configuration of the ConsoleSampleGitImportSourceService type for use with
 // apply.
 func ConsoleSampleGitImportSourceService() *ConsoleSampleGitImportSourceServiceApplyConfiguration {
 	return &ConsoleSampleGitImportSourceServiceApplyConfiguration{}

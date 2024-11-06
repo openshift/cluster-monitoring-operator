@@ -2,14 +2,14 @@
 
 package v1
 
-// LinkApplyConfiguration represents an declarative configuration of the Link type for use
+// LinkApplyConfiguration represents a declarative configuration of the Link type for use
 // with apply.
 type LinkApplyConfiguration struct {
 	Text *string `json:"text,omitempty"`
 	Href *string `json:"href,omitempty"`
 }
 
-// LinkApplyConfiguration constructs an declarative configuration of the Link type for use with
+// LinkApplyConfiguration constructs a declarative configuration of the Link type for use with
 // apply.
 func Link() *LinkApplyConfiguration {
 	return &LinkApplyConfiguration{}

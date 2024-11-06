@@ -4,9 +4,6 @@ package v1
 
 import (
 	"context"
-	json "encoding/json"
-	"fmt"
-	"time"
 
 	v1 "github.com/openshift/api/console/v1"
 	consolev1 "github.com/openshift/client-go/console/applyconfigurations/console/v1"
@@ -14,7 +11,7 @@ import (
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	types "k8s.io/apimachinery/pkg/types"
 	watch "k8s.io/apimachinery/pkg/watch"
-	rest "k8s.io/client-go/rest"
+	gentype "k8s.io/client-go/gentype"
 )
 
 // ConsolePluginsGetter has a method to return a ConsolePluginInterface.
@@ -39,143 +36,18 @@ type ConsolePluginInterface interface {
 
 // consolePlugins implements ConsolePluginInterface
 type consolePlugins struct {
-	client rest.Interface
+	*gentype.ClientWithListAndApply[*v1.ConsolePlugin, *v1.ConsolePluginList, *consolev1.ConsolePluginApplyConfiguration]
 }
 
 // newConsolePlugins returns a ConsolePlugins
 func newConsolePlugins(c *ConsoleV1Client) *consolePlugins {
 	return &consolePlugins{
-		client: c.RESTClient(),
+		gentype.NewClientWithListAndApply[*v1.ConsolePlugin, *v1.ConsolePluginList, *consolev1.ConsolePluginApplyConfiguration](
+			"consoleplugins",
+			c.RESTClient(),
+			scheme.ParameterCodec,
+			"",
+			func() *v1.ConsolePlugin { return &v1.ConsolePlugin{} },
+			func() *v1.ConsolePluginList { return &v1.ConsolePluginList{} }),
 	}
-}
-
-// Get takes name of the consolePlugin, and returns the corresponding consolePlugin object, and an error if there is any.
-func (c *consolePlugins) Get(ctx context.Context, name string, options metav1.GetOptions) (result *v1.ConsolePlugin, err error) {
-	result = &v1.ConsolePlugin{}
-	err = c.client.Get().
-		Resource("consoleplugins").
-		Name(name).
-		VersionedParams(&options, scheme.ParameterCodec).
-		Do(ctx).
-		Into(result)
-	return
-}
-
-// List takes label and field selectors, and returns the list of ConsolePlugins that match those selectors.
-func (c *consolePlugins) List(ctx context.Context, opts metav1.ListOptions) (result *v1.ConsolePluginList, err error) {
-	var timeout time.Duration
-	if opts.TimeoutSeconds != nil {
-		timeout = time.Duration(*opts.TimeoutSeconds) * time.Second
-	}
-	result = &v1.ConsolePluginList{}
-	err = c.client.Get().
-		Resource("consoleplugins").
-		VersionedParams(&opts, scheme.ParameterCodec).
-		Timeout(timeout).
-		Do(ctx).
-		Into(result)
-	return
-}
-
-// Watch returns a watch.Interface that watches the requested consolePlugins.
-func (c *consolePlugins) Watch(ctx context.Context, opts metav1.ListOptions) (watch.Interface, error) {
-	var timeout time.Duration
-	if opts.TimeoutSeconds != nil {
-		timeout = time.Duration(*opts.TimeoutSeconds) * time.Second
-	}
-	opts.Watch = true
-	return c.client.Get().
-		Resource("consoleplugins").
-		VersionedParams(&opts, scheme.ParameterCodec).
-		Timeout(timeout).
-		Watch(ctx)
-}
-
-// Create takes the representation of a consolePlugin and creates it.  Returns the server's representation of the consolePlugin, and an error, if there is any.
-func (c *consolePlugins) Create(ctx context.Context, consolePlugin *v1.ConsolePlugin, opts metav1.CreateOptions) (result *v1.ConsolePlugin, err error) {
-	result = &v1.ConsolePlugin{}
-	err = c.client.Post().
-		Resource("consoleplugins").
-		VersionedParams(&opts, scheme.ParameterCodec).
-		Body(consolePlugin).
-		Do(ctx).
-		Into(result)
-	return
-}
-
-// Update takes the representation of a consolePlugin and updates it. Returns the server's representation of the consolePlugin, and an error, if there is any.
-func (c *consolePlugins) Update(ctx context.Context, consolePlugin *v1.ConsolePlugin, opts metav1.UpdateOptions) (result *v1.ConsolePlugin, err error) {
-	result = &v1.ConsolePlugin{}
-	err = c.client.Put().
-		Resource("consoleplugins").
-		Name(consolePlugin.Name).
-		VersionedParams(&opts, scheme.ParameterCodec).
-		Body(consolePlugin).
-		Do(ctx).
-		Into(result)
-	return
-}
-
-// Delete takes name of the consolePlugin and deletes it. Returns an error if one occurs.
-func (c *consolePlugins) Delete(ctx context.Context, name string, opts metav1.DeleteOptions) error {
-	return c.client.Delete().
-		Resource("consoleplugins").
-		Name(name).
-		Body(&opts).
-		Do(ctx).
-		Error()
-}
-
-// DeleteCollection deletes a collection of objects.
-func (c *consolePlugins) DeleteCollection(ctx context.Context, opts metav1.DeleteOptions, listOpts metav1.ListOptions) error {
-	var timeout time.Duration
-	if listOpts.TimeoutSeconds != nil {
-		timeout = time.Duration(*listOpts.TimeoutSeconds) * time.Second
-	}
-	return c.client.Delete().
-		Resource("consoleplugins").
-		VersionedParams(&listOpts, scheme.ParameterCodec).
-		Timeout(timeout).
-		Body(&opts).
-		Do(ctx).
-		Error()
-}
-
-// Patch applies the patch and returns the patched consolePlugin.
-func (c *consolePlugins) Patch(ctx context.Context, name string, pt types.PatchType, data []byte, opts metav1.PatchOptions, subresources ...string) (result *v1.ConsolePlugin, err error) {
-	result = &v1.ConsolePlugin{}
-	err = c.client.Patch(pt).
-		Resource("consoleplugins").
-		Name(name).
-		SubResource(subresources...).
-		VersionedParams(&opts, scheme.ParameterCodec).
-		Body(data).
-		Do(ctx).
-		Into(result)
-	return
-}
-
-// Apply takes the given apply declarative configuration, applies it and returns the applied consolePlugin.
-func (c *consolePlugins) Apply(ctx context.Context, consolePlugin *consolev1.ConsolePluginApplyConfiguration, opts metav1.ApplyOptions) (result *v1.ConsolePlugin, err error) {
-	if consolePlugin == nil {
-		return nil, fmt.Errorf("consolePlugin provided to Apply must not be nil")
-	}
-	patchOpts := opts.ToPatchOptions()
-	data, err := json.Marshal(consolePlugin)
-	if err != nil {
-		return nil, err
-	}
-	name := consolePlugin.Name
-	if name == nil {
-		return nil, fmt.Errorf("consolePlugin.Name must be provided to Apply")
-	}
-	result = &v1.ConsolePlugin{}
-	err = c.client.Patch(types.ApplyPatchType).
-		Resource("consoleplugins").
-		Name(*name).
-		VersionedParams(&patchOpts, scheme.ParameterCodec).
-		Body(data).
-		Do(ctx).
-		Into(result)
-	return
 }

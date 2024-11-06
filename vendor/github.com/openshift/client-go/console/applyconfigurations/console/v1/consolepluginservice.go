@@ -2,7 +2,7 @@
 
 package v1
 
-// ConsolePluginServiceApplyConfiguration represents an declarative configuration of the ConsolePluginService type for use
+// ConsolePluginServiceApplyConfiguration represents a declarative configuration of the ConsolePluginService type for use
 // with apply.
 type ConsolePluginServiceApplyConfiguration struct {
 	Name      *string `json:"name,omitempty"`
@@ -11,7 +11,7 @@ type ConsolePluginServiceApplyConfiguration struct {
 	BasePath  *string `json:"basePath,omitempty"`
 }
 
-// ConsolePluginServiceApplyConfiguration constructs an declarative configuration of the ConsolePluginService type for use with
+// ConsolePluginServiceApplyConfiguration constructs a declarative configuration of the ConsolePluginService type for use with
 // apply.
 func ConsolePluginService() *ConsolePluginServiceApplyConfiguration {
 	return &ConsolePluginServiceApplyConfiguration{}

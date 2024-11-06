@@ -6,14 +6,14 @@ import (
 	v1 "github.com/openshift/api/console/v1"
 )
 
-// ConsolePluginProxyEndpointApplyConfiguration represents an declarative configuration of the ConsolePluginProxyEndpoint type for use
+// ConsolePluginProxyEndpointApplyConfiguration represents a declarative configuration of the ConsolePluginProxyEndpoint type for use
 // with apply.
 type ConsolePluginProxyEndpointApplyConfiguration struct {
 	Type    *v1.ConsolePluginProxyType                         `json:"type,omitempty"`
 	Service *ConsolePluginProxyServiceConfigApplyConfiguration `json:"service,omitempty"`
 }
 
-// ConsolePluginProxyEndpointApplyConfiguration constructs an declarative configuration of the ConsolePluginProxyEndpoint type for use with
+// ConsolePluginProxyEndpointApplyConfiguration constructs a declarative configuration of the ConsolePluginProxyEndpoint type for use with
 // apply.
 func ConsolePluginProxyEndpoint() *ConsolePluginProxyEndpointApplyConfiguration {
 	return &ConsolePluginProxyEndpointApplyConfiguration{}

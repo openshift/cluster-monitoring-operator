@@ -76,6 +76,7 @@ func (s *Server) Run(ctx context.Context) error {
 		s.kubeClient,
 		nil,   // disable leader election
 		false, // disable http2
+		nil,   // version info
 	)
 	if err != nil {
 		return err

@@ -2,7 +2,7 @@
 
 package v1
 
-// ConsoleQuickStartTaskApplyConfiguration represents an declarative configuration of the ConsoleQuickStartTask type for use
+// ConsoleQuickStartTaskApplyConfiguration represents a declarative configuration of the ConsoleQuickStartTask type for use
 // with apply.
 type ConsoleQuickStartTaskApplyConfiguration struct {
 	Title       *string                                         `json:"title,omitempty"`
@@ -11,7 +11,7 @@ type ConsoleQuickStartTaskApplyConfiguration struct {
 	Summary     *ConsoleQuickStartTaskSummaryApplyConfiguration `json:"summary,omitempty"`
 }
 
-// ConsoleQuickStartTaskApplyConfiguration constructs an declarative configuration of the ConsoleQuickStartTask type for use with
+// ConsoleQuickStartTaskApplyConfiguration constructs a declarative configuration of the ConsoleQuickStartTask type for use with
 // apply.
 func ConsoleQuickStartTask() *ConsoleQuickStartTaskApplyConfiguration {
 	return &ConsoleQuickStartTaskApplyConfiguration{}

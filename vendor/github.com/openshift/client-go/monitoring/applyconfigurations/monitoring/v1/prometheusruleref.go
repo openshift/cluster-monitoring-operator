@@ -2,13 +2,13 @@
 
 package v1
 
-// PrometheusRuleRefApplyConfiguration represents an declarative configuration of the PrometheusRuleRef type for use
+// PrometheusRuleRefApplyConfiguration represents a declarative configuration of the PrometheusRuleRef type for use
 // with apply.
 type PrometheusRuleRefApplyConfiguration struct {
 	Name *string `json:"name,omitempty"`
 }
 
-// PrometheusRuleRefApplyConfiguration constructs an declarative configuration of the PrometheusRuleRef type for use with
+// PrometheusRuleRefApplyConfiguration constructs a declarative configuration of the PrometheusRuleRef type for use with
 // apply.
 func PrometheusRuleRef() *PrometheusRuleRefApplyConfiguration {
 	return &PrometheusRuleRefApplyConfiguration{}

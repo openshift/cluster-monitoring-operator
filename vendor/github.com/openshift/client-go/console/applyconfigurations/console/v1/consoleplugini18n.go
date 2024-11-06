@@ -6,13 +6,13 @@ import (
 	v1 "github.com/openshift/api/console/v1"
 )
 
-// ConsolePluginI18nApplyConfiguration represents an declarative configuration of the ConsolePluginI18n type for use
+// ConsolePluginI18nApplyConfiguration represents a declarative configuration of the ConsolePluginI18n type for use
 // with apply.
 type ConsolePluginI18nApplyConfiguration struct {
 	LoadType *v1.LoadType `json:"loadType,omitempty"`
 }
 
-// ConsolePluginI18nApplyConfiguration constructs an declarative configuration of the ConsolePluginI18n type for use with
+// ConsolePluginI18nApplyConfiguration constructs a declarative configuration of the ConsolePluginI18n type for use with
 // apply.
 func ConsolePluginI18n() *ConsolePluginI18nApplyConfiguration {
 	return &ConsolePluginI18nApplyConfiguration{}

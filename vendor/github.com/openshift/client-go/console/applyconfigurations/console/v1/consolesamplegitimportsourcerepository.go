@@ -2,7 +2,7 @@
 
 package v1
 
-// ConsoleSampleGitImportSourceRepositoryApplyConfiguration represents an declarative configuration of the ConsoleSampleGitImportSourceRepository type for use
+// ConsoleSampleGitImportSourceRepositoryApplyConfiguration represents a declarative configuration of the ConsoleSampleGitImportSourceRepository type for use
 // with apply.
 type ConsoleSampleGitImportSourceRepositoryApplyConfiguration struct {
 	URL        *string `json:"url,omitempty"`
@@ -10,7 +10,7 @@ type ConsoleSampleGitImportSourceRepositoryApplyConfiguration struct {
 	ContextDir *string `json:"contextDir,omitempty"`
 }
 
-// ConsoleSampleGitImportSourceRepositoryApplyConfiguration constructs an declarative configuration of the ConsoleSampleGitImportSourceRepository type for use with
+// ConsoleSampleGitImportSourceRepositoryApplyConfiguration constructs a declarative configuration of the ConsoleSampleGitImportSourceRepository type for use with
 // apply.
 func ConsoleSampleGitImportSourceRepository() *ConsoleSampleGitImportSourceRepositoryApplyConfiguration {
 	return &ConsoleSampleGitImportSourceRepositoryApplyConfiguration{}

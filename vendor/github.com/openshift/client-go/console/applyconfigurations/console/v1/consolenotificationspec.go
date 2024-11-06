@@ -6,7 +6,7 @@ import (
 	v1 "github.com/openshift/api/console/v1"
 )
 
-// ConsoleNotificationSpecApplyConfiguration represents an declarative configuration of the ConsoleNotificationSpec type for use
+// ConsoleNotificationSpecApplyConfiguration represents a declarative configuration of the ConsoleNotificationSpec type for use
 // with apply.
 type ConsoleNotificationSpecApplyConfiguration struct {
 	Text            *string                         `json:"text,omitempty"`
@@ -16,7 +16,7 @@ type ConsoleNotificationSpecApplyConfiguration struct {
 	BackgroundColor *string                         `json:"backgroundColor,omitempty"`
 }
 
-// ConsoleNotificationSpecApplyConfiguration constructs an declarative configuration of the ConsoleNotificationSpec type for use with
+// ConsoleNotificationSpecApplyConfiguration constructs a declarative configuration of the ConsoleNotificationSpec type for use with
 // apply.
 func ConsoleNotificationSpec() *ConsoleNotificationSpecApplyConfiguration {
 	return &ConsoleNotificationSpecApplyConfiguration{}

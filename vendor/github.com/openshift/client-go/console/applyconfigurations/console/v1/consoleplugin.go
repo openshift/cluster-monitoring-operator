@@ -11,7 +11,7 @@ import (
 	v1 "k8s.io/client-go/applyconfigurations/meta/v1"
 )
 
-// ConsolePluginApplyConfiguration represents an declarative configuration of the ConsolePlugin type for use
+// ConsolePluginApplyConfiguration represents a declarative configuration of the ConsolePlugin type for use
 // with apply.
 type ConsolePluginApplyConfiguration struct {
 	v1.TypeMetaApplyConfiguration    `json:",inline"`
@@ -19,7 +19,7 @@ type ConsolePluginApplyConfiguration struct {
 	Spec                             *ConsolePluginSpecApplyConfiguration `json:"spec,omitempty"`
 }
 
-// ConsolePlugin constructs an declarative configuration of the ConsolePlugin type for use with
+// ConsolePlugin constructs a declarative configuration of the ConsolePlugin type for use with
 // apply.
 func ConsolePlugin(name string) *ConsolePluginApplyConfiguration {
 	b := &ConsolePluginApplyConfiguration{}
@@ -228,4 +228,10 @@ func (b *ConsolePluginApplyConfiguration) ensureObjectMetaApplyConfigurationExis
 func (b *ConsolePluginApplyConfiguration) WithSpec(value *ConsolePluginSpecApplyConfiguration) *ConsolePluginApplyConfiguration {
 	b.Spec = value
 	return b
+}
+
+// GetName retrieves the value of the Name field in the declarative configuration.
+func (b *ConsolePluginApplyConfiguration) GetName() *string {
+	b.ensureObjectMetaApplyConfigurationExists()
+	return b.Name
 }

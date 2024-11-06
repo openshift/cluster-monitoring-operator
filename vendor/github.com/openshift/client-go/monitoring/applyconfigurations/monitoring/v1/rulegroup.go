@@ -6,7 +6,7 @@ import (
 	v1 "github.com/openshift/api/monitoring/v1"
 )
 
-// RuleGroupApplyConfiguration represents an declarative configuration of the RuleGroup type for use
+// RuleGroupApplyConfiguration represents a declarative configuration of the RuleGroup type for use
 // with apply.
 type RuleGroupApplyConfiguration struct {
 	Name     *string                  `json:"name,omitempty"`
@@ -14,7 +14,7 @@ type RuleGroupApplyConfiguration struct {
 	Rules    []RuleApplyConfiguration `json:"rules,omitempty"`
 }
 
-// RuleGroupApplyConfiguration constructs an declarative configuration of the RuleGroup type for use with
+// RuleGroupApplyConfiguration constructs a declarative configuration of the RuleGroup type for use with
 // apply.
 func RuleGroup() *RuleGroupApplyConfiguration {
 	return &RuleGroupApplyConfiguration{}

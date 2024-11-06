@@ -27,20 +27,22 @@ var rangeallocationsKind = v1.SchemeGroupVersion.WithKind("RangeAllocation")
 
 // Get takes name of the rangeAllocation, and returns the corresponding rangeAllocation object, and an error if there is any.
 func (c *FakeRangeAllocations) Get(ctx context.Context, name string, options metav1.GetOptions) (result *v1.RangeAllocation, err error) {
+	emptyResult := &v1.RangeAllocation{}
 	obj, err := c.Fake.
-		Invokes(testing.NewRootGetAction(rangeallocationsResource, name), &v1.RangeAllocation{})
+		Invokes(testing.NewRootGetActionWithOptions(rangeallocationsResource, name, options), emptyResult)
 	if obj == nil {
-		return nil, err
+		return emptyResult, err
 	}
 	return obj.(*v1.RangeAllocation), err
 }
 
 // List takes label and field selectors, and returns the list of RangeAllocations that match those selectors.
 func (c *FakeRangeAllocations) List(ctx context.Context, opts metav1.ListOptions) (result *v1.RangeAllocationList, err error) {
+	emptyResult := &v1.RangeAllocationList{}
 	obj, err := c.Fake.
-		Invokes(testing.NewRootListAction(rangeallocationsResource, rangeallocationsKind, opts), &v1.RangeAllocationList{})
+		Invokes(testing.NewRootListActionWithOptions(rangeallocationsResource, rangeallocationsKind, opts), emptyResult)
 	if obj == nil {
-		return nil, err
+		return emptyResult, err
 	}
 
 	label, _, _ := testing.ExtractFromListOptions(opts)
@@ -59,25 +61,27 @@ func (c *FakeRangeAllocations) List(ctx context.Context, opts metav1.ListOptions
 // Watch returns a watch.Interface that watches the requested rangeAllocations.
 func (c *FakeRangeAllocations) Watch(ctx context.Context, opts metav1.ListOptions) (watch.Interface, error) {
 	return c.Fake.
-		InvokesWatch(testing.NewRootWatchAction(rangeallocationsResource, opts))
+		InvokesWatch(testing.NewRootWatchActionWithOptions(rangeallocationsResource, opts))
 }
 
 // Create takes the representation of a rangeAllocation and creates it.  Returns the server's representation of the rangeAllocation, and an error, if there is any.
 func (c *FakeRangeAllocations) Create(ctx context.Context, rangeAllocation *v1.RangeAllocation, opts metav1.CreateOptions) (result *v1.RangeAllocation, err error) {
+	emptyResult := &v1.RangeAllocation{}
 	obj, err := c.Fake.
-		Invokes(testing.NewRootCreateAction(rangeallocationsResource, rangeAllocation), &v1.RangeAllocation{})
+		Invokes(testing.NewRootCreateActionWithOptions(rangeallocationsResource, rangeAllocation, opts), emptyResult)
 	if obj == nil {
-		return nil, err
+		return emptyResult, err
 	}
 	return obj.(*v1.RangeAllocation), err
 }
 
 // Update takes the representation of a rangeAllocation and updates it. Returns the server's representation of the rangeAllocation, and an error, if there is any.
 func (c *FakeRangeAllocations) Update(ctx context.Context, rangeAllocation *v1.RangeAllocation, opts metav1.UpdateOptions) (result *v1.RangeAllocation, err error) {
+	emptyResult := &v1.RangeAllocation{}
 	obj, err := c.Fake.
-		Invokes(testing.NewRootUpdateAction(rangeallocationsResource, rangeAllocation), &v1.RangeAllocation{})
+		Invokes(testing.NewRootUpdateActionWithOptions(rangeallocationsResource, rangeAllocation, opts), emptyResult)
 	if obj == nil {
-		return nil, err
+		return emptyResult, err
 	}
 	return obj.(*v1.RangeAllocation), err
 }
@@ -91,7 +95,7 @@ func (c *FakeRangeAllocations) Delete(ctx context.Context, name string, opts met
 
 // DeleteCollection deletes a collection of objects.
 func (c *FakeRangeAllocations) DeleteCollection(ctx context.Context, opts metav1.DeleteOptions, listOpts metav1.ListOptions) error {
-	action := testing.NewRootDeleteCollectionAction(rangeallocationsResource, listOpts)
+	action := testing.NewRootDeleteCollectionActionWithOptions(rangeallocationsResource, opts, listOpts)
 
 	_, err := c.Fake.Invokes(action, &v1.RangeAllocationList{})
 	return err
@@ -99,10 +103,11 @@ func (c *FakeRangeAllocations) DeleteCollection(ctx context.Context, opts metav1
 
 // Patch applies the patch and returns the patched rangeAllocation.
 func (c *FakeRangeAllocations) Patch(ctx context.Context, name string, pt types.PatchType, data []byte, opts metav1.PatchOptions, subresources ...string) (result *v1.RangeAllocation, err error) {
+	emptyResult := &v1.RangeAllocation{}
 	obj, err := c.Fake.
-		Invokes(testing.NewRootPatchSubresourceAction(rangeallocationsResource, name, pt, data, subresources...), &v1.RangeAllocation{})
+		Invokes(testing.NewRootPatchSubresourceActionWithOptions(rangeallocationsResource, name, pt, data, opts, subresources...), emptyResult)
 	if obj == nil {
-		return nil, err
+		return emptyResult, err
 	}
 	return obj.(*v1.RangeAllocation), err
 }
@@ -120,10 +125,11 @@ func (c *FakeRangeAllocations) Apply(ctx context.Context, rangeAllocation *secur
 	if name == nil {
 		return nil, fmt.Errorf("rangeAllocation.Name must be provided to Apply")
 	}
+	emptyResult := &v1.RangeAllocation{}
 	obj, err := c.Fake.
-		Invokes(testing.NewRootPatchSubresourceAction(rangeallocationsResource, *name, types.ApplyPatchType, data), &v1.RangeAllocation{})
+		Invokes(testing.NewRootPatchSubresourceActionWithOptions(rangeallocationsResource, *name, types.ApplyPatchType, data, opts.ToPatchOptions()), emptyResult)
 	if obj == nil {
-		return nil, err
+		return emptyResult, err
 	}
 	return obj.(*v1.RangeAllocation), err
 }

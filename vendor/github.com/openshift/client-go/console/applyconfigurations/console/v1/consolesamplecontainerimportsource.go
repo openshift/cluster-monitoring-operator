@@ -2,14 +2,14 @@
 
 package v1
 
-// ConsoleSampleContainerImportSourceApplyConfiguration represents an declarative configuration of the ConsoleSampleContainerImportSource type for use
+// ConsoleSampleContainerImportSourceApplyConfiguration represents a declarative configuration of the ConsoleSampleContainerImportSource type for use
 // with apply.
 type ConsoleSampleContainerImportSourceApplyConfiguration struct {
 	Image   *string                                                      `json:"image,omitempty"`
 	Service *ConsoleSampleContainerImportSourceServiceApplyConfiguration `json:"service,omitempty"`
 }
 
-// ConsoleSampleContainerImportSourceApplyConfiguration constructs an declarative configuration of the ConsoleSampleContainerImportSource type for use with
+// ConsoleSampleContainerImportSourceApplyConfiguration constructs a declarative configuration of the ConsoleSampleContainerImportSource type for use with
 // apply.
 func ConsoleSampleContainerImportSource() *ConsoleSampleContainerImportSourceApplyConfiguration {
 	return &ConsoleSampleContainerImportSourceApplyConfiguration{}

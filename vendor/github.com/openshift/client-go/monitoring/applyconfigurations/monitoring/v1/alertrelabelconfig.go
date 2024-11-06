@@ -11,7 +11,7 @@ import (
 	v1 "k8s.io/client-go/applyconfigurations/meta/v1"
 )
 
-// AlertRelabelConfigApplyConfiguration represents an declarative configuration of the AlertRelabelConfig type for use
+// AlertRelabelConfigApplyConfiguration represents a declarative configuration of the AlertRelabelConfig type for use
 // with apply.
 type AlertRelabelConfigApplyConfiguration struct {
 	v1.TypeMetaApplyConfiguration    `json:",inline"`
@@ -20,7 +20,7 @@ type AlertRelabelConfigApplyConfiguration struct {
 	Status                           *AlertRelabelConfigStatusApplyConfiguration `json:"status,omitempty"`
 }
 
-// AlertRelabelConfig constructs an declarative configuration of the AlertRelabelConfig type for use with
+// AlertRelabelConfig constructs a declarative configuration of the AlertRelabelConfig type for use with
 // apply.
 func AlertRelabelConfig(name, namespace string) *AlertRelabelConfigApplyConfiguration {
 	b := &AlertRelabelConfigApplyConfiguration{}
@@ -239,4 +239,10 @@ func (b *AlertRelabelConfigApplyConfiguration) WithSpec(value *AlertRelabelConfi
 func (b *AlertRelabelConfigApplyConfiguration) WithStatus(value *AlertRelabelConfigStatusApplyConfiguration) *AlertRelabelConfigApplyConfiguration {
 	b.Status = value
 	return b
+}
+
+// GetName retrieves the value of the Name field in the declarative configuration.
+func (b *AlertRelabelConfigApplyConfiguration) GetName() *string {
+	b.ensureObjectMetaApplyConfigurationExists()
+	return b.Name
 }

@@ -11,7 +11,7 @@ import (
 	v1 "k8s.io/client-go/applyconfigurations/meta/v1"
 )
 
-// AlertingRuleApplyConfiguration represents an declarative configuration of the AlertingRule type for use
+// AlertingRuleApplyConfiguration represents a declarative configuration of the AlertingRule type for use
 // with apply.
 type AlertingRuleApplyConfiguration struct {
 	v1.TypeMetaApplyConfiguration    `json:",inline"`
@@ -20,7 +20,7 @@ type AlertingRuleApplyConfiguration struct {
 	Status                           *AlertingRuleStatusApplyConfiguration `json:"status,omitempty"`
 }
 
-// AlertingRule constructs an declarative configuration of the AlertingRule type for use with
+// AlertingRule constructs a declarative configuration of the AlertingRule type for use with
 // apply.
 func AlertingRule(name, namespace string) *AlertingRuleApplyConfiguration {
 	b := &AlertingRuleApplyConfiguration{}
@@ -239,4 +239,10 @@ func (b *AlertingRuleApplyConfiguration) WithSpec(value *AlertingRuleSpecApplyCo
 func (b *AlertingRuleApplyConfiguration) WithStatus(value *AlertingRuleStatusApplyConfiguration) *AlertingRuleApplyConfiguration {
 	b.Status = value
 	return b
+}
+
+// GetName retrieves the value of the Name field in the declarative configuration.
+func (b *AlertingRuleApplyConfiguration) GetName() *string {
+	b.ensureObjectMetaApplyConfigurationExists()
+	return b.Name
 }

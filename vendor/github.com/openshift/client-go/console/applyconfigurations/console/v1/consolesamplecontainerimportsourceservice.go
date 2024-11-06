@@ -2,13 +2,13 @@
 
 package v1
 
-// ConsoleSampleContainerImportSourceServiceApplyConfiguration represents an declarative configuration of the ConsoleSampleContainerImportSourceService type for use
+// ConsoleSampleContainerImportSourceServiceApplyConfiguration represents a declarative configuration of the ConsoleSampleContainerImportSourceService type for use
 // with apply.
 type ConsoleSampleContainerImportSourceServiceApplyConfiguration struct {
 	TargetPort *int32 `json:"targetPort,omitempty"`
 }
 
-// ConsoleSampleContainerImportSourceServiceApplyConfiguration constructs an declarative configuration of the ConsoleSampleContainerImportSourceService type for use with
+// ConsoleSampleContainerImportSourceServiceApplyConfiguration constructs a declarative configuration of the ConsoleSampleContainerImportSourceService type for use with
 // apply.
 func ConsoleSampleContainerImportSourceService() *ConsoleSampleContainerImportSourceServiceApplyConfiguration {
 	return &ConsoleSampleContainerImportSourceServiceApplyConfiguration{}

@@ -7,7 +7,7 @@ import (
 	v1 "k8s.io/client-go/applyconfigurations/meta/v1"
 )
 
-// ConsoleYAMLSampleSpecApplyConfiguration represents an declarative configuration of the ConsoleYAMLSampleSpec type for use
+// ConsoleYAMLSampleSpecApplyConfiguration represents a declarative configuration of the ConsoleYAMLSampleSpec type for use
 // with apply.
 type ConsoleYAMLSampleSpecApplyConfiguration struct {
 	TargetResource *v1.TypeMetaApplyConfiguration          `json:"targetResource,omitempty"`
@@ -17,7 +17,7 @@ type ConsoleYAMLSampleSpecApplyConfiguration struct {
 	Snippet        *bool                                   `json:"snippet,omitempty"`
 }
 
-// ConsoleYAMLSampleSpecApplyConfiguration constructs an declarative configuration of the ConsoleYAMLSampleSpec type for use with
+// ConsoleYAMLSampleSpecApplyConfiguration constructs a declarative configuration of the ConsoleYAMLSampleSpec type for use with
 // apply.
 func ConsoleYAMLSampleSpec() *ConsoleYAMLSampleSpecApplyConfiguration {
 	return &ConsoleYAMLSampleSpecApplyConfiguration{}
