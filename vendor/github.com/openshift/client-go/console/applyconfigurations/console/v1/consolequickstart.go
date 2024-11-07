@@ -11,7 +11,7 @@ import (
 	v1 "k8s.io/client-go/applyconfigurations/meta/v1"
 )
 
-// ConsoleQuickStartApplyConfiguration represents an declarative configuration of the ConsoleQuickStart type for use
+// ConsoleQuickStartApplyConfiguration represents a declarative configuration of the ConsoleQuickStart type for use
 // with apply.
 type ConsoleQuickStartApplyConfiguration struct {
 	v1.TypeMetaApplyConfiguration    `json:",inline"`
@@ -19,7 +19,7 @@ type ConsoleQuickStartApplyConfiguration struct {
 	Spec                             *ConsoleQuickStartSpecApplyConfiguration `json:"spec,omitempty"`
 }
 
-// ConsoleQuickStart constructs an declarative configuration of the ConsoleQuickStart type for use with
+// ConsoleQuickStart constructs a declarative configuration of the ConsoleQuickStart type for use with
 // apply.
 func ConsoleQuickStart(name string) *ConsoleQuickStartApplyConfiguration {
 	b := &ConsoleQuickStartApplyConfiguration{}
@@ -228,4 +228,10 @@ func (b *ConsoleQuickStartApplyConfiguration) ensureObjectMetaApplyConfiguration
 func (b *ConsoleQuickStartApplyConfiguration) WithSpec(value *ConsoleQuickStartSpecApplyConfiguration) *ConsoleQuickStartApplyConfiguration {
 	b.Spec = value
 	return b
+}
+
+// GetName retrieves the value of the Name field in the declarative configuration.
+func (b *ConsoleQuickStartApplyConfiguration) GetName() *string {
+	b.ensureObjectMetaApplyConfigurationExists()
+	return b.Name
 }

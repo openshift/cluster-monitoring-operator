@@ -127,6 +127,11 @@ type OperatorStatus struct {
 	// readyReplicas indicates how many replicas are ready and at the desired state
 	ReadyReplicas int32 `json:"readyReplicas"`
 
+	// latestAvailableRevision is the deploymentID of the most recent deployment
+	// +optional
+	// +kubebuilder:validation:XValidation:rule="self >= oldSelf",message="must only increase"
+	LatestAvailableRevision int32 `json:"latestAvailableRevision,omitempty"`
+
 	// generations are used to determine when an item needs to be reconciled or has changed in a way that needs a reaction.
 	// +listType=map
 	// +listMapKey=group
@@ -210,10 +215,6 @@ type StaticPodOperatorSpec struct {
 // node status must be tracked.
 type StaticPodOperatorStatus struct {
 	OperatorStatus `json:",inline"`
-
-	// latestAvailableRevision is the deploymentID of the most recent deployment
-	// +optional
-	LatestAvailableRevision int32 `json:"latestAvailableRevision,omitempty"`
 
 	// latestAvailableRevisionReason describe the detailed reason for the most recent deployment
 	// +optional

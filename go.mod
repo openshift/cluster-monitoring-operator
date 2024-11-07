@@ -15,9 +15,9 @@ require (
 	github.com/google/uuid v1.6.0
 	github.com/imdario/mergo v0.3.16
 	github.com/mattn/go-shellwords v1.0.12
-	github.com/openshift/api v0.0.0-20240919193929-2669d1ebc910
-	github.com/openshift/client-go v0.0.0-20240528061634-b054aa794d87
-	github.com/openshift/library-go v0.0.0-20240619120114-0c65da30ad30
+	github.com/openshift/api v0.0.0-20241001152557-e415140e5d5f
+	github.com/openshift/client-go v0.0.0-20241001162912-da6d55e4611f
+	github.com/openshift/library-go v0.0.0-20241106000323-9fcf3125a28e
 	github.com/prometheus-operator/prometheus-operator/pkg/apis/monitoring v0.76.0
 	github.com/prometheus-operator/prometheus-operator/pkg/client v0.76.0
 	github.com/prometheus/alertmanager v0.27.0
@@ -30,7 +30,7 @@ require (
 	gopkg.in/yaml.v2 v2.4.0
 	gopkg.in/yaml.v3 v3.0.1
 	k8s.io/api v0.31.1
-	k8s.io/apiextensions-apiserver v0.30.5
+	k8s.io/apiextensions-apiserver v0.31.1
 	k8s.io/apimachinery v0.31.1
 	k8s.io/apiserver v0.31.1
 	k8s.io/autoscaler/vertical-pod-autoscaler v1.0.0
@@ -39,7 +39,7 @@ require (
 	k8s.io/klog/v2 v2.130.1
 	k8s.io/kube-aggregator v0.31.1
 	k8s.io/metrics v0.31.1
-	k8s.io/utils v0.0.0-20240902221715-702e33fdd3c3
+	k8s.io/utils v0.0.0-20240921022957-49e7df575cb6
 	sigs.k8s.io/yaml v1.4.0
 )
 

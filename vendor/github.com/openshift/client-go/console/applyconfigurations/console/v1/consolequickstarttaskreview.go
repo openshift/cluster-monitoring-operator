@@ -2,14 +2,14 @@
 
 package v1
 
-// ConsoleQuickStartTaskReviewApplyConfiguration represents an declarative configuration of the ConsoleQuickStartTaskReview type for use
+// ConsoleQuickStartTaskReviewApplyConfiguration represents a declarative configuration of the ConsoleQuickStartTaskReview type for use
 // with apply.
 type ConsoleQuickStartTaskReviewApplyConfiguration struct {
 	Instructions   *string `json:"instructions,omitempty"`
 	FailedTaskHelp *string `json:"failedTaskHelp,omitempty"`
 }
 
-// ConsoleQuickStartTaskReviewApplyConfiguration constructs an declarative configuration of the ConsoleQuickStartTaskReview type for use with
+// ConsoleQuickStartTaskReviewApplyConfiguration constructs a declarative configuration of the ConsoleQuickStartTaskReview type for use with
 // apply.
 func ConsoleQuickStartTaskReview() *ConsoleQuickStartTaskReviewApplyConfiguration {
 	return &ConsoleQuickStartTaskReviewApplyConfiguration{}

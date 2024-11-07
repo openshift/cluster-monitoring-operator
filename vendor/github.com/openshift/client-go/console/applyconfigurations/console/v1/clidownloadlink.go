@@ -2,14 +2,14 @@
 
 package v1
 
-// CLIDownloadLinkApplyConfiguration represents an declarative configuration of the CLIDownloadLink type for use
+// CLIDownloadLinkApplyConfiguration represents a declarative configuration of the CLIDownloadLink type for use
 // with apply.
 type CLIDownloadLinkApplyConfiguration struct {
 	Text *string `json:"text,omitempty"`
 	Href *string `json:"href,omitempty"`
 }
 
-// CLIDownloadLinkApplyConfiguration constructs an declarative configuration of the CLIDownloadLink type for use with
+// CLIDownloadLinkApplyConfiguration constructs a declarative configuration of the CLIDownloadLink type for use with
 // apply.
 func CLIDownloadLink() *CLIDownloadLinkApplyConfiguration {
 	return &CLIDownloadLinkApplyConfiguration{}

@@ -6,14 +6,14 @@ import (
 	v1 "k8s.io/client-go/applyconfigurations/meta/v1"
 )
 
-// NamespaceDashboardSpecApplyConfiguration represents an declarative configuration of the NamespaceDashboardSpec type for use
+// NamespaceDashboardSpecApplyConfiguration represents a declarative configuration of the NamespaceDashboardSpec type for use
 // with apply.
 type NamespaceDashboardSpecApplyConfiguration struct {
 	Namespaces        []string                            `json:"namespaces,omitempty"`
 	NamespaceSelector *v1.LabelSelectorApplyConfiguration `json:"namespaceSelector,omitempty"`
 }
 
-// NamespaceDashboardSpecApplyConfiguration constructs an declarative configuration of the NamespaceDashboardSpec type for use with
+// NamespaceDashboardSpecApplyConfiguration constructs a declarative configuration of the NamespaceDashboardSpec type for use with
 // apply.
 func NamespaceDashboardSpec() *NamespaceDashboardSpecApplyConfiguration {
 	return &NamespaceDashboardSpecApplyConfiguration{}

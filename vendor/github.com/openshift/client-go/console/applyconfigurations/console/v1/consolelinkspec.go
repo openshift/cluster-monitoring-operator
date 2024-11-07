@@ -6,7 +6,7 @@ import (
 	consolev1 "github.com/openshift/api/console/v1"
 )
 
-// ConsoleLinkSpecApplyConfiguration represents an declarative configuration of the ConsoleLinkSpec type for use
+// ConsoleLinkSpecApplyConfiguration represents a declarative configuration of the ConsoleLinkSpec type for use
 // with apply.
 type ConsoleLinkSpecApplyConfiguration struct {
 	LinkApplyConfiguration `json:",inline"`
@@ -15,7 +15,7 @@ type ConsoleLinkSpecApplyConfiguration struct {
 	NamespaceDashboard     *NamespaceDashboardSpecApplyConfiguration `json:"namespaceDashboard,omitempty"`
 }
 
-// ConsoleLinkSpecApplyConfiguration constructs an declarative configuration of the ConsoleLinkSpec type for use with
+// ConsoleLinkSpecApplyConfiguration constructs a declarative configuration of the ConsoleLinkSpec type for use with
 // apply.
 func ConsoleLinkSpec() *ConsoleLinkSpecApplyConfiguration {
 	return &ConsoleLinkSpecApplyConfiguration{}

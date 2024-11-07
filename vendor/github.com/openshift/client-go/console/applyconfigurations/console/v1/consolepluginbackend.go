@@ -6,14 +6,14 @@ import (
 	v1 "github.com/openshift/api/console/v1"
 )
 
-// ConsolePluginBackendApplyConfiguration represents an declarative configuration of the ConsolePluginBackend type for use
+// ConsolePluginBackendApplyConfiguration represents a declarative configuration of the ConsolePluginBackend type for use
 // with apply.
 type ConsolePluginBackendApplyConfiguration struct {
 	Type    *v1.ConsolePluginBackendType            `json:"type,omitempty"`
 	Service *ConsolePluginServiceApplyConfiguration `json:"service,omitempty"`
 }
 
-// ConsolePluginBackendApplyConfiguration constructs an declarative configuration of the ConsolePluginBackend type for use with
+// ConsolePluginBackendApplyConfiguration constructs a declarative configuration of the ConsolePluginBackend type for use with
 // apply.
 func ConsolePluginBackend() *ConsolePluginBackendApplyConfiguration {
 	return &ConsolePluginBackendApplyConfiguration{}

@@ -6,7 +6,7 @@ import (
 	consolev1 "github.com/openshift/api/console/v1"
 )
 
-// ConsolePluginProxyApplyConfiguration represents an declarative configuration of the ConsolePluginProxy type for use
+// ConsolePluginProxyApplyConfiguration represents a declarative configuration of the ConsolePluginProxy type for use
 // with apply.
 type ConsolePluginProxyApplyConfiguration struct {
 	Endpoint      *ConsolePluginProxyEndpointApplyConfiguration `json:"endpoint,omitempty"`
@@ -15,7 +15,7 @@ type ConsolePluginProxyApplyConfiguration struct {
 	Authorization *consolev1.AuthorizationType                  `json:"authorization,omitempty"`
 }
 
-// ConsolePluginProxyApplyConfiguration constructs an declarative configuration of the ConsolePluginProxy type for use with
+// ConsolePluginProxyApplyConfiguration constructs a declarative configuration of the ConsolePluginProxy type for use with
 // apply.
 func ConsolePluginProxy() *ConsolePluginProxyApplyConfiguration {
 	return &ConsolePluginProxyApplyConfiguration{}

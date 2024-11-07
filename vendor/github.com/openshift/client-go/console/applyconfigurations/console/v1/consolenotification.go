@@ -11,7 +11,7 @@ import (
 	v1 "k8s.io/client-go/applyconfigurations/meta/v1"
 )
 
-// ConsoleNotificationApplyConfiguration represents an declarative configuration of the ConsoleNotification type for use
+// ConsoleNotificationApplyConfiguration represents a declarative configuration of the ConsoleNotification type for use
 // with apply.
 type ConsoleNotificationApplyConfiguration struct {
 	v1.TypeMetaApplyConfiguration    `json:",inline"`
@@ -19,7 +19,7 @@ type ConsoleNotificationApplyConfiguration struct {
 	Spec                             *ConsoleNotificationSpecApplyConfiguration `json:"spec,omitempty"`
 }
 
-// ConsoleNotification constructs an declarative configuration of the ConsoleNotification type for use with
+// ConsoleNotification constructs a declarative configuration of the ConsoleNotification type for use with
 // apply.
 func ConsoleNotification(name string) *ConsoleNotificationApplyConfiguration {
 	b := &ConsoleNotificationApplyConfiguration{}
@@ -228,4 +228,10 @@ func (b *ConsoleNotificationApplyConfiguration) ensureObjectMetaApplyConfigurati
 func (b *ConsoleNotificationApplyConfiguration) WithSpec(value *ConsoleNotificationSpecApplyConfiguration) *ConsoleNotificationApplyConfiguration {
 	b.Spec = value
 	return b
+}
+
+// GetName retrieves the value of the Name field in the declarative configuration.
+func (b *ConsoleNotificationApplyConfiguration) GetName() *string {
+	b.ensureObjectMetaApplyConfigurationExists()
+	return b.Name
 }

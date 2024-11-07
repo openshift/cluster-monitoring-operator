@@ -6,7 +6,7 @@ import (
 	authorizationv1 "k8s.io/api/authorization/v1"
 )
 
-// ConsoleQuickStartSpecApplyConfiguration represents an declarative configuration of the ConsoleQuickStartSpec type for use
+// ConsoleQuickStartSpecApplyConfiguration represents a declarative configuration of the ConsoleQuickStartSpec type for use
 // with apply.
 type ConsoleQuickStartSpecApplyConfiguration struct {
 	DisplayName           *string                                   `json:"displayName,omitempty"`
@@ -22,7 +22,7 @@ type ConsoleQuickStartSpecApplyConfiguration struct {
 	AccessReviewResources []authorizationv1.ResourceAttributes      `json:"accessReviewResources,omitempty"`
 }
 
-// ConsoleQuickStartSpecApplyConfiguration constructs an declarative configuration of the ConsoleQuickStartSpec type for use with
+// ConsoleQuickStartSpecApplyConfiguration constructs a declarative configuration of the ConsoleQuickStartSpec type for use with
 // apply.
 func ConsoleQuickStartSpec() *ConsoleQuickStartSpecApplyConfiguration {
 	return &ConsoleQuickStartSpecApplyConfiguration{}

@@ -2,7 +2,7 @@
 
 package v1
 
-// ConsolePluginProxyServiceConfigApplyConfiguration represents an declarative configuration of the ConsolePluginProxyServiceConfig type for use
+// ConsolePluginProxyServiceConfigApplyConfiguration represents a declarative configuration of the ConsolePluginProxyServiceConfig type for use
 // with apply.
 type ConsolePluginProxyServiceConfigApplyConfiguration struct {
 	Name      *string `json:"name,omitempty"`
@@ -10,7 +10,7 @@ type ConsolePluginProxyServiceConfigApplyConfiguration struct {
 	Port      *int32  `json:"port,omitempty"`
 }
 
-// ConsolePluginProxyServiceConfigApplyConfiguration constructs an declarative configuration of the ConsolePluginProxyServiceConfig type for use with
+// ConsolePluginProxyServiceConfigApplyConfiguration constructs a declarative configuration of the ConsolePluginProxyServiceConfig type for use with
 // apply.
 func ConsolePluginProxyServiceConfig() *ConsolePluginProxyServiceConfigApplyConfiguration {
 	return &ConsolePluginProxyServiceConfigApplyConfiguration{}

@@ -4,9 +4,6 @@ package v1
 
 import (
 	"context"
-	json "encoding/json"
-	"fmt"
-	"time"
 
 	v1 "github.com/openshift/api/console/v1"
 	consolev1 "github.com/openshift/client-go/console/applyconfigurations/console/v1"
@@ -14,7 +11,7 @@ import (
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	types "k8s.io/apimachinery/pkg/types"
 	watch "k8s.io/apimachinery/pkg/watch"
-	rest "k8s.io/client-go/rest"
+	gentype "k8s.io/client-go/gentype"
 )
 
 // ConsoleLinksGetter has a method to return a ConsoleLinkInterface.
@@ -39,143 +36,18 @@ type ConsoleLinkInterface interface {
 
 // consoleLinks implements ConsoleLinkInterface
 type consoleLinks struct {
-	client rest.Interface
+	*gentype.ClientWithListAndApply[*v1.ConsoleLink, *v1.ConsoleLinkList, *consolev1.ConsoleLinkApplyConfiguration]
 }
 
 // newConsoleLinks returns a ConsoleLinks
 func newConsoleLinks(c *ConsoleV1Client) *consoleLinks {
 	return &consoleLinks{
-		client: c.RESTClient(),
+		gentype.NewClientWithListAndApply[*v1.ConsoleLink, *v1.ConsoleLinkList, *consolev1.ConsoleLinkApplyConfiguration](
+			"consolelinks",
+			c.RESTClient(),
+			scheme.ParameterCodec,
+			"",
+			func() *v1.ConsoleLink { return &v1.ConsoleLink{} },
+			func() *v1.ConsoleLinkList { return &v1.ConsoleLinkList{} }),
 	}
-}
-
-// Get takes name of the consoleLink, and returns the corresponding consoleLink object, and an error if there is any.
-func (c *consoleLinks) Get(ctx context.Context, name string, options metav1.GetOptions) (result *v1.ConsoleLink, err error) {
-	result = &v1.ConsoleLink{}
-	err = c.client.Get().
-		Resource("consolelinks").
-		Name(name).
-		VersionedParams(&options, scheme.ParameterCodec).
-		Do(ctx).
-		Into(result)
-	return
-}
-
-// List takes label and field selectors, and returns the list of ConsoleLinks that match those selectors.
-func (c *consoleLinks) List(ctx context.Context, opts metav1.ListOptions) (result *v1.ConsoleLinkList, err error) {
-	var timeout time.Duration
-	if opts.TimeoutSeconds != nil {
-		timeout = time.Duration(*opts.TimeoutSeconds) * time.Second
-	}
-	result = &v1.ConsoleLinkList{}
-	err = c.client.Get().
-		Resource("consolelinks").
-		VersionedParams(&opts, scheme.ParameterCodec).
-		Timeout(timeout).
-		Do(ctx).
-		Into(result)
-	return
-}
-
-// Watch returns a watch.Interface that watches the requested consoleLinks.
-func (c *consoleLinks) Watch(ctx context.Context, opts metav1.ListOptions) (watch.Interface, error) {
-	var timeout time.Duration
-	if opts.TimeoutSeconds != nil {
-		timeout = time.Duration(*opts.TimeoutSeconds) * time.Second
-	}
-	opts.Watch = true
-	return c.client.Get().
-		Resource("consolelinks").
-		VersionedParams(&opts, scheme.ParameterCodec).
-		Timeout(timeout).
-		Watch(ctx)
-}
-
-// Create takes the representation of a consoleLink and creates it.  Returns the server's representation of the consoleLink, and an error, if there is any.
-func (c *consoleLinks) Create(ctx context.Context, consoleLink *v1.ConsoleLink, opts metav1.CreateOptions) (result *v1.ConsoleLink, err error) {
-	result = &v1.ConsoleLink{}
-	err = c.client.Post().
-		Resource("consolelinks").
-		VersionedParams(&opts, scheme.ParameterCodec).
-		Body(consoleLink).
-		Do(ctx).
-		Into(result)
-	return
-}
-
-// Update takes the representation of a consoleLink and updates it. Returns the server's representation of the consoleLink, and an error, if there is any.
-func (c *consoleLinks) Update(ctx context.Context, consoleLink *v1.ConsoleLink, opts metav1.UpdateOptions) (result *v1.ConsoleLink, err error) {
-	result = &v1.ConsoleLink{}
-	err = c.client.Put().
-		Resource("consolelinks").
-		Name(consoleLink.Name).
-		VersionedParams(&opts, scheme.ParameterCodec).
-		Body(consoleLink).
-		Do(ctx).
-		Into(result)
-	return
-}
-
-// Delete takes name of the consoleLink and deletes it. Returns an error if one occurs.
-func (c *consoleLinks) Delete(ctx context.Context, name string, opts metav1.DeleteOptions) error {
-	return c.client.Delete().
-		Resource("consolelinks").
-		Name(name).
-		Body(&opts).
-		Do(ctx).
-		Error()
-}
-
-// DeleteCollection deletes a collection of objects.
-func (c *consoleLinks) DeleteCollection(ctx context.Context, opts metav1.DeleteOptions, listOpts metav1.ListOptions) error {
-	var timeout time.Duration
-	if listOpts.TimeoutSeconds != nil {
-		timeout = time.Duration(*listOpts.TimeoutSeconds) * time.Second
-	}
-	return c.client.Delete().
-		Resource("consolelinks").
-		VersionedParams(&listOpts, scheme.ParameterCodec).
-		Timeout(timeout).
-		Body(&opts).
-		Do(ctx).
-		Error()
-}
-
-// Patch applies the patch and returns the patched consoleLink.
-func (c *consoleLinks) Patch(ctx context.Context, name string, pt types.PatchType, data []byte, opts metav1.PatchOptions, subresources ...string) (result *v1.ConsoleLink, err error) {
-	result = &v1.ConsoleLink{}
-	err = c.client.Patch(pt).
-		Resource("consolelinks").
-		Name(name).
-		SubResource(subresources...).
-		VersionedParams(&opts, scheme.ParameterCodec).
-		Body(data).
-		Do(ctx).
-		Into(result)
-	return
-}
-
-// Apply takes the given apply declarative configuration, applies it and returns the applied consoleLink.
-func (c *consoleLinks) Apply(ctx context.Context, consoleLink *consolev1.ConsoleLinkApplyConfiguration, opts metav1.ApplyOptions) (result *v1.ConsoleLink, err error) {
-	if consoleLink == nil {
-		return nil, fmt.Errorf("consoleLink provided to Apply must not be nil")
-	}
-	patchOpts := opts.ToPatchOptions()
-	data, err := json.Marshal(consoleLink)
-	if err != nil {
-		return nil, err
-	}
-	name := consoleLink.Name
-	if name == nil {
-		return nil, fmt.Errorf("consoleLink.Name must be provided to Apply")
-	}
-	result = &v1.ConsoleLink{}
-	err = c.client.Patch(types.ApplyPatchType).
-		Resource("consolelinks").
-		Name(*name).
-		VersionedParams(&patchOpts, scheme.ParameterCodec).
-		Body(data).
-		Do(ctx).
-		Into(result)
-	return
 }

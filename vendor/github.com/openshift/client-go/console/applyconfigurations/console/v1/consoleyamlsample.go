@@ -11,7 +11,7 @@ import (
 	v1 "k8s.io/client-go/applyconfigurations/meta/v1"
 )
 
-// ConsoleYAMLSampleApplyConfiguration represents an declarative configuration of the ConsoleYAMLSample type for use
+// ConsoleYAMLSampleApplyConfiguration represents a declarative configuration of the ConsoleYAMLSample type for use
 // with apply.
 type ConsoleYAMLSampleApplyConfiguration struct {
 	v1.TypeMetaApplyConfiguration    `json:",inline"`
@@ -19,7 +19,7 @@ type ConsoleYAMLSampleApplyConfiguration struct {
 	Spec                             *ConsoleYAMLSampleSpecApplyConfiguration `json:"spec,omitempty"`
 }
 
-// ConsoleYAMLSample constructs an declarative configuration of the ConsoleYAMLSample type for use with
+// ConsoleYAMLSample constructs a declarative configuration of the ConsoleYAMLSample type for use with
 // apply.
 func ConsoleYAMLSample(name string) *ConsoleYAMLSampleApplyConfiguration {
 	b := &ConsoleYAMLSampleApplyConfiguration{}
@@ -228,4 +228,10 @@ func (b *ConsoleYAMLSampleApplyConfiguration) ensureObjectMetaApplyConfiguration
 func (b *ConsoleYAMLSampleApplyConfiguration) WithSpec(value *ConsoleYAMLSampleSpecApplyConfiguration) *ConsoleYAMLSampleApplyConfiguration {
 	b.Spec = value
 	return b
+}
+
+// GetName retrieves the value of the Name field in the declarative configuration.
+func (b *ConsoleYAMLSampleApplyConfiguration) GetName() *string {
+	b.ensureObjectMetaApplyConfigurationExists()
+	return b.Name
 }

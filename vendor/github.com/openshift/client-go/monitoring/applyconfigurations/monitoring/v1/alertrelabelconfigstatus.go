@@ -6,13 +6,13 @@ import (
 	v1 "k8s.io/client-go/applyconfigurations/meta/v1"
 )
 
-// AlertRelabelConfigStatusApplyConfiguration represents an declarative configuration of the AlertRelabelConfigStatus type for use
+// AlertRelabelConfigStatusApplyConfiguration represents a declarative configuration of the AlertRelabelConfigStatus type for use
 // with apply.
 type AlertRelabelConfigStatusApplyConfiguration struct {
 	Conditions []v1.ConditionApplyConfiguration `json:"conditions,omitempty"`
 }
 
-// AlertRelabelConfigStatusApplyConfiguration constructs an declarative configuration of the AlertRelabelConfigStatus type for use with
+// AlertRelabelConfigStatusApplyConfiguration constructs a declarative configuration of the AlertRelabelConfigStatus type for use with
 // apply.
 func AlertRelabelConfigStatus() *AlertRelabelConfigStatusApplyConfiguration {
 	return &AlertRelabelConfigStatusApplyConfiguration{}

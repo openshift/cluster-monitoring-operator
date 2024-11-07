@@ -22,11 +22,12 @@ var podsecuritypolicyreviewsKind = v1.SchemeGroupVersion.WithKind("PodSecurityPo
 
 // Create takes the representation of a podSecurityPolicyReview and creates it.  Returns the server's representation of the podSecurityPolicyReview, and an error, if there is any.
 func (c *FakePodSecurityPolicyReviews) Create(ctx context.Context, podSecurityPolicyReview *v1.PodSecurityPolicyReview, opts metav1.CreateOptions) (result *v1.PodSecurityPolicyReview, err error) {
+	emptyResult := &v1.PodSecurityPolicyReview{}
 	obj, err := c.Fake.
-		Invokes(testing.NewCreateAction(podsecuritypolicyreviewsResource, c.ns, podSecurityPolicyReview), &v1.PodSecurityPolicyReview{})
+		Invokes(testing.NewCreateActionWithOptions(podsecuritypolicyreviewsResource, c.ns, podSecurityPolicyReview, opts), emptyResult)
 
 	if obj == nil {
-		return nil, err
+		return emptyResult, err
 	}
 	return obj.(*v1.PodSecurityPolicyReview), err
 }

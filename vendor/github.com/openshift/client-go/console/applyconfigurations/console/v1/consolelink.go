@@ -11,7 +11,7 @@ import (
 	v1 "k8s.io/client-go/applyconfigurations/meta/v1"
 )
 
-// ConsoleLinkApplyConfiguration represents an declarative configuration of the ConsoleLink type for use
+// ConsoleLinkApplyConfiguration represents a declarative configuration of the ConsoleLink type for use
 // with apply.
 type ConsoleLinkApplyConfiguration struct {
 	v1.TypeMetaApplyConfiguration    `json:",inline"`
@@ -19,7 +19,7 @@ type ConsoleLinkApplyConfiguration struct {
 	Spec                             *ConsoleLinkSpecApplyConfiguration `json:"spec,omitempty"`
 }
 
-// ConsoleLink constructs an declarative configuration of the ConsoleLink type for use with
+// ConsoleLink constructs a declarative configuration of the ConsoleLink type for use with
 // apply.
 func ConsoleLink(name string) *ConsoleLinkApplyConfiguration {
 	b := &ConsoleLinkApplyConfiguration{}
@@ -228,4 +228,10 @@ func (b *ConsoleLinkApplyConfiguration) ensureObjectMetaApplyConfigurationExists
 func (b *ConsoleLinkApplyConfiguration) WithSpec(value *ConsoleLinkSpecApplyConfiguration) *ConsoleLinkApplyConfiguration {
 	b.Spec = value
 	return b
+}
+
+// GetName retrieves the value of the Name field in the declarative configuration.
+func (b *ConsoleLinkApplyConfiguration) GetName() *string {
+	b.ensureObjectMetaApplyConfigurationExists()
+	return b.Name
 }

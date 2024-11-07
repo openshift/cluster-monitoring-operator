@@ -2,14 +2,14 @@
 
 package v1
 
-// AlertingRuleStatusApplyConfiguration represents an declarative configuration of the AlertingRuleStatus type for use
+// AlertingRuleStatusApplyConfiguration represents a declarative configuration of the AlertingRuleStatus type for use
 // with apply.
 type AlertingRuleStatusApplyConfiguration struct {
 	ObservedGeneration *int64                               `json:"observedGeneration,omitempty"`
 	PrometheusRule     *PrometheusRuleRefApplyConfiguration `json:"prometheusRule,omitempty"`
 }
 
-// AlertingRuleStatusApplyConfiguration constructs an declarative configuration of the AlertingRuleStatus type for use with
+// AlertingRuleStatusApplyConfiguration constructs a declarative configuration of the AlertingRuleStatus type for use with
 // apply.
 func AlertingRuleStatus() *AlertingRuleStatusApplyConfiguration {
 	return &AlertingRuleStatusApplyConfiguration{}

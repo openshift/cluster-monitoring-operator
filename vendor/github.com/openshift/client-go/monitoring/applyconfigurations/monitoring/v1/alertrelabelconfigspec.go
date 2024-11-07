@@ -2,13 +2,13 @@
 
 package v1
 
-// AlertRelabelConfigSpecApplyConfiguration represents an declarative configuration of the AlertRelabelConfigSpec type for use
+// AlertRelabelConfigSpecApplyConfiguration represents a declarative configuration of the AlertRelabelConfigSpec type for use
 // with apply.
 type AlertRelabelConfigSpecApplyConfiguration struct {
 	Configs []RelabelConfigApplyConfiguration `json:"configs,omitempty"`
 }
 
-// AlertRelabelConfigSpecApplyConfiguration constructs an declarative configuration of the AlertRelabelConfigSpec type for use with
+// AlertRelabelConfigSpecApplyConfiguration constructs a declarative configuration of the AlertRelabelConfigSpec type for use with
 // apply.
 func AlertRelabelConfigSpec() *AlertRelabelConfigSpecApplyConfiguration {
 	return &AlertRelabelConfigSpecApplyConfiguration{}

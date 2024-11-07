@@ -2,14 +2,14 @@
 
 package v1
 
-// ApplicationMenuSpecApplyConfiguration represents an declarative configuration of the ApplicationMenuSpec type for use
+// ApplicationMenuSpecApplyConfiguration represents a declarative configuration of the ApplicationMenuSpec type for use
 // with apply.
 type ApplicationMenuSpecApplyConfiguration struct {
 	Section  *string `json:"section,omitempty"`
 	ImageURL *string `json:"imageURL,omitempty"`
 }
 
-// ApplicationMenuSpecApplyConfiguration constructs an declarative configuration of the ApplicationMenuSpec type for use with
+// ApplicationMenuSpecApplyConfiguration constructs a declarative configuration of the ApplicationMenuSpec type for use with
 // apply.
 func ApplicationMenuSpec() *ApplicationMenuSpecApplyConfiguration {
 	return &ApplicationMenuSpecApplyConfiguration{}

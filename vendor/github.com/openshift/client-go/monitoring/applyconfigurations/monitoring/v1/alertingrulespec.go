@@ -2,13 +2,13 @@
 
 package v1
 
-// AlertingRuleSpecApplyConfiguration represents an declarative configuration of the AlertingRuleSpec type for use
+// AlertingRuleSpecApplyConfiguration represents a declarative configuration of the AlertingRuleSpec type for use
 // with apply.
 type AlertingRuleSpecApplyConfiguration struct {
 	Groups []RuleGroupApplyConfiguration `json:"groups,omitempty"`
 }
 
-// AlertingRuleSpecApplyConfiguration constructs an declarative configuration of the AlertingRuleSpec type for use with
+// AlertingRuleSpecApplyConfiguration constructs a declarative configuration of the AlertingRuleSpec type for use with
 // apply.
 func AlertingRuleSpec() *AlertingRuleSpecApplyConfiguration {
 	return &AlertingRuleSpecApplyConfiguration{}

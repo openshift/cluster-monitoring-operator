@@ -11,7 +11,7 @@ import (
 	v1 "k8s.io/client-go/applyconfigurations/meta/v1"
 )
 
-// ConsoleExternalLogLinkApplyConfiguration represents an declarative configuration of the ConsoleExternalLogLink type for use
+// ConsoleExternalLogLinkApplyConfiguration represents a declarative configuration of the ConsoleExternalLogLink type for use
 // with apply.
 type ConsoleExternalLogLinkApplyConfiguration struct {
 	v1.TypeMetaApplyConfiguration    `json:",inline"`
@@ -19,7 +19,7 @@ type ConsoleExternalLogLinkApplyConfiguration struct {
 	Spec                             *ConsoleExternalLogLinkSpecApplyConfiguration `json:"spec,omitempty"`
 }
 
-// ConsoleExternalLogLink constructs an declarative configuration of the ConsoleExternalLogLink type for use with
+// ConsoleExternalLogLink constructs a declarative configuration of the ConsoleExternalLogLink type for use with
 // apply.
 func ConsoleExternalLogLink(name string) *ConsoleExternalLogLinkApplyConfiguration {
 	b := &ConsoleExternalLogLinkApplyConfiguration{}
@@ -228,4 +228,10 @@ func (b *ConsoleExternalLogLinkApplyConfiguration) ensureObjectMetaApplyConfigur
 func (b *ConsoleExternalLogLinkApplyConfiguration) WithSpec(value *ConsoleExternalLogLinkSpecApplyConfiguration) *ConsoleExternalLogLinkApplyConfiguration {
 	b.Spec = value
 	return b
+}
+
+// GetName retrieves the value of the Name field in the declarative configuration.
+func (b *ConsoleExternalLogLinkApplyConfiguration) GetName() *string {
+	b.ensureObjectMetaApplyConfigurationExists()
+	return b.Name
 }

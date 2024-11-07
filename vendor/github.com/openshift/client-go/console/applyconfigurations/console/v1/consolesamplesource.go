@@ -6,7 +6,7 @@ import (
 	v1 "github.com/openshift/api/console/v1"
 )
 
-// ConsoleSampleSourceApplyConfiguration represents an declarative configuration of the ConsoleSampleSource type for use
+// ConsoleSampleSourceApplyConfiguration represents a declarative configuration of the ConsoleSampleSource type for use
 // with apply.
 type ConsoleSampleSourceApplyConfiguration struct {
 	Type            *v1.ConsoleSampleSourceType                           `json:"type,omitempty"`
@@ -14,7 +14,7 @@ type ConsoleSampleSourceApplyConfiguration struct {
 	ContainerImport *ConsoleSampleContainerImportSourceApplyConfiguration `json:"containerImport,omitempty"`
 }
 
-// ConsoleSampleSourceApplyConfiguration constructs an declarative configuration of the ConsoleSampleSource type for use with
+// ConsoleSampleSourceApplyConfiguration constructs a declarative configuration of the ConsoleSampleSource type for use with
 // apply.
 func ConsoleSampleSource() *ConsoleSampleSourceApplyConfiguration {
 	return &ConsoleSampleSourceApplyConfiguration{}

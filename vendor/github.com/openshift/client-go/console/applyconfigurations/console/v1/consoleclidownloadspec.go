@@ -2,7 +2,7 @@
 
 package v1
 
-// ConsoleCLIDownloadSpecApplyConfiguration represents an declarative configuration of the ConsoleCLIDownloadSpec type for use
+// ConsoleCLIDownloadSpecApplyConfiguration represents a declarative configuration of the ConsoleCLIDownloadSpec type for use
 // with apply.
 type ConsoleCLIDownloadSpecApplyConfiguration struct {
 	DisplayName *string                             `json:"displayName,omitempty"`
@@ -10,7 +10,7 @@ type ConsoleCLIDownloadSpecApplyConfiguration struct {
 	Links       []CLIDownloadLinkApplyConfiguration `json:"links,omitempty"`
 }
 
-// ConsoleCLIDownloadSpecApplyConfiguration constructs an declarative configuration of the ConsoleCLIDownloadSpec type for use with
+// ConsoleCLIDownloadSpecApplyConfiguration constructs a declarative configuration of the ConsoleCLIDownloadSpec type for use with
 // apply.
 func ConsoleCLIDownloadSpec() *ConsoleCLIDownloadSpecApplyConfiguration {
 	return &ConsoleCLIDownloadSpecApplyConfiguration{}

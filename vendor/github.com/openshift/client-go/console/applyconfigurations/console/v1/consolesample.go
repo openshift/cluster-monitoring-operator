@@ -11,7 +11,7 @@ import (
 	v1 "k8s.io/client-go/applyconfigurations/meta/v1"
 )
 
-// ConsoleSampleApplyConfiguration represents an declarative configuration of the ConsoleSample type for use
+// ConsoleSampleApplyConfiguration represents a declarative configuration of the ConsoleSample type for use
 // with apply.
 type ConsoleSampleApplyConfiguration struct {
 	v1.TypeMetaApplyConfiguration    `json:",inline"`
@@ -19,7 +19,7 @@ type ConsoleSampleApplyConfiguration struct {
 	Spec                             *ConsoleSampleSpecApplyConfiguration `json:"spec,omitempty"`
 }
 
-// ConsoleSample constructs an declarative configuration of the ConsoleSample type for use with
+// ConsoleSample constructs a declarative configuration of the ConsoleSample type for use with
 // apply.
 func ConsoleSample(name string) *ConsoleSampleApplyConfiguration {
 	b := &ConsoleSampleApplyConfiguration{}
@@ -228,4 +228,10 @@ func (b *ConsoleSampleApplyConfiguration) ensureObjectMetaApplyConfigurationExis
 func (b *ConsoleSampleApplyConfiguration) WithSpec(value *ConsoleSampleSpecApplyConfiguration) *ConsoleSampleApplyConfiguration {
 	b.Spec = value
 	return b
+}
+
+// GetName retrieves the value of the Name field in the declarative configuration.
+func (b *ConsoleSampleApplyConfiguration) GetName() *string {
+	b.ensureObjectMetaApplyConfigurationExists()
+	return b.Name
 }

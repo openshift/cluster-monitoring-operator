@@ -2,7 +2,7 @@
 
 package v1
 
-// ConsoleExternalLogLinkSpecApplyConfiguration represents an declarative configuration of the ConsoleExternalLogLinkSpec type for use
+// ConsoleExternalLogLinkSpecApplyConfiguration represents a declarative configuration of the ConsoleExternalLogLinkSpec type for use
 // with apply.
 type ConsoleExternalLogLinkSpecApplyConfiguration struct {
 	Text            *string `json:"text,omitempty"`
@@ -10,7 +10,7 @@ type ConsoleExternalLogLinkSpecApplyConfiguration struct {
 	NamespaceFilter *string `json:"namespaceFilter,omitempty"`
 }
 
-// ConsoleExternalLogLinkSpecApplyConfiguration constructs an declarative configuration of the ConsoleExternalLogLinkSpec type for use with
+// ConsoleExternalLogLinkSpecApplyConfiguration constructs a declarative configuration of the ConsoleExternalLogLinkSpec type for use with
 // apply.
 func ConsoleExternalLogLinkSpec() *ConsoleExternalLogLinkSpecApplyConfiguration {
 	return &ConsoleExternalLogLinkSpecApplyConfiguration{}

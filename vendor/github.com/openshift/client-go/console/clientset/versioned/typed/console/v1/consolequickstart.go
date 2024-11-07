@@ -4,9 +4,6 @@ package v1
 
 import (
 	"context"
-	json "encoding/json"
-	"fmt"
-	"time"
 
 	v1 "github.com/openshift/api/console/v1"
 	consolev1 "github.com/openshift/client-go/console/applyconfigurations/console/v1"
@@ -14,7 +11,7 @@ import (
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	types "k8s.io/apimachinery/pkg/types"
 	watch "k8s.io/apimachinery/pkg/watch"
-	rest "k8s.io/client-go/rest"
+	gentype "k8s.io/client-go/gentype"
 )
 
 // ConsoleQuickStartsGetter has a method to return a ConsoleQuickStartInterface.
@@ -39,143 +36,18 @@ type ConsoleQuickStartInterface interface {
 
 // consoleQuickStarts implements ConsoleQuickStartInterface
 type consoleQuickStarts struct {
-	client rest.Interface
+	*gentype.ClientWithListAndApply[*v1.ConsoleQuickStart, *v1.ConsoleQuickStartList, *consolev1.ConsoleQuickStartApplyConfiguration]
 }
 
 // newConsoleQuickStarts returns a ConsoleQuickStarts
 func newConsoleQuickStarts(c *ConsoleV1Client) *consoleQuickStarts {
 	return &consoleQuickStarts{
-		client: c.RESTClient(),
+		gentype.NewClientWithListAndApply[*v1.ConsoleQuickStart, *v1.ConsoleQuickStartList, *consolev1.ConsoleQuickStartApplyConfiguration](
+			"consolequickstarts",
+			c.RESTClient(),
+			scheme.ParameterCodec,
+			"",
+			func() *v1.ConsoleQuickStart { return &v1.ConsoleQuickStart{} },
+			func() *v1.ConsoleQuickStartList { return &v1.ConsoleQuickStartList{} }),
 	}
-}
-
-// Get takes name of the consoleQuickStart, and returns the corresponding consoleQuickStart object, and an error if there is any.
-func (c *consoleQuickStarts) Get(ctx context.Context, name string, options metav1.GetOptions) (result *v1.ConsoleQuickStart, err error) {
-	result = &v1.ConsoleQuickStart{}
-	err = c.client.Get().
-		Resource("consolequickstarts").
-		Name(name).
-		VersionedParams(&options, scheme.ParameterCodec).
-		Do(ctx).
-		Into(result)
-	return
-}
-
-// List takes label and field selectors, and returns the list of ConsoleQuickStarts that match those selectors.
-func (c *consoleQuickStarts) List(ctx context.Context, opts metav1.ListOptions) (result *v1.ConsoleQuickStartList, err error) {
-	var timeout time.Duration
-	if opts.TimeoutSeconds != nil {
-		timeout = time.Duration(*opts.TimeoutSeconds) * time.Second
-	}
-	result = &v1.ConsoleQuickStartList{}
-	err = c.client.Get().
-		Resource("consolequickstarts").
-		VersionedParams(&opts, scheme.ParameterCodec).
-		Timeout(timeout).
-		Do(ctx).
-		Into(result)
-	return
-}
-
-// Watch returns a watch.Interface that watches the requested consoleQuickStarts.
-func (c *consoleQuickStarts) Watch(ctx context.Context, opts metav1.ListOptions) (watch.Interface, error) {
-	var timeout time.Duration
-	if opts.TimeoutSeconds != nil {
-		timeout = time.Duration(*opts.TimeoutSeconds) * time.Second
-	}
-	opts.Watch = true
-	return c.client.Get().
-		Resource("consolequickstarts").
-		VersionedParams(&opts, scheme.ParameterCodec).
-		Timeout(timeout).
-		Watch(ctx)
-}
-
-// Create takes the representation of a consoleQuickStart and creates it.  Returns the server's representation of the consoleQuickStart, and an error, if there is any.
-func (c *consoleQuickStarts) Create(ctx context.Context, consoleQuickStart *v1.ConsoleQuickStart, opts metav1.CreateOptions) (result *v1.ConsoleQuickStart, err error) {
-	result = &v1.ConsoleQuickStart{}
-	err = c.client.Post().
-		Resource("consolequickstarts").
-		VersionedParams(&opts, scheme.ParameterCodec).
-		Body(consoleQuickStart).
-		Do(ctx).
-		Into(result)
-	return
-}
-
-// Update takes the representation of a consoleQuickStart and updates it. Returns the server's representation of the consoleQuickStart, and an error, if there is any.
-func (c *consoleQuickStarts) Update(ctx context.Context, consoleQuickStart *v1.ConsoleQuickStart, opts metav1.UpdateOptions) (result *v1.ConsoleQuickStart, err error) {
-	result = &v1.ConsoleQuickStart{}
-	err = c.client.Put().
-		Resource("consolequickstarts").
-		Name(consoleQuickStart.Name).
-		VersionedParams(&opts, scheme.ParameterCodec).
-		Body(consoleQuickStart).
-		Do(ctx).
-		Into(result)
-	return
-}
-
-// Delete takes name of the consoleQuickStart and deletes it. Returns an error if one occurs.
-func (c *consoleQuickStarts) Delete(ctx context.Context, name string, opts metav1.DeleteOptions) error {
-	return c.client.Delete().
-		Resource("consolequickstarts").
-		Name(name).
-		Body(&opts).
-		Do(ctx).
-		Error()
-}
-
-// DeleteCollection deletes a collection of objects.
-func (c *consoleQuickStarts) DeleteCollection(ctx context.Context, opts metav1.DeleteOptions, listOpts metav1.ListOptions) error {
-	var timeout time.Duration
-	if listOpts.TimeoutSeconds != nil {
-		timeout = time.Duration(*listOpts.TimeoutSeconds) * time.Second
-	}
-	return c.client.Delete().
-		Resource("consolequickstarts").
-		VersionedParams(&listOpts, scheme.ParameterCodec).
-		Timeout(timeout).
-		Body(&opts).
-		Do(ctx).
-		Error()
-}
-
-// Patch applies the patch and returns the patched consoleQuickStart.
-func (c *consoleQuickStarts) Patch(ctx context.Context, name string, pt types.PatchType, data []byte, opts metav1.PatchOptions, subresources ...string) (result *v1.ConsoleQuickStart, err error) {
-	result = &v1.ConsoleQuickStart{}
-	err = c.client.Patch(pt).
-		Resource("consolequickstarts").
-		Name(name).
-		SubResource(subresources...).
-		VersionedParams(&opts, scheme.ParameterCodec).
-		Body(data).
-		Do(ctx).
-		Into(result)
-	return
-}
-
-// Apply takes the given apply declarative configuration, applies it and returns the applied consoleQuickStart.
-func (c *consoleQuickStarts) Apply(ctx context.Context, consoleQuickStart *consolev1.ConsoleQuickStartApplyConfiguration, opts metav1.ApplyOptions) (result *v1.ConsoleQuickStart, err error) {
-	if consoleQuickStart == nil {
-		return nil, fmt.Errorf("consoleQuickStart provided to Apply must not be nil")
-	}
-	patchOpts := opts.ToPatchOptions()
-	data, err := json.Marshal(consoleQuickStart)
-	if err != nil {
-		return nil, err
-	}
-	name := consoleQuickStart.Name
-	if name == nil {
-		return nil, fmt.Errorf("consoleQuickStart.Name must be provided to Apply")
-	}
-	result = &v1.ConsoleQuickStart{}
-	err = c.client.Patch(types.ApplyPatchType).
-		Resource("consolequickstarts").
-		Name(*name).
-		VersionedParams(&patchOpts, scheme.ParameterCodec).
-		Body(data).
-		Do(ctx).
-		Into(result)
-	return
 }

@@ -2,7 +2,7 @@
 
 package v1
 
-// ConsolePluginSpecApplyConfiguration represents an declarative configuration of the ConsolePluginSpec type for use
+// ConsolePluginSpecApplyConfiguration represents a declarative configuration of the ConsolePluginSpec type for use
 // with apply.
 type ConsolePluginSpecApplyConfiguration struct {
 	DisplayName *string                                 `json:"displayName,omitempty"`
@@ -11,7 +11,7 @@ type ConsolePluginSpecApplyConfiguration struct {
 	I18n        *ConsolePluginI18nApplyConfiguration    `json:"i18n,omitempty"`
 }
 
-// ConsolePluginSpecApplyConfiguration constructs an declarative configuration of the ConsolePluginSpec type for use with
+// ConsolePluginSpecApplyConfiguration constructs a declarative configuration of the ConsolePluginSpec type for use with
 // apply.
 func ConsolePluginSpec() *ConsolePluginSpecApplyConfiguration {
 	return &ConsolePluginSpecApplyConfiguration{}

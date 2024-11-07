@@ -11,7 +11,7 @@ import (
 	v1 "k8s.io/client-go/applyconfigurations/meta/v1"
 )
 
-// ConsoleCLIDownloadApplyConfiguration represents an declarative configuration of the ConsoleCLIDownload type for use
+// ConsoleCLIDownloadApplyConfiguration represents a declarative configuration of the ConsoleCLIDownload type for use
 // with apply.
 type ConsoleCLIDownloadApplyConfiguration struct {
 	v1.TypeMetaApplyConfiguration    `json:",inline"`
@@ -19,7 +19,7 @@ type ConsoleCLIDownloadApplyConfiguration struct {
 	Spec                             *ConsoleCLIDownloadSpecApplyConfiguration `json:"spec,omitempty"`
 }
 
-// ConsoleCLIDownload constructs an declarative configuration of the ConsoleCLIDownload type for use with
+// ConsoleCLIDownload constructs a declarative configuration of the ConsoleCLIDownload type for use with
 // apply.
 func ConsoleCLIDownload(name string) *ConsoleCLIDownloadApplyConfiguration {
 	b := &ConsoleCLIDownloadApplyConfiguration{}
@@ -228,4 +228,10 @@ func (b *ConsoleCLIDownloadApplyConfiguration) ensureObjectMetaApplyConfiguratio
 func (b *ConsoleCLIDownloadApplyConfiguration) WithSpec(value *ConsoleCLIDownloadSpecApplyConfiguration) *ConsoleCLIDownloadApplyConfiguration {
 	b.Spec = value
 	return b
+}
+
+// GetName retrieves the value of the Name field in the declarative configuration.
+func (b *ConsoleCLIDownloadApplyConfiguration) GetName() *string {
+	b.ensureObjectMetaApplyConfigurationExists()
+	return b.Name
 }

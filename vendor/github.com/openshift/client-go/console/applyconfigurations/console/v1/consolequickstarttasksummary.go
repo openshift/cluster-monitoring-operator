@@ -2,14 +2,14 @@
 
 package v1
 
-// ConsoleQuickStartTaskSummaryApplyConfiguration represents an declarative configuration of the ConsoleQuickStartTaskSummary type for use
+// ConsoleQuickStartTaskSummaryApplyConfiguration represents a declarative configuration of the ConsoleQuickStartTaskSummary type for use
 // with apply.
 type ConsoleQuickStartTaskSummaryApplyConfiguration struct {
 	Success *string `json:"success,omitempty"`
 	Failed  *string `json:"failed,omitempty"`
 }
 
-// ConsoleQuickStartTaskSummaryApplyConfiguration constructs an declarative configuration of the ConsoleQuickStartTaskSummary type for use with
+// ConsoleQuickStartTaskSummaryApplyConfiguration constructs a declarative configuration of the ConsoleQuickStartTaskSummary type for use with
 // apply.
 func ConsoleQuickStartTaskSummary() *ConsoleQuickStartTaskSummaryApplyConfiguration {
 	return &ConsoleQuickStartTaskSummaryApplyConfiguration{}
