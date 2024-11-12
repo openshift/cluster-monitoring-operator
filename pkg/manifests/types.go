@@ -607,6 +607,13 @@ type PrometheusRestrictedConfig struct {
 	// seconds (for example `30s`.), minutes (for example `1m`.) or a mix of minutes and seconds (for example `1m30s`.).
 	// The default value is `30s`.
 	ScrapeInterval string `json:"scrapeInterval,omitempty"`
+	// Configures the default interval between rule evaluations in case the `PrometheusRule` resource does not specify any value.
+	// The interval must be set between 5 seconds and 5 minutes.
+	// The value can be expressed in:
+	// seconds (for example `30s`.), minutes (for example `1m`.) or a mix of minutes and seconds (for example `1m30s`.).
+	// It only applies to `PrometheusRule` resources with the `openshift.io/prometheus-rule-evaluation-scope="leaf-prometheus"` label.
+	// The default value is `30s`.
+	EvaluationInterval string `json:"evaluationInterval,omitempty"`
 	// Configures additional Alertmanager instances that receive alerts from
 	// the Prometheus component. By default, no additional Alertmanager
 	// instances are configured.
@@ -697,6 +704,13 @@ type ThanosRulerConfig struct {
 	// with additional Alertmanager instances.
 	// The default value is `nil`.
 	AlertmanagersConfigs []AdditionalAlertmanagerConfig `json:"additionalAlertmanagerConfigs,omitempty"`
+	// Configures the default interval between Prometheus rule evaluations in case the `PrometheusRule` resource does not specify any value.
+	// The interval must be set between 5 seconds and 5 minutes.
+	// The value can be expressed in:
+	// seconds (for example `30s`.), minutes (for example `1m`.) or a mix of minutes and seconds (for example `1m30s`.).
+	// It applies to `PrometheusRule` resources without the `openshift.io/prometheus-rule-evaluation-scope="leaf"` label.
+	// The default value is `15s`.
+	EvaluationInterval string `json:"evaluationInterval,omitempty"`
 	// Defines the log level setting for Thanos Ruler.
 	// The possible values are `error`, `warn`, `info`, and `debug`.
 	// The default value is `info`.

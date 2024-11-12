@@ -2,7 +2,8 @@
 
 ## 4.18
 
-- [#2503] (https://github.com/openshift/cluster-monitoring-operator/issues/2503) Expose `scrapeInterval` setting for UWM Prometheus.
+- [#2503](https://github.com/openshift/cluster-monitoring-operator/issues/2503) Expose `scrapeInterval` setting for UWM Prometheus.
+- [#2517](https://github.com/openshift/cluster-monitoring-operator/issues/2517) Expose `evaluationInterval` setting for UWM Prometheus and ThanosRuler.
 
 ## 4.17
 

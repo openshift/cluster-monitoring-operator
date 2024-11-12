@@ -133,11 +133,13 @@ func scrapeIntervalLimits() (model.Duration, model.Duration) {
 	return lowerLimit, upperLimit
 }
 
-func (u *UserWorkloadConfiguration) check() error {
-	if u == nil {
-		return nil
-	}
+func evaluationIntervalLimits() (model.Duration, model.Duration) {
+	lowerLimit, _ := model.ParseDuration("5s")
+	upperLimit, _ := model.ParseDuration("5m")
+	return lowerLimit, upperLimit
+}
 
+func (u *UserWorkloadConfiguration) checkScrapeInterval() error {
 	if u.Prometheus == nil || u.Prometheus.ScrapeInterval == "" {
 		return nil
 	}
@@ -151,8 +153,66 @@ func (u *UserWorkloadConfiguration) check() error {
 	allowedLowerLimit, allowedUpperLimit := scrapeIntervalLimits()
 
 	if (scrapeInterval < allowedLowerLimit) || (scrapeInterval > allowedUpperLimit) {
-		return fmt.Errorf("scrape interval value %q outside of the allowed range [%q, %q]", u.Prometheus.ScrapeInterval, allowedLowerLimit, allowedUpperLimit)
+		return fmt.Errorf("Prometheus scrape interval value %q outside of the allowed range [%q, %q]", u.Prometheus.ScrapeInterval, allowedLowerLimit, allowedUpperLimit)
 	}
+	return nil
+}
+
+func (u *UserWorkloadConfiguration) checkPrometheusEvaluationInterval() error {
+	if u.Prometheus == nil || u.Prometheus.EvaluationInterval == "" {
+		return nil
+	}
+
+	evaluationInterval, err := model.ParseDuration(u.Prometheus.EvaluationInterval)
+
+	if err != nil {
+		return fmt.Errorf("invalid evaluation interval value: %w", err)
+	}
+
+	allowedLowerLimit, allowedUpperLimit := evaluationIntervalLimits()
+
+	if (evaluationInterval < allowedLowerLimit) || (evaluationInterval > allowedUpperLimit) {
+		return fmt.Errorf("Prometheus evaluation interval value %q outside of the allowed range [%q, %q]", u.Prometheus.EvaluationInterval, allowedLowerLimit, allowedUpperLimit)
+	}
+	return nil
+}
+
+func (u *UserWorkloadConfiguration) checkThanosRulerEvaluationInterval() error {
+	if u.ThanosRuler == nil || u.ThanosRuler.EvaluationInterval == "" {
+		return nil
+	}
+
+	evaluationInterval, err := model.ParseDuration(u.ThanosRuler.EvaluationInterval)
+
+	if err != nil {
+		return fmt.Errorf("invalid evaluation interval value: %w", err)
+	}
+
+	allowedLowerLimit, allowedUpperLimit := evaluationIntervalLimits()
+
+	if (evaluationInterval < allowedLowerLimit) || (evaluationInterval > allowedUpperLimit) {
+		return fmt.Errorf("Thanos Ruler evaluation interval value %q outside of the allowed range [%q, %q]", u.ThanosRuler.EvaluationInterval, allowedLowerLimit, allowedUpperLimit)
+	}
+	return nil
+}
+
+func (u *UserWorkloadConfiguration) check() error {
+	if u == nil {
+		return nil
+	}
+
+	if err := u.checkScrapeInterval(); err != nil {
+		return err
+	}
+
+	if err := u.checkPrometheusEvaluationInterval(); err != nil {
+		return err
+	}
+
+	if err := u.checkThanosRulerEvaluationInterval(); err != nil {
+		return err
+	}
+
 	return nil
 }
 

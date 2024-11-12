@@ -484,7 +484,7 @@ func TestLoadEnforcedBodySizeLimit(t *testing.T) {
 	}
 }
 
-func TestScrapeIntervalUWMPreCheck(t *testing.T) {
+func TestScrapeIntervalUWM(t *testing.T) {
 	for _, tc := range []struct {
 		name          string
 		uwmconfig     string
@@ -527,6 +527,99 @@ func TestScrapeIntervalUWMPreCheck(t *testing.T) {
 			name: "incorrect scrape interval value",
 			uwmconfig: `prometheus:
   scrapeInterval: 1234www
+  `,
+			expectedError: true,
+		},
+	} {
+		t.Run(tc.name, func(t *testing.T) {
+			_, err := NewUserConfigFromString(tc.uwmconfig)
+			if tc.expectedError {
+				require.Error(t, err)
+				return
+			}
+			require.NoError(t, err)
+		})
+	}
+}
+
+func TestEvaluationIntervalUWM(t *testing.T) {
+	for _, tc := range []struct {
+		name          string
+		uwmconfig     string
+		expectedError bool
+	}{
+		{
+			name:          "default",
+			uwmconfig:     "",
+			expectedError: false,
+		},
+		{
+			name: "prometheus.evaluationInterval valid within limits",
+			uwmconfig: `prometheus:
+  evaluationInterval: 15s
+  `,
+			expectedError: false,
+		},
+		{
+			name: "prometheus.evaluationInterval valid within limits-mix-of-minutes-seconds",
+			uwmconfig: `prometheus:
+  evaluationInterval: 1m30s
+  `,
+			expectedError: false,
+		},
+		{
+			name: "prometheus.evaluationInterval < allowed lower limit",
+			uwmconfig: `prometheus:
+  evaluationInterval: 2s
+  `,
+			expectedError: true,
+		},
+		{
+			name: "prometheus.evaluationInterval > allowed upper limit",
+			uwmconfig: `prometheus:
+  evaluationInterval: 10m
+  `,
+			expectedError: true,
+		},
+		{
+			name: "prometheus incorrect scrape interval value",
+			uwmconfig: `prometheus:
+  evaluationInterval: 1234www
+  `,
+			expectedError: true,
+		},
+		{
+			name: "thanosRuler.evaluationInterval valid within limits",
+			uwmconfig: `thanosRuler:
+  evaluationInterval: 15s
+  `,
+			expectedError: false,
+		},
+		{
+			name: "thanosRuler.evaluationInterval valid within limits-mix-of-minutes-seconds",
+			uwmconfig: `thanosRuler:
+  evaluationInterval: 1m30s
+  `,
+			expectedError: false,
+		},
+		{
+			name: "thanosRuler.evaluationInterval < allowed lower limit",
+			uwmconfig: `thanosRuler:
+  evaluationInterval: 2s
+  `,
+			expectedError: true,
+		},
+		{
+			name: "thanosRuler.evaluationInterval > allowed upper limit",
+			uwmconfig: `thanosRuler:
+  evaluationInterval: 10m
+  `,
+			expectedError: true,
+		},
+		{
+			name: "thanosRuler incorrect scrape interval value",
+			uwmconfig: `thanosRuler:
+  evaluationInterval: 1234www
   `,
 			expectedError: true,
 		},
