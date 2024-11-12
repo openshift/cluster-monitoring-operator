@@ -601,6 +601,12 @@ type AlertmanagerUserWorkloadConfig struct {
 // The `PrometheusRestrictedConfig` resource defines the settings for the
 // Prometheus component that monitors user-defined projects.
 type PrometheusRestrictedConfig struct {
+	// Configures the default interval between consecutive scrapes in case the `ServiceMonitor` or `PodMonitor` resource does not specify any value.
+	// The interval must be set between 5 seconds and 5 minutes.
+	// The value can be expressed in:
+	// seconds (for example `30s`.), minutes (for example `1m`.) or a mix of minutes and seconds (for example `1m30s`.).
+	// The default value is `30s`.
+	ScrapeInterval string `json:"scrapeInterval,omitempty"`
 	// Configures additional Alertmanager instances that receive alerts from
 	// the Prometheus component. By default, no additional Alertmanager
 	// instances are configured.

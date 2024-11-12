@@ -484,6 +484,64 @@ func TestLoadEnforcedBodySizeLimit(t *testing.T) {
 	}
 }
 
+func TestScrapeIntervalUWMPreCheck(t *testing.T) {
+	for _, tc := range []struct {
+		name          string
+		uwmconfig     string
+		expectedError bool
+	}{
+		{
+			name:          "default",
+			uwmconfig:     "",
+			expectedError: false,
+		},
+		{
+			name: "scrapeInterval valid within limits",
+			uwmconfig: `prometheus:
+  scrapeInterval: 15s
+  `,
+			expectedError: false,
+		},
+		{
+			name: "scrapeInterval valid within limits-mix-of-minutes-seconds",
+			uwmconfig: `prometheus:
+  scrapeInterval: 1m30s
+  `,
+			expectedError: false,
+		},
+		{
+			name: "scrapeInterval < allowed lower limit",
+			uwmconfig: `prometheus:
+  scrapeInterval: 2s
+  `,
+			expectedError: true,
+		},
+		{
+			name: "scrapeInterval > allowed upper limit",
+			uwmconfig: `prometheus:
+  scrapeInterval: 10m
+  `,
+			expectedError: true,
+		},
+		{
+			name: "incorrect scrape interval value",
+			uwmconfig: `prometheus:
+  scrapeInterval: 1234www
+  `,
+			expectedError: true,
+		},
+	} {
+		t.Run(tc.name, func(t *testing.T) {
+			_, err := NewUserConfigFromString(tc.uwmconfig)
+			if tc.expectedError {
+				require.Error(t, err)
+				return
+			}
+			require.NoError(t, err)
+		})
+	}
+}
+
 func TestCollectionProfilePreCheck(t *testing.T) {
 	for _, tc := range []struct {
 		name          string

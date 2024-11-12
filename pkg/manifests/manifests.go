@@ -1658,6 +1658,10 @@ func (f *Factory) PrometheusUserWorkload(grpcTLS *v1.Secret) (*monv1.Prometheus,
 	if err != nil {
 		return nil, err
 	}
+	if f.config.UserWorkloadConfiguration.Prometheus.ScrapeInterval != "" {
+		p.Spec.ScrapeInterval = monv1.Duration(f.config.UserWorkloadConfiguration.Prometheus.ScrapeInterval)
+	}
+
 	if f.config.UserWorkloadConfiguration.Prometheus.LogLevel != "" {
 		p.Spec.LogLevel = f.config.UserWorkloadConfiguration.Prometheus.LogLevel
 	}
