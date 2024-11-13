@@ -334,5 +334,20 @@ function(params)
         },
       },
     },
+
     kubeRbacProxySecret: generateSecret.staticAuthSecret(cfg.namespace, cfg.commonLabels, 'node-exporter-kube-rbac-proxy-config'),
+
+    prometheusRule+: {
+      spec+: {
+        groups+: [
+          {
+            name: 'telemetry',
+            rules: [{
+              record: 'vendor_model:node_accelerator_cards:sum',
+              expr: 'sum by(vendor,model) (node_accelerator_card_info)',
+            }],
+          },
+        ],
+      },
+    },
   }

@@ -640,6 +640,15 @@ data:
     #   profile: full|minimal (refer: cluster-monitoring-operator/pkg/manifests#SupportedCollectionProfiles)
     - '{__name__="profile:cluster_monitoring_operator_collection_profile:max"}'
     #
+    # owners: (@openshift/openshift-team-monitoring)
+    #
+    # vendor_model:node_accelerator_cards:sum reports the total number of accelerator cards
+    # in the cluster per vendor and model.
+    # Possible label values are:
+    #   vendor: NVIDIA
+    #   model: 100, RTX_A6000, RTX_4090, A40, V100
+    - '{__name__="vendor_model:node_accelerator_cards:sum",vendor=~"NVIDIA",model=~"A100|RTX_A6000|RTX_4090|A40|V100"}'
+    #
     # owners: (https://github.com/integr8ly, @david-martin)
     #
     # rhmi_status reports the status of an RHMI installation.

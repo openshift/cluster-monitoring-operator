@@ -354,3 +354,7 @@ spec:
           rate(node_network_transmit_drop_total{job="node-exporter", device!="lo"}[1m])
         )
       record: instance:node_network_transmit_drop_excluding_lo:rate1m
+  - name: telemetry
+    rules:
+    - expr: sum by(vendor,model) (node_accelerator_card_info)
+      record: vendor_model:node_accelerator_cards:sum
