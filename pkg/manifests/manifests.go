@@ -1662,6 +1662,10 @@ func (f *Factory) PrometheusUserWorkload(grpcTLS *v1.Secret) (*monv1.Prometheus,
 		p.Spec.ScrapeInterval = monv1.Duration(f.config.UserWorkloadConfiguration.Prometheus.ScrapeInterval)
 	}
 
+	if f.config.UserWorkloadConfiguration.Prometheus.EvaluationInterval != "" {
+		p.Spec.EvaluationInterval = monv1.Duration(f.config.UserWorkloadConfiguration.Prometheus.EvaluationInterval)
+	}
+
 	if f.config.UserWorkloadConfiguration.Prometheus.LogLevel != "" {
 		p.Spec.LogLevel = f.config.UserWorkloadConfiguration.Prometheus.LogLevel
 	}
@@ -3178,6 +3182,10 @@ func (f *Factory) ThanosRulerCustomResource(
 	}
 
 	t.Spec.Image = f.config.Images.Thanos
+
+	if f.config.UserWorkloadConfiguration.ThanosRuler.EvaluationInterval != "" {
+		t.Spec.EvaluationInterval = monv1.Duration(f.config.UserWorkloadConfiguration.ThanosRuler.EvaluationInterval)
+	}
 
 	if f.config.UserWorkloadConfiguration.ThanosRuler.LogLevel != "" {
 		t.Spec.LogLevel = f.config.UserWorkloadConfiguration.ThanosRuler.LogLevel

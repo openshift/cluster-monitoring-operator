@@ -588,6 +588,7 @@ func TestUserWorkloadMonitorPrometheusK8Config(t *testing.T) {
 	uwmCM := f.BuildUserWorkloadConfigMap(t,
 		fmt.Sprintf(`prometheus:
   scrapeInterval: 15s
+  evaluationInterval: 15s
   enforcedTargetLimit: 10
   enforcedLabelLimit: 500
   enforcedLabelNameLengthLimit: 50
@@ -676,7 +677,11 @@ func TestUserWorkloadMonitorPrometheusK8Config(t *testing.T) {
 		},
 		{
 			name:      "assert scrape interval is configured",
-			assertion: assertScrapeInterval("15s"),
+			assertion: assertPrometheusScrapeInterval("15s"),
+		},
+		{
+			name:      "assert evaluation interval is configured",
+			assertion: assertPrometheusEvaluationInterval("15s"),
 		},
 	} {
 		t.Run(tc.name, tc.assertion)
@@ -697,6 +702,7 @@ func TestUserWorkloadMonitorThanosRulerConfig(t *testing.T) {
 
 	uwmCM := f.BuildUserWorkloadConfigMap(t,
 		fmt.Sprintf(`thanosRuler:
+  evaluationInterval: 15s
   logLevel: debug
   retention: 15d
   tolerations:
@@ -735,8 +741,36 @@ func TestUserWorkloadMonitorThanosRulerConfig(t *testing.T) {
 				},
 			),
 		},
+		{
+			name:      "assert evaluation interval is configured",
+			assertion: assertThanosRulerEvaluationInterval("15s"),
+		},
 	} {
 		t.Run(tc.name, tc.assertion)
+	}
+}
+
+func assertThanosRulerEvaluationInterval(evaluationInterval string) func(*testing.T) {
+	ctx := context.Background()
+	return func(t *testing.T) {
+		err := framework.Poll(time.Second, 5*time.Minute, func() error {
+			t, err := f.MonitoringClient.ThanosRulers(f.UserWorkloadMonitoringNs).Get(ctx, "user-workload", metav1.GetOptions{})
+			if err != nil {
+				return err
+			}
+
+			if t.Spec.EvaluationInterval == "" {
+				return errors.New("evaluationInterval is not set")
+			} else if t.Spec.EvaluationInterval != monv1.Duration(evaluationInterval) {
+				return fmt.Errorf("expected evaluationInterval to be %s, but got %s", evaluationInterval, t.Spec.EvaluationInterval)
+			}
+
+			return nil
+		})
+
+		if err != nil {
+			t.Fatalf("Timed out waiting for evaluationInterval configuration: %v", err)
+		}
 	}
 }
 
@@ -1035,7 +1069,7 @@ func assertRemoteWriteWasSet(namespace, crName, urlValue string) func(t *testing
 	}
 }
 
-func assertScrapeInterval(scrapeInterval string) func(*testing.T) {
+func assertPrometheusScrapeInterval(scrapeInterval string) func(*testing.T) {
 	ctx := context.Background()
 	return func(t *testing.T) {
 		err := framework.Poll(time.Second, 5*time.Minute, func() error {
@@ -1055,6 +1089,30 @@ func assertScrapeInterval(scrapeInterval string) func(*testing.T) {
 
 		if err != nil {
 			t.Fatalf("Timed out waiting for scrapeInterval configuration: %v", err)
+		}
+	}
+}
+
+func assertPrometheusEvaluationInterval(evaluationInterval string) func(*testing.T) {
+	ctx := context.Background()
+	return func(t *testing.T) {
+		err := framework.Poll(time.Second, 5*time.Minute, func() error {
+			p, err := f.MonitoringClient.Prometheuses(f.UserWorkloadMonitoringNs).Get(ctx, "user-workload", metav1.GetOptions{})
+			if err != nil {
+				return err
+			}
+
+			if p.Spec.EvaluationInterval == "" {
+				return errors.New("evaluationInterval is not set")
+			} else if p.Spec.EvaluationInterval != monv1.Duration(evaluationInterval) {
+				return fmt.Errorf("expected evaluationInterval to be %s, but got %s", evaluationInterval, p.Spec.EvaluationInterval)
+			}
+
+			return nil
+		})
+
+		if err != nil {
+			t.Fatalf("Timed out waiting for evaluationInterval configuration: %v", err)
 		}
 	}
 }

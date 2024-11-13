@@ -1640,6 +1640,7 @@ func TestPrometheusUserWorkloadConfiguration(t *testing.T) {
 
 	uwc, err := NewUserConfigFromString(`prometheus:
   scrapeInterval: 15s
+  evaluationInterval: 15s
   resources:
     requests:
       cpu: 100m
@@ -1669,6 +1670,10 @@ func TestPrometheusUserWorkloadConfiguration(t *testing.T) {
 
 	if p.Spec.ScrapeInterval != "15s" {
 		t.Fatal("Prometheus UWM scrapeInterval not configured correctly")
+	}
+
+	if p.Spec.EvaluationInterval != "15s" {
+		t.Fatal("Prometheus UWM evaluationInterval not configured correctly")
 	}
 
 	if p.Spec.TopologySpreadConstraints[0].MaxSkew != 1 {
@@ -4115,6 +4120,7 @@ func TestTelemeterClientSecret(t *testing.T) {
 func TestThanosRulerConfiguration(t *testing.T) {
 	c, err := NewConfigFromString(``, false)
 	uwc, err := NewUserConfigFromString(`thanosRuler:
+  evaluationInterval: 20s
   resources:
     requests:
       cpu: 100m
@@ -4141,6 +4147,10 @@ func TestThanosRulerConfiguration(t *testing.T) {
 	)
 	if err != nil {
 		t.Fatal(err)
+	}
+
+	if tr.Spec.EvaluationInterval != "20s" {
+		t.Fatal("Thanos ruler evaluationInterval is not configured correctly")
 	}
 
 	if tr.Spec.TopologySpreadConstraints[0].MaxSkew != 1 {
