@@ -708,7 +708,7 @@ type ThanosRulerConfig struct {
 	// The interval must be set between 5 seconds and 5 minutes.
 	// The value can be expressed in:
 	// seconds (for example `30s`.), minutes (for example `1m`.) or a mix of minutes and seconds (for example `1m30s`.).
-	// It applies to `PrometheusRule` resources without the `openshift.io/prometheus-rule-evaluation-scope="leaf"` label.
+	// It applies to `PrometheusRule` resources without the `openshift.io/prometheus-rule-evaluation-scope="leaf-prometheus"` label.
 	// The default value is `15s`.
 	EvaluationInterval string `json:"evaluationInterval,omitempty"`
 	// Defines the log level setting for Thanos Ruler.
