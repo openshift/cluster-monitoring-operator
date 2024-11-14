@@ -174,12 +174,12 @@ func (f *Framework) MustGetStatefulSet(t *testing.T, name, namespace string) *ap
 	return statefulSet
 }
 
-// MustGetPods return all pods from `namespace` within 5 minutes or fail
-func (f *Framework) MustGetPods(t *testing.T, namespace string) *v1.PodList {
+// MustListPods returns all pods matching labelSelector from `namespace` within 5 minutes or fails.
+func (f *Framework) MustListPods(t *testing.T, namespace, labelSelector string) *v1.PodList {
 	t.Helper()
 	var pods *v1.PodList
 	err := wait.Poll(time.Second, 5*time.Minute, func() (bool, error) {
-		pl, err := f.KubeClient.CoreV1().Pods(namespace).List(ctx, metav1.ListOptions{})
+		pl, err := f.KubeClient.CoreV1().Pods(namespace).List(ctx, metav1.ListOptions{LabelSelector: labelSelector})
 		if err != nil {
 			return false, nil
 		}

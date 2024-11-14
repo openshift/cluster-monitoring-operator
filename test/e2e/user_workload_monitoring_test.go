@@ -189,6 +189,11 @@ namespacesWithoutLabelEnforcement:
 			name: "assert alertmanager is not deployed in user namespace",
 			f:    f.AssertStatefulsetDoesNotExist("alertmanager-not-to-be-reconciled", userWorkloadTestNs),
 		},
+		// TODO: the test will be renamed and merged with others in a follow-up PR.
+		{
+			name: "assert containers images registry is the same than CMO",
+			f:    cmoImageRegistryIsUsedInNsAssert(t, f.UserWorkloadMonitoringNs),
+		},
 	} {
 		t.Run(scenario.name, scenario.f)
 	}
@@ -381,7 +386,9 @@ func assertMetricsForMonitoringComponents(t *testing.T) {
 	} {
 		t.Run(service, func(t *testing.T) {
 			f.ThanosQuerierClient.WaitForQueryReturn(
-				t, time.Minute, fmt.Sprintf(`count(up{service="%s",namespace="openshift-user-workload-monitoring"} == 1)`, service),
+				// To avoid making the test wait for more than lookback-delta in case Prometheus
+				// wasn't able to write stale markers (because it was down), reduce the lookup period.
+				t, time.Minute, fmt.Sprintf(`count(last_over_time(up{service="%s",namespace="openshift-user-workload-monitoring"}[1m]) == 1)`, service),
 				func(v float64) error {
 					if v == float64(expected) {
 						return nil
