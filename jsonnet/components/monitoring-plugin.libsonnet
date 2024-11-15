@@ -23,6 +23,7 @@ function(params)
       include            /etc/nginx/mime.types;
       default_type       application/octet-stream;
       keepalive_timeout  65;
+      server_tokens off;
       server {
         listen              LISTEN_ADDRESS_PORT_REPLACED_AT_RUNTIME ssl;
         ssl_certificate     %(tlsPath)s/tls.crt;
