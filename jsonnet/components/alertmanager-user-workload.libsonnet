@@ -18,12 +18,6 @@ function(params)
 
     trustedCaBundle: generateCertInjection.trustedCNOCaBundleCM(cfg.namespace, 'alertmanager-trusted-ca-bundle'),
 
-    serviceAccount+: {
-      // automountServiceAccountToken is set to true as kube-rbac-proxy sidecar
-      // requires connection to kubernetes API
-      automountServiceAccountToken: true,
-    },
-
     // Adding the serving certs annotation causes the serving certs controller
     // to generate a valid and signed serving certificate and put it in the
     // specified secret.
@@ -31,7 +25,6 @@ function(params)
     // The ClusterIP is explicitly set, as it signifies the
     // cluster-monitoring-operator, that when reconciling this service the
     // cluster IP needs to be retained.
-
     service+: {
       metadata+: {
         annotations: {
@@ -209,6 +202,7 @@ function(params)
         },
       },
       spec+: {
+        automountServiceAccountToken: true,
         securityContext: {
           fsGroup: 65534,
           runAsNonRoot: true,
