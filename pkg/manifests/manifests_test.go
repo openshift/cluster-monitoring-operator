@@ -1421,11 +1421,15 @@ func TestRemoteWriteAuthorizationConfig(t *testing.T) {
 	}
 }
 
-func TestPrometheusK8sRemoteWriteProxy(t *testing.T) {
+func TestPrometheusRemoteWriteProxy(t *testing.T) {
+	// This is not required, as the configuration is overridden below, set to maintain consistency.
 	config := func() *Config {
-		c, err := NewConfigFromString("", false)
+		c, err := NewConfigFromString(`
+enableUserWorkload: true
+`, false)
 		require.NoError(t, err)
-		c.ClusterMonitoringConfiguration.PrometheusK8sConfig.RemoteWrite = []RemoteWriteSpec{{URL: "http://custom"}}
+		c.ClusterMonitoringConfiguration.PrometheusK8sConfig.RemoteWrite = []RemoteWriteSpec{{URL: "http://custom1"}}
+		c.UserWorkloadConfiguration.Prometheus.RemoteWrite = []RemoteWriteSpec{{URL: "http://custom2"}}
 		return c
 	}
 
@@ -1475,14 +1479,21 @@ func TestPrometheusK8sRemoteWriteProxy(t *testing.T) {
 	} {
 		t.Run(tc.name, func(t *testing.T) {
 			f := NewFactory("openshift-monitoring", "openshift-user-workload-monitoring", config(), defaultInfrastructureReader(), tc.proxyReader, NewAssets(assetsPath), &APIServerConfig{}, &configv1.Console{})
-			p, err := f.PrometheusK8s(
+			platformProm, err := f.PrometheusK8s(
 				&v1.Secret{ObjectMeta: metav1.ObjectMeta{Name: "foo"}},
 				nil,
 			)
 			require.NoError(t, err)
-			require.Len(t, p.Spec.RemoteWrite, 1)
-			require.Equal(t, tc.expectedRemoteWriteProxyURL, p.Spec.RemoteWrite[0].ProxyConfig.ProxyURL)
-			require.Equal(t, tc.expectedRemoteWriteNoProxy, p.Spec.RemoteWrite[0].ProxyConfig.NoProxy)
+			require.NoError(t, err)
+			require.Len(t, platformProm.Spec.RemoteWrite, 1)
+			require.Equal(t, tc.expectedRemoteWriteProxyURL, platformProm.Spec.RemoteWrite[0].ProxyConfig.ProxyURL)
+			require.Equal(t, tc.expectedRemoteWriteNoProxy, platformProm.Spec.RemoteWrite[0].ProxyConfig.NoProxy)
+
+			uwmPrometheus, err := f.PrometheusUserWorkload(&v1.Secret{ObjectMeta: metav1.ObjectMeta{Name: "bar"}})
+			require.NoError(t, err)
+			require.Len(t, uwmPrometheus.Spec.RemoteWrite, 1)
+			require.Equal(t, tc.expectedRemoteWriteProxyURL, uwmPrometheus.Spec.RemoteWrite[0].ProxyConfig.ProxyURL)
+			require.Equal(t, tc.expectedRemoteWriteNoProxy, uwmPrometheus.Spec.RemoteWrite[0].ProxyConfig.NoProxy)
 		})
 	}
 }

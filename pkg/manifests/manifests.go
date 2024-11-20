@@ -1443,19 +1443,7 @@ func (f *Factory) PrometheusK8s(grpcTLS *v1.Secret, telemetrySecret *v1.Secret) 
 		p.Spec.RemoteWrite = addRemoteWriteConfigs(clusterID, p.Spec.RemoteWrite, f.config.ClusterMonitoringConfiguration.PrometheusK8sConfig.RemoteWrite...)
 	}
 
-	for k := range p.Spec.RemoteWrite {
-		rw := &p.Spec.RemoteWrite[k]
-
-		if f.proxy.HTTPProxy() != "" {
-			rw.ProxyURL = ptr.To(f.proxy.HTTPProxy())
-		}
-		if f.proxy.HTTPSProxy() != "" {
-			rw.ProxyURL = ptr.To(f.proxy.HTTPSProxy())
-		}
-		if f.proxy.NoProxy() != "" {
-			rw.NoProxy = ptr.To(f.proxy.NoProxy())
-		}
-	}
+	f.setupPrometheusRemoteWriteProxy(p)
 
 	if f.config.Images.Thanos != "" {
 		p.Spec.Thanos.Image = &f.config.Images.Thanos
@@ -1614,6 +1602,22 @@ func setupProfilesToIgnore(p *monv1.Prometheus, cp CollectionProfile) error {
 	return nil
 }
 
+func (f *Factory) setupPrometheusRemoteWriteProxy(p *monv1.Prometheus) {
+	for k := range p.Spec.RemoteWrite {
+		rw := &p.Spec.RemoteWrite[k]
+
+		if f.proxy.HTTPProxy() != "" {
+			rw.ProxyURL = ptr.To(f.proxy.HTTPProxy())
+		}
+		if f.proxy.HTTPSProxy() != "" {
+			rw.ProxyURL = ptr.To(f.proxy.HTTPSProxy())
+		}
+		if f.proxy.NoProxy() != "" {
+			rw.NoProxy = ptr.To(f.proxy.NoProxy())
+		}
+	}
+}
+
 func (f *Factory) PrometheusK8sAdditionalAlertManagerConfigsSecret() (*v1.Secret, error) {
 	amConfigs := f.config.ClusterMonitoringConfiguration.PrometheusK8sConfig.AlertmanagerConfigs
 	prometheusAmConfigs := PrometheusAdditionalAlertmanagerConfigs(amConfigs)
@@ -1732,6 +1736,8 @@ func (f *Factory) PrometheusUserWorkload(grpcTLS *v1.Secret) (*monv1.Prometheus,
 			}
 		}
 	}
+
+	f.setupPrometheusRemoteWriteProxy(p)
 
 	if f.config.UserWorkloadConfiguration.Prometheus.EnforcedSampleLimit != nil {
 		p.Spec.EnforcedSampleLimit = f.config.UserWorkloadConfiguration.Prometheus.EnforcedSampleLimit
