@@ -29,10 +29,11 @@ import (
 	"k8s.io/apimachinery/pkg/util/yaml"
 	"k8s.io/client-go/tools/clientcmd"
 	"k8s.io/klog/v2"
+	runtimelog "sigs.k8s.io/controller-runtime/pkg/log"
 
 	"github.com/openshift/cluster-monitoring-operator/pkg/manifests"
-	"github.com/openshift/cluster-monitoring-operator/pkg/metrics"
 	cmo "github.com/openshift/cluster-monitoring-operator/pkg/operator"
+	"github.com/openshift/cluster-monitoring-operator/pkg/server"
 )
 
 type images map[string]string
@@ -85,6 +86,7 @@ type telemetryConfig struct {
 func Main() int {
 	flagset := flag.CommandLine
 	klog.InitFlags(flagset)
+	runtimelog.SetLogger(klog.Background())
 	namespace := flagset.String("namespace", "openshift-monitoring", "Namespace to deploy and manage cluster monitoring stack in.")
 	namespaceUserWorkload := flagset.String("namespace-user-workload", "openshift-user-workload-monitoring", "Namespace to deploy and manage user workload monitoring stack in.")
 	configMapName := flagset.String("configmap", "cluster-monitoring-config", "ConfigMap name to configure the cluster monitoring stack.")
@@ -201,12 +203,12 @@ func Main() int {
 
 	wg.Go(func() error { return o.Run(ctx) })
 
-	srv, err := metrics.NewServer("cluster-monitoring-operator", config, *kubeconfigPath, *certFile, *keyFile)
+	srv, err := server.NewServer("cluster-monitoring-operator", config, *kubeconfigPath, *certFile, *keyFile)
 	if err != nil {
 		fmt.Fprint(os.Stderr, err)
 		return 1
 	}
-	wg.Go(func() error { return srv.Run(ctx) })
+	wg.Go(func() error { return srv.Run(ctx, o.CollectionProfilesEnabled) })
 
 	term := make(chan os.Signal, 1)
 	signal.Notify(term, os.Interrupt, syscall.SIGTERM)
