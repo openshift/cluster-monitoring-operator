@@ -167,6 +167,9 @@ function(params) {
             'app.kubernetes.io/name': 'metrics-server',
             'app.kubernetes.io/component': 'metrics-server',
           } + cfg.commonLabels,
+          annotations+: {
+            'openshift.io/required-scc': 'restricted-v2',
+          },
         },
         spec: {
           affinity: {
