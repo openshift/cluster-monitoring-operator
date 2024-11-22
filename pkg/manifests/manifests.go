@@ -2804,7 +2804,7 @@ func (f *Factory) MonitoringPlugin() (*consolev1.ConsolePlugin, error) {
 	return f.NewConsolePlugin(f.assets.MustNewAssetSlice(MonitoringPlugin))
 }
 
-func (f *Factory) MonitoringPluginDeployment(tlsSecret *v1.Secret) (*appsv1.Deployment, error) {
+func (f *Factory) MonitoringPluginDeployment() (*appsv1.Deployment, error) {
 	d, err := f.NewDeployment(f.assets.MustNewAssetSlice(MonitoringPluginDeployment))
 	if err != nil {
 		return nil, err
@@ -2822,11 +2822,6 @@ func (f *Factory) MonitoringPluginDeployment(tlsSecret *v1.Secret) (*appsv1.Depl
 	}
 
 	containers[idx].Image = f.config.Images.MonitoringPlugin
-
-	// Hash the TLS secret and propagate it as an annotation to the
-	// deployment's pods to trigger a new rollout when the TLS certificate/key
-	// are rotated.
-	d.Spec.Template.Annotations["monitoring.openshift.io/cert-hash"] = hashByteMap(tlsSecret.Data)
 
 	cfg := f.config.ClusterMonitoringConfiguration.MonitoringPluginConfig
 	if cfg == nil {

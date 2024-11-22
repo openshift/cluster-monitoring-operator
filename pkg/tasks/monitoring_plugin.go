@@ -20,7 +20,6 @@ import (
 
 	v1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
-	"k8s.io/apimachinery/pkg/types"
 	"k8s.io/klog/v2"
 
 	"github.com/openshift/cluster-monitoring-operator/pkg/client"
@@ -108,18 +107,7 @@ func (t *MonitoringPluginTask) Run(ctx context.Context) error {
 			return fmt.Errorf("reconciling Console Plugin Service failed: %w", err)
 		}
 
-		secret, err := t.client.WaitForSecretByNsName(
-			ctx,
-			types.NamespacedName{
-				Namespace: svc.Namespace,
-				Name:      svc.Annotations["service.beta.openshift.io/serving-cert-secret-name"],
-			},
-		)
-		if err != nil {
-			return err
-		}
-
-		d, err := t.factory.MonitoringPluginDeployment(secret)
+		d, err := t.factory.MonitoringPluginDeployment()
 		if err != nil {
 			return fmt.Errorf("initializing Console Plugin Deployment failed: %w", err)
 		}
