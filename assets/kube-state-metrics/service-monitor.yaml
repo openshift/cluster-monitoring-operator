@@ -25,10 +25,7 @@ spec:
     scheme: https
     scrapeTimeout: 1m
     tlsConfig:
-      caFile: /etc/prometheus/configmaps/serving-certs-ca-bundle/service-ca.crt
-      certFile: /etc/prometheus/secrets/metrics-client-certs/tls.crt
       insecureSkipVerify: false
-      keyFile: /etc/prometheus/secrets/metrics-client-certs/tls.key
       serverName: kube-state-metrics.openshift-monitoring.svc
   - bearerTokenFile: ""
     interval: 1m
@@ -36,12 +33,10 @@ spec:
     scheme: https
     scrapeTimeout: 1m
     tlsConfig:
-      caFile: /etc/prometheus/configmaps/serving-certs-ca-bundle/service-ca.crt
-      certFile: /etc/prometheus/secrets/metrics-client-certs/tls.crt
       insecureSkipVerify: false
-      keyFile: /etc/prometheus/secrets/metrics-client-certs/tls.key
       serverName: kube-state-metrics.openshift-monitoring.svc
   jobLabel: app.kubernetes.io/name
+  scrapeClass: tls-client-certificate-auth
   selector:
     matchLabels:
       app.kubernetes.io/component: exporter
