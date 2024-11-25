@@ -25,6 +25,7 @@ spec:
         namespaces:
         - openshift-user-workload-monitoring
         topologyKey: kubernetes.io/hostname
+  automountServiceAccountToken: true
   containers:
   - env:
     - name: HTTP_PROXY
