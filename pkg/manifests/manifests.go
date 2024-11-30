@@ -138,6 +138,7 @@ var (
 	NodeExporterMinimalServiceMonitor      = "node-exporter/minimal-service-monitor.yaml"
 	NodeExporterPrometheusRule             = "node-exporter/prometheus-rule.yaml"
 	NodeExporterKubeRbacProxySecret        = "node-exporter/kube-rbac-proxy-secret.yaml"
+	NodeExporterAcceleratorsConfigMap      = "node-exporter/accelerators-collector-configmap.yaml"
 
 	PrometheusK8sClusterRoleBinding               = "prometheus-k8s/cluster-role-binding.yaml"
 	PrometheusK8sRoleBindingConfig                = "prometheus-k8s/role-binding-config.yaml"
@@ -1031,6 +1032,10 @@ func (f *Factory) NodeExporterPrometheusRule() (*monv1.PrometheusRule, error) {
 
 func (f *Factory) NodeExporterRBACProxySecret() (*v1.Secret, error) {
 	return f.NewSecret(f.assets.MustNewAssetSlice(NodeExporterKubeRbacProxySecret))
+}
+
+func (f *Factory) NodeExporterAcceleratorsCollectorConfigMap() (*v1.ConfigMap, error) {
+	return f.NewConfigMap(f.assets.MustNewAssetSlice(NodeExporterAcceleratorsConfigMap))
 }
 
 func (f *Factory) PrometheusK8sClusterRoleBinding() (*rbacv1.ClusterRoleBinding, error) {
