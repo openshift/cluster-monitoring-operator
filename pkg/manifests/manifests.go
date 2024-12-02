@@ -884,6 +884,25 @@ func (f *Factory) updateNodeExporterArgs(args []string) ([]string, error) {
 		args = setArg(args, "--no-collector.tcpstat", "")
 	}
 
+	if f.config.ClusterMonitoringConfiguration.NodeExporterConfig.Collectors.Sysctl.Enabled {
+		includeSysctlMetrics := f.config.ClusterMonitoringConfiguration.NodeExporterConfig.Collectors.Sysctl.IncludeSysctlMetrics
+		includeInfoSysctlMetrics := f.config.ClusterMonitoringConfiguration.NodeExporterConfig.Collectors.Sysctl.IncludeInfoSysctlMetrics
+
+		args = setArg(args, "--collector.sysctl", "")
+
+		sysctlSet := uniqueSet(includeSysctlMetrics)
+		for _, sysctl := range sysctlSet {
+			args = append(args, fmt.Sprintf("--collector.sysctl.include=%s", sysctl))
+		}
+
+		sysctlSet = uniqueSet(includeInfoSysctlMetrics)
+		for _, sysctl := range sysctlSet {
+			args = append(args, fmt.Sprintf("--collector.sysctl.include-info=%s", sysctl))
+		}
+	} else {
+		args = setArg(args, "--no-collector.sysctl", "")
+	}
+
 	var excludedDevices string
 	if f.config.ClusterMonitoringConfiguration.NodeExporterConfig.Collectors.NetDev.Enabled ||
 		f.config.ClusterMonitoringConfiguration.NodeExporterConfig.Collectors.NetClass.Enabled {
@@ -2351,6 +2370,18 @@ func setArg(args []string, argName string, argValue string) []string {
 	}
 
 	return args
+}
+
+func uniqueSet(input []string) []string {
+	uniqueMap := make(map[string]struct{})
+	var unique []string
+	for _, str := range input {
+		if _, ok := uniqueMap[str]; !ok {
+			uniqueMap[str] = struct{}{}
+			unique = append(unique, str)
+		}
+	}
+	return unique
 }
 
 func (f *Factory) PrometheusRuleValidatingWebhook() (*admissionv1.ValidatingWebhookConfiguration, error) {
