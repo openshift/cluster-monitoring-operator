@@ -1,0 +1,29 @@
+apiVersion: v1
+data:
+  config.yaml: |-
+    - "models":
+      - "pciID": "0x20b5"
+        "pciName": "A100"
+      - "pciID": "0x2230"
+        "pciName": "RTX_A6000"
+      - "pciID": "0x2717"
+        "pciName": "RTX_4090"
+      - "pciID": "0x2235"
+        "pciName": "A40"
+      - "pciID": "0x1df5"
+        "pciName": "V100"
+      - "pciID": "0x20f1"
+        "pciName": "A100 40G"
+      - "pciID": "0x1ff2"
+        "pciName": "T400 4GB"
+      - "pciID": "0x1eb8"
+        "pciName": "Tesla T4"
+      "vendorID": "0x10de"
+      "vendorName": "NVIDIA"
+kind: ConfigMap
+metadata:
+  labels:
+    app.kubernetes.io/managed-by: cluster-monitoring-operator
+    app.kubernetes.io/part-of: openshift-monitoring
+  name: node-exporter-accelerators-collector-config
+  namespace: openshift-monitoring

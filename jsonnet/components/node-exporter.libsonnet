@@ -3,6 +3,26 @@ local textfileVolumeName = 'node-exporter-textfile';
 local tlsVolumeName = 'node-exporter-tls';
 local wtmpPath = '/var/log/wtmp';
 local wtmpVolumeName = 'node-exporter-wtmp';
+local configDir = '/var/node_exporter/accelerators_collector_config';
+local configVolumeName = 'node-exporter-accelerators-collector-config';
+local acceleratorsConfigFileName = 'config.yaml';
+local acceleratorsConfigMapName = 'node-exporter-accelerators-collector-config';
+local acceleratorsConfigData = [
+  {
+    vendorName: 'NVIDIA',
+    vendorID: '0x10de',
+    models: [
+      { pciID: '0x20b5', pciName: 'A100' },
+      { pciID: '0x2230', pciName: 'RTX_A6000' },
+      { pciID: '0x2717', pciName: 'RTX_4090' },
+      { pciID: '0x2235', pciName: 'A40' },
+      { pciID: '0x1df5', pciName: 'V100' },
+      { pciID: '0x20f1', pciName: 'A100 40G' },
+      { pciID: '0x1ff2', pciName: 'T400 4GB' },
+      { pciID: '0x1eb8', pciName: 'Tesla T4' },
+    ],
+  },
+];
 
 local nodeExporter = import 'github.com/prometheus-operator/kube-prometheus/jsonnet/kube-prometheus/components/node-exporter.libsonnet';
 local generateSecret = import '../utils/generate-secret.libsonnet';
@@ -269,11 +289,18 @@ function(params)
                           exec /bin/node_exporter "$0" "$@"
                         |||,
                       ],
-                      volumeMounts+: [{
-                        mountPath: textfileDir,
-                        name: textfileVolumeName,
-                        readOnly: true,
-                      }],
+                      volumeMounts+: [
+                        {
+                          mountPath: textfileDir,
+                          name: textfileVolumeName,
+                          readOnly: true,
+                        },
+                        {
+                          mountPath: configDir,
+                          name: configVolumeName,
+                          readOnly: true,
+                        },
+                      ],
                       workingDir: textfileDir,
                       resources+: {
                         requests+: {
@@ -324,6 +351,18 @@ function(params)
                   secretName: 'node-exporter-kube-rbac-proxy-config',
                 },
               },
+              {
+                name: configVolumeName,
+                configMap: {
+                  name: acceleratorsConfigMapName,
+                  items: [
+                    {
+                      key: acceleratorsConfigFileName,
+                      path: acceleratorsConfigFileName,
+                    },
+                  ],
+                },
+              },
             ],
             securityContext: {},
             priorityClassName: 'system-cluster-critical',
@@ -348,6 +387,18 @@ function(params)
             }],
           },
         ],
+      },
+    },
+
+    acceleratorsCollectorConfigmap: {
+      apiVersion: 'v1',
+      kind: 'ConfigMap',
+      metadata: {
+        name: acceleratorsConfigMapName,
+        namespace: cfg.namespace,
+      },
+      data: {
+        [acceleratorsConfigFileName]: std.manifestYamlDoc(acceleratorsConfigData),
       },
     },
   }

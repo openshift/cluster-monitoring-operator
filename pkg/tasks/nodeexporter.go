@@ -94,6 +94,15 @@ func (t *NodeExporterTask) Run(ctx context.Context) error {
 		return fmt.Errorf("reconciling node-exporter Service failed: %w", err)
 	}
 
+	cm, err := t.factory.NodeExporterAcceleratorsCollectorConfigMap()
+	if err != nil {
+		return fmt.Errorf("initializing node-exporter accelerators collector ConfigMap failed: %w", err)
+	}
+	err = t.client.CreateOrUpdateConfigMap(ctx, cm)
+	if err != nil {
+		return fmt.Errorf("reconciling node-exporter accelerators collector ConfigMap failed: %w", err)
+	}
+
 	ds, err := t.factory.NodeExporterDaemonSet()
 	if err != nil {
 		return fmt.Errorf("initializing node-exporter DaemonSet failed: %w", err)
