@@ -114,6 +114,7 @@ func astFrom(filePath string) (*doc.Package, error) {
 	}
 
 	m[filePath] = f
+	//nolint:staticcheck // SA1019 ast.NewPackage is deprecated, will migrate later.
 	apkg, _ := ast.NewPackage(fset, m, nil, nil)
 
 	return doc.New(apkg, "", 0), nil
