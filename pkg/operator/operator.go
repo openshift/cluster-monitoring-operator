@@ -62,8 +62,8 @@ type InfrastructureConfig struct {
 
 var (
 	// The cluster-policy-controller will automatically approve the
-	// CertificateSigningRequest resources issued for the prometheus-k8s
-	// service account.
+	// CertificateSigningRequest resources issued for the prometheus and metrics-server
+	// service accounts.
 	// See https://github.com/openshift/cluster-policy-controller/blob/cc787e1b1e177696817b66689a03471914083a67/pkg/cmd/controller/csr.go#L21-L46.
 	csrOption = csr.CSROption{
 		ObjectMeta: metav1.ObjectMeta{
@@ -73,6 +73,17 @@ var (
 			},
 		},
 		Subject:    &pkix.Name{CommonName: "system:serviceaccount:openshift-monitoring:prometheus-k8s"},
+		SignerName: certapiv1.KubeAPIServerClientSignerName,
+	}
+
+	csrMetricsServerOption = csr.CSROption{
+		ObjectMeta: metav1.ObjectMeta{
+			GenerateName: "system:openshift:openshift-monitoring-",
+			Labels: map[string]string{
+				"metrics.openshift.io/csr.subject": "metrics-server",
+			},
+		},
+		Subject:    &pkix.Name{CommonName: "system:serviceaccount:openshift-monitoring:metrics-server"},
 		SignerName: certapiv1.KubeAPIServerClientSignerName,
 	}
 
@@ -154,6 +165,7 @@ const (
 	alertmanagerCABundleConfigMap = "openshift-monitoring/alertmanager-trusted-ca-bundle"
 	grpcTLS                       = "openshift-monitoring/grpc-tls"
 	metricsClientCerts            = "openshift-monitoring/metrics-client-certs"
+	metricsServerClientCerts      = "openshift-monitoring/metrics-server-client-certs"
 	federateClientCerts           = "openshift-monitoring/federate-client-certs"
 
 	// Canonical name of the cluster-wide infrastructure resource.
@@ -527,9 +539,35 @@ func New(
 		return nil, fmt.Errorf("failed to create federate certificate controller: %w", err)
 	}
 
-	o.controllersToRunFunc = append(o.controllersToRunFunc, csrFederateController.Run, csrController.Run)
+	csrMetricsServerController, err := csr.NewClientCertificateController(
+		csr.ClientCertOption{
+			SecretNamespace: "openshift-monitoring",
+			SecretName:      "metrics-server-client-certs",
+			AdditionalAnnotations: certrotation.AdditionalAnnotations{
+				JiraComponent: "Monitoring",
+			},
+		},
+		csrMetricsServerOption,
+		kubeInformersOperatorNS.Certificates().V1().CertificateSigningRequests(),
+		o.client.KubernetesInterface().CertificatesV1().CertificateSigningRequests(),
+		kubeInformersOperatorNS.Core().V1().Secrets(),
+		o.client.KubernetesInterface().CoreV1(),
+		o.client.EventRecorder(),
+		"OpenShiftMonitoringMetricsServerClientCertRequester",
+	)
 
-	o.controllersToRunFunc = append(o.controllersToRunFunc, o.ruleController.Run, o.relabelController.Run)
+	if err != nil {
+		return nil, fmt.Errorf("failed to create client certificate controller: %w", err)
+	}
+
+	o.controllersToRunFunc = append(
+		o.controllersToRunFunc,
+		csrFederateController.Run,
+		csrController.Run,
+		csrMetricsServerController.Run,
+		o.ruleController.Run,
+		o.relabelController.Run,
+	)
 
 	return o, nil
 }
@@ -663,6 +701,7 @@ func (o *Operator) handleEvent(obj interface{}) {
 	case cmoConfigMap:
 	case apiAuthenticationConfigMap:
 	case kubeletServingCAConfigMap:
+	case metricsServerClientCerts:
 	case telemeterCABundleConfigMap:
 	case alertmanagerCABundleConfigMap:
 	case grpcTLS:
