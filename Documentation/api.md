@@ -34,6 +34,7 @@ Configuring Cluster Monitoring is optional. If the config does not exist or is e
 * [NodeExporterCollectorNetClassConfig](#nodeexportercollectornetclassconfig)
 * [NodeExporterCollectorNetDevConfig](#nodeexportercollectornetdevconfig)
 * [NodeExporterCollectorProcessesConfig](#nodeexportercollectorprocessesconfig)
+* [NodeExporterCollectorSysctlConfig](#nodeexportercollectorsysctlconfig)
 * [NodeExporterCollectorSystemdConfig](#nodeexportercollectorsystemdconfig)
 * [NodeExporterCollectorTcpStatConfig](#nodeexportercollectortcpstatconfig)
 * [NodeExporterConfig](#nodeexporterconfig)
@@ -248,6 +249,7 @@ The `NodeExporterCollectorConfig` resource defines settings for individual colle
 | mountstats | [NodeExporterCollectorMountStatsConfig](#nodeexportercollectormountstatsconfig) | Defines the configuration of the `mountstats` collector, which collects statistics about NFS volume I/O activities. Disabled by default. |
 | ksmd | [NodeExporterCollectorKSMDConfig](#nodeexportercollectorksmdconfig) | Defines the configuration of the `ksmd` collector, which collects statistics from the kernel same-page merger daemon. Disabled by default. |
 | processes | [NodeExporterCollectorProcessesConfig](#nodeexportercollectorprocessesconfig) | Defines the configuration of the `processes` collector, which collects statistics from processes and threads running in the system. Disabled by default. |
+| sysctl | [NodeExporterCollectorSysctlConfig](#nodeexportercollectorsysctlconfig) | Defines the configuration of the `sysctl` collector, which collects sysctl metrics. Disabled by default. |
 | systemd | [NodeExporterCollectorSystemdConfig](#nodeexportercollectorsystemdconfig) | Defines the configuration of the `systemd` collector, which collects statistics on the systemd daemon and its managed services. Disabled by default. |
 
 [Back to TOC](#table-of-contents)
@@ -340,6 +342,23 @@ The `NodeExporterCollectorProcessesConfig` resource works as an on/off switch fo
 | Property | Type | Description |
 | -------- | ---- | ----------- |
 | enabled | bool | A Boolean flag that enables or disables the `processes` collector. |
+
+[Back to TOC](#table-of-contents)
+
+## NodeExporterCollectorSysctlConfig
+
+#### Description
+
+The `NodeExporterCollectorSysctlConfig` resource works as an on/off switch for the `sysctl` collector of the `node-exporter` agent. Caution! Exposing metrics like kernel.random.uuid can disrupt Prometheus, as it generates new data series with every scrape. Use this option judiciously! By default, the `sysctl` collector is disabled.
+
+
+<em>appears in: [NodeExporterCollectorConfig](#nodeexportercollectorconfig)</em>
+
+| Property | Type | Description |
+| -------- | ---- | ----------- |
+| enabled | bool | A Boolean flag that enables or disables the `sysctl` collector. |
+| includeSysctlMetrics | []string | A list of numeric sysctl values. Note that a sysctl can contain multiple values, for example: `net.ipv4.tcp_rmem = 4096\t131072\t6291456`. Using `includeSysctlMetrics: ['net.ipv4.tcp_rmem']` the collector will expose: `node_sysctl_net_ipv4_tcp_rmem{index=\"0\"} 4096`, `node_sysctl_net_ipv4_tcp_rmem{index=\"1\"} 131072`, `node_sysctl_net_ipv4_tcp_rmem{index=\"2\"} 6291456`. If the indexes have defined meaning like in this case, the values can be mapped to multiple metrics: `includeSysctlMetrics: ['net.ipv4.tcp_rmem:min,default,max']`. The collector will expose these metrics as such: `node_sysctl_net_ipv4_tcp_rmem_min 4096`, `node_sysctl_net_ipv4_tcp_rmem_default 131072`, `node_sysctl_net_ipv4_tcp_rmem_max 6291456`. |
+| includeInfoSysctlMetrics | []string | A list of string sysctl values. For example: `includeSysctlMetrics: ['kernel.core_pattern', 'kernel.seccomp.actions_avail = kill_process kill_thread']`. The collector will expose these metrics as such: `node_sysctl_info{name=\"kernel.core_pattern\", value=\"core\"} 1`, `node_sysctl_info{name=\"kernel.seccomp.actions_avail\", index=\"0\", value=\"kill_process\"} 1`, `node_sysctl_info{name=\"kernel.seccomp.actions_avail\", index=\"1\", value=\"kill_thread\"} 1`, ... |
 
 [Back to TOC](#table-of-contents)
 
