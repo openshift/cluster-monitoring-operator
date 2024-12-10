@@ -44,7 +44,7 @@ func (GenerationHistory) SwaggerDoc() map[string]string {
 
 var map_GenericOperatorConfig = map[string]string{
 	"":               "GenericOperatorConfig provides information to configure an operator\n\nCompatibility level 4: No compatibility is provided, the API can change at any point for any reason. These capabilities should not be used by applications needing long term support.",
-	"servingInfo":    "ServingInfo is the HTTP serving information for the controller's endpoints",
+	"servingInfo":    "servingInfo is the HTTP serving information for the controller's endpoints",
 	"leaderElection": "leaderElection provides information to elect a leader. Only override this if you have a specific need",
 	"authentication": "authentication allows configuration of authentication for the endpoints",
 	"authorization":  "authorization allows configuration of authentication for the endpoints",
@@ -164,7 +164,7 @@ func (EtcdBackupList) SwaggerDoc() map[string]string {
 }
 
 var map_EtcdBackupSpec = map[string]string{
-	"pvcName": "PVCName specifies the name of the PersistentVolumeClaim (PVC) which binds a PersistentVolume where the etcd backup file would be saved The PVC itself must always be created in the \"openshift-etcd\" namespace If the PVC is left unspecified \"\" then the platform will choose a reasonable default location to save the backup. In the future this would be backups saved across the control-plane master nodes.",
+	"pvcName": "pvcName specifies the name of the PersistentVolumeClaim (PVC) which binds a PersistentVolume where the etcd backup file would be saved The PVC itself must always be created in the \"openshift-etcd\" namespace If the PVC is left unspecified \"\" then the platform will choose a reasonable default location to save the backup. In the future this would be backups saved across the control-plane master nodes.",
 }
 
 func (EtcdBackupSpec) SwaggerDoc() map[string]string {
@@ -232,7 +232,7 @@ func (OLM) SwaggerDoc() map[string]string {
 var map_OLMList = map[string]string{
 	"":         "OLMList is a collection of items\n\nCompatibility level 4: No compatibility is provided, the API can change at any point for any reason. These capabilities should not be used by applications needing long term support.",
 	"metadata": "metadata is the standard list's metadata. More info: https://git.k8s.io/community/contributors/devel/sig-architecture/api-conventions.md#metadata",
-	"items":    "Items contains the items",
+	"items":    "items contains the items",
 }
 
 func (OLMList) SwaggerDoc() map[string]string {
