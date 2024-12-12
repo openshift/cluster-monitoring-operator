@@ -79,6 +79,9 @@ spec:
         - mountPath: /var/node_exporter/textfile
           name: node-exporter-textfile
           readOnly: true
+        - mountPath: /var/node_exporter/accelerators_collector_config
+          name: node-exporter-accelerators-collector-config
+          readOnly: true
         workingDir: /var/node_exporter/textfile
       - args:
         - --secure-listen-address=[$(IP)]:9100
@@ -182,6 +185,12 @@ spec:
       - name: node-exporter-kube-rbac-proxy-config
         secret:
           secretName: node-exporter-kube-rbac-proxy-config
+      - configMap:
+          items:
+          - key: config.yaml
+            path: config.yaml
+          name: node-exporter-accelerators-collector-config
+        name: node-exporter-accelerators-collector-config
   updateStrategy:
     rollingUpdate:
       maxUnavailable: 10%
