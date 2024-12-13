@@ -2,12 +2,12 @@ apiVersion: apiextensions.k8s.io/v1
 kind: CustomResourceDefinition
 metadata:
   annotations:
-    controller-gen.kubebuilder.io/version: v0.16.4
+    controller-gen.kubebuilder.io/version: v0.16.5
     include.release.openshift.io/hypershift: "true"
     include.release.openshift.io/ibm-cloud-managed: "true"
     include.release.openshift.io/self-managed-high-availability: "true"
     include.release.openshift.io/single-node-developer: "true"
-    operator.prometheus.io/version: 0.78.2
+    operator.prometheus.io/version: 0.79.1
     service.beta.openshift.io/inject-cabundle: "true"
   labels:
     app.kubernetes.io/managed-by: cluster-version-operator
@@ -6294,6 +6294,12 @@ spec:
                           message:
                             description: Message template
                             type: string
+                          messageThreadID:
+                            description: |-
+                              The Telegram Group Topic ID.
+                              It requires Alertmanager >= 0.26.0.
+                            format: int64
+                            type: integer
                           parseMode:
                             description: Parse mode for telegram message
                             enum:
@@ -15194,6 +15200,12 @@ spec:
                           message:
                             description: Message template
                             type: string
+                          messageThreadID:
+                            description: |-
+                              The Telegram Group Topic ID.
+                              It requires Alertmanager >= 0.26.0.
+                            format: int64
+                            type: integer
                           parseMode:
                             description: Parse mode for telegram message
                             enum:
