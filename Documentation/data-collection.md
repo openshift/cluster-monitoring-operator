@@ -909,6 +909,31 @@ data:
     # cluster:log_logged_bytes_total:sum gives total bytes logged by the containers and aggregated at each cluster level
     - '{__name__="cluster:log_logged_bytes_total:sum"}'
     #
+    # owners: (@openshift/team-logging)
+    #
+    # openshift_logging:log_forwarder_pipelines:sum number of logging pipelines in each namespace
+    - '{__name__="openshift_logging:log_forwarder_pipelines:sum"}'
+    #
+    # owners: (@openshift/team-logging)
+    #
+    # openshift_logging:log_forwarders:sum number of ClusterLogForwarder instances in each namespace
+    - '{__name__="openshift_logging:log_forwarders:sum"}'
+    #
+    # owners: (@openshift/team-logging)
+    #
+    # openshift_logging:log_forwarder_input_type:sum number of inputs per namespace
+    - '{__name__="openshift_logging:log_forwarder_input_type:sum"}'
+    #
+    # owners: (@openshift/team-logging)
+    #
+    # openshift_logging:log_forwarder_output_type:sum number of outputs per namespace
+    - '{__name__="openshift_logging:log_forwarder_output_type:sum"}'
+    #
+    # owners: (@openshift/team-logging)
+    #
+    # openshift_logging:vector_component_received_bytes_total:rate5m total number of collected log bytes per namespace
+    - '{__name__="openshift_logging:vector_component_received_bytes_total:rate5m"}'
+    #
     # owners: (@openshift/sandboxed-containers-operator)
     #
     # cluster:kata_monitor_running_shim_count:sum provides the number of VM
