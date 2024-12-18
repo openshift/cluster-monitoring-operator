@@ -80,7 +80,7 @@ func (t *AlertmanagerUserWorkloadTask) create(ctx context.Context) error {
 		return fmt.Errorf("initializing Alertmanager User Workload RBAC proxy Secret failed: %w", err)
 	}
 
-	err = t.client.CreateIfNotExistSecret(ctx, s)
+	err = t.client.CreateOrUpdateSecret(ctx, s)
 	if err != nil {
 		return fmt.Errorf("creating Alertmanager User Workload RBAC proxy Secret failed: %w", err)
 	}
@@ -90,7 +90,7 @@ func (t *AlertmanagerUserWorkloadTask) create(ctx context.Context) error {
 		return fmt.Errorf("initializing Alertmanager User Workload RBAC proxy tenancy Secret failed: %w", err)
 	}
 
-	err = t.client.CreateIfNotExistSecret(ctx, s)
+	err = t.client.CreateOrUpdateSecret(ctx, s)
 	if err != nil {
 		return fmt.Errorf("creating Alertmanager User Workload RBAC proxy tenancy Secret failed: %w", err)
 	}
@@ -100,7 +100,7 @@ func (t *AlertmanagerUserWorkloadTask) create(ctx context.Context) error {
 		return fmt.Errorf("initializing Alertmanager User Workload RBAC proxy metric Secret failed: %w", err)
 	}
 
-	err = t.client.CreateIfNotExistSecret(ctx, rsm)
+	err = t.client.CreateOrUpdateSecret(ctx, rsm)
 	if err != nil {
 		return fmt.Errorf("creating Alertmanager User Workload RBAC proxy metric Secret failed: %w", err)
 	}
