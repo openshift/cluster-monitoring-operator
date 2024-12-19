@@ -123,7 +123,7 @@ type remoteWriteTest struct {
 func TestPrometheusRemoteWrite(t *testing.T) {
 	ctx := context.Background()
 
-	// Get the Prometheus image to use, use the same than k8s's.
+	// Use the same image than k8s' for the remote write target.
 	k8sProm, err := f.MonitoringClient.Prometheuses(f.Ns).Get(ctx, "k8s", metav1.GetOptions{})
 	if err != nil {
 		t.Fatal(err)
