@@ -123,6 +123,13 @@ type remoteWriteTest struct {
 func TestPrometheusRemoteWrite(t *testing.T) {
 	ctx := context.Background()
 
+	// Use the same image than k8s' for the remote write target.
+	k8sProm, err := f.MonitoringClient.Prometheuses(f.Ns).Get(ctx, "k8s", metav1.GetOptions{})
+	if err != nil {
+		t.Fatal(err)
+	}
+	image := k8sProm.Spec.Image
+
 	name := "rwe2e"
 
 	// deploy a service for our remote write target
@@ -291,7 +298,7 @@ func TestPrometheusRemoteWrite(t *testing.T) {
 
 		t.Run(tc.name, func(t *testing.T) {
 			// deploy remote write target
-			prometheusReceiver := f.MakePrometheusWithWebTLSRemoteReceive(name, secName)
+			prometheusReceiver := f.MakePrometheusWithWebTLSRemoteReceive(name, secName, image)
 			if err := f.OperatorClient.CreateOrUpdatePrometheus(ctx, prometheusReceiver); err != nil {
 				t.Fatal(err)
 			}
