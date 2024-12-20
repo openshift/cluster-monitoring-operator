@@ -32,7 +32,7 @@ import (
 	"k8s.io/apimachinery/pkg/util/intstr"
 )
 
-func (f Framework) MakePrometheusWithWebTLSRemoteReceive(name, tlsSecretName string) *monitoringv1.Prometheus {
+func (f Framework) MakePrometheusWithWebTLSRemoteReceive(name, tlsSecretName string, image *string) *monitoringv1.Prometheus {
 	// This is not required in the Prometheus spec, but we inspect that value in
 	// WaitForPrometheus. Omitting it causes this code to derefence a nil.
 	replicas := int32(1)
@@ -47,10 +47,11 @@ func (f Framework) MakePrometheusWithWebTLSRemoteReceive(name, tlsSecretName str
 		},
 		Spec: monitoringv1.PrometheusSpec{
 			CommonPrometheusFields: monitoringv1.CommonPrometheusFields{
-				Replicas:           &replicas,
-				ServiceAccountName: "prometheus-k8s",
-				Secrets:            []string{tlsSecretName},
-				EnableFeatures:     []monitoringv1.EnableFeature{"remote-write-receiver"},
+				Image:                     image,
+				Replicas:                  &replicas,
+				ServiceAccountName:        "prometheus-k8s",
+				Secrets:                   []string{tlsSecretName},
+				EnableRemoteWriteReceiver: true,
 				Web: &monitoringv1.PrometheusWebSpec{
 					WebConfigFileFields: monitoringv1.WebConfigFileFields{
 						TLSConfig: &monitoringv1.WebTLSConfig{
