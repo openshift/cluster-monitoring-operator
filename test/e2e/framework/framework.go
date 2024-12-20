@@ -19,13 +19,14 @@ import (
 	"context"
 	"errors"
 	"fmt"
-	apiextensionsclient "k8s.io/apiextensions-apiserver/pkg/client/clientset/clientset"
 	"os/exec"
 	"regexp"
 	"strconv"
 	"strings"
 	"testing"
 	"time"
+
+	apiextensionsclient "k8s.io/apiextensions-apiserver/pkg/client/clientset/clientset"
 
 	"github.com/imdario/mergo"
 	configv1 "github.com/openshift/api/config/v1"
@@ -35,6 +36,7 @@ import (
 	"github.com/openshift/cluster-monitoring-operator/pkg/client"
 	"github.com/openshift/cluster-monitoring-operator/pkg/manifests"
 	authenticationv1 "k8s.io/api/authentication/v1"
+	"k8s.io/utils/clock"
 	"k8s.io/utils/ptr"
 
 	"github.com/openshift/library-go/pkg/operator/events"
@@ -125,7 +127,7 @@ func New(kubeConfigPath string) (*Framework, CleanUpFunc, error) {
 	}
 
 	// The event recorder will be used by some CreateOrUpdateXXX utils for creation/update events.
-	operatorClient, err := client.NewForConfig(config, "", namespaceName, userWorkloadNamespaceName, client.EventRecorder(events.NewInMemoryRecorder("cluster-monitoring-operator")))
+	operatorClient, err := client.NewForConfig(config, "", namespaceName, userWorkloadNamespaceName, client.EventRecorder(events.NewInMemoryRecorder("cluster-monitoring-operator", clock.RealClock{})))
 	if err != nil {
 		return nil, nil, fmt.Errorf("creating operator client failed: %w", err)
 	}
