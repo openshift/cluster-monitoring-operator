@@ -37,97 +37,39 @@ func atLeastVersionTLS12(v string) string {
 	return v
 }
 
-func TestTLSSecurityProfileConfiguration(t *testing.T) {
-	t.Skip("Changing apiserverConfig.Spec.TLSSecurityProfile now makes MCO rollout nodes which is disruptive for other tests. See https://issues.redhat.com/browse/MON-3959")
-	testCases := []struct {
-		name                  string
-		profile               *configv1.TLSSecurityProfile
-		expectedCipherSuite   []string
-		expectedMinTLSVersion string
-	}{
-		{
-			name:                  "no profile",
-			profile:               nil,
-			expectedCipherSuite:   manifests.APIServerDefaultTLSCiphers,
-			expectedMinTLSVersion: "VersionTLS12",
-		},
-		{
-			name: "old profile",
-			profile: &configv1.TLSSecurityProfile{
-				Type: configv1.TLSProfileOldType,
-				Old:  &configv1.OldTLSProfile{},
-			},
-			expectedCipherSuite:   configv1.TLSProfiles[configv1.TLSProfileOldType].Ciphers,
-			expectedMinTLSVersion: "VersionTLS10",
-		},
-		{
-			name: "intermediate profile",
-			profile: &configv1.TLSSecurityProfile{
-				Type:         configv1.TLSProfileIntermediateType,
-				Intermediate: &configv1.IntermediateTLSProfile{},
-			},
-			expectedCipherSuite:   configv1.TLSProfiles[configv1.TLSProfileIntermediateType].Ciphers,
-			expectedMinTLSVersion: "VersionTLS12",
-		},
-		{
-			name: "custom profile",
-			profile: &configv1.TLSSecurityProfile{
-				Type: configv1.TLSProfileCustomType,
-				Custom: &configv1.CustomTLSProfile{
-					TLSProfileSpec: configv1.TLSProfileSpec{
-						Ciphers: []string{
-							"ECDHE-RSA-AES128-GCM-SHA256",
-							"ECDHE-ECDSA-AES256-GCM-SHA384",
-						},
-						MinTLSVersion: "VersionTLS10",
-					},
-				},
-			},
-			expectedCipherSuite: []string{
-				"ECDHE-RSA-AES128-GCM-SHA256",
-				"ECDHE-ECDSA-AES256-GCM-SHA384",
-			},
-			expectedMinTLSVersion: "VersionTLS10",
-		},
-	}
-
-	for _, tt := range testCases {
-		t.Run(tt.name, func(t *testing.T) {
-			setTLSSecurityProfile(t, tt.profile)
-			// The admission webhook supports only TLS versions >= 1.2.
-			assertCorrectTLSConfiguration(t, "prometheus-operator-admission-webhook", "deployment",
-				manifests.PrometheusOperatorWebTLSCipherSuitesFlag,
-				manifests.PrometheusOperatorWebTLSMinTLSVersionFlag, tt.expectedCipherSuite,
-				atLeastVersionTLS12(tt.expectedMinTLSVersion))
-			assertCorrectTLSConfiguration(t, "prometheus-operator", "deployment",
-				manifests.KubeRbacProxyTLSCipherSuitesFlag,
-				manifests.KubeRbacProxyMinTLSVersionFlag, tt.expectedCipherSuite, tt.expectedMinTLSVersion)
-			assertCorrectTLSConfiguration(t, "kube-state-metrics", "deployment",
-				manifests.KubeRbacProxyTLSCipherSuitesFlag,
-				manifests.KubeRbacProxyMinTLSVersionFlag, tt.expectedCipherSuite, tt.expectedMinTLSVersion)
-			assertCorrectTLSConfiguration(t, "openshift-state-metrics", "deployment",
-				manifests.KubeRbacProxyTLSCipherSuitesFlag,
-				manifests.KubeRbacProxyMinTLSVersionFlag, tt.expectedCipherSuite, tt.expectedMinTLSVersion)
-			assertCorrectTLSConfiguration(t, "node-exporter", "daemonset",
-				manifests.KubeRbacProxyTLSCipherSuitesFlag,
-				manifests.KubeRbacProxyMinTLSVersionFlag, tt.expectedCipherSuite, tt.expectedMinTLSVersion)
-			assertCorrectTLSConfiguration(t, "telemeter-client", "deployment",
-				manifests.KubeRbacProxyTLSCipherSuitesFlag,
-				manifests.KubeRbacProxyMinTLSVersionFlag, tt.expectedCipherSuite, tt.expectedMinTLSVersion)
-			assertCorrectTLSConfiguration(t, "thanos-querier", "deployment",
-				manifests.KubeRbacProxyTLSCipherSuitesFlag,
-				manifests.KubeRbacProxyMinTLSVersionFlag, tt.expectedCipherSuite, tt.expectedMinTLSVersion)
-			assertCorrectTLSConfiguration(t, "alertmanager-main", "statefulset",
-				manifests.KubeRbacProxyTLSCipherSuitesFlag,
-				manifests.KubeRbacProxyMinTLSVersionFlag, tt.expectedCipherSuite, tt.expectedMinTLSVersion)
-			assertCorrectTLSConfiguration(t, "prometheus-k8s", "statefulset",
-				manifests.KubeRbacProxyTLSCipherSuitesFlag,
-				manifests.KubeRbacProxyMinTLSVersionFlag, tt.expectedCipherSuite, tt.expectedMinTLSVersion)
-			assertCorrectTLSConfiguration(t, "metrics-server", "deployment",
-				manifests.MetricsServerTLSCipherSuitesFlag,
-				manifests.MetricsServerTLSMinTLSVersionFlag, tt.expectedCipherSuite, tt.expectedMinTLSVersion)
-		})
-	}
+func TestDefaultTLSSecurityProfileConfiguration(t *testing.T) {
+	// The admission webhook supports only TLS versions >= 1.2.
+	assertCorrectTLSConfiguration(t, "prometheus-operator-admission-webhook", "deployment",
+		manifests.PrometheusOperatorWebTLSCipherSuitesFlag,
+		manifests.PrometheusOperatorWebTLSMinTLSVersionFlag, configv1.TLSProfiles[configv1.TLSProfileIntermediateType].Ciphers,
+		atLeastVersionTLS12("VersionTLS12"))
+	assertCorrectTLSConfiguration(t, "prometheus-operator", "deployment",
+		manifests.KubeRbacProxyTLSCipherSuitesFlag,
+		manifests.KubeRbacProxyMinTLSVersionFlag, configv1.TLSProfiles[configv1.TLSProfileIntermediateType].Ciphers, "VersionTLS12")
+	assertCorrectTLSConfiguration(t, "kube-state-metrics", "deployment",
+		manifests.KubeRbacProxyTLSCipherSuitesFlag,
+		manifests.KubeRbacProxyMinTLSVersionFlag, configv1.TLSProfiles[configv1.TLSProfileIntermediateType].Ciphers, "VersionTLS12")
+	assertCorrectTLSConfiguration(t, "openshift-state-metrics", "deployment",
+		manifests.KubeRbacProxyTLSCipherSuitesFlag,
+		manifests.KubeRbacProxyMinTLSVersionFlag, configv1.TLSProfiles[configv1.TLSProfileIntermediateType].Ciphers, "VersionTLS12")
+	assertCorrectTLSConfiguration(t, "node-exporter", "daemonset",
+		manifests.KubeRbacProxyTLSCipherSuitesFlag,
+		manifests.KubeRbacProxyMinTLSVersionFlag, configv1.TLSProfiles[configv1.TLSProfileIntermediateType].Ciphers, "VersionTLS12")
+	assertCorrectTLSConfiguration(t, "telemeter-client", "deployment",
+		manifests.KubeRbacProxyTLSCipherSuitesFlag,
+		manifests.KubeRbacProxyMinTLSVersionFlag, configv1.TLSProfiles[configv1.TLSProfileIntermediateType].Ciphers, "VersionTLS12")
+	assertCorrectTLSConfiguration(t, "thanos-querier", "deployment",
+		manifests.KubeRbacProxyTLSCipherSuitesFlag,
+		manifests.KubeRbacProxyMinTLSVersionFlag, configv1.TLSProfiles[configv1.TLSProfileIntermediateType].Ciphers, "VersionTLS12")
+	assertCorrectTLSConfiguration(t, "alertmanager-main", "statefulset",
+		manifests.KubeRbacProxyTLSCipherSuitesFlag,
+		manifests.KubeRbacProxyMinTLSVersionFlag, configv1.TLSProfiles[configv1.TLSProfileIntermediateType].Ciphers, "VersionTLS12")
+	assertCorrectTLSConfiguration(t, "prometheus-k8s", "statefulset",
+		manifests.KubeRbacProxyTLSCipherSuitesFlag,
+		manifests.KubeRbacProxyMinTLSVersionFlag, configv1.TLSProfiles[configv1.TLSProfileIntermediateType].Ciphers, "VersionTLS12")
+	assertCorrectTLSConfiguration(t, "metrics-server", "deployment",
+		manifests.MetricsServerTLSCipherSuitesFlag,
+		manifests.MetricsServerTLSMinTLSVersionFlag, configv1.TLSProfiles[configv1.TLSProfileIntermediateType].Ciphers, "VersionTLS12")
 }
 
 func assertCorrectTLSConfiguration(t *testing.T, componentName, objectType, tlsCipherSuiteFlag, tlsMinTLSVersionFlag string, expectedCipherSuite []string, expectedTLSVersion string) {
@@ -198,16 +140,4 @@ func correctMinTLSVersion(minTLSVersionArg, tlsVersion string, containers []v1.C
 		}
 	}
 	return false
-}
-
-func setTLSSecurityProfile(t *testing.T, tlsSecurityProfile *configv1.TLSSecurityProfile) {
-	ctx := context.Background()
-	apiserverConfig, err := f.OpenShiftConfigClient.ConfigV1().APIServers().Get(ctx, "cluster", metav1.GetOptions{})
-	if err != nil {
-		t.Fatal(err)
-	}
-	apiserverConfig.Spec.TLSSecurityProfile = tlsSecurityProfile
-	if _, err := f.OpenShiftConfigClient.ConfigV1().APIServers().Update(ctx, apiserverConfig, metav1.UpdateOptions{}); err != nil {
-		t.Fatal(err)
-	}
 }

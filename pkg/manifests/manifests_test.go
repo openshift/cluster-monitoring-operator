@@ -4953,3 +4953,82 @@ xx_omitted_before_deploy__test_file_name:foo.yaml`,
 		})
 	}
 }
+
+func TestSetTLSSecurityConfiguration(t *testing.T) {
+	tests := []struct {
+		name               string
+		apiServerConfig    *APIServerConfig
+		initialArgs        []string
+		tlsCipherSuitesArg string
+		tlsMinVersionArg   string
+		finalArgs          []string
+	}{
+		{
+			name:               "Empty APIServerConfig",
+			apiServerConfig:    &APIServerConfig{},
+			initialArgs:        []string{"--foo=bar"},
+			tlsCipherSuitesArg: "--tls-cipher-suites=",
+			tlsMinVersionArg:   "--tls-min-version=",
+			finalArgs: []string{
+				"--foo=bar",
+				"--tls-cipher-suites=TLS_AES_128_GCM_SHA256,TLS_AES_256_GCM_SHA384,TLS_CHACHA20_POLY1305_SHA256,TLS_ECDHE_ECDSA_WITH_AES_128_GCM_SHA256,TLS_ECDHE_RSA_WITH_AES_128_GCM_SHA256,TLS_ECDHE_ECDSA_WITH_AES_256_GCM_SHA384,TLS_ECDHE_RSA_WITH_AES_256_GCM_SHA384,TLS_ECDHE_ECDSA_WITH_CHACHA20_POLY1305_SHA256,TLS_ECDHE_RSA_WITH_CHACHA20_POLY1305_SHA256",
+				"--tls-min-version=VersionTLS12",
+			},
+		},
+		{
+			name:               "Empty APIServerConfig args to override",
+			apiServerConfig:    &APIServerConfig{},
+			initialArgs:        []string{"--foo=bar", "--tls-cipher-suites=toOverride", "--tls-min-version=toOverride"},
+			tlsCipherSuitesArg: "--tls-cipher-suites=",
+			tlsMinVersionArg:   "--tls-min-version=",
+			finalArgs: []string{
+				"--foo=bar",
+				"--tls-cipher-suites=TLS_AES_128_GCM_SHA256,TLS_AES_256_GCM_SHA384,TLS_CHACHA20_POLY1305_SHA256,TLS_ECDHE_ECDSA_WITH_AES_128_GCM_SHA256,TLS_ECDHE_RSA_WITH_AES_128_GCM_SHA256,TLS_ECDHE_ECDSA_WITH_AES_256_GCM_SHA384,TLS_ECDHE_RSA_WITH_AES_256_GCM_SHA384,TLS_ECDHE_ECDSA_WITH_CHACHA20_POLY1305_SHA256,TLS_ECDHE_RSA_WITH_CHACHA20_POLY1305_SHA256",
+				"--tls-min-version=VersionTLS12",
+			},
+		},
+		{
+			name: "Custom TLSSecurityProfile",
+			apiServerConfig: NewAPIServerConfig(&configv1.APIServer{
+				Spec: configv1.APIServerSpec{
+					TLSSecurityProfile: &configv1.TLSSecurityProfile{
+						Type: configv1.TLSProfileCustomType,
+						Custom: &configv1.CustomTLSProfile{
+							TLSProfileSpec: configv1.TLSProfileSpec{
+								Ciphers: []string{
+									"ECDHE-RSA-AES128-GCM-SHA256",
+									"ECDHE-ECDSA-AES256-GCM-SHA384",
+								},
+								MinTLSVersion: "VersionTLS10",
+							},
+						},
+					},
+				},
+			}),
+			initialArgs:        []string{"--foo=bar", "--tls-cipher-suites=toOverride", "--tls-min-version=toOverride"},
+			tlsCipherSuitesArg: "--tls-cipher-suites=",
+			tlsMinVersionArg:   "--tls-min-version=",
+			finalArgs: []string{
+				"--foo=bar",
+				"--tls-cipher-suites=TLS_ECDHE_RSA_WITH_AES_128_GCM_SHA256,TLS_ECDHE_ECDSA_WITH_AES_256_GCM_SHA384",
+				"--tls-min-version=VersionTLS10",
+			},
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			f := NewFactory(
+				"openshift-monitoring",
+				"openshift-user-workload-monitoring",
+				NewDefaultConfig(),
+				defaultInfrastructureReader(),
+				&fakeProxyReader{},
+				NewAssets(assetsPath),
+				tt.apiServerConfig,
+				&configv1.Console{},
+			)
+			require.Equal(t, tt.finalArgs, f.setTLSSecurityConfiguration(tt.initialArgs, tt.tlsCipherSuitesArg, tt.tlsMinVersionArg))
+		})
+	}
+}
