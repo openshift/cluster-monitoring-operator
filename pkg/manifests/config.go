@@ -17,6 +17,7 @@ package manifests
 import (
 	"context"
 	"encoding/json"
+	"errors"
 	"fmt"
 	"math"
 	"slices"
@@ -49,6 +50,8 @@ const (
 
 	configKey = "config.yaml"
 )
+
+var errAlertmanagerV1NotSupported = errors.New("alertmanager's apiVersion=v1 is no longer supported, v2 has been available since Alertmanager 0.16.0")
 
 type Config struct {
 	Images                               *Images `json:"-"`
@@ -196,6 +199,31 @@ func (u *UserWorkloadConfiguration) checkThanosRulerEvaluationInterval() error {
 	return nil
 }
 
+func (u *UserWorkloadConfiguration) checkAlertmanagerVersion() error {
+	if u.Prometheus != nil {
+		for _, amConfig := range u.Prometheus.AlertmanagerConfigs {
+			if alertmanagerV1(amConfig.APIVersion) {
+				return fmt.Errorf("%w: found in prometheus.additionalAlertmanagerConfigs", errAlertmanagerV1NotSupported)
+			}
+		}
+	}
+	if u.ThanosRuler != nil {
+		for _, amConfig := range u.ThanosRuler.AlertmanagersConfigs {
+			if alertmanagerV1(amConfig.APIVersion) {
+				return fmt.Errorf("%w: found in thanosRuler.additionalAlertmanagerConfigs", errAlertmanagerV1NotSupported)
+			}
+		}
+	}
+
+	return nil
+}
+
+func alertmanagerV1(version string) bool {
+	// Only meant to guide users by failing early in case v1 Alertmanager is still referenced,
+	// this is not meant to validate the apiVersion field.
+	return version == "v1"
+}
+
 func (u *UserWorkloadConfiguration) check() error {
 	if u == nil {
 		return nil
@@ -210,6 +238,12 @@ func (u *UserWorkloadConfiguration) check() error {
 	}
 
 	if err := u.checkThanosRulerEvaluationInterval(); err != nil {
+		return err
+	}
+
+	// TODO: remove after 4.19
+	// Only to assist with the migration to Prometheus 3; fail early if Alertmanager v1 is still in use.
+	if err := u.checkAlertmanagerVersion(); err != nil {
 		return err
 	}
 
@@ -526,6 +560,19 @@ func (c *Config) LoadEnforcedBodySizeLimit(pcr PodCapacityReader, ctx context.Co
 	return nil
 }
 
+func (c *Config) checkAlertmanagerVersion() error {
+	if c.ClusterMonitoringConfiguration == nil || c.ClusterMonitoringConfiguration.PrometheusK8sConfig == nil {
+		return nil
+	}
+
+	for _, amConfig := range c.ClusterMonitoringConfiguration.PrometheusK8sConfig.AlertmanagerConfigs {
+		if alertmanagerV1(amConfig.APIVersion) {
+			return fmt.Errorf("%w: found in prometheusK8s.additionalAlertmanagerConfigs", errAlertmanagerV1NotSupported)
+		}
+	}
+	return nil
+}
+
 func (c *Config) Precheck() error {
 	if c.ClusterMonitoringConfiguration.PrometheusK8sConfig.CollectionProfile != FullCollectionProfile && !c.CollectionProfilesFeatureGateEnabled {
 		return fmt.Errorf("%w: collectionProfiles is currently a TechPreview feature behind the \"MetricsCollectionProfiles\" feature-gate, to be able to use a profile different from the default (\"full\") please enable it first", ErrConfigValidation)
@@ -553,6 +600,13 @@ func (c *Config) Precheck() error {
 	}
 	// Prometheus-Adapter is replaced with Metrics Server by default from 4.16
 	metrics.DeprecatedConfig.WithLabelValues("openshift-monitoring/cluster-monitoring-config", "k8sPrometheusAdapter", "4.16").Set(d)
+
+	// TODO: remove after 4.19
+	// Only to assist with the migration to Prometheus 3; fail early if Alertmanager v1 is still in use.
+	if err := c.checkAlertmanagerVersion(); err != nil {
+		return err
+	}
+
 	return nil
 }
 

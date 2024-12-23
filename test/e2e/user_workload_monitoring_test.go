@@ -285,7 +285,7 @@ func TestUserWorkloadMonitoringWithAdditionalAlertmanagerConfigs(t *testing.T) {
   - scheme: https
     pathPrefix: /prefix
     timeout: "30s"
-    apiVersion: v1
+    apiVersion: v2
     tlsConfig:
       key:
         name: alertmanager-tls
