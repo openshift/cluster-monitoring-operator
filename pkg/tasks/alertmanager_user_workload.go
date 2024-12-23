@@ -19,6 +19,7 @@ import (
 	"fmt"
 
 	"k8s.io/apimachinery/pkg/types"
+	"k8s.io/klog/v2"
 
 	"github.com/openshift/cluster-monitoring-operator/pkg/client"
 	"github.com/openshift/cluster-monitoring-operator/pkg/manifests"
@@ -47,6 +48,7 @@ func (t *AlertmanagerUserWorkloadTask) Run(ctx context.Context) error {
 		return t.create(ctx)
 	}
 
+	klog.V(3).Infof("UWM alertmanager is disabled, existing related resources are to be destroyed.")
 	return t.destroy(ctx)
 }
 
