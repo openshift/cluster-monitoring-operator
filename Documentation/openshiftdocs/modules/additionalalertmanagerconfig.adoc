@@ -22,7 +22,7 @@ link:thanosrulerconfig.adoc[ThanosRulerConfig]
 [options="header"]
 |===
 | Property | Type | Description 
-|apiVersion|string|Defines the API version of Alertmanager. Possible values are `v1` or `v2`. The default is `v2`.
+|apiVersion|string|Defines the API version of Alertmanager. `v1` is no longer supported, `v2` is set as the default value.
 
 |bearerToken|*v1.SecretKeySelector|Defines the secret key reference containing the bearer token to use when authenticating to Alertmanager.
 
