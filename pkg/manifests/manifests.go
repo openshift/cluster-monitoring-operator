@@ -128,17 +128,18 @@ var (
 	OpenShiftStateMetricsServiceMonitor      = "openshift-state-metrics/service-monitor.yaml"
 	OpenShiftStateMetricsKubeRbacProxySecret = "openshift-state-metrics/kube-rbac-proxy-secret.yaml"
 
-	NodeExporterDaemonSet                  = "node-exporter/daemonset.yaml"
-	NodeExporterService                    = "node-exporter/service.yaml"
-	NodeExporterServiceAccount             = "node-exporter/service-account.yaml"
-	NodeExporterClusterRole                = "node-exporter/cluster-role.yaml"
-	NodeExporterClusterRoleBinding         = "node-exporter/cluster-role-binding.yaml"
-	NodeExporterSecurityContextConstraints = "node-exporter/security-context-constraints.yaml"
-	NodeExporterServiceMonitor             = "node-exporter/service-monitor.yaml"
-	NodeExporterMinimalServiceMonitor      = "node-exporter/minimal-service-monitor.yaml"
-	NodeExporterPrometheusRule             = "node-exporter/prometheus-rule.yaml"
-	NodeExporterKubeRbacProxySecret        = "node-exporter/kube-rbac-proxy-secret.yaml"
-	NodeExporterAcceleratorsConfigMap      = "node-exporter/accelerators-collector-configmap.yaml"
+	NodeExporterDaemonSet                      = "node-exporter/daemonset.yaml"
+	NodeExporterService                        = "node-exporter/service.yaml"
+	NodeExporterServiceAccount                 = "node-exporter/service-account.yaml"
+	NodeExporterClusterRole                    = "node-exporter/cluster-role.yaml"
+	NodeExporterClusterRoleBinding             = "node-exporter/cluster-role-binding.yaml"
+	NodeExporterSecurityContextConstraints     = "node-exporter/security-context-constraints.yaml"
+	NodeExporterServiceMonitor                 = "node-exporter/service-monitor.yaml"
+	NodeExporterMinimalServiceMonitor          = "node-exporter/minimal-service-monitor.yaml"
+	NodeExporterPrometheusRule                 = "node-exporter/prometheus-rule.yaml"
+	NodeExporterKubeRbacProxySecret            = "node-exporter/kube-rbac-proxy-secret.yaml"
+	NodeExporterAcceleratorsConfigMap          = "node-exporter/accelerators-collector-configmap.yaml"
+	NodeExporterAcceleratorsDashboardConfigMap = "node-exporter/accelerators-dashboard-configmap.yaml"
 
 	PrometheusK8sClusterRoleBinding               = "prometheus-k8s/cluster-role-binding.yaml"
 	PrometheusK8sRoleBindingConfig                = "prometheus-k8s/role-binding-config.yaml"
@@ -1036,6 +1037,10 @@ func (f *Factory) NodeExporterRBACProxySecret() (*v1.Secret, error) {
 
 func (f *Factory) NodeExporterAcceleratorsCollectorConfigMap() (*v1.ConfigMap, error) {
 	return f.NewConfigMap(f.assets.MustNewAssetSlice(NodeExporterAcceleratorsConfigMap))
+}
+
+func (f *Factory) NodeExporterAcceleratorsDashboardConfigMap() (*v1.ConfigMap, error) {
+	return f.NewConfigMap(f.assets.MustNewAssetSlice(NodeExporterAcceleratorsDashboardConfigMap))
 }
 
 func (f *Factory) PrometheusK8sClusterRoleBinding() (*rbacv1.ClusterRoleBinding, error) {

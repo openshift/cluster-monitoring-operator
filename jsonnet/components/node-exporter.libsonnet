@@ -7,6 +7,7 @@ local configDir = '/var/node_exporter/accelerators_collector_config';
 local configVolumeName = 'node-exporter-accelerators-collector-config';
 local acceleratorsConfigFileName = 'config.yaml';
 local acceleratorsConfigMapName = 'node-exporter-accelerators-collector-config';
+local acceleratorsDashboardConfigMapName = 'node-exporter-accelerators-dashboard-config';
 local acceleratorsConfigData = [
   {
     vendorName: 'NVIDIA',
@@ -23,6 +24,129 @@ local acceleratorsConfigData = [
     ],
   },
 ];
+
+local acceleratorsDashboardConfigData =
+  {
+    __requires: [
+      {
+        type: 'grafana',
+        id: 'grafana',
+        name: 'Grafana',
+        version: '6.7.6',
+      },
+      {
+        type: 'datasource',
+        id: 'prometheus',
+        name: 'Prometheus',
+        version: '1.0.0',
+      },
+      {
+        type: 'panel',
+        id: 'table',
+        name: 'Table',
+        version: '',
+      },
+    ],
+    annotations: {
+      list: [
+        {
+          builtIn: 1,
+          datasource: '-- Grafana --',
+          enable: true,
+          hide: true,
+          iconColor: 'rgba(0, 211, 255, 1)',
+          name: 'Annotations & Alerts',
+          type: 'dashboard',
+        },
+      ],
+    },
+    editable: true,
+    gnetId: null,
+    graphTooltip: 0,
+    id: null,
+    links: [],
+    panels: [
+      {
+        cacheTimeout: null,
+        columns: [
+          {
+            text: 'Avg',
+            value: 'avg',
+          },
+        ],
+        datasource: '$datasource',
+        id: 2,
+        links: [],
+        pageSize: null,
+        showHeader: true,
+        sort: {
+          col: 0,
+          desc: true,
+        },
+        styles: [
+          {
+            alias: 'Count',
+            align: 'left',
+            decimals: 0,
+            mappingType: 1,
+            pattern: 'Value',
+            type: 'number',
+            unit: 'none',
+          },
+          {
+            alias: 'Vendor',
+            align: 'left',
+            decimals: 0,
+            mappingType: 1,
+            pattern: 'vendor',
+            type: 'string',
+            unit: 'none',
+          },
+          {
+            alias: 'Model',
+            align: 'left',
+            decimals: 0,
+            mappingType: 1,
+            pattern: 'model',
+            type: 'string',
+            unit: 'none',
+          },
+        ],
+        targets: [
+          {
+            expr: 'vendor_model:node_accelerator_cards:sum',
+            format: 'table',
+            instant: true,
+            interval: '',
+            legendFormat: '',
+            refId: 'A',
+          },
+        ],
+        timeFrom: null,
+        timeShift: null,
+        title: 'Inventory',
+        transform: 'table',
+        type: 'table',
+      },
+    ],
+    refresh: '',
+    schemaVersion: 22,
+    tags: [],
+    templating: {
+      list: [],
+    },
+    time: {
+      from: 'now-6h',
+      to: 'now',
+    },
+    timepicker: {},
+    timezone: '',
+    title: 'Hardware Accelerators',
+    description: 'This dashboard displays the inventory of hardware accelerators in a Red Hat OpenShift cluster',
+    variables: {
+      list: [],
+    },
+  };
 
 local nodeExporter = import 'github.com/prometheus-operator/kube-prometheus/jsonnet/kube-prometheus/components/node-exporter.libsonnet';
 local generateSecret = import '../utils/generate-secret.libsonnet';
@@ -399,6 +523,21 @@ function(params)
       },
       data: {
         [acceleratorsConfigFileName]: std.manifestYamlDoc(acceleratorsConfigData),
+      },
+    },
+
+    acceleratorsDashboardConfigmap: {
+      apiVersion: 'v1',
+      kind: 'ConfigMap',
+      metadata: {
+        name: acceleratorsDashboardConfigMapName,
+        namespace: 'openshift-config-managed',
+        labels: {
+          'console.openshift.io/dashboard': 'true',
+        },
+      },
+      data: {
+        'accelerators-dashboard.json': std.manifestJson(acceleratorsDashboardConfigData),
       },
     },
   }

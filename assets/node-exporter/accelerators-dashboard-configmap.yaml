@@ -1,0 +1,144 @@
+apiVersion: v1
+data:
+  accelerators-dashboard.json: |-
+    {
+        "__requires": [
+            {
+                "id": "grafana",
+                "name": "Grafana",
+                "type": "grafana",
+                "version": "6.7.6"
+            },
+            {
+                "id": "prometheus",
+                "name": "Prometheus",
+                "type": "datasource",
+                "version": "1.0.0"
+            },
+            {
+                "id": "table",
+                "name": "Table",
+                "type": "panel",
+                "version": ""
+            }
+        ],
+        "annotations": {
+            "list": [
+                {
+                    "builtIn": 1,
+                    "datasource": "-- Grafana --",
+                    "enable": true,
+                    "hide": true,
+                    "iconColor": "rgba(0, 211, 255, 1)",
+                    "name": "Annotations & Alerts",
+                    "type": "dashboard"
+                }
+            ]
+        },
+        "description": "This dashboard displays the inventory of hardware accelerators in a Red Hat OpenShift cluster",
+        "editable": true,
+        "gnetId": null,
+        "graphTooltip": 0,
+        "id": null,
+        "links": [
+
+        ],
+        "panels": [
+            {
+                "cacheTimeout": null,
+                "columns": [
+                    {
+                        "text": "Avg",
+                        "value": "avg"
+                    }
+                ],
+                "datasource": "$datasource",
+                "id": 2,
+                "links": [
+
+                ],
+                "pageSize": null,
+                "showHeader": true,
+                "sort": {
+                    "col": 0,
+                    "desc": true
+                },
+                "styles": [
+                    {
+                        "alias": "Count",
+                        "align": "left",
+                        "decimals": 0,
+                        "mappingType": 1,
+                        "pattern": "Value",
+                        "type": "number",
+                        "unit": "none"
+                    },
+                    {
+                        "alias": "Vendor",
+                        "align": "left",
+                        "decimals": 0,
+                        "mappingType": 1,
+                        "pattern": "vendor",
+                        "type": "string",
+                        "unit": "none"
+                    },
+                    {
+                        "alias": "Model",
+                        "align": "left",
+                        "decimals": 0,
+                        "mappingType": 1,
+                        "pattern": "model",
+                        "type": "string",
+                        "unit": "none"
+                    }
+                ],
+                "targets": [
+                    {
+                        "expr": "vendor_model:node_accelerator_cards:sum",
+                        "format": "table",
+                        "instant": true,
+                        "interval": "",
+                        "legendFormat": "",
+                        "refId": "A"
+                    }
+                ],
+                "timeFrom": null,
+                "timeShift": null,
+                "title": "Inventory",
+                "transform": "table",
+                "type": "table"
+            }
+        ],
+        "refresh": "",
+        "schemaVersion": 22,
+        "tags": [
+
+        ],
+        "templating": {
+            "list": [
+
+            ]
+        },
+        "time": {
+            "from": "now-6h",
+            "to": "now"
+        },
+        "timepicker": {
+
+        },
+        "timezone": "",
+        "title": "Hardware Accelerators",
+        "variables": {
+            "list": [
+
+            ]
+        }
+    }
+kind: ConfigMap
+metadata:
+  labels:
+    app.kubernetes.io/managed-by: cluster-monitoring-operator
+    app.kubernetes.io/part-of: openshift-monitoring
+    console.openshift.io/dashboard: "true"
+  name: node-exporter-accelerators-dashboard-config
+  namespace: openshift-config-managed
