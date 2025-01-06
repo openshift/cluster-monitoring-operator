@@ -63,7 +63,7 @@ The `AdditionalAlertmanagerConfig` resource defines settings for how a component
 
 | Property | Type | Description |
 | -------- | ---- | ----------- |
-| apiVersion | string | Defines the API version of Alertmanager. Possible values are `v1` or `v2`. The default is `v2`. |
+| apiVersion | string | Defines the API version of Alertmanager. `v1` is no longer supported, `v2` is set as the default value. |
 | bearerToken | *[v1.SecretKeySelector](https://kubernetes.io/docs/reference/generated/kubernetes-api/v1.31/#secretkeyselector-v1-core) | Defines the secret key reference containing the bearer token to use when authenticating to Alertmanager. |
 | pathPrefix | string | Defines the path prefix to add in front of the push endpoint path. |
 | scheme | string | Defines the URL scheme to use when communicating with Alertmanager instances. Possible values are `http` or `https`. The default value is `http`. |

@@ -242,6 +242,85 @@ thanosRuler:
 	}
 }
 
+// TestNewUserConfigFromStringUnsupportedAlertmanagerVersion is a temp test
+// TODO: remove after 4.19
+// Only to assist with the migration to Prometheus 3; fail early if Alertmanager v1 is still in use.
+func TestNewUserConfigFromStringUnsupportedAlertmanagerVersion(t *testing.T) {
+	tcs := []struct {
+		name         string
+		configString func() string
+		shouldFail   bool
+	}{
+		{
+			name: "unsupported alertmanager version in thanosRuler.additionalAlertmanagerConfigs",
+			configString: func() string {
+				return `
+thanosRuler:
+  additionalAlertmanagerConfigs:
+    - apiVersion: v1`
+			},
+			shouldFail: true,
+		},
+		{
+			name: "unsupported alertmanager version in prometheus.additionalAlertmanagerConfigs",
+			configString: func() string {
+				return `
+prometheus:
+  additionalAlertmanagerConfigs:
+    - apiVersion: v1`
+			},
+			shouldFail: true,
+		},
+		{
+			name: "supported alertmanager version in thanosRuler.additionalAlertmanagerConfigs",
+			configString: func() string {
+				return `
+thanosRuler:
+  additionalAlertmanagerConfigs:
+    - apiVersion: v2`
+			},
+		},
+		{
+			name: "supported alertmanager version in prometheus.additionalAlertmanagerConfigs",
+			configString: func() string {
+				return `
+prometheus:
+  additionalAlertmanagerConfigs:
+    - apiVersion: v2`
+			},
+		},
+		{
+			name: "default alertmanager version in thanosRuler.additionalAlertmanagerConfigs",
+			configString: func() string {
+				return `
+thanosRuler:
+  additionalAlertmanagerConfigs:
+    - scheme: foo`
+			},
+		},
+		{
+			name: "default alertmanager version in prometheus.additionalAlertmanagerConfigs",
+			configString: func() string {
+				return `
+prometheus:
+  additionalAlertmanagerConfigs:
+    - scheme: foo`
+			},
+		},
+	}
+
+	for _, tc := range tcs {
+		t.Run(tc.name, func(t *testing.T) {
+			_, err := NewUserConfigFromString(tc.configString())
+			if tc.shouldFail {
+				require.ErrorIs(t, err, errAlertmanagerV1NotSupported)
+				return
+			}
+			require.NoError(t, err)
+		})
+	}
+}
+
 func TestTelemeterClientConfig(t *testing.T) {
 	truev, falsev := true, false
 
@@ -720,6 +799,51 @@ func TestDeprecatedConfig(t *testing.T) {
 			err = c.Precheck()
 			require.NoError(t, err)
 			require.Equal(t, tc.expectedMetricValue, prom_testutil.ToFloat64(metrics.DeprecatedConfig))
+		})
+	}
+}
+
+// TestUnsupportedAlertmanagerVersion is a temp test
+// TODO: remove after 4.19
+// Only to assist with the migration to Prometheus 3; fail early if Alertmanager v1 is still in use.
+func TestUnsupportedAlertmanagerVersion(t *testing.T) {
+	for _, tc := range []struct {
+		name       string
+		config     string
+		shouldFail bool
+	}{
+		{
+			name: "using unsupported Alertmanager v1 API",
+			config: `prometheusK8s:
+  additionalAlertmanagerConfigs:
+    - apiVersion: v1
+  `,
+			shouldFail: true,
+		},
+		{
+			name: "using supported Alertmanager v2 API",
+			config: `prometheusK8s:
+  additionalAlertmanagerConfigs:
+    - apiVersion: v2
+  `,
+		},
+		{
+			name: "using default value",
+			config: `prometheusK8s:
+  additionalAlertmanagerConfigs:
+    - Scheme: foo
+  `,
+		},
+	} {
+		t.Run(tc.name, func(t *testing.T) {
+			c, err := NewConfigFromString(tc.config, true)
+			require.NoError(t, err)
+			err = c.Precheck()
+			if tc.shouldFail {
+				require.ErrorIs(t, err, errAlertmanagerV1NotSupported)
+			} else {
+				require.NoError(t, err)
+			}
 		})
 	}
 }

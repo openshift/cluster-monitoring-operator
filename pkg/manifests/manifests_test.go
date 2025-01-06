@@ -2013,7 +2013,7 @@ func TestPrometheusK8sAdditionalAlertManagerConfigsSecret(t *testing.T) {
 			name: "version, path and scheme override",
 			config: `prometheusK8s:
   additionalAlertmanagerConfigs:
-  - apiVersion: v1
+  - apiVersion: v2
     pathPrefix: /path
     scheme: ftp
     staticConfigs:
@@ -2022,7 +2022,7 @@ func TestPrometheusK8sAdditionalAlertManagerConfigsSecret(t *testing.T) {
 `,
 			expected: `- scheme: ftp
   path_prefix: /path
-  api_version: v1
+  api_version: v2
   static_configs:
   - targets:
     - alertmanager1-remote.com
@@ -2301,7 +2301,7 @@ func TestThanosRulerAdditionalAlertManagerConfigsSecret(t *testing.T) {
 			name: "version, path and scheme override",
 			userWorkloadConfig: `thanosRuler:
   additionalAlertmanagerConfigs:
-  - apiVersion: v1
+  - apiVersion: v2
     pathPrefix: /path-prefix
     scheme: ftp
     staticConfigs:
@@ -2320,7 +2320,7 @@ func TestThanosRulerAdditionalAlertManagerConfigsSecret(t *testing.T) {
   - dnssrv+_web._tcp.alertmanager-operated.openshift-monitoring.svc
 - scheme: ftp
   path_prefix: /path-prefix
-  api_version: v1
+  api_version: v2
   static_configs:
   - alertmanager1-remote.com
   - alertmanager1-remotex.com

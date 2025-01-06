@@ -761,9 +761,8 @@ type MonitoringPluginConfig struct {
 // The `AdditionalAlertmanagerConfig` resource defines settings for how a
 // component communicates with additional Alertmanager instances.
 type AdditionalAlertmanagerConfig struct {
-	// Defines the API version of Alertmanager. Possible values are `v1` or
-	// `v2`.
-	// The default is `v2`.
+	// Defines the API version of Alertmanager.
+	// `v1` is no longer supported, `v2` is set as the default value.
 	APIVersion string `json:"apiVersion"`
 	// Defines the secret key reference containing the bearer token
 	// to use when authenticating to Alertmanager.
