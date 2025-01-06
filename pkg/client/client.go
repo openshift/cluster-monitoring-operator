@@ -739,7 +739,13 @@ func (c *Client) CreateOrUpdateThanosRuler(ctx context.Context, t *monv1.ThanosR
 }
 
 func (c *Client) DeleteConfigMap(ctx context.Context, cm *v1.ConfigMap) error {
-	err := c.kclient.CoreV1().ConfigMaps(cm.GetNamespace()).Delete(ctx, cm.GetName(), metav1.DeleteOptions{})
+	// Short-circuit if the resource doesn't exist (a Get is less expensive than a no-op Delete)
+	_, err := c.kclient.CoreV1().ConfigMaps(cm.GetNamespace()).Get(ctx, cm.GetName(), metav1.GetOptions{})
+	if apierrors.IsNotFound(err) {
+		return nil
+	}
+
+	err = c.kclient.CoreV1().ConfigMaps(cm.GetNamespace()).Delete(ctx, cm.GetName(), metav1.DeleteOptions{})
 	if apierrors.IsNotFound(err) {
 		return nil
 	}
@@ -790,7 +796,13 @@ func (c *Client) DeleteHashedSecret(ctx context.Context, namespace, prefix, newH
 }
 
 func (c *Client) DeleteValidatingWebhook(ctx context.Context, w *admissionv1.ValidatingWebhookConfiguration) error {
-	err := c.kclient.AdmissionregistrationV1().ValidatingWebhookConfigurations().Delete(ctx, w.GetName(), metav1.DeleteOptions{})
+	// Short-circuit if the resource doesn't exist (a Get is less expensive than a no-op Delete)
+	_, err := c.kclient.AdmissionregistrationV1().ValidatingWebhookConfigurations().Get(ctx, w.GetName(), metav1.GetOptions{})
+	if apierrors.IsNotFound(err) {
+		return nil
+	}
+
+	err = c.kclient.AdmissionregistrationV1().ValidatingWebhookConfigurations().Delete(ctx, w.GetName(), metav1.DeleteOptions{})
 	if apierrors.IsNotFound(err) {
 		return nil
 	}
@@ -803,7 +815,13 @@ func (c *Client) DeleteDeployment(ctx context.Context, d *appsv1.Deployment) err
 }
 
 func (c *Client) DeletePodDisruptionBudget(ctx context.Context, pdb *policyv1.PodDisruptionBudget) error {
-	err := c.kclient.PolicyV1().PodDisruptionBudgets(pdb.GetNamespace()).Delete(ctx, pdb.GetName(), deleteOptions(metav1.DeletePropagationForeground))
+	// Short-circuit if the resource doesn't exist (a Get is less expensive than a no-op Delete)
+	_, err := c.kclient.PolicyV1().PodDisruptionBudgets(pdb.GetNamespace()).Get(ctx, pdb.GetName(), metav1.GetOptions{})
+	if apierrors.IsNotFound(err) {
+		return nil
+	}
+
+	err = c.kclient.PolicyV1().PodDisruptionBudgets(pdb.GetNamespace()).Delete(ctx, pdb.GetName(), deleteOptions(metav1.DeletePropagationForeground))
 	if apierrors.IsNotFound(err) {
 		return nil
 	}
@@ -820,7 +838,13 @@ func (c *Client) DeleteThanosRuler(ctx context.Context, tr *monv1.ThanosRuler) e
 }
 
 func (c *Client) DeleteDaemonSet(ctx context.Context, d *appsv1.DaemonSet) error {
-	err := c.kclient.AppsV1().DaemonSets(d.GetNamespace()).Delete(ctx, d.GetName(), deleteOptions(metav1.DeletePropagationForeground))
+	// Short-circuit if the resource doesn't exist (a Get is less expensive than a no-op Delete)
+	_, err := c.kclient.AppsV1().DaemonSets(d.GetNamespace()).Get(ctx, d.GetName(), metav1.GetOptions{})
+	if apierrors.IsNotFound(err) {
+		return nil
+	}
+
+	err = c.kclient.AppsV1().DaemonSets(d.GetNamespace()).Delete(ctx, d.GetName(), deleteOptions(metav1.DeletePropagationForeground))
 	if apierrors.IsNotFound(err) {
 		return nil
 	}
@@ -835,7 +859,13 @@ func (c *Client) DeleteServiceMonitor(ctx context.Context, sm *monv1.ServiceMoni
 func (c *Client) DeleteServiceMonitorByNamespaceAndName(ctx context.Context, namespace, name string) error {
 	sclient := c.mclient.MonitoringV1().ServiceMonitors(namespace)
 
-	err := sclient.Delete(ctx, name, metav1.DeleteOptions{})
+	// Short-circuit if the resource doesn't exist (a Get is less expensive than a no-op Delete)
+	_, err := sclient.Get(ctx, name, metav1.GetOptions{})
+	if apierrors.IsNotFound(err) {
+		return nil
+	}
+
+	err = sclient.Delete(ctx, name, metav1.DeleteOptions{})
 	// if the object does not exist then everything is good here
 	if err != nil && !apierrors.IsNotFound(err) {
 		return fmt.Errorf("deleting ServiceMonitor object failed: %w", err)
@@ -845,7 +875,13 @@ func (c *Client) DeleteServiceMonitorByNamespaceAndName(ctx context.Context, nam
 }
 
 func (c *Client) DeleteServiceAccount(ctx context.Context, sa *v1.ServiceAccount) error {
-	err := c.kclient.CoreV1().ServiceAccounts(sa.Namespace).Delete(ctx, sa.GetName(), metav1.DeleteOptions{})
+	// Short-circuit if the resource doesn't exist (a Get is less expensive than a no-op Delete)
+	_, err := c.kclient.CoreV1().ServiceAccounts(sa.Namespace).Get(ctx, sa.GetName(), metav1.GetOptions{})
+	if apierrors.IsNotFound(err) {
+		return nil
+	}
+
+	err = c.kclient.CoreV1().ServiceAccounts(sa.Namespace).Delete(ctx, sa.GetName(), metav1.DeleteOptions{})
 	if apierrors.IsNotFound(err) {
 		return nil
 	}
@@ -854,7 +890,13 @@ func (c *Client) DeleteServiceAccount(ctx context.Context, sa *v1.ServiceAccount
 }
 
 func (c *Client) DeleteClusterRole(ctx context.Context, cr *rbacv1.ClusterRole) error {
-	err := c.kclient.RbacV1().ClusterRoles().Delete(ctx, cr.GetName(), metav1.DeleteOptions{})
+	// Short-circuit if the resource doesn't exist (a Get is less expensive than a no-op Delete)
+	_, err := c.kclient.RbacV1().ClusterRoles().Get(ctx, cr.GetName(), metav1.GetOptions{})
+	if apierrors.IsNotFound(err) {
+		return nil
+	}
+
+	err = c.kclient.RbacV1().ClusterRoles().Delete(ctx, cr.GetName(), metav1.DeleteOptions{})
 	if apierrors.IsNotFound(err) {
 		return nil
 	}
@@ -863,7 +905,13 @@ func (c *Client) DeleteClusterRole(ctx context.Context, cr *rbacv1.ClusterRole) 
 }
 
 func (c *Client) DeleteClusterRoleBinding(ctx context.Context, crb *rbacv1.ClusterRoleBinding) error {
-	err := c.kclient.RbacV1().ClusterRoleBindings().Delete(ctx, crb.GetName(), metav1.DeleteOptions{})
+	// Short-circuit if the resource doesn't exist (a Get is less expensive than a no-op Delete)
+	_, err := c.kclient.RbacV1().ClusterRoleBindings().Get(ctx, crb.GetName(), metav1.GetOptions{})
+	if apierrors.IsNotFound(err) {
+		return nil
+	}
+
+	err = c.kclient.RbacV1().ClusterRoleBindings().Delete(ctx, crb.GetName(), metav1.DeleteOptions{})
 	if apierrors.IsNotFound(err) {
 		return nil
 	}
@@ -872,7 +920,13 @@ func (c *Client) DeleteClusterRoleBinding(ctx context.Context, crb *rbacv1.Clust
 }
 
 func (c *Client) DeleteService(ctx context.Context, svc *v1.Service) error {
-	err := c.kclient.CoreV1().Services(svc.Namespace).Delete(ctx, svc.GetName(), metav1.DeleteOptions{})
+	// Short-circuit if the resource doesn't exist (a Get is less expensive than a no-op Delete)
+	_, err := c.kclient.CoreV1().Services(svc.Namespace).Get(ctx, svc.GetName(), metav1.GetOptions{})
+	if apierrors.IsNotFound(err) {
+		return nil
+	}
+
+	err = c.kclient.CoreV1().Services(svc.Namespace).Delete(ctx, svc.GetName(), metav1.DeleteOptions{})
 	if apierrors.IsNotFound(err) {
 		return nil
 	}
@@ -881,7 +935,13 @@ func (c *Client) DeleteService(ctx context.Context, svc *v1.Service) error {
 }
 
 func (c *Client) DeleteRoute(ctx context.Context, r *routev1.Route) error {
-	err := c.osrclient.RouteV1().Routes(r.GetNamespace()).Delete(ctx, r.GetName(), metav1.DeleteOptions{})
+	// Short-circuit if the resource doesn't exist (a Get is less expensive than a no-op Delete)
+	_, err := c.osrclient.RouteV1().Routes(r.GetNamespace()).Get(ctx, r.GetName(), metav1.GetOptions{})
+	if apierrors.IsNotFound(err) {
+		return nil
+	}
+
+	err = c.osrclient.RouteV1().Routes(r.GetNamespace()).Delete(ctx, r.GetName(), metav1.DeleteOptions{})
 	if apierrors.IsNotFound(err) {
 		return nil
 	}
@@ -895,7 +955,13 @@ func (c *Client) DeletePrometheusRule(ctx context.Context, rule *monv1.Prometheu
 func (c *Client) DeletePrometheusRuleByNamespaceAndName(ctx context.Context, namespace, name string) error {
 	sclient := c.mclient.MonitoringV1().PrometheusRules(namespace)
 
-	err := sclient.Delete(ctx, name, metav1.DeleteOptions{})
+	// Short-circuit if the resource doesn't exist (a Get is less expensive than a no-op Delete)
+	_, err := sclient.Get(ctx, name, metav1.GetOptions{})
+	if apierrors.IsNotFound(err) {
+		return nil
+	}
+
+	err = sclient.Delete(ctx, name, metav1.DeleteOptions{})
 	// if the object does not exist then everything is good here
 	if err != nil && !apierrors.IsNotFound(err) {
 		return fmt.Errorf("deleting PrometheusRule object failed: %w", err)
@@ -905,7 +971,13 @@ func (c *Client) DeletePrometheusRuleByNamespaceAndName(ctx context.Context, nam
 }
 
 func (c *Client) DeleteSecret(ctx context.Context, s *v1.Secret) error {
-	err := c.kclient.CoreV1().Secrets(s.Namespace).Delete(ctx, s.GetName(), metav1.DeleteOptions{})
+	// Short-circuit if the resource doesn't exist (a Get is less expensive than a no-op Delete)
+	_, err := c.kclient.CoreV1().Secrets(s.Namespace).Get(ctx, s.GetName(), metav1.GetOptions{})
+	if apierrors.IsNotFound(err) {
+		return nil
+	}
+
+	err = c.kclient.CoreV1().Secrets(s.Namespace).Delete(ctx, s.GetName(), metav1.DeleteOptions{})
 	if apierrors.IsNotFound(err) {
 		return nil
 	}
@@ -1194,7 +1266,13 @@ func (c *Client) WaitForDeploymentRollout(ctx context.Context, dep *appsv1.Deplo
 // policy and will block until the resource is effectively deleted.
 func (c *Client) deleteResourceUntilGone(ctx context.Context, gvr schema.GroupVersionResource, obj metav1.Object, timeout time.Duration) error {
 	client := c.mdataclient.Resource(gvr).Namespace(obj.GetNamespace())
-	err := client.Delete(ctx, obj.GetName(), deleteOptions(metav1.DeletePropagationForeground))
+	// Short-circuit if the resource doesn't exist (a Get is less expensive than a no-op Delete)
+	_, err := client.Get(ctx, obj.GetName(), metav1.GetOptions{})
+	if apierrors.IsNotFound(err) {
+		return nil
+	}
+
+	err = client.Delete(ctx, obj.GetName(), deleteOptions(metav1.DeletePropagationForeground))
 	if apierrors.IsNotFound(err) {
 		return nil
 	}
@@ -1631,7 +1709,13 @@ func (c *Client) StatusReporter() *StatusReporter {
 }
 
 func (c *Client) DeleteRoleBinding(ctx context.Context, binding *rbacv1.RoleBinding) error {
-	err := c.kclient.RbacV1().RoleBindings(binding.Namespace).Delete(ctx, binding.GetName(), metav1.DeleteOptions{})
+	// Short-circuit if the resource doesn't exist (a Get is less expensive than a no-op Delete)
+	_, err := c.kclient.RbacV1().RoleBindings(binding.Namespace).Get(ctx, binding.GetName(), metav1.GetOptions{})
+	if apierrors.IsNotFound(err) {
+		return nil
+	}
+
+	err = c.kclient.RbacV1().RoleBindings(binding.Namespace).Delete(ctx, binding.GetName(), metav1.DeleteOptions{})
 	if apierrors.IsNotFound(err) {
 		return nil
 	}
@@ -1640,7 +1724,13 @@ func (c *Client) DeleteRoleBinding(ctx context.Context, binding *rbacv1.RoleBind
 }
 
 func (c *Client) DeleteRole(ctx context.Context, role *rbacv1.Role) error {
-	err := c.kclient.RbacV1().Roles(role.Namespace).Delete(ctx, role.GetName(), metav1.DeleteOptions{})
+	// Short-circuit if the resource doesn't exist (a Get is less expensive than a no-op Delete)
+	_, err := c.kclient.RbacV1().Roles(role.Namespace).Get(ctx, role.GetName(), metav1.GetOptions{})
+	if apierrors.IsNotFound(err) {
+		return nil
+	}
+
+	err = c.kclient.RbacV1().Roles(role.Namespace).Delete(ctx, role.GetName(), metav1.DeleteOptions{})
 	if apierrors.IsNotFound(err) {
 		return nil
 	}
