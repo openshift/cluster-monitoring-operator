@@ -4288,12 +4288,13 @@ func TestThanosRulerRetentionConfig(t *testing.T) {
 	}
 }
 
-func TestPrometheusGoGC(t *testing.T) {
+func TestPrometheusGoGCRelatedConfig(t *testing.T) {
 	for _, tc := range []struct {
 		ir    InfrastructureReader
 		promf func(*Factory) (*monv1.Prometheus, error)
 
-		exp string
+		expectedGOGC           string
+		autoGOMEMLIMITDisabled bool
 	}{
 		{
 			ir: &fakeInfrastructureReader{highlyAvailableInfrastructure: false},
@@ -4301,7 +4302,8 @@ func TestPrometheusGoGC(t *testing.T) {
 				return f.PrometheusK8s(&v1.Secret{ObjectMeta: metav1.ObjectMeta{Name: "foo"}}, nil)
 			},
 
-			exp: "100",
+			expectedGOGC:           "100",
+			autoGOMEMLIMITDisabled: true,
 		},
 		{
 			ir: &fakeInfrastructureReader{highlyAvailableInfrastructure: true},
@@ -4309,7 +4311,7 @@ func TestPrometheusGoGC(t *testing.T) {
 				return f.PrometheusK8s(&v1.Secret{ObjectMeta: metav1.ObjectMeta{Name: "foo"}}, nil)
 			},
 
-			exp: "",
+			expectedGOGC: "",
 		},
 		{
 			ir: &fakeInfrastructureReader{highlyAvailableInfrastructure: false},
@@ -4317,7 +4319,8 @@ func TestPrometheusGoGC(t *testing.T) {
 				return f.PrometheusUserWorkload(&v1.Secret{ObjectMeta: metav1.ObjectMeta{Name: "foo"}})
 			},
 
-			exp: "100",
+			expectedGOGC:           "100",
+			autoGOMEMLIMITDisabled: true,
 		},
 		{
 			ir: &fakeInfrastructureReader{highlyAvailableInfrastructure: true},
@@ -4325,7 +4328,7 @@ func TestPrometheusGoGC(t *testing.T) {
 				return f.PrometheusUserWorkload(&v1.Secret{ObjectMeta: metav1.ObjectMeta{Name: "foo"}})
 			},
 
-			exp: "",
+			expectedGOGC: "",
 		},
 	} {
 		t.Run("", func(t *testing.T) {
@@ -4341,14 +4344,17 @@ func TestPrometheusGoGC(t *testing.T) {
 				}
 			}
 			require.NotNil(t, c)
-			if tc.exp == "" {
+			if tc.expectedGOGC == "" {
 				for _, env := range c.Env {
 					require.NotEqual(t, env.Name, "GOGC")
 				}
 				return
 			}
 
-			require.Contains(t, c.Env, v1.EnvVar{Name: "GOGC", Value: tc.exp})
+			require.Contains(t, c.Env, v1.EnvVar{Name: "GOGC", Value: tc.expectedGOGC})
+			if tc.autoGOMEMLIMITDisabled {
+				require.Contains(t, p.Spec.AdditionalArgs, monv1.Argument{Name: "no-auto-gomemlimit"})
+			}
 		})
 	}
 }

@@ -1456,7 +1456,7 @@ func (f *Factory) PrometheusK8s(grpcTLS *v1.Secret, telemetrySecret *v1.Secret) 
 	}
 
 	setupAlerting(p, platformAlertmanagerService, f.namespace)
-	f.setupGoGC(p)
+	f.adjustGoGCRelatedConfig(p)
 
 	for i, container := range p.Spec.Containers {
 		switch container.Name {
@@ -1495,7 +1495,7 @@ func (f *Factory) PrometheusK8s(grpcTLS *v1.Secret, telemetrySecret *v1.Secret) 
 	return p, nil
 }
 
-func (f *Factory) setupGoGC(p *monv1.Prometheus) {
+func (f *Factory) adjustGoGCRelatedConfig(p *monv1.Prometheus) {
 	if f.infrastructure.HighlyAvailableInfrastructure() {
 		return
 	}
@@ -1513,6 +1513,11 @@ func (f *Factory) setupGoGC(p *monv1.Prometheus) {
 		// be savvy on CPU hence set GOGC=100 (Go runtime default) in this
 		// case.
 		p.Spec.Containers[i].Env = append(p.Spec.Containers[i].Env, v1.EnvVar{Name: "GOGC", Value: "100"})
+
+		// Until we're certain setting GOMEMLIMIT to 0.9 (default ratio) of detected maximum
+		// container or system memory won't result in excessive CPU usage, we're disabling the
+		// auto setting for SNO.
+		p.Spec.AdditionalArgs = append(p.Spec.AdditionalArgs, monv1.Argument{Name: "no-auto-gomemlimit"})
 	}
 }
 
@@ -1805,7 +1810,7 @@ func (f *Factory) PrometheusUserWorkload(grpcTLS *v1.Secret) (*monv1.Prometheus,
 		}
 	}
 
-	f.setupGoGC(p)
+	f.adjustGoGCRelatedConfig(p)
 
 	if f.config.UserWorkloadConfiguration.Alertmanager.Enabled {
 		setupAlerting(p, userWorkloadAlertmanagerService, f.namespaceUserWorkload)
