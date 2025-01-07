@@ -19,6 +19,7 @@ import (
 	"fmt"
 
 	apierrors "k8s.io/apimachinery/pkg/api/errors"
+	"k8s.io/klog/v2"
 
 	"github.com/openshift/cluster-monitoring-operator/pkg/client"
 	"github.com/openshift/cluster-monitoring-operator/pkg/manifests"
@@ -43,7 +44,16 @@ func (t *TelemeterClientTask) Run(ctx context.Context) error {
 		return t.create(ctx)
 	}
 
-	if !t.config.ClusterMonitoringConfiguration.TelemeterClientConfig.IsEnabled() || t.config.ClusterMonitoringConfiguration.TelemeterClientConfig.IsEnabled() && t.config.RemoteWrite {
+	var reason string
+	switch {
+	case !t.config.ClusterMonitoringConfiguration.TelemeterClientConfig.IsEnabled():
+		reason = "telemetry is explicitly disabled"
+	case t.config.ClusterMonitoringConfiguration.TelemeterClientConfig.IsEnabled() && t.config.RemoteWrite:
+		reason = "remote-write is enabled instead"
+	}
+
+	if reason != "" {
+		klog.V(3).Infof("Telemeter client is disabled (because %s), existing related resources are to be destroyed.", reason)
 		return t.destroy(ctx)
 	}
 

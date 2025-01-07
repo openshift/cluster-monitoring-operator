@@ -44,6 +44,7 @@ func (t *PrometheusUserWorkloadTask) Run(ctx context.Context) error {
 		return t.create(ctx)
 	}
 
+	klog.V(3).Infof("UWM prometheus is disabled (because UWM is disabled), existing related resources are to be destroyed.")
 	return t.destroy(ctx)
 }
 
