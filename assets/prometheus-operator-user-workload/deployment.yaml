@@ -6,7 +6,7 @@ metadata:
     app.kubernetes.io/managed-by: cluster-monitoring-operator
     app.kubernetes.io/name: prometheus-operator
     app.kubernetes.io/part-of: openshift-monitoring
-    app.kubernetes.io/version: 0.78.2
+    app.kubernetes.io/version: 0.79.2
   name: prometheus-operator
   namespace: openshift-user-workload-monitoring
 spec:
@@ -27,12 +27,12 @@ spec:
         app.kubernetes.io/managed-by: cluster-monitoring-operator
         app.kubernetes.io/name: prometheus-operator
         app.kubernetes.io/part-of: openshift-monitoring
-        app.kubernetes.io/version: 0.78.2
+        app.kubernetes.io/version: 0.79.2
     spec:
       automountServiceAccountToken: true
       containers:
       - args:
-        - --prometheus-config-reloader=quay.io/prometheus-operator/prometheus-config-reloader:v0.78.2
+        - --prometheus-config-reloader=quay.io/prometheus-operator/prometheus-config-reloader:v0.79.2
         - --kubelet-endpoints=true
         - --kubelet-endpointslice=false
         - --prometheus-instance-namespaces=openshift-user-workload-monitoring
@@ -47,7 +47,7 @@ spec:
         env:
         - name: GOGC
           value: "30"
-        image: quay.io/prometheus-operator/prometheus-operator:v0.78.2
+        image: quay.io/prometheus-operator/prometheus-operator:v0.79.2
         name: prometheus-operator
         ports: []
         resources:
