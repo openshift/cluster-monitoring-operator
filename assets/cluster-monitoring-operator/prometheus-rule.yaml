@@ -30,6 +30,16 @@ spec:
       for: 15m
       labels:
         severity: warning
+    - alert: PrometheusPossibleNarrowSelectors
+      annotations:
+        description: Queries or/and relabel configs on Prometheus/Thanos {{$labels.namespace}}/{{$labels.pod}} could be too restrictive.
+        summary: |
+          Some queries or/and relabel configs with selectors on the values of the "le" label of classic histograms or/and the "quantile" label of summaries
+          may not take into account that values could also be floats, they may need to be adjusted. If assistance is needed, please let us know at https://issues.redhat.com/browse/MON-4129.
+      expr: increase(prometheus_narrow_selectors_count{job=~"prometheus-k8s|prometheus-user-workload|thanos-querier|thanos-ruler"}[5m]) > 0
+      for: 15m
+      labels:
+        severity: warning
   - name: openshift-kubernetes.rules
     rules:
     - expr: sum(rate(container_cpu_usage_seconds_total{container="",pod!=""}[5m])) BY (pod, namespace)
