@@ -17,7 +17,7 @@ import (
 )
 
 const (
-	mainBranch          = "master"
+	mainBranch          = "main"
 	metricsServerRepo   = "openshift/kubernetes-metrics-server"
 	versionFile         = "../../jsonnet/versions.yaml"
 	versionNotFound     = "N/A"
