@@ -8,19 +8,35 @@ metadata:
     rbac.authorization.k8s.io/aggregate-to-cluster-reader: "true"
     rbac.authorization.k8s.io/aggregate-to-edit: "true"
     rbac.authorization.k8s.io/aggregate-to-view: "true"
-  name: cluster-monitoring-view
+  name: monitoring-view
 rules:
 - apiGroups:
-  - ""
+  - monitoring.coreos.com
   resources:
-  - namespaces
+  - servicemonitors
+  - podmonitors
+  - probes
+  - alertmanagerconfigs
   verbs:
   - get
+  - list
+  - watch
 - apiGroups:
   - monitoring.coreos.com
-  resourceNames:
-  - k8s
   resources:
-  - prometheuses/api
+  - prometheuses
+  - alertmanagers
+  - thanosrulers
   verbs:
   - get
+  - list
+  - watch
+- apiGroups:
+  - monitoring.openshift.io
+  resources:
+  - alertingrules
+  - alertrelabelconfigs
+  verbs:
+  - get
+  - list
+  - watch

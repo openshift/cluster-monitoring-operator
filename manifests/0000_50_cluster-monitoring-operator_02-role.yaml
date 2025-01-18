@@ -210,8 +210,6 @@ rules:
   - prometheuses/api
   verbs:
   - get
-  - create
-  - update
 - apiGroups:
   - ""
   resourceNames:

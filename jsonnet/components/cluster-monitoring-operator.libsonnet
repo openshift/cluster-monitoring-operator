@@ -353,6 +353,12 @@ function(params) {
     kind: 'ClusterRole',
     metadata: {
       name: 'cluster-monitoring-view',
+      labels: {
+        'rbac.authorization.k8s.io/aggregate-to-admin': 'true',
+        'rbac.authorization.k8s.io/aggregate-to-edit': 'true',
+        'rbac.authorization.k8s.io/aggregate-to-view': 'true',
+        'rbac.authorization.k8s.io/aggregate-to-cluster-reader': 'true',
+      },
     },
     rules: [
       {
@@ -364,7 +370,7 @@ function(params) {
         apiGroups: ['monitoring.coreos.com'],
         resources: ['prometheuses/api'],
         resourceNames: ['k8s'],
-        verbs: ['get', 'create', 'update'],
+        verbs: ['get'],
       },
     ],
   },
@@ -495,12 +501,50 @@ function(params) {
     }],
   },
 
+  monitoringViewClusterRole: {
+    apiVersion: 'rbac.authorization.k8s.io/v1',
+    kind: 'ClusterRole',
+    metadata: {
+      name: 'monitoring-view',
+      labels: {
+        'rbac.authorization.k8s.io/aggregate-to-admin': 'true',
+        'rbac.authorization.k8s.io/aggregate-to-edit': 'true',
+        'rbac.authorization.k8s.io/aggregate-to-view': 'true',
+        'rbac.authorization.k8s.io/aggregate-to-cluster-reader': 'true',
+      },
+    },
+    rules: [
+      {
+        apiGroups: ['monitoring.coreos.com'],
+        resources: ['servicemonitors', 'podmonitors', 'probes', 'alertmanagerconfigs'],
+        verbs: ['get', 'list', 'watch'],
+      },
+      {
+        apiGroups: ['monitoring.coreos.com'],
+        resources: ['prometheuses', 'alertmanagers', 'thanosrulers'],
+        verbs: ['get', 'list', 'watch'],
+      },
+      {
+        apiGroups: ['monitoring.openshift.io'],
+        resources: ['alertingrules', 'alertrelabelconfigs'],
+        verbs: ['get', 'list', 'watch'],
+      },
+    ],
+  },
+
   // This cluster role can be referenced in a RoleBinding object to provide read access to PrometheusRule objects for a project.
+  // This is required for viewing silences.
   monitoringRulesViewClusterRole: {
     apiVersion: 'rbac.authorization.k8s.io/v1',
     kind: 'ClusterRole',
     metadata: {
       name: 'monitoring-rules-view',
+      labels: {
+        'rbac.authorization.k8s.io/aggregate-to-admin': 'true',
+        'rbac.authorization.k8s.io/aggregate-to-edit': 'true',
+        'rbac.authorization.k8s.io/aggregate-to-view': 'true',
+        'rbac.authorization.k8s.io/aggregate-to-cluster-reader': 'true',
+      },
     },
     rules: [{
       apiGroups: ['monitoring.coreos.com'],
