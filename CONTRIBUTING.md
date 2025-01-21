@@ -23,7 +23,7 @@ If you want to make changes to the actual code, please follow the [Coding Style]
 ## General workflow information
 These steps outline the general contribution workflow:
 
-* Create a topic branch from where you want to base your work (usually master).
+* Create a topic branch from where you want to base your work (usually main).
 * Make commits of logical units.
 * Make sure your commit messages are in the proper format (see [Format of the Commit Message](#format-of-the-commit-message))
 * Push your changes to a topic branch in your fork of the repository.
