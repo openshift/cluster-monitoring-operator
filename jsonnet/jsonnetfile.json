@@ -36,7 +36,7 @@
           "subdir": "jsonnet/telemeter"
         }
       },
-      "version": "master",
+      "version": "main",
       "name": "telemeter-client"
     },
     {
