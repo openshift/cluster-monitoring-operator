@@ -105,7 +105,9 @@ func (suite *Suite) StringMarkdown() string {
 }
 
 func (suite *Suite) StringAscii() string {
-	return suite.intoCodeBlocks("----")
+	// Not ready to be part of the doc yet.
+	return ""
+	// return suite.intoCodeBlocks("----")
 }
 
 func (stc *SetUpTearDownCommand) Run(t *testing.T, wDir, kubeConfigPath string) error {

@@ -59,15 +59,9 @@ To avoid these issues, follow these recommendations:
 // make edits or learn more about how this file is generated, read the docgen utility
 // instructions in the source code for the CMO.
 :_mod-docs-content-type: REFERENCE
-[id="resources-reference-for-the-cluster-monitoring-operator"]
+[id="resources-reference-for-the-cluster-monitoring-operator_{context}"]
 = Resources reference for the Cluster Monitoring Operator
-include::_attributes/common-attributes.adoc[]
-:context: resources-reference-for-the-cluster-monitoring-operator
 
-toc::[]
-
-[id="Cluster-monitoring-resources-reference"]
-== Cluster monitoring resources reference
 This document describes the following resources deployed and managed by the Cluster Monitoring Operator (CMO):
 
 * link:#cmo-routes-resources[Routes]
@@ -168,6 +162,11 @@ func PrintManagedResources(format string) error {
 			return err
 		}
 
+		desc, err = formatDescription(desc, format)
+		if err != nil {
+			return err
+		}
+
 		resourcesByKind[o.GetKind()] = append(
 			resourcesByKind[o.GetKind()],
 			resource{
@@ -249,7 +248,34 @@ func substitutePlaceholdersInDescription(desc, format string) (string, error) {
 		} else {
 			content = suite.StringMarkdown()
 		}
-		lines = append(lines, content)
+		// TODO: remove once unnecessary
+		if content != "" {
+			lines = append(lines, content)
+		}
+	}
+	if err := scanner.Err(); err != nil {
+		return "", err
+	}
+	return strings.Join(lines, "\n"), nil
+}
+
+// formatDescription improves the formatting of the description according to the desired format.
+// For example, for better list rendering.
+func formatDescription(desc, format string) (string, error) {
+	if format != asciiDocsFormat {
+		return desc, nil
+	}
+
+	var lines []string
+	scanner := bufio.NewScanner(strings.NewReader(desc))
+	for scanner.Scan() {
+		line := scanner.Text()
+		lines = append(lines, line)
+		// Supposing a list will exist after "foo bar:"
+		// make sure to add a new line for better rendering.
+		if strings.HasSuffix(line, ":") {
+			lines = append(lines, "")
+		}
 	}
 	if err := scanner.Err(); err != nil {
 		return "", err
