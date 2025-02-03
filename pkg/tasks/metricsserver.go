@@ -122,20 +122,20 @@ func (t *MetricsServerTask) Run(ctx context.Context) error {
 			return fmt.Errorf("reconciling MetricsServer Service failed: %w", err)
 		}
 
-		cacm, err := t.factory.PrometheusK8sKubeletServingCABundle(map[string]string{})
+		kubeletServingCA, err := t.factory.PrometheusK8sKubeletServingCABundle(map[string]string{})
 		if err != nil {
 			return fmt.Errorf("initializing kubelet serving CA Bundle ConfigMap failed: %w", err)
 		}
 
-		cacm, err = t.client.WaitForConfigMap(
+		kubeletServingCA, err = t.client.WaitForConfigMap(
 			ctx,
-			cacm,
+			kubeletServingCA,
 		)
 		if err != nil {
 			return err
 		}
 
-		scas, err := t.client.WaitForSecretByNsName(
+		servingCASecret, err := t.client.WaitForSecretByNsName(
 			ctx,
 			types.NamespacedName{
 				Namespace: s.Namespace,
@@ -146,17 +146,17 @@ func (t *MetricsServerTask) Run(ctx context.Context) error {
 			return err
 		}
 
-		mcs, err := t.factory.MetricsClientCerts()
+		metricsServerClientCerts, err := t.factory.MetricsServerClientCerts()
 		if err != nil {
 			return fmt.Errorf("initializing metrics-client-cert failed: %w", err)
 		}
 
-		mcs, err = t.client.WaitForSecret(
+		metricsServerClientCerts, err = t.client.WaitForSecret(
 			ctx,
-			mcs,
+			metricsServerClientCerts,
 		)
 		if err != nil {
-			return err
+			return fmt.Errorf("waiting for metrics-server-client-certs secret failed: %w", err)
 		}
 
 		{
@@ -171,19 +171,14 @@ func (t *MetricsServerTask) Run(ctx context.Context) error {
 			}
 		}
 
-		tlsSecret, err := t.client.WaitForSecretByNsName(ctx, types.NamespacedName{Namespace: t.namespace, Name: "metrics-server-tls"})
-		if err != nil {
-			return fmt.Errorf("failed to wait for metrics-server-tls secret: %w", err)
-		}
-
 		apiAuthConfigmap, err := t.client.WaitForConfigMapByNsName(ctx, types.NamespacedName{Namespace: "kube-system", Name: "extension-apiserver-authentication"})
 		if err != nil {
 			return fmt.Errorf("failed to wait for kube-system/extension-apiserver-authentication configmap: %w", err)
 		}
 
-		secret, err := t.factory.MetricsServerSecret(tlsSecret, apiAuthConfigmap)
+		secret, err := t.factory.MetricsServerClientCASecret(apiAuthConfigmap)
 		if err != nil {
-			return fmt.Errorf("failed to create metrics-server secret: %w", err)
+			return fmt.Errorf("failed to create metrics-server client-ca secret: %w", err)
 		}
 
 		err = t.deleteOldMetricsServerSecrets(secret.Labels["monitoring.openshift.io/hash"])
@@ -193,10 +188,10 @@ func (t *MetricsServerTask) Run(ctx context.Context) error {
 
 		err = t.client.CreateOrUpdateSecret(ctx, secret)
 		if err != nil {
-			return fmt.Errorf("reconciling MetricsServer Secret failed: %w", err)
+			return fmt.Errorf("reconciling metrics-server client-ca secret failed: %w", err)
 		}
 
-		dep, err := t.factory.MetricsServerDeployment(secret.Name, cacm, scas, mcs, apiAuthConfigmap.Data)
+		dep, err := t.factory.MetricsServerDeployment(secret.Name, kubeletServingCA, servingCASecret, metricsServerClientCerts, apiAuthConfigmap.Data)
 		if err != nil {
 			return fmt.Errorf("initializing MetricsServer Deployment failed: %w", err)
 		}
