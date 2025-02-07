@@ -18,19 +18,19 @@ package v1alpha1
 
 import (
 	v1 "github.com/prometheus-operator/prometheus-operator/pkg/apis/monitoring/v1"
-	v1alpha1 "github.com/prometheus-operator/prometheus-operator/pkg/apis/monitoring/v1alpha1"
+	monitoringv1alpha1 "github.com/prometheus-operator/prometheus-operator/pkg/apis/monitoring/v1alpha1"
 )
 
-// DNSSDConfigApplyConfiguration represents an declarative configuration of the DNSSDConfig type for use
+// DNSSDConfigApplyConfiguration represents a declarative configuration of the DNSSDConfig type for use
 // with apply.
 type DNSSDConfigApplyConfiguration struct {
-	Names           []string                `json:"names,omitempty"`
-	RefreshInterval *v1.Duration            `json:"refreshInterval,omitempty"`
-	Type            *v1alpha1.DNSRecordType `json:"type,omitempty"`
-	Port            *int32                  `json:"port,omitempty"`
+	Names           []string                          `json:"names,omitempty"`
+	RefreshInterval *v1.Duration                      `json:"refreshInterval,omitempty"`
+	Type            *monitoringv1alpha1.DNSRecordType `json:"type,omitempty"`
+	Port            *int32                            `json:"port,omitempty"`
 }
 
-// DNSSDConfigApplyConfiguration constructs an declarative configuration of the DNSSDConfig type for use with
+// DNSSDConfigApplyConfiguration constructs a declarative configuration of the DNSSDConfig type for use with
 // apply.
 func DNSSDConfig() *DNSSDConfigApplyConfiguration {
 	return &DNSSDConfigApplyConfiguration{}
@@ -57,7 +57,7 @@ func (b *DNSSDConfigApplyConfiguration) WithRefreshInterval(value v1.Duration) *
 // WithType sets the Type field in the declarative configuration to the given value
 // and returns the receiver, so that objects can be built by chaining "With" function invocations.
 // If called multiple times, the Type field is set to the value of the last call.
-func (b *DNSSDConfigApplyConfiguration) WithType(value v1alpha1.DNSRecordType) *DNSSDConfigApplyConfiguration {
+func (b *DNSSDConfigApplyConfiguration) WithType(value monitoringv1alpha1.DNSRecordType) *DNSSDConfigApplyConfiguration {
 	b.Type = &value
 	return b
 }
