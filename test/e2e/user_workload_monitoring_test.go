@@ -85,19 +85,6 @@ func TestUserWorkloadMonitoringInvalidConfig(t *testing.T) {
 func TestUserWorkloadMonitoringMetrics(t *testing.T) {
 	setupUserWorkloadAssetsWithTeardownHook(t, f)
 
-	uwmCM := f.BuildUserWorkloadConfigMap(t,
-		`prometheus:
-  enforcedTargetLimit: 10
-  volumeClaimTemplate:
-    spec:
-      resources:
-        requests:
-          storage: 2Gi
-`,
-	)
-	f.MustCreateOrUpdateConfigMap(t, uwmCM)
-	defer f.MustDeleteConfigMap(t, uwmCM)
-
 	f.AssertStatefulSetExistsAndRollout("prometheus-user-workload", f.UserWorkloadMonitoringNs)(t)
 	if err := deployUserApplication(f); err != nil {
 		t.Fatal(err)
@@ -145,13 +132,7 @@ func TestUserWorkloadMonitoringAlerting(t *testing.T) {
 	setupUserWorkloadAssetsWithTeardownHook(t, f)
 
 	uwmCM := f.BuildUserWorkloadConfigMap(t,
-		fmt.Sprintf(`prometheus:
-  enforcedTargetLimit: 10
-  volumeClaimTemplate:
-    spec:
-      resources:
-        requests:
-          storage: 2Gi
+		fmt.Sprintf(`
 namespacesWithoutLabelEnforcement:
 - %s
 `, notEnforcedNs),
@@ -217,19 +198,6 @@ userWorkload:
 func TestUserWorkloadMonitoringOptOut(t *testing.T) {
 	setupUserWorkloadAssetsWithTeardownHook(t, f)
 
-	uwmCM := f.BuildUserWorkloadConfigMap(t,
-		`prometheus:
-  enforcedTargetLimit: 10
-  volumeClaimTemplate:
-    spec:
-      resources:
-        requests:
-          storage: 2Gi
-`,
-	)
-	f.MustCreateOrUpdateConfigMap(t, uwmCM)
-	defer f.MustDeleteConfigMap(t, uwmCM)
-
 	f.AssertStatefulSetExistsAndRollout("prometheus-user-workload", f.UserWorkloadMonitoringNs)(t)
 	if err := deployUserApplication(f); err != nil {
 		t.Fatal(err)
@@ -248,19 +216,6 @@ func TestUserWorkloadMonitoringOptOut(t *testing.T) {
 
 func TestUserWorkloadMonitoringGrpcSecrets(t *testing.T) {
 	setupUserWorkloadAssetsWithTeardownHook(t, f)
-
-	uwmCM := f.BuildUserWorkloadConfigMap(t,
-		`prometheus:
-  enforcedTargetLimit: 10
-  volumeClaimTemplate:
-    spec:
-      resources:
-        requests:
-          storage: 2Gi
-`,
-	)
-	f.MustCreateOrUpdateConfigMap(t, uwmCM)
-	defer f.MustDeleteConfigMap(t, uwmCM)
 
 	for _, scenario := range []struct {
 		name string
