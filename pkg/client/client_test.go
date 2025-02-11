@@ -41,6 +41,7 @@ import (
 	"k8s.io/apimachinery/pkg/util/intstr"
 	"k8s.io/apimachinery/pkg/util/wait"
 	"k8s.io/client-go/kubernetes/fake"
+	clocktesting "k8s.io/utils/clock/testing"
 	"k8s.io/utils/ptr"
 )
 
@@ -510,7 +511,7 @@ func TestCreateOrUpdateSecret(t *testing.T) {
 
 			c := Client{
 				kclient:       fake.NewSimpleClientset(initial),
-				eventRecorder: events.NewInMemoryRecorder("cluster-monitoring-operator"),
+				eventRecorder: events.NewInMemoryRecorder("cluster-monitoring-operator", clocktesting.NewFakePassiveClock(time.Now())),
 			}
 
 			_, err := c.kclient.CoreV1().Secrets(ns).Get(ctx, initial.Name, metav1.GetOptions{})
@@ -634,7 +635,7 @@ func TestCreateOrUpdateConfigMap(t *testing.T) {
 
 			c := Client{
 				kclient:       fake.NewSimpleClientset(initial),
-				eventRecorder: events.NewInMemoryRecorder("cluster-monitoring-operator"),
+				eventRecorder: events.NewInMemoryRecorder("cluster-monitoring-operator", clocktesting.NewFakePassiveClock(time.Now())),
 			}
 
 			_, err := c.kclient.CoreV1().ConfigMaps(ns).Get(ctx, initial.Name, metav1.GetOptions{})
@@ -782,7 +783,7 @@ func TestCreateOrUpdateService(t *testing.T) {
 
 			c := Client{
 				kclient:       fake.NewSimpleClientset(initial),
-				eventRecorder: events.NewInMemoryRecorder("cluster-monitoring-operator"),
+				eventRecorder: events.NewInMemoryRecorder("cluster-monitoring-operator", clocktesting.NewFakePassiveClock(time.Now())),
 			}
 
 			initial, err := c.kclient.CoreV1().Services(ns).Get(ctx, initial.Name, metav1.GetOptions{})
@@ -902,7 +903,7 @@ func TestCreateOrUpdateServiceAccount(t *testing.T) {
 		},
 	}
 
-	eventRecorder := events.NewInMemoryRecorder("cluster-monitoring-operator")
+	eventRecorder := events.NewInMemoryRecorder("cluster-monitoring-operator", clocktesting.NewFakePassiveClock(time.Now()))
 	for _, tc := range testCases {
 		t.Run(tc.name, func(st *testing.T) {
 			sa := &v1.ServiceAccount{
@@ -1026,7 +1027,7 @@ func TestCreateOrUpdateRole(t *testing.T) {
 			}
 			c := Client{
 				kclient:       fake.NewSimpleClientset(initial),
-				eventRecorder: events.NewInMemoryRecorder("cluster-monitoring-operator"),
+				eventRecorder: events.NewInMemoryRecorder("cluster-monitoring-operator", clocktesting.NewFakePassiveClock(time.Now())),
 			}
 			_, err := c.kclient.RbacV1().Roles(ns).Get(ctx, initial.Name, metav1.GetOptions{})
 			require.NoError(t, err)
@@ -1176,7 +1177,7 @@ func TestCreateOrUpdateRoleBinding(t *testing.T) {
 			}
 			c := Client{
 				kclient:       fake.NewSimpleClientset(initial),
-				eventRecorder: events.NewInMemoryRecorder("cluster-monitoring-operator"),
+				eventRecorder: events.NewInMemoryRecorder("cluster-monitoring-operator", clocktesting.NewFakePassiveClock(time.Now())),
 			}
 			initial, err := c.kclient.RbacV1().RoleBindings(ns).Get(ctx, initial.Name, metav1.GetOptions{})
 			require.NoError(t, err)
@@ -1270,7 +1271,7 @@ func TestCreateOrUpdateClusterRole(t *testing.T) {
 			}
 			c := Client{
 				kclient:       fake.NewSimpleClientset(initial),
-				eventRecorder: events.NewInMemoryRecorder("cluster-monitoring-operator"),
+				eventRecorder: events.NewInMemoryRecorder("cluster-monitoring-operator", clocktesting.NewFakePassiveClock(time.Now())),
 			}
 			_, err := c.kclient.RbacV1().ClusterRoles().Get(ctx, initial.Name, metav1.GetOptions{})
 			require.NoError(t, err)
@@ -1416,7 +1417,7 @@ func TestCreateOrUpdateClusterRoleBinding(t *testing.T) {
 
 			c := Client{
 				kclient:       fake.NewSimpleClientset(initial.DeepCopy()),
-				eventRecorder: events.NewInMemoryRecorder("cluster-monitoring-operator"),
+				eventRecorder: events.NewInMemoryRecorder("cluster-monitoring-operator", clocktesting.NewFakePassiveClock(time.Now())),
 			}
 			initial, err := c.kclient.RbacV1().ClusterRoleBindings().Get(ctx, initial.Name, metav1.GetOptions{})
 			require.NoError(t, err)
@@ -1932,7 +1933,7 @@ func TestCreateOrUpdateValidatingWebhookConfiguration(t *testing.T) {
 
 	c := Client{
 		kclient:       fake.NewSimpleClientset(webhook.DeepCopy()),
-		eventRecorder: events.NewInMemoryRecorder("cluster-monitoring-operator"),
+		eventRecorder: events.NewInMemoryRecorder("cluster-monitoring-operator", clocktesting.NewFakePassiveClock(time.Now())),
 		resourceCache: resourceapply.NewResourceCache(),
 	}
 
