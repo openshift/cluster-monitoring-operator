@@ -349,9 +349,9 @@ func assertMetricsForMonitoringComponents(t *testing.T) {
 	} {
 		t.Run(service, func(t *testing.T) {
 			f.ThanosQuerierClient.WaitForQueryReturn(
-				// To avoid making the test wait for more than lookback-delta in case Prometheus
-				// wasn't able to write stale markers (because it was down), reduce the lookup period.
-				t, time.Minute, fmt.Sprintf(`count(last_over_time(up{service="%s",namespace="openshift-user-workload-monitoring"}[1m]) == 1)`, service),
+				// To avoid having to make the test run for more than lookback-delta in case Prometheus
+				// wasn't able to write stale markers (because it was down), reduce the lookup period and the timeout.
+				t, 3*time.Minute, fmt.Sprintf(`count(last_over_time(up{service="%s",namespace="openshift-user-workload-monitoring"}[1m]) == 1)`, service),
 				func(v float64) error {
 					if v == float64(expected) {
 						return nil
