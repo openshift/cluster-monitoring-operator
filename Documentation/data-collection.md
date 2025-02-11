@@ -1231,6 +1231,13 @@ data:
     #
     # openshift:openshift_network_operator_ipsec_state:info shows the cluster ipsec status (Disabled, External, Full) and whether the legacy or new API was used to set the status
     - '{__name__="openshift:openshift_network_operator_ipsec_state:info"}'
+    #
+    # owners: (https://github.com/openshift/cluster-health-analyzer)
+    #
+    # cluster:health:group_severity:count shows the total number of firing incidents by severity
+    # Expected labels:
+    # - severity: "critical", "warning", "info" or "none".
+    - '{__name__="cluster:health:group_severity:count"}'
 kind: ConfigMap
 metadata:
   name: telemetry-config
