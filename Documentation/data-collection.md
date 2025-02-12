@@ -1237,7 +1237,7 @@ data:
     # cluster:health:group_severity:count shows the total number of firing incidents by severity
     # Expected labels:
     # - severity: "critical", "warning", "info" or "none".
-    - '{__name__="cluster:health:group_severity:count"}'
+    - '{__name__="cluster:health:group_severity:count", severity=~"critical|warning|info|none"}'
 kind: ConfigMap
 metadata:
   name: telemetry-config
