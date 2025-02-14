@@ -178,6 +178,7 @@ spec:
   - delayed-compaction
   enforcedNamespaceLabel: namespace
   externalLabels: {}
+  fallbackScrapeProtocol: PrometheusText0.0.4
   ignoreNamespaceSelectors: true
   image: quay.io/prometheus/prometheus:v2.55.1
   listenLocal: true
