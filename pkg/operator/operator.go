@@ -45,6 +45,7 @@ import (
 	"k8s.io/client-go/tools/cache"
 	"k8s.io/client-go/util/workqueue"
 	"k8s.io/klog/v2"
+	"k8s.io/utils/clock"
 
 	"github.com/openshift/cluster-monitoring-operator/pkg/alert"
 	"github.com/openshift/cluster-monitoring-operator/pkg/client"
@@ -250,6 +251,7 @@ func New(
 		events.RecommendedClusterSingletonCorrelatorOptions(),
 		"cluster-monitoring-operator",
 		controllerRef,
+		clock.RealClock{},
 	)
 
 	configClient, err := configv1client.NewForConfig(config)

@@ -22,7 +22,7 @@ import (
 	v1 "k8s.io/api/core/v1"
 )
 
-// OpenStackSDConfigApplyConfiguration represents an declarative configuration of the OpenStackSDConfig type for use
+// OpenStackSDConfigApplyConfiguration represents a declarative configuration of the OpenStackSDConfig type for use
 // with apply.
 type OpenStackSDConfigApplyConfiguration struct {
 	Role                        *string                                                         `json:"role,omitempty"`
@@ -40,12 +40,12 @@ type OpenStackSDConfigApplyConfiguration struct {
 	ApplicationCredentialSecret *v1.SecretKeySelector                                           `json:"applicationCredentialSecret,omitempty"`
 	AllTenants                  *bool                                                           `json:"allTenants,omitempty"`
 	RefreshInterval             *monitoringv1.Duration                                          `json:"refreshInterval,omitempty"`
-	Port                        *int                                                            `json:"port,omitempty"`
+	Port                        *int32                                                          `json:"port,omitempty"`
 	Availability                *string                                                         `json:"availability,omitempty"`
 	TLSConfig                   *applyconfigurationmonitoringv1.SafeTLSConfigApplyConfiguration `json:"tlsConfig,omitempty"`
 }
 
-// OpenStackSDConfigApplyConfiguration constructs an declarative configuration of the OpenStackSDConfig type for use with
+// OpenStackSDConfigApplyConfiguration constructs a declarative configuration of the OpenStackSDConfig type for use with
 // apply.
 func OpenStackSDConfig() *OpenStackSDConfigApplyConfiguration {
 	return &OpenStackSDConfigApplyConfiguration{}
@@ -174,7 +174,7 @@ func (b *OpenStackSDConfigApplyConfiguration) WithRefreshInterval(value monitori
 // WithPort sets the Port field in the declarative configuration to the given value
 // and returns the receiver, so that objects can be built by chaining "With" function invocations.
 // If called multiple times, the Port field is set to the value of the last call.
-func (b *OpenStackSDConfigApplyConfiguration) WithPort(value int) *OpenStackSDConfigApplyConfiguration {
+func (b *OpenStackSDConfigApplyConfiguration) WithPort(value int32) *OpenStackSDConfigApplyConfiguration {
 	b.Port = &value
 	return b
 }
