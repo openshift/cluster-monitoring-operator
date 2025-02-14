@@ -85,19 +85,6 @@ func TestUserWorkloadMonitoringInvalidConfig(t *testing.T) {
 func TestUserWorkloadMonitoringMetrics(t *testing.T) {
 	setupUserWorkloadAssetsWithTeardownHook(t, f)
 
-	uwmCM := f.BuildUserWorkloadConfigMap(t,
-		`prometheus:
-  enforcedTargetLimit: 10
-  volumeClaimTemplate:
-    spec:
-      resources:
-        requests:
-          storage: 2Gi
-`,
-	)
-	f.MustCreateOrUpdateConfigMap(t, uwmCM)
-	defer f.MustDeleteConfigMap(t, uwmCM)
-
 	f.AssertStatefulSetExistsAndRollout("prometheus-user-workload", f.UserWorkloadMonitoringNs)(t)
 	if err := deployUserApplication(f); err != nil {
 		t.Fatal(err)
@@ -145,13 +132,7 @@ func TestUserWorkloadMonitoringAlerting(t *testing.T) {
 	setupUserWorkloadAssetsWithTeardownHook(t, f)
 
 	uwmCM := f.BuildUserWorkloadConfigMap(t,
-		fmt.Sprintf(`prometheus:
-  enforcedTargetLimit: 10
-  volumeClaimTemplate:
-    spec:
-      resources:
-        requests:
-          storage: 2Gi
+		fmt.Sprintf(`
 namespacesWithoutLabelEnforcement:
 - %s
 `, notEnforcedNs),
@@ -217,19 +198,6 @@ userWorkload:
 func TestUserWorkloadMonitoringOptOut(t *testing.T) {
 	setupUserWorkloadAssetsWithTeardownHook(t, f)
 
-	uwmCM := f.BuildUserWorkloadConfigMap(t,
-		`prometheus:
-  enforcedTargetLimit: 10
-  volumeClaimTemplate:
-    spec:
-      resources:
-        requests:
-          storage: 2Gi
-`,
-	)
-	f.MustCreateOrUpdateConfigMap(t, uwmCM)
-	defer f.MustDeleteConfigMap(t, uwmCM)
-
 	f.AssertStatefulSetExistsAndRollout("prometheus-user-workload", f.UserWorkloadMonitoringNs)(t)
 	if err := deployUserApplication(f); err != nil {
 		t.Fatal(err)
@@ -248,19 +216,6 @@ func TestUserWorkloadMonitoringOptOut(t *testing.T) {
 
 func TestUserWorkloadMonitoringGrpcSecrets(t *testing.T) {
 	setupUserWorkloadAssetsWithTeardownHook(t, f)
-
-	uwmCM := f.BuildUserWorkloadConfigMap(t,
-		`prometheus:
-  enforcedTargetLimit: 10
-  volumeClaimTemplate:
-    spec:
-      resources:
-        requests:
-          storage: 2Gi
-`,
-	)
-	f.MustCreateOrUpdateConfigMap(t, uwmCM)
-	defer f.MustDeleteConfigMap(t, uwmCM)
 
 	for _, scenario := range []struct {
 		name string
@@ -394,9 +349,9 @@ func assertMetricsForMonitoringComponents(t *testing.T) {
 	} {
 		t.Run(service, func(t *testing.T) {
 			f.ThanosQuerierClient.WaitForQueryReturn(
-				// To avoid making the test wait for more than lookback-delta in case Prometheus
-				// wasn't able to write stale markers (because it was down), reduce the lookup period.
-				t, time.Minute, fmt.Sprintf(`count(last_over_time(up{service="%s",namespace="openshift-user-workload-monitoring"}[1m]) == 1)`, service),
+				// To avoid having to make the test run for more than lookback-delta in case Prometheus
+				// wasn't able to write stale markers (because it was down), reduce the lookup period and the timeout.
+				t, 3*time.Minute, fmt.Sprintf(`count(last_over_time(up{service="%s",namespace="openshift-user-workload-monitoring"}[1m]) == 1)`, service),
 				func(v float64) error {
 					if v == float64(expected) {
 						return nil
