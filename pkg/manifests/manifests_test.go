@@ -2010,6 +2010,27 @@ func TestPrometheusK8sAdditionalAlertManagerConfigsSecret(t *testing.T) {
 			mountedSecrets: []string{},
 		},
 		{
+			name: "proxy url",
+			config: `prometheusK8s:
+  additionalAlertmanagerConfigs:
+  - apiVersion: v2
+    scheme: https
+    proxyUrl: testproxy.com
+    staticConfigs:
+    - alertmanager1-remote.com
+    - alertmanager1-remotex.com
+`,
+			expected: `- scheme: https
+  api_version: v2
+  static_configs:
+  - targets:
+    - alertmanager1-remote.com
+    - alertmanager1-remotex.com
+  proxyUrl: testproxy.com
+`,
+			mountedSecrets: []string{},
+		},
+		{
 			name: "version, path and scheme override",
 			config: `prometheusK8s:
   additionalAlertmanagerConfigs:
@@ -2479,6 +2500,21 @@ func TestThanosRulerAdditionalAlertManagerConfigsSecret(t *testing.T) {
   static_configs:
   - alertmanager1-remote.com
   - alertmanager1-remotex.com
+`,
+		},
+		{
+			name: "proxyURL",
+			config: `alertmanagerMain:
+  enabled: false`,
+			userWorkloadConfig: `thanosRuler:
+  additionalAlertmanagerConfigs:
+  - apiVersion: v2
+    scheme: https
+    proxyUrl: testproxy.com`,
+			expected: `alertmanagers:
+- scheme: https
+  api_version: v2
+  proxyUrl: testproxy.com
 `,
 		},
 	}

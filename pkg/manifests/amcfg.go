@@ -36,6 +36,7 @@ type amConfigPrometheus struct {
 	Authorization amConfigAuthorization   `yaml:"authorization,omitempty"`
 	TLSConfig     amConfigTLS             `yaml:"tls_config,omitempty"`
 	StaticConfigs []amConfigStaticConfigs `yaml:"static_configs,omitempty"`
+	ProxyURL      string                  `yaml:"proxyUrl,omitempty"`
 }
 
 type amConfigAuthorization struct {
@@ -68,6 +69,7 @@ func (a prometheusAdditionalAlertmanagerConfig) MarshalYAML() (interface{}, erro
 		PathPrefix: a.PathPrefix,
 		Timeout:    a.Timeout,
 		APIVersion: a.APIVersion,
+		ProxyURL:   a.ProxyURL,
 		TLSConfig: amConfigTLS{
 			CA:                 "",
 			Cert:               "",
@@ -126,6 +128,7 @@ type thanosAlertmanagerConfiguration struct {
 	APIVersion    string       `yaml:"api_version,omitempty"`
 	HTTPConfig    amHTTPConfig `yaml:"http_config,omitempty"`
 	StaticConfigs []string     `yaml:"static_configs,omitempty"`
+	ProxyURL      string       `yaml:"proxyUrl,omitempty"`
 }
 
 type amHTTPConfig struct {
@@ -142,6 +145,7 @@ func ConvertToThanosAlertmanagerConfiguration(ta []AdditionalAlertmanagerConfig)
 			PathPrefix: a.PathPrefix,
 			Timeout:    a.Timeout,
 			APIVersion: a.APIVersion,
+			ProxyURL:   a.ProxyURL,
 			HTTPConfig: amHTTPConfig{
 				BearerTokenFile: "",
 				TLSConfig: amConfigTLS{

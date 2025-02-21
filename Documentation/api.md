@@ -70,6 +70,7 @@ The `AdditionalAlertmanagerConfig` resource defines settings for how a component
 | staticConfigs | []string | A list of statically configured Alertmanager endpoints in the form of `<hosts>:<port>`. |
 | timeout | *string | Defines the timeout value used when sending alerts. |
 | tlsConfig | [TLSConfig](#tlsconfig) | Defines the TLS settings to use for Alertmanager connections. |
+| proxyUrl | string | Defines proxy_url settings for Alertmanager |
 
 [Back to TOC](#table-of-contents)
 

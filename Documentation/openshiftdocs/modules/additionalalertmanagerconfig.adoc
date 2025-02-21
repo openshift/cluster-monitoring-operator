@@ -36,6 +36,8 @@ link:thanosrulerconfig.adoc[ThanosRulerConfig]
 
 |tlsConfig|link:tlsconfig.adoc[TLSConfig]|Defines the TLS settings to use for Alertmanager connections.
 
+|proxyUrl|string|Defines proxy_url settings for Alertmanager
+
 |===
 
 link:../index.adoc[Back to TOC]
