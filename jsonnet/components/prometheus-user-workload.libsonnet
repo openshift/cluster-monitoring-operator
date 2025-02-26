@@ -292,6 +292,7 @@ function(params)
       spec+: {
         // Enable experimental additional scrape metrics and delayed compaction features.
         enableFeatures+: ['extra-scrape-metrics', 'delayed-compaction'],
+        fallbackScrapeProtocol: 'PrometheusText0.0.4',
         overrideHonorTimestamps: true,
         overrideHonorLabels: true,
         ignoreNamespaceSelectors: true,

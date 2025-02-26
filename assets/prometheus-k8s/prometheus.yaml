@@ -197,7 +197,8 @@ spec:
       openshift.io/cluster-monitoring: "true"
   ruleSelector: {}
   scrapeClasses:
-  - name: tls-client-certificate-auth
+  - fallbackScrapeProtocol: PrometheusText0.0.4
+    name: tls-client-certificate-auth
     tlsConfig:
       caFile: /etc/prometheus/configmaps/serving-certs-ca-bundle/service-ca.crt
       certFile: /etc/prometheus/secrets/metrics-client-certs/tls.crt
