@@ -103,7 +103,7 @@ Expose openshift-state-metrics `/metrics` endpoints within the cluster on the fo
 
 Expose the Prometheus web server within the cluster on the following ports:
 
-* Port 9091 provides access to all the Prometheus endpoints. Granting access requires binding a user to the `cluster-monitoring-view` cluster role.
+* Port 9091 provides access to all the Prometheus endpoints. Granting access requires binding a user to the `cluster-monitoring-view` cluster role or `cluster-monitoring-metrics-api` cluster role in the `openshift-monitoring` project.
 * Port 9092 provides access to the `/metrics` and `/federate` endpoints only. This port is for internal use, and no other usage is guaranteed.
 
 === openshift-user-workload-monitoring/prometheus-operator
@@ -131,7 +131,7 @@ Expose the `/metrics` endpoint on port 8443. This port is for internal use, and 
 
 Expose the Thanos Querier web server within the cluster on the following ports:
 
-* Port 9091 provides access to all the Thanos Querier endpoints. Granting access requires binding a user to the `cluster-monitoring-view` cluster role.
+* Port 9091 provides access to all the Thanos Querier endpoints. Granting access requires binding a user to the `cluster-monitoring-view` cluster role or `cluster-monitoring-metrics-api` cluster role in the `openshift-monitoring` project.
 * Port 9092 provides access to the `/api/v1/query`, `/api/v1/query_range/`, `/api/v1/labels`, `/api/v1/label/*/values`, and `/api/v1/series` endpoints restricted to a given project. Granting access requires binding a user to the `view` cluster role in the project.
 * Port 9093 provides access to the `/api/v1/alerts`, and `/api/v1/rules` endpoints restricted to a given project. Granting access requires binding a user to the `monitoring-rules-edit` cluster role or `monitoring-edit` cluster role or `monitoring-rules-view` cluster role in the project.
 * Port 9094 provides access to the `/metrics` endpoint only. This port is for internal use, and no other usage is guaranteed.

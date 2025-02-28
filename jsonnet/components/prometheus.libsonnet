@@ -5,6 +5,7 @@ local generateSecret = import '../utils/generate-secret.libsonnet';
 local prometheus = import 'github.com/prometheus-operator/kube-prometheus/jsonnet/kube-prometheus/components/prometheus.libsonnet';
 local withDescription = (import '../utils/add-annotations.libsonnet').withDescription;
 local requiredClusterRoles = (import '../utils/add-annotations.libsonnet').requiredClusterRoles;
+local testFilePlaceholder = (import '../utils/add-annotations.libsonnet').testFilePlaceholder;
 
 function(params)
   local cfg = params;
@@ -103,10 +104,12 @@ function(params)
           |||
             Expose the Prometheus web server within the cluster on the following ports:
             * Port %d provides access to all the Prometheus endpoints. %s
+            %s
             * Port %d provides access to the `/metrics` and `/federate` endpoints only. This port is for internal use, and no other usage is guaranteed.
           ||| % [
             $.service.spec.ports[0].port,
-            requiredClusterRoles(['cluster-monitoring-view'], true),
+            requiredClusterRoles(['cluster-monitoring-view', 'cluster-monitoring-metrics-api'], false, 'openshift-monitoring'),
+            testFilePlaceholder('openshift-monitoring', 'prometheus-k8s', $.service.spec.ports[0].port),
             $.service.spec.ports[1].port,
           ],
         ),
