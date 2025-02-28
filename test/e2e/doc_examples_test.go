@@ -15,6 +15,7 @@
 package e2e
 
 import (
+	"fmt"
 	"os"
 	"path/filepath"
 	"testing"
@@ -29,49 +30,50 @@ func TestDocExamples(t *testing.T) {
 	tempDir := t.TempDir()
 	kubeConfigPath := f.KubeConfigPath
 
-	entries, err := os.ReadDir(filesDir)
+	scripts, err := os.ReadDir(filesDir)
 	require.NoError(t, err)
 	// In case there is a wiring issue.
-	require.Greater(t, len(entries), 0)
+	require.Greater(t, len(scripts), 0)
 
-	for _, entry := range entries {
-		file, err := os.Open(filepath.Join(filesDir, entry.Name()))
-		require.NoError(t, err)
-		defer file.Close()
+	for _, script := range scripts {
+		t.Run(script.Name(), func(t *testing.T) {
+			file, err := os.Open(filepath.Join(filesDir, script.Name()))
+			require.NoError(t, err)
+			defer file.Close()
 
-		var suite test_command.Suite
-		decoder := yaml.NewDecoder(file)
-		decoder.KnownFields(true)
-		err = decoder.Decode(&suite)
-		require.NoError(t, err)
+			var suite test_command.Suite
+			decoder := yaml.NewDecoder(file)
+			decoder.KnownFields(true)
+			err = decoder.Decode(&suite)
+			require.NoError(t, err)
 
-		for _, test := range suite.Tests {
-			// TODO: run in //
-			t.Run(entry.Name(), func(t *testing.T) {
-				// Set up cleaners
-				t.Cleanup(func() {
-					for _, c := range test.TearDown {
-						c.Run(t, tempDir, kubeConfigPath)
+			for i, test := range suite.Tests {
+				// TODO: run in //
+				t.Run(fmt.Sprintf("suite-%d", i), func(t *testing.T) {
+					t.Cleanup(func() {
+						for _, c := range test.TearDown {
+							c.Run(t, tempDir, kubeConfigPath)
+						}
+					})
+
+					// Setup
+					envVars := map[string]string{}
+					for _, setupCommand := range test.SetUp {
+						require.NoError(t, setupCommand.Run(t, tempDir, kubeConfigPath))
+						if setupCommand.EnvVarValue() == "" {
+							continue
+						}
+						// Check duplicated env vars.
+						require.NotContains(t, envVars, setupCommand.EnvVar)
+						envVars[setupCommand.EnvVar] = setupCommand.EnvVarValue()
+					}
+
+					// Run the checks
+					for _, g := range test.Checks {
+						require.NoError(t, g.Run(t, tempDir, kubeConfigPath, envVars))
 					}
 				})
-
-				// Setup
-				envVars := map[string]string{}
-				for _, setup := range test.SetUp {
-					require.NoError(t, setup.Run(t, tempDir, kubeConfigPath))
-					if setup.EnvVarValue() == "" {
-						continue
-					}
-					// Check duplicated env vars.
-					require.NotContains(t, envVars, setup.EnvVar)
-					envVars[setup.EnvVar] = setup.EnvVarValue()
-				}
-
-				// Run the checks
-				for _, g := range test.Checks {
-					require.NoError(t, g.Run(t, tempDir, kubeConfigPath, envVars))
-				}
-			})
-		}
+			}
+		})
 	}
 }
