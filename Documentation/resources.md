@@ -57,25 +57,28 @@ Expose the Alertmanager web server within the cluster on the following ports:
 * Port 9094 provides access to all the Alertmanager endpoints. Granting access requires binding a user to the `monitoring-alertmanager-view` role (for read-only operations) or `monitoring-alertmanager-edit` role in the `openshift-monitoring` project.
 ```
 # monitoring-alertmanager-view grants read permissions.
-$ oc project openshift-monitoring
-$ oc create serviceaccount am-ro-client
-$ oc adm policy add-role-to-user monitoring-alertmanager-view \
-  --role-namespace=openshift-monitoring --rolebinding-name=am-ro-client \
-  --serviceaccount=am-ro-client
-$ TOKEN=$(oc create token am-ro-client)
-$ ROUTE=$(oc get route alertmanager-main -n openshift-monitoring -ojsonpath={.spec.host})
-$ curl -H "Authorization: Bearer $TOKEN" -k --fail-with-body "https://$ROUTE/api/v2/alerts?filter=alertname=Watchdog"
+$ oc create namespace test-monitoring-alertmanager-view-am
+$ oc create serviceaccount am-client --namespace=test-monitoring-alertmanager-view-am
+$ oc create rolebinding test-monitoring-alertmanager-view-am \
+  --namespace=openshift-monitoring \
+  --role=monitoring-alertmanager-view \
+  --serviceaccount=test-monitoring-alertmanager-view-am:am-client
+$ TOKEN=$(oc create token am-client --namespace=test-monitoring-alertmanager-view-am)
+$ ROUTE=$(oc get route alertmanager-main --namespace=openshift-monitoring -ojsonpath={.spec.host})
+$ curl -k --fail-with-body -H "Authorization: Bearer $TOKEN" "https://$ROUTE/api/v2/alerts?filter=alertname=Watchdog"
 ```
 ```
 # monitoring-alertmanager-edit grants edit permissions.
-$ oc project openshift-monitoring
-$ oc create serviceaccount am-rw-client
-$ oc adm policy add-role-to-user monitoring-alertmanager-edit \
-  --role-namespace=openshift-monitoring --rolebinding-name=am-rw-client \
-  --serviceaccount=am-rw-client
-$ TOKEN=$(oc create token am-rw-client)
-$ ROUTE=$(oc get route alertmanager-main -n openshift-monitoring -ojsonpath={.spec.host})
-$ curl -X POST -H "Authorization: Bearer $TOKEN" -H "Content-Type: application/json" \
+$ oc create namespace test-monitoring-alertmanager-edit-am
+$ oc create serviceaccount am-client --namespace=test-monitoring-alertmanager-edit-am
+$ oc create rolebinding test-monitoring-alertmanager-edit-am \
+  --namespace=openshift-monitoring \
+  --role=monitoring-alertmanager-edit \
+  --serviceaccount=test-monitoring-alertmanager-edit-am:am-client
+$ TOKEN=$(oc create token am-client --namespace=test-monitoring-alertmanager-edit-am)
+$ ROUTE=$(oc get route alertmanager-main --namespace=openshift-monitoring -ojsonpath={.spec.host})
+$ curl -k -X POST --fail-with-body "https://$ROUTE/api/v2/silences" \
+  -H "Authorization: Bearer $TOKEN" -H "Content-Type: application/json" \
   -d '{
     "matchers": [
       {
@@ -86,10 +89,9 @@ $ curl -X POST -H "Authorization: Bearer $TOKEN" -H "Content-Type: application/j
     ],
     "startsAt": "2044-01-01T00:00:00Z",
     "endsAt": "2044-01-01T00:00:01Z",
-    "createdBy": "am-rw-client",
+    "createdBy": "test-monitoring-alertmanager-edit-am/am-client",
     "comment": "Silence test"
-  }' \
-  -k --fail-with-body "https://$ROUTE/api/v2/silences"
+  }'
 ```
 
 * Port 9092 provides access to the Alertmanager endpoints restricted to a given project. Granting access requires binding a user to the `monitoring-rules-edit` cluster role or `monitoring-edit` cluster role in the project.
@@ -123,6 +125,31 @@ Expose openshift-state-metrics `/metrics` endpoints within the cluster on the fo
 
 Expose the Prometheus web server within the cluster on the following ports:
 * Port 9091 provides access to all the Prometheus endpoints. Granting access requires binding a user to the `cluster-monitoring-view` cluster role.
+```
+# cluster-monitoring-view grants permissions.
+$ oc create namespace test-cluster-monitoring-view-prom
+$ oc create serviceaccount prom-client --namespace=test-cluster-monitoring-view-prom
+$ oc create rolebinding test-cluster-monitoring-view-prom \
+  --namespace=openshift-monitoring \
+  --clusterrole=cluster-monitoring-view \
+  --serviceaccount=test-cluster-monitoring-view-prom:prom-client
+$ TOKEN=$(oc create token prom-client --namespace=test-cluster-monitoring-view-prom)
+$ ROUTE=$(oc get route prometheus-k8s --namespace=openshift-monitoring -ojsonpath={.spec.host})
+$ curl -k --fail-with-body -H "Authorization: Bearer $TOKEN" "https://$ROUTE/api/v1/query?query=up"
+```
+```
+# cluster-monitoring-metrics-api grants permissions.
+$ oc create namespace test-cluster-monitoring-metrics-api-prom
+$ oc create serviceaccount prom-client --namespace=test-cluster-monitoring-metrics-api-prom
+$ oc create rolebinding test-cluster-monitoring-metrics-api-prom \
+  --namespace=openshift-monitoring \
+  --role=cluster-monitoring-metrics-api  \
+  --serviceaccount=test-cluster-monitoring-metrics-api-prom:prom-client
+$ TOKEN=$(oc create token prom-client --namespace=test-cluster-monitoring-metrics-api-prom)
+$ ROUTE=$(oc get route prometheus-k8s --namespace=openshift-monitoring -ojsonpath={.spec.host})
+$ curl -k --fail-with-body -H "Authorization: Bearer $TOKEN" "https://$ROUTE/api/v1/query?query=up"
+```
+
 * Port 9092 provides access to the `/metrics` and `/federate` endpoints only. This port is for internal use, and no other usage is guaranteed.
 
 ### openshift-user-workload-monitoring/prometheus-operator
