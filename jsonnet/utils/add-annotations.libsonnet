@@ -88,7 +88,7 @@
     if clusterRoleBinding then
       s + '.'
     else if namespace != '' then
-      s + ' in the `%s` project.'
+      s + ' in the `%s` project.' % namespace
     else
       s + ' in the project.',
 
