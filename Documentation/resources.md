@@ -63,6 +63,7 @@ $ oc create rolebinding test-monitoring-alertmanager-view-am \
   --namespace=openshift-monitoring \
   --role=monitoring-alertmanager-view \
   --serviceaccount=test-monitoring-alertmanager-view-am:am-client
+# TODO: use Route's status.
 $ TOKEN=$(oc create token am-client --namespace=test-monitoring-alertmanager-view-am)
 $ ROUTE=$(oc get route alertmanager-main --namespace=openshift-monitoring -ojsonpath={.spec.host})
 $ curl -k --fail-with-body -H "Authorization: Bearer $TOKEN" "https://$ROUTE/api/v2/alerts?filter=alertname=Watchdog"
@@ -139,8 +140,8 @@ $ curl -k --fail-with-body -H "Authorization: Bearer $TOKEN" "https://$ROUTE/api
 ```
 ```
 # cluster-monitoring-metrics-api grants permissions.
-$ oc create namespace test-cluster-monitoring-metrics-api-prom
-$ oc create serviceaccount prom-client --namespace=test-cluster-monitoring-metrics-api-prom
+$ oc create namespace test-cluster-monitoring-metrics-api-prom"
+$ oc create serviceaccount prom-client --namespace=test-cluster-monitoring-metrics-api-prom"
 $ oc create rolebinding test-cluster-monitoring-metrics-api-prom \
   --namespace=openshift-monitoring \
   --role=cluster-monitoring-metrics-api  \

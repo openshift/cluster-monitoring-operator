@@ -37,6 +37,8 @@ func TestDocExamples(t *testing.T) {
 
 	for _, script := range scripts {
 		t.Run(script.Name(), func(t *testing.T) {
+			// TODO
+			// t.Parallel()
 			file, err := os.Open(filepath.Join(filesDir, script.Name()))
 			require.NoError(t, err)
 			defer file.Close()
@@ -44,33 +46,20 @@ func TestDocExamples(t *testing.T) {
 			var suite test_command.Suite
 			decoder := yaml.NewDecoder(file)
 			decoder.KnownFields(true)
-			err = decoder.Decode(&suite)
-			require.NoError(t, err)
+			require.NoError(t, decoder.Decode(&suite))
 
 			for i, test := range suite.Tests {
-				// TODO: run in //
 				t.Run(fmt.Sprintf("suite-%d", i), func(t *testing.T) {
+					// TODO
+					// t.Parallel()
 					t.Cleanup(func() {
-						for _, c := range test.TearDown {
-							c.Run(t, tempDir, kubeConfigPath)
-						}
+						test_command.RunScript(t, test.TearDown, tempDir, kubeConfigPath)
 					})
 
-					// Setup
-					envVars := map[string]string{}
-					for _, setupCommand := range test.SetUp {
-						require.NoError(t, setupCommand.Run(t, tempDir, kubeConfigPath))
-						if setupCommand.EnvVarValue() == "" {
-							continue
-						}
-						// Check duplicated env vars.
-						require.NotContains(t, envVars, setupCommand.EnvVar)
-						envVars[setupCommand.EnvVar] = setupCommand.EnvVarValue()
-					}
-
-					// Run the checks
-					for _, g := range test.Checks {
-						require.NoError(t, g.Run(t, tempDir, kubeConfigPath, envVars))
+					if test.InCluster {
+						
+					} else {
+						test_command.RunScript(t, test.Script, tempDir, kubeConfigPath)
 					}
 				})
 			}

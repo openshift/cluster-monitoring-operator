@@ -1,56 +1,44 @@
 tests:
-  - header: >-
+  - script: |
       # monitoring-alertmanager-view grants read permissions.
-    setUp:
-      - run: "oc create namespace test-monitoring-alertmanager-view-am"
-      - run: "oc create serviceaccount am-client --namespace=test-monitoring-alertmanager-view-am"
-      - run: >-
-          oc create rolebinding test-monitoring-alertmanager-view-am \
-            --namespace=openshift-monitoring \
-            --role=monitoring-alertmanager-view \
-            --serviceaccount=test-monitoring-alertmanager-view-am:am-client
-      - run: "oc create token am-client --namespace=test-monitoring-alertmanager-view-am"
-        toEnvVar: TOKEN
-        # TODO: use Route's status.
-      - run: "oc get route alertmanager-main --namespace=openshift-monitoring -ojsonpath={.spec.host}"
-        toEnvVar: ROUTE
-    checks:
-      - run: >
-          curl -k --fail-with-body -H "Authorization: Bearer $TOKEN" "https://$ROUTE/api/v2/alerts?filter=alertname=Watchdog"
-    tearDown:
-      - run: "oc delete rolebinding test-monitoring-alertmanager-view-am --namespace=openshift-monitoring"
-      - run: "oc delete namespace test-monitoring-alertmanager-view-am --wait=false"
-  - header: >-
+      oc create namespace test-monitoring-alertmanager-view-am
+      oc create serviceaccount am-client --namespace=test-monitoring-alertmanager-view-am
+      oc create rolebinding test-monitoring-alertmanager-view-am \
+        --namespace=openshift-monitoring \
+        --role=monitoring-alertmanager-view \
+        --serviceaccount=test-monitoring-alertmanager-view-am:am-client
+      # TODO: use Route's status.
+      TOKEN=$(oc create token am-client --namespace=test-monitoring-alertmanager-view-am)
+      ROUTE=$(oc get route alertmanager-main --namespace=openshift-monitoring -ojsonpath={.spec.host})
+      curl -k --fail-with-body -H "Authorization: Bearer $TOKEN" "https://$ROUTE/api/v2/alerts?filter=alertname=Watchdog"
+    tearDown: |
+      oc delete rolebinding test-monitoring-alertmanager-view-am --namespace=openshift-monitoring
+      oc delete namespace test-monitoring-alertmanager-view-am --wait=false
+  - script: |
       # monitoring-alertmanager-edit grants edit permissions.
-    setUp:
-      - run: "oc create namespace test-monitoring-alertmanager-edit-am"
-      - run: "oc create serviceaccount am-client --namespace=test-monitoring-alertmanager-edit-am"
-      - run: >-
-          oc create rolebinding test-monitoring-alertmanager-edit-am \
-            --namespace=openshift-monitoring \
-            --role=monitoring-alertmanager-edit \
-            --serviceaccount=test-monitoring-alertmanager-edit-am:am-client
-      - run: "oc create token am-client --namespace=test-monitoring-alertmanager-edit-am"
-        toEnvVar: TOKEN
-      - run: "oc get route alertmanager-main --namespace=openshift-monitoring -ojsonpath={.spec.host}"
-        toEnvVar: ROUTE
-    checks:
-      - run: >
-          curl -k -X POST --fail-with-body "https://$ROUTE/api/v2/silences" \
-            -H "Authorization: Bearer $TOKEN" -H "Content-Type: application/json" \
-            -d '{
-              "matchers": [
-                {
-                  "name": "alertname",
-                  "value": "MyTestAlert",
-                  "isRegex": false
-                }
-              ],
-              "startsAt": "2044-01-01T00:00:00Z",
-              "endsAt": "2044-01-01T00:00:01Z",
-              "createdBy": "test-monitoring-alertmanager-edit-am/am-client",
-              "comment": "Silence test"
-            }'
-    tearDown:
-      - run: "oc delete rolebinding test-monitoring-alertmanager-edit-am --namespace=openshift-monitoring"
-      - run: "oc delete namespace test-monitoring-alertmanager-edit-am --wait=false"
+      oc create namespace test-monitoring-alertmanager-edit-am
+      oc create serviceaccount am-client --namespace=test-monitoring-alertmanager-edit-am
+      oc create rolebinding test-monitoring-alertmanager-edit-am \
+        --namespace=openshift-monitoring \
+        --role=monitoring-alertmanager-edit \
+        --serviceaccount=test-monitoring-alertmanager-edit-am:am-client
+      TOKEN=$(oc create token am-client --namespace=test-monitoring-alertmanager-edit-am)
+      ROUTE=$(oc get route alertmanager-main --namespace=openshift-monitoring -ojsonpath={.spec.host})
+      curl -k -X POST --fail-with-body "https://$ROUTE/api/v2/silences" \
+        -H "Authorization: Bearer $TOKEN" -H "Content-Type: application/json" \
+        -d '{
+          "matchers": [
+            {
+              "name": "alertname",
+              "value": "MyTestAlert",
+              "isRegex": false
+            }
+          ],
+          "startsAt": "2044-01-01T00:00:00Z",
+          "endsAt": "2044-01-01T00:00:01Z",
+          "createdBy": "test-monitoring-alertmanager-edit-am/am-client",
+          "comment": "Silence test"
+        }'
+    tearDown: |
+      oc delete rolebinding test-monitoring-alertmanager-edit-am --namespace=openshift-monitoring
+      oc delete namespace test-monitoring-alertmanager-edit-am --wait=false
