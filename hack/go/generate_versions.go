@@ -83,8 +83,15 @@ func updateVersionFile(fileP string, components Components) error {
 	sort.Strings(keys)
 
 	for _, component := range keys {
-		knownVersion, _ := components.Versions[component]
-		newVersion, err := getVersion(components.Repos[component], mainBranch)
+		knownVersion := components.Versions[component]
+
+		// TODO: simplify once kubeRbacProxy's primary branch is main
+		branch := mainBranch
+		if component == "kubeRbacProxy" {
+			branch = "master"
+		}
+
+		newVersion, err := getVersion(components.Repos[component], branch)
 		if err != nil {
 			log.Fatalf("couldn't fetch the new version for %s: %v", component, err)
 		}
