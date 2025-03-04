@@ -80,7 +80,7 @@ func (t *OpenShiftStateMetricsTask) Run(ctx context.Context) error {
 		return fmt.Errorf("initializing openshift-state-metrics RBAC proxy Secret failed: %w", err)
 	}
 
-	err = t.client.CreateIfNotExistSecret(ctx, rs)
+	err = t.client.CreateOrUpdateSecret(ctx, rs)
 	if err != nil {
 		return fmt.Errorf("creating openshift-state-metrics RBAC proxy Secret failed: %w", err)
 	}
