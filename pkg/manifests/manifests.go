@@ -1177,7 +1177,9 @@ func (f *Factory) ThanosRulerAlertmanagerConfigSecret() (*v1.Secret, error) {
 		alertingConfiguration.Alertmanagers = []thanosAlertmanagerConfiguration{}
 	}
 
-	additionalConfigs, err := ConvertToThanosAlertmanagerConfiguration(f.config.GetThanosRulerAlertmanagerConfigs())
+	amConfigs := f.config.GetThanosRulerAlertmanagerConfigs()
+	f.injectClusterWideProxy(amConfigs)
+	additionalConfigs, err := ConvertToThanosAlertmanagerConfiguration(amConfigs)
 	if err != nil {
 		return nil, err
 	}
@@ -1624,8 +1626,31 @@ func (f *Factory) setupPrometheusRemoteWriteProxy(p *monv1.Prometheus) {
 	}
 }
 
+func (f *Factory) injectClusterWideProxy(amConfigs []AdditionalAlertmanagerConfig) {
+	var proxyParts []string
+
+	if httpProxy := f.proxy.HTTPProxy(); httpProxy != "" {
+		proxyParts = append(proxyParts, httpProxy)
+	}
+	if httpsProxy := f.proxy.HTTPSProxy(); httpsProxy != "" {
+		proxyParts = append(proxyParts, httpsProxy)
+	}
+
+	proxy := strings.Join(proxyParts, ",")
+
+	for i := range amConfigs {
+		amConfigs[i].ProxyURL = proxy
+
+		if noProxy := f.proxy.NoProxy(); noProxy != "" {
+			amConfigs[i].NoProxy = noProxy
+		}
+	}
+}
+
 func (f *Factory) PrometheusK8sAdditionalAlertManagerConfigsSecret() (*v1.Secret, error) {
 	amConfigs := f.config.ClusterMonitoringConfiguration.PrometheusK8sConfig.AlertmanagerConfigs
+	// inject cluster wide-proxy into AdditionalAltermanager
+	f.injectClusterWideProxy(amConfigs)
 	prometheusAmConfigs := PrometheusAdditionalAlertmanagerConfigs(amConfigs)
 
 	config, err := yaml2.Marshal(prometheusAmConfigs)
@@ -1646,6 +1671,8 @@ func (f *Factory) PrometheusK8sAdditionalAlertManagerConfigsSecret() (*v1.Secret
 
 func (f *Factory) PrometheusUserWorkloadAdditionalAlertManagerConfigsSecret() (*v1.Secret, error) {
 	amConfigs := f.config.AdditionalAlertmanagerConfigsForPrometheusUserWorkload()
+	// inject cluster wide-proxy into AdditionalAltermanager
+	f.injectClusterWideProxy(amConfigs)
 	prometheusAmConfigs := PrometheusAdditionalAlertmanagerConfigs(amConfigs)
 	config, err := yaml2.Marshal(prometheusAmConfigs)
 	if err != nil {

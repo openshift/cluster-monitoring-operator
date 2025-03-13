@@ -780,6 +780,10 @@ type AdditionalAlertmanagerConfig struct {
 	Timeout *string `json:"timeout,omitempty"`
 	// Defines the TLS settings to use for Alertmanager connections.
 	TLSConfig TLSConfig `json:"tlsConfig,omitempty"`
+	// Defines proxy_url settings for Alertmanager
+	ProxyURL string `json:"proxyUrl,omitempty"`
+	// Defines no_proxy settings for Alertmanager
+	NoProxy string `json:"noProxy,omitempty"`
 }
 
 // The `RemoteWriteSpec` resource defines the settings for remote write storage.

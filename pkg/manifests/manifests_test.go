@@ -2006,6 +2006,8 @@ func TestPrometheusK8sAdditionalAlertManagerConfigsSecret(t *testing.T) {
   - targets:
     - alertmanager1-remote.com
     - alertmanager1-remotex.com
+  proxy_url: http://example.com:8080/,https://example.com:8080/
+  no_proxy: local.example.com
 `,
 			mountedSecrets: []string{},
 		},
@@ -2027,6 +2029,8 @@ func TestPrometheusK8sAdditionalAlertManagerConfigsSecret(t *testing.T) {
   - targets:
     - alertmanager1-remote.com
     - alertmanager1-remotex.com
+  proxy_url: http://example.com:8080/,https://example.com:8080/
+  no_proxy: local.example.com
 `,
 			mountedSecrets: []string{},
 		},
@@ -2050,6 +2054,8 @@ func TestPrometheusK8sAdditionalAlertManagerConfigsSecret(t *testing.T) {
   - targets:
     - alertmanager1-remote.com
     - alertmanager1-remotex.com
+  proxy_url: http://example.com:8080/,https://example.com:8080/
+  no_proxy: local.example.com
 `,
 			mountedSecrets: []string{"alertmanager1-bearer-token"},
 		},
@@ -2084,6 +2090,8 @@ func TestPrometheusK8sAdditionalAlertManagerConfigsSecret(t *testing.T) {
   - targets:
     - alertmanager1-remote.com
     - alertmanager1-remotex.com
+  proxy_url: http://example.com:8080/,https://example.com:8080/
+  no_proxy: local.example.com
 `,
 			mountedSecrets: []string{"alertmanager-tls"},
 		},
@@ -2120,6 +2128,8 @@ func TestPrometheusK8sAdditionalAlertManagerConfigsSecret(t *testing.T) {
   - targets:
     - alertmanager1-remote.com
     - alertmanager1-remotex.com
+  proxy_url: http://example.com:8080/,https://example.com:8080/
+  no_proxy: local.example.com
 `,
 			mountedSecrets: []string{"alertmanager-ca-tls", "alertmanager-cert-tls", "alertmanager-key-tls"},
 		},
@@ -2159,8 +2169,31 @@ func TestPrometheusK8sAdditionalAlertManagerConfigsSecret(t *testing.T) {
   - targets:
     - alertmanager1-remote.com
     - alertmanager1-remotex.com
+  proxy_url: http://example.com:8080/,https://example.com:8080/
+  no_proxy: local.example.com
 `,
 			mountedSecrets: []string{"alertmanager-bearer-token", "alertmanager-ca-tls", "alertmanager-cert-tls", "alertmanager-key-tls"},
+		},
+		{
+			name: "proxy url",
+			config: `prometheusK8s:
+  additionalAlertmanagerConfigs:
+  - apiVersion: v2
+    scheme: https
+    staticConfigs:
+    - alertmanager1-remote.com
+    - alertmanager1-remotex.com
+`,
+			expected: `- scheme: https
+  api_version: v2
+  static_configs:
+  - targets:
+    - alertmanager1-remote.com
+    - alertmanager1-remotex.com
+  proxy_url: http://example.com:8080/,https://example.com:8080/
+  no_proxy: local.example.com
+`,
+			mountedSecrets: []string{},
 		},
 	}
 
@@ -2170,7 +2203,11 @@ func TestPrometheusK8sAdditionalAlertManagerConfigsSecret(t *testing.T) {
 			if err != nil {
 				t.Fatal(err)
 			}
-			f := NewFactory("openshift-monitoring", "openshift-user-workload-monitoring", c, defaultInfrastructureReader(), &fakeProxyReader{}, NewAssets(assetsPath), &APIServerConfig{}, &configv1.Console{})
+			f := NewFactory("openshift-monitoring", "openshift-user-workload-monitoring", c, defaultInfrastructureReader(), &fakeProxyReader{
+				httpProxy:  "http://example.com:8080/",
+				httpsProxy: "https://example.com:8080/",
+				noProxy:    "local.example.com",
+			}, NewAssets(assetsPath), &APIServerConfig{}, &configv1.Console{})
 
 			p, err := f.PrometheusK8s(
 				&v1.Secret{ObjectMeta: metav1.ObjectMeta{Name: "foo"}},
@@ -2278,6 +2315,8 @@ func TestThanosRulerAdditionalAlertManagerConfigsSecret(t *testing.T) {
 - static_configs:
   - alertmanager1-remote.com
   - alertmanager1-remotex.com
+  proxy_url: http://example.com:8080/,https://example.com:8080/
+  no_proxy: local.example.com
 `,
 		},
 		{
@@ -2295,6 +2334,8 @@ func TestThanosRulerAdditionalAlertManagerConfigsSecret(t *testing.T) {
 - static_configs:
   - alertmanager1-remote.com
   - alertmanager1-remotex.com
+  proxy_url: http://example.com:8080/,https://example.com:8080/
+  no_proxy: local.example.com
 `,
 		},
 		{
@@ -2324,6 +2365,8 @@ func TestThanosRulerAdditionalAlertManagerConfigsSecret(t *testing.T) {
   static_configs:
   - alertmanager1-remote.com
   - alertmanager1-remotex.com
+  proxy_url: http://example.com:8080/,https://example.com:8080/
+  no_proxy: local.example.com
 `,
 		},
 		{
@@ -2352,6 +2395,8 @@ func TestThanosRulerAdditionalAlertManagerConfigsSecret(t *testing.T) {
   static_configs:
   - alertmanager1-remote.com
   - alertmanager1-remotex.com
+  proxy_url: http://example.com:8080/,https://example.com:8080/
+  no_proxy: local.example.com
 `,
 		},
 		{
@@ -2393,6 +2438,8 @@ func TestThanosRulerAdditionalAlertManagerConfigsSecret(t *testing.T) {
   static_configs:
   - alertmanager1-remote.com
   - alertmanager1-remotex.com
+  proxy_url: http://example.com:8080/,https://example.com:8080/
+  no_proxy: local.example.com
 `,
 		},
 		{
@@ -2432,6 +2479,8 @@ func TestThanosRulerAdditionalAlertManagerConfigsSecret(t *testing.T) {
   static_configs:
   - alertmanager1-remote.com
   - alertmanager1-remotex.com
+  proxy_url: http://example.com:8080/,https://example.com:8080/
+  no_proxy: local.example.com
 `,
 		},
 		{
@@ -2479,6 +2528,8 @@ func TestThanosRulerAdditionalAlertManagerConfigsSecret(t *testing.T) {
   static_configs:
   - alertmanager1-remote.com
   - alertmanager1-remotex.com
+  proxy_url: http://example.com:8080/,https://example.com:8080/
+  no_proxy: local.example.com
 `,
 		},
 	}
@@ -2496,7 +2547,11 @@ func TestThanosRulerAdditionalAlertManagerConfigsSecret(t *testing.T) {
 			}
 			c.UserWorkloadConfiguration = uwc
 
-			f := NewFactory("openshift-monitoring", "openshift-user-workload-monitoring", c, defaultInfrastructureReader(), &fakeProxyReader{}, NewAssets(assetsPath), &APIServerConfig{}, &configv1.Console{})
+			f := NewFactory("openshift-monitoring", "openshift-user-workload-monitoring", c, defaultInfrastructureReader(), &fakeProxyReader{
+				httpProxy:  "http://example.com:8080/",
+				httpsProxy: "https://example.com:8080/",
+				noProxy:    "local.example.com",
+			}, NewAssets(assetsPath), &APIServerConfig{}, &configv1.Console{})
 
 			s, err := f.ThanosRulerAlertmanagerConfigSecret()
 			if err != nil {
