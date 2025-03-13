@@ -407,10 +407,10 @@ github.com/pkg/errors v0.9.1/go.mod h1:bwawxfHBFNV+L2hUp1rHADufV3IMtnDRdf1r5NINE
 github.com/pmezard/go-difflib v1.0.0/go.mod h1:iKH77koFhYxTK1pcRnkKkqfTogsbg7gZNVY4sRDYZ/4=
 github.com/pmezard/go-difflib v1.0.1-0.20181226105442-5d4384ee4fb2 h1:Jamvg5psRIccs7FGNTlIRMkT8wgtp5eCXdBlqhYGL6U=
 github.com/pmezard/go-difflib v1.0.1-0.20181226105442-5d4384ee4fb2/go.mod h1:iKH77koFhYxTK1pcRnkKkqfTogsbg7gZNVY4sRDYZ/4=
-github.com/prometheus-operator/prometheus-operator/pkg/apis/monitoring v0.80.0 h1:ckSycH7xHtpcvXsmEY/qEziRhDQKqKqbsHi9kX/BO7A=
-github.com/prometheus-operator/prometheus-operator/pkg/apis/monitoring v0.80.0/go.mod h1:6x4x0t9BP35g4XcjkHE9EB3RxhyfxpdpmZKd/Qyk8+M=
-github.com/prometheus-operator/prometheus-operator/pkg/client v0.80.0 h1:TvrTp81Ra7c3n+P4tArjx/st9x92q1BlxfjhqeP3aSA=
-github.com/prometheus-operator/prometheus-operator/pkg/client v0.80.0/go.mod h1:G2GGhVurNB5qQh7DZVSAtdN4Szvp6IxWhc1+n2rclw4=
+github.com/prometheus-operator/prometheus-operator/pkg/apis/monitoring v0.80.1 h1:DP+PUNVOc+Bkft8a4QunLzaZ0RspWuD3tBbcPHr2PeE=
+github.com/prometheus-operator/prometheus-operator/pkg/apis/monitoring v0.80.1/go.mod h1:6x4x0t9BP35g4XcjkHE9EB3RxhyfxpdpmZKd/Qyk8+M=
+github.com/prometheus-operator/prometheus-operator/pkg/client v0.80.1 h1:7/TPlTy7tkMXC1KwS2WdUdU8J220DszlSQ1+KHjXwHc=
+github.com/prometheus-operator/prometheus-operator/pkg/client v0.80.1/go.mod h1:0lW4yp2XE7AKohpGB2UGdomjP08rbr4f8JwAN6sUDWU=
 github.com/prometheus/alertmanager v0.27.0 h1:V6nTa2J5V4s8TG4C4HtrBP/WNSebCCTYGGv4qecA/+I=
 github.com/prometheus/alertmanager v0.27.0/go.mod h1:8Ia/R3urPmbzJ8OsdvmZvIprDwvwmYCmUbwBL+jlPOE=
 github.com/prometheus/client_golang v0.9.1/go.mod h1:7SWBe2y4D6OKWSNQJUaRYU/AaXPKyh/dDVn+NZz0KFw=
