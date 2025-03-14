@@ -432,6 +432,19 @@ function(params)
         priorityClassName: 'openshift-user-critical',
         containers: [
           {
+            name: 'thanos-ruler',
+            env: [{
+              name: 'HTTP_PROXY',
+              value: '',
+            }, {
+              name: 'HTTPS_PROXY',
+              value: '',
+            }, {
+              name: 'NO_PROXY',
+              value: '',
+            }],
+          },
+          {
             // Note: this is performing strategic-merge-patch for thanos-ruler
             // container. the rest of the container configuration is managed by
             // prometheus-operator based on $.thanosRuler.spec.
