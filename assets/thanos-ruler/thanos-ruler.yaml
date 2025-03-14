@@ -24,6 +24,15 @@ spec:
     key: alertmanagers.yaml
     name: thanos-ruler-alertmanagers-config
   containers:
+  - env:
+    - name: HTTP_PROXY
+      value: ""
+    - name: HTTPS_PROXY
+      value: ""
+    - name: NO_PROXY
+      value: ""
+    name: thanos-ruler
+    terminationMessagePolicy: FallbackToLogsOnError
   - name: thanos-ruler
     securityContext:
       allowPrivilegeEscalation: false
