@@ -1460,6 +1460,8 @@ func (f *Factory) PrometheusK8s(grpcTLS *v1.Secret, telemetrySecret *v1.Secret) 
 
 	for i, container := range p.Spec.Containers {
 		switch container.Name {
+		case "prometheus":
+			f.injectProxyVariables(&p.Spec.Containers[i])
 		case "kube-rbac-proxy", "kube-rbac-proxy-web", "kube-rbac-proxy-thanos":
 			p.Spec.Containers[i].Image = f.config.Images.KubeRbacProxy
 			p.Spec.Containers[i].Args = f.setTLSSecurityConfiguration(container.Args, KubeRbacProxyTLSCipherSuitesFlag, KubeRbacProxyMinTLSVersionFlag)
@@ -1795,6 +1797,7 @@ func (f *Factory) PrometheusUserWorkload(grpcTLS *v1.Secret) (*monv1.Prometheus,
 				FailureThreshold: 240,
 			}
 
+			f.injectProxyVariables(&p.Spec.Containers[i])
 		case "kube-rbac-proxy-metrics", "kube-rbac-proxy-federate", "kube-rbac-proxy-thanos":
 			p.Spec.Containers[i].Image = f.config.Images.KubeRbacProxy
 			p.Spec.Containers[i].Args = f.setTLSSecurityConfiguration(container.Args, KubeRbacProxyTLSCipherSuitesFlag, KubeRbacProxyMinTLSVersionFlag)
@@ -3222,6 +3225,8 @@ func (f *Factory) ThanosRulerCustomResource(
 
 	for i, container := range t.Spec.Containers {
 		switch container.Name {
+		case "thanos-ruler":
+			f.injectProxyVariables(&t.Spec.Containers[i])
 		case "kube-rbac-proxy-metrics", "kube-rbac-proxy-web":
 			t.Spec.Containers[i].Image = f.config.Images.KubeRbacProxy
 			t.Spec.Containers[i].Args = f.setTLSSecurityConfiguration(container.Args, KubeRbacProxyTLSCipherSuitesFlag, KubeRbacProxyMinTLSVersionFlag)

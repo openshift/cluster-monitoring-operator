@@ -563,6 +563,16 @@ function(params)
           // See e.g pkg/manifests/manifests.go where the startup probe is added
           {
             name: 'prometheus',
+            env: [{
+              name: 'HTTP_PROXY',
+              value: '',
+            }, {
+              name: 'HTTPS_PROXY',
+              value: '',
+            }, {
+              name: 'NO_PROXY',
+              value: '',
+            }],
             volumeMounts+: [
               {
                 name: $.trustedCaBundle.metadata.name,

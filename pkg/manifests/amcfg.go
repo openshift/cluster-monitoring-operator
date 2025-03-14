@@ -29,13 +29,14 @@ func (a PrometheusAdditionalAlertmanagerConfigs) MarshalYAML() (interface{}, err
 
 // amConfigPrometheus is our internal representation of the Prometheus alerting configuration.
 type amConfigPrometheus struct {
-	Scheme        string                  `yaml:"scheme,omitempty"`
-	PathPrefix    string                  `yaml:"path_prefix,omitempty"`
-	Timeout       *string                 `yaml:"timeout,omitempty"`
-	APIVersion    string                  `yaml:"api_version,omitempty"`
-	Authorization amConfigAuthorization   `yaml:"authorization,omitempty"`
-	TLSConfig     amConfigTLS             `yaml:"tls_config,omitempty"`
-	StaticConfigs []amConfigStaticConfigs `yaml:"static_configs,omitempty"`
+	Scheme               string                  `yaml:"scheme,omitempty"`
+	PathPrefix           string                  `yaml:"path_prefix,omitempty"`
+	Timeout              *string                 `yaml:"timeout,omitempty"`
+	APIVersion           string                  `yaml:"api_version,omitempty"`
+	Authorization        amConfigAuthorization   `yaml:"authorization,omitempty"`
+	TLSConfig            amConfigTLS             `yaml:"tls_config,omitempty"`
+	StaticConfigs        []amConfigStaticConfigs `yaml:"static_configs,omitempty"`
+	ProxyFromEnvironment bool                    `yaml:"proxy_from_environment,omitempty"`
 }
 
 type amConfigAuthorization struct {
@@ -64,10 +65,11 @@ type prometheusAdditionalAlertmanagerConfig AdditionalAlertmanagerConfig
 // compatible with the Prometheus configuration.
 func (a prometheusAdditionalAlertmanagerConfig) MarshalYAML() (interface{}, error) {
 	cfg := amConfigPrometheus{
-		Scheme:     a.Scheme,
-		PathPrefix: a.PathPrefix,
-		Timeout:    a.Timeout,
-		APIVersion: a.APIVersion,
+		Scheme:               a.Scheme,
+		PathPrefix:           a.PathPrefix,
+		Timeout:              a.Timeout,
+		APIVersion:           a.APIVersion,
+		ProxyFromEnvironment: true,
 		TLSConfig: amConfigTLS{
 			CA:                 "",
 			Cert:               "",
@@ -126,6 +128,7 @@ type thanosAlertmanagerConfiguration struct {
 	APIVersion    string       `yaml:"api_version,omitempty"`
 	HTTPConfig    amHTTPConfig `yaml:"http_config,omitempty"`
 	StaticConfigs []string     `yaml:"static_configs,omitempty"`
+	ProxyURL      string       `yaml:"proxy_url,omitempty"`
 }
 
 type amHTTPConfig struct {
@@ -182,6 +185,8 @@ func ConvertToThanosAlertmanagerConfiguration(ta []AdditionalAlertmanagerConfig)
 
 		result[i] = cfg
 	}
+
+	// todo mariofer proxyURL
 
 	return result, nil
 }
