@@ -1,5 +1,9 @@
 # Note: This CHANGELOG is only for the monitoring team to track all monitoring related changes. Please see OpenShift release notes for official changes.
 
+## 4.19
+
+- [#2553](https://github.com/openshift/cluster-monitoring-operator/pull/2553) Expose `kube_cronjob_labels` and `kube_job_labels` metrics.
+
 ## 4.18
 
 - [#2503](https://github.com/openshift/cluster-monitoring-operator/issues/2503) Expose `scrapeInterval` setting for UWM Prometheus.
