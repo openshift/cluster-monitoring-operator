@@ -23,7 +23,7 @@ import (
 	metav1 "k8s.io/client-go/applyconfigurations/meta/v1"
 )
 
-// CommonPrometheusFieldsApplyConfiguration represents an declarative configuration of the CommonPrometheusFields type for use
+// CommonPrometheusFieldsApplyConfiguration represents a declarative configuration of the CommonPrometheusFields type for use
 // with apply.
 type CommonPrometheusFieldsApplyConfiguration struct {
 	PodMetadata                          *EmbeddedObjectMetadataApplyConfiguration               `json:"podMetadata,omitempty"`
@@ -51,6 +51,7 @@ type CommonPrometheusFieldsApplyConfiguration struct {
 	ScrapeProtocols                      []monitoringv1.ScrapeProtocol                           `json:"scrapeProtocols,omitempty"`
 	ExternalLabels                       map[string]string                                       `json:"externalLabels,omitempty"`
 	EnableRemoteWriteReceiver            *bool                                                   `json:"enableRemoteWriteReceiver,omitempty"`
+	RemoteWriteReceiverMessageVersions   []monitoringv1.RemoteWriteMessageVersion                `json:"remoteWriteReceiverMessageVersions,omitempty"`
 	EnableFeatures                       []monitoringv1.EnableFeature                            `json:"enableFeatures,omitempty"`
 	ExternalURL                          *string                                                 `json:"externalUrl,omitempty"`
 	RoutePrefix                          *string                                                 `json:"routePrefix,omitempty"`
@@ -69,7 +70,10 @@ type CommonPrometheusFieldsApplyConfiguration struct {
 	Tolerations                          []corev1.Toleration                                     `json:"tolerations,omitempty"`
 	TopologySpreadConstraints            []TopologySpreadConstraintApplyConfiguration            `json:"topologySpreadConstraints,omitempty"`
 	RemoteWrite                          []RemoteWriteSpecApplyConfiguration                     `json:"remoteWrite,omitempty"`
+	OTLP                                 *OTLPConfigApplyConfiguration                           `json:"otlp,omitempty"`
 	SecurityContext                      *corev1.PodSecurityContext                              `json:"securityContext,omitempty"`
+	DNSPolicy                            *monitoringv1.DNSPolicy                                 `json:"dnsPolicy,omitempty"`
+	DNSConfig                            *PodDNSConfigApplyConfiguration                         `json:"dnsConfig,omitempty"`
 	ListenLocal                          *bool                                                   `json:"listenLocal,omitempty"`
 	Containers                           []corev1.Container                                      `json:"containers,omitempty"`
 	InitContainers                       []corev1.Container                                      `json:"initContainers,omitempty"`
@@ -108,9 +112,10 @@ type CommonPrometheusFieldsApplyConfiguration struct {
 	MaximumStartupDurationSeconds        *int32                                                  `json:"maximumStartupDurationSeconds,omitempty"`
 	ScrapeClasses                        []ScrapeClassApplyConfiguration                         `json:"scrapeClasses,omitempty"`
 	ServiceDiscoveryRole                 *monitoringv1.ServiceDiscoveryRole                      `json:"serviceDiscoveryRole,omitempty"`
+	TSDB                                 *TSDBSpecApplyConfiguration                             `json:"tsdb,omitempty"`
 }
 
-// CommonPrometheusFieldsApplyConfiguration constructs an declarative configuration of the CommonPrometheusFields type for use with
+// CommonPrometheusFieldsApplyConfiguration constructs a declarative configuration of the CommonPrometheusFields type for use with
 // apply.
 func CommonPrometheusFields() *CommonPrometheusFieldsApplyConfiguration {
 	return &CommonPrometheusFieldsApplyConfiguration{}
@@ -326,6 +331,16 @@ func (b *CommonPrometheusFieldsApplyConfiguration) WithEnableRemoteWriteReceiver
 	return b
 }
 
+// WithRemoteWriteReceiverMessageVersions adds the given value to the RemoteWriteReceiverMessageVersions field in the declarative configuration
+// and returns the receiver, so that objects can be build by chaining "With" function invocations.
+// If called multiple times, values provided by each call will be appended to the RemoteWriteReceiverMessageVersions field.
+func (b *CommonPrometheusFieldsApplyConfiguration) WithRemoteWriteReceiverMessageVersions(values ...monitoringv1.RemoteWriteMessageVersion) *CommonPrometheusFieldsApplyConfiguration {
+	for i := range values {
+		b.RemoteWriteReceiverMessageVersions = append(b.RemoteWriteReceiverMessageVersions, values[i])
+	}
+	return b
+}
+
 // WithEnableFeatures adds the given value to the EnableFeatures field in the declarative configuration
 // and returns the receiver, so that objects can be build by chaining "With" function invocations.
 // If called multiple times, values provided by each call will be appended to the EnableFeatures field.
@@ -498,11 +513,35 @@ func (b *CommonPrometheusFieldsApplyConfiguration) WithRemoteWrite(values ...*Re
 	return b
 }
 
+// WithOTLP sets the OTLP field in the declarative configuration to the given value
+// and returns the receiver, so that objects can be built by chaining "With" function invocations.
+// If called multiple times, the OTLP field is set to the value of the last call.
+func (b *CommonPrometheusFieldsApplyConfiguration) WithOTLP(value *OTLPConfigApplyConfiguration) *CommonPrometheusFieldsApplyConfiguration {
+	b.OTLP = value
+	return b
+}
+
 // WithSecurityContext sets the SecurityContext field in the declarative configuration to the given value
 // and returns the receiver, so that objects can be built by chaining "With" function invocations.
 // If called multiple times, the SecurityContext field is set to the value of the last call.
 func (b *CommonPrometheusFieldsApplyConfiguration) WithSecurityContext(value corev1.PodSecurityContext) *CommonPrometheusFieldsApplyConfiguration {
 	b.SecurityContext = &value
+	return b
+}
+
+// WithDNSPolicy sets the DNSPolicy field in the declarative configuration to the given value
+// and returns the receiver, so that objects can be built by chaining "With" function invocations.
+// If called multiple times, the DNSPolicy field is set to the value of the last call.
+func (b *CommonPrometheusFieldsApplyConfiguration) WithDNSPolicy(value monitoringv1.DNSPolicy) *CommonPrometheusFieldsApplyConfiguration {
+	b.DNSPolicy = &value
+	return b
+}
+
+// WithDNSConfig sets the DNSConfig field in the declarative configuration to the given value
+// and returns the receiver, so that objects can be built by chaining "With" function invocations.
+// If called multiple times, the DNSConfig field is set to the value of the last call.
+func (b *CommonPrometheusFieldsApplyConfiguration) WithDNSConfig(value *PodDNSConfigApplyConfiguration) *CommonPrometheusFieldsApplyConfiguration {
+	b.DNSConfig = value
 	return b
 }
 
@@ -833,5 +872,13 @@ func (b *CommonPrometheusFieldsApplyConfiguration) WithScrapeClasses(values ...*
 // If called multiple times, the ServiceDiscoveryRole field is set to the value of the last call.
 func (b *CommonPrometheusFieldsApplyConfiguration) WithServiceDiscoveryRole(value monitoringv1.ServiceDiscoveryRole) *CommonPrometheusFieldsApplyConfiguration {
 	b.ServiceDiscoveryRole = &value
+	return b
+}
+
+// WithTSDB sets the TSDB field in the declarative configuration to the given value
+// and returns the receiver, so that objects can be built by chaining "With" function invocations.
+// If called multiple times, the TSDB field is set to the value of the last call.
+func (b *CommonPrometheusFieldsApplyConfiguration) WithTSDB(value *TSDBSpecApplyConfiguration) *CommonPrometheusFieldsApplyConfiguration {
+	b.TSDB = value
 	return b
 }

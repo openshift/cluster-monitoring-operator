@@ -3440,8 +3440,8 @@ func addRemoteWriteConfigs(clusterID string, rw []monv1.RemoteWriteSpec, rwTarge
 		writeRelabelConfigs = append(writeRelabelConfigs, tmpRelabelDrop)
 		rwConf := monv1.RemoteWriteSpec{
 			URL:                 target.URL,
-			Name:                target.Name,
-			RemoteTimeout:       monv1.Duration(target.RemoteTimeout),
+			Name:                ptr.To(target.Name),
+			RemoteTimeout:       ptr.To(monv1.Duration(target.RemoteTimeout)),
 			Headers:             target.Headers,
 			QueueConfig:         target.QueueConfig,
 			WriteRelabelConfigs: writeRelabelConfigs,
