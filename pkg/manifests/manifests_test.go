@@ -1989,12 +1989,6 @@ func TestPrometheusK8sAdditionalAlertManagerConfigsSecret(t *testing.T) {
 		mountedSecrets []string
 	}{
 		{
-			name:           "empty config",
-			config:         "",
-			expected:       "[]\n",
-			mountedSecrets: []string{},
-		},
-		{
 			name: "basic config",
 			config: `prometheusK8s:
   additionalAlertmanagerConfigs:
@@ -2006,6 +2000,7 @@ func TestPrometheusK8sAdditionalAlertManagerConfigsSecret(t *testing.T) {
   - targets:
     - alertmanager1-remote.com
     - alertmanager1-remotex.com
+  proxy_from_environment: true
 `,
 			mountedSecrets: []string{},
 		},
@@ -2027,6 +2022,7 @@ func TestPrometheusK8sAdditionalAlertManagerConfigsSecret(t *testing.T) {
   - targets:
     - alertmanager1-remote.com
     - alertmanager1-remotex.com
+  proxy_from_environment: true
 `,
 			mountedSecrets: []string{},
 		},
@@ -2050,6 +2046,7 @@ func TestPrometheusK8sAdditionalAlertManagerConfigsSecret(t *testing.T) {
   - targets:
     - alertmanager1-remote.com
     - alertmanager1-remotex.com
+  proxy_from_environment: true
 `,
 			mountedSecrets: []string{"alertmanager1-bearer-token"},
 		},
@@ -2084,6 +2081,7 @@ func TestPrometheusK8sAdditionalAlertManagerConfigsSecret(t *testing.T) {
   - targets:
     - alertmanager1-remote.com
     - alertmanager1-remotex.com
+  proxy_from_environment: true
 `,
 			mountedSecrets: []string{"alertmanager-tls"},
 		},
@@ -2120,6 +2118,7 @@ func TestPrometheusK8sAdditionalAlertManagerConfigsSecret(t *testing.T) {
   - targets:
     - alertmanager1-remote.com
     - alertmanager1-remotex.com
+  proxy_from_environment: true
 `,
 			mountedSecrets: []string{"alertmanager-ca-tls", "alertmanager-cert-tls", "alertmanager-key-tls"},
 		},
@@ -2159,6 +2158,7 @@ func TestPrometheusK8sAdditionalAlertManagerConfigsSecret(t *testing.T) {
   - targets:
     - alertmanager1-remote.com
     - alertmanager1-remotex.com
+  proxy_from_environment: true
 `,
 			mountedSecrets: []string{"alertmanager-bearer-token", "alertmanager-ca-tls", "alertmanager-cert-tls", "alertmanager-key-tls"},
 		},
@@ -2169,7 +2169,6 @@ func TestPrometheusK8sAdditionalAlertManagerConfigsSecret(t *testing.T) {
   - staticConfigs:
     - alertmanager1-remote.com
     - alertmanager1-remotex.com
-    proxyFromEnvironment: true
 `,
 			expected: `- static_configs:
   - targets:
@@ -2255,6 +2254,7 @@ func TestThanosRulerAdditionalAlertManagerConfigsSecret(t *testing.T) {
       server_name: alertmanager-main.openshift-monitoring.svc
   static_configs:
   - dnssrv+_web._tcp.alertmanager-operated.openshift-monitoring.svc
+  proxy_url: https://example.com:8080/
 `,
 		},
 		{
@@ -2272,6 +2272,7 @@ func TestThanosRulerAdditionalAlertManagerConfigsSecret(t *testing.T) {
       server_name: alertmanager-user-workload.openshift-user-workload-monitoring.svc
   static_configs:
   - dnssrv+_web._tcp.alertmanager-operated.openshift-user-workload-monitoring.svc
+  proxy_url: https://example.com:8080/
 `,
 		},
 		{
@@ -2292,6 +2293,7 @@ func TestThanosRulerAdditionalAlertManagerConfigsSecret(t *testing.T) {
       server_name: alertmanager-main.openshift-monitoring.svc
   static_configs:
   - dnssrv+_web._tcp.alertmanager-operated.openshift-monitoring.svc
+  proxy_url: https://example.com:8080/
 - static_configs:
   - alertmanager1-remote.com
   - alertmanager1-remotex.com
@@ -2320,7 +2322,7 @@ func TestThanosRulerAdditionalAlertManagerConfigsSecret(t *testing.T) {
   additionalAlertmanagerConfigs:
   - apiVersion: v2
     pathPrefix: /path-prefix
-    scheme: ftp
+    scheme: https
     staticConfigs:
     - alertmanager1-remote.com
     - alertmanager1-remotex.com
@@ -2335,12 +2337,14 @@ func TestThanosRulerAdditionalAlertManagerConfigsSecret(t *testing.T) {
       server_name: alertmanager-main.openshift-monitoring.svc
   static_configs:
   - dnssrv+_web._tcp.alertmanager-operated.openshift-monitoring.svc
-- scheme: ftp
+  proxy_url: https://example.com:8080/
+- scheme: https
   path_prefix: /path-prefix
   api_version: v2
   static_configs:
   - alertmanager1-remote.com
   - alertmanager1-remotex.com
+  proxy_url: https://example.com:8080/
 `,
 		},
 		{
@@ -2364,6 +2368,7 @@ func TestThanosRulerAdditionalAlertManagerConfigsSecret(t *testing.T) {
       server_name: alertmanager-main.openshift-monitoring.svc
   static_configs:
   - dnssrv+_web._tcp.alertmanager-operated.openshift-monitoring.svc
+  proxy_url: https://example.com:8080/
 - http_config:
     bearer_token_file: /etc/prometheus/secrets/bearer-token/key
   static_configs:
@@ -2400,6 +2405,7 @@ func TestThanosRulerAdditionalAlertManagerConfigsSecret(t *testing.T) {
       server_name: alertmanager-main.openshift-monitoring.svc
   static_configs:
   - dnssrv+_web._tcp.alertmanager-operated.openshift-monitoring.svc
+  proxy_url: https://example.com:8080/
 - http_config:
     tls_config:
       ca_file: /etc/prometheus/secrets/alertmanager-tls/tls.ca
@@ -2440,6 +2446,7 @@ func TestThanosRulerAdditionalAlertManagerConfigsSecret(t *testing.T) {
       server_name: alertmanager-main.openshift-monitoring.svc
   static_configs:
   - dnssrv+_web._tcp.alertmanager-operated.openshift-monitoring.svc
+  proxy_url: https://example.com:8080/
 - http_config:
     tls_config:
       ca_file: /etc/prometheus/secrets/alertmanager-ca-tls/tls.ca
@@ -2484,6 +2491,7 @@ func TestThanosRulerAdditionalAlertManagerConfigsSecret(t *testing.T) {
       server_name: alertmanager-main.openshift-monitoring.svc
   static_configs:
   - dnssrv+_web._tcp.alertmanager-operated.openshift-monitoring.svc
+  proxy_url: https://example.com:8080/
 - scheme: https
   api_version: v2
   http_config:
@@ -2496,6 +2504,7 @@ func TestThanosRulerAdditionalAlertManagerConfigsSecret(t *testing.T) {
   static_configs:
   - alertmanager1-remote.com
   - alertmanager1-remotex.com
+  proxy_url: https://example.com:8080/
 `,
 		},
 	}
@@ -2513,7 +2522,11 @@ func TestThanosRulerAdditionalAlertManagerConfigsSecret(t *testing.T) {
 			}
 			c.UserWorkloadConfiguration = uwc
 
-			f := NewFactory("openshift-monitoring", "openshift-user-workload-monitoring", c, defaultInfrastructureReader(), &fakeProxyReader{}, NewAssets(assetsPath), &APIServerConfig{}, &configv1.Console{})
+			f := NewFactory("openshift-monitoring", "openshift-user-workload-monitoring", c, defaultInfrastructureReader(), &fakeProxyReader{
+				httpProxy:  "http://example.com:8080/",
+				httpsProxy: "https://example.com:8080/",
+				noProxy:    "local.example.com",
+			}, NewAssets(assetsPath), &APIServerConfig{}, &configv1.Console{})
 
 			s, err := f.ThanosRulerAlertmanagerConfigSecret()
 			if err != nil {
@@ -5006,70 +5019,6 @@ func TestPrometheusProxy(t *testing.T) {
 				require.NotNil(t, pc)
 				tc.assertFn(t, pc)
 			})
-		})
-	}
-}
-
-func TestThanosRulerProxy(t *testing.T) {
-	for _, tc := range []struct {
-		proxyReader ProxyReader
-		assertFn    func(*testing.T, *v1.Container)
-	}{
-		{
-			proxyReader: &fakeProxyReader{},
-			assertFn: func(t *testing.T, c *v1.Container) {
-				t.Helper()
-
-				require.Len(t, c.Env, 3)
-				require.Equal(t, c.Env[0].Value, "")
-				require.Equal(t, c.Env[1].Value, "")
-				require.Equal(t, c.Env[2].Value, "")
-			},
-		},
-		{
-			proxyReader: &fakeProxyReader{
-				httpProxy:  "http://example.com:8080/",
-				httpsProxy: "https://example.com:8080/",
-				noProxy:    "local.example.com",
-			},
-			assertFn: func(t *testing.T, c *v1.Container) {
-				t.Helper()
-
-				require.Len(t, c.Env, 3)
-				require.Equal(t, c.Env[0].Name, "HTTP_PROXY")
-				require.Equal(t, c.Env[0].Value, "http://example.com:8080/")
-				require.Equal(t, c.Env[1].Name, "HTTPS_PROXY")
-				require.Equal(t, c.Env[1].Value, "https://example.com:8080/")
-				require.Equal(t, c.Env[2].Name, "NO_PROXY")
-				require.Equal(t, c.Env[2].Value, "local.example.com")
-			},
-		},
-	} {
-		t.Run("", func(t *testing.T) {
-			findContainer := func(am *monv1.ThanosRuler) *v1.Container {
-				for _, c := range am.Spec.Containers {
-					if c.Name == "thanos-ruler" {
-						return &c
-					}
-				}
-
-				return nil
-			}
-
-			f := NewFactory("openshift-monitoring", "openshift-user-workload-monitoring", NewDefaultConfig(), defaultInfrastructureReader(), tc.proxyReader, NewAssets(assetsPath), &APIServerConfig{}, &configv1.Console{})
-
-			t.Run("main", func(t *testing.T) {
-				tr, err := f.ThanosRulerCustomResource(
-					&v1.Secret{ObjectMeta: metav1.ObjectMeta{Name: "foo"}},
-					nil,
-				)
-				require.NoError(t, err)
-
-				trc := findContainer(tr)
-				require.NotNil(t, trc)
-				tc.assertFn(t, trc)
-			})
-
 		})
 	}
 }

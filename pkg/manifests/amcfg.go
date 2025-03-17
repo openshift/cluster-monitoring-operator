@@ -136,7 +136,7 @@ type amHTTPConfig struct {
 	TLSConfig       amConfigTLS `yaml:"tls_config,omitempty"`
 }
 
-func ConvertToThanosAlertmanagerConfiguration(ta []AdditionalAlertmanagerConfig) ([]thanosAlertmanagerConfiguration, error) {
+func (f *Factory) ConvertToThanosAlertmanagerConfiguration(ta []AdditionalAlertmanagerConfig) ([]thanosAlertmanagerConfiguration, error) {
 	result := make([]thanosAlertmanagerConfiguration, len(ta))
 
 	for i, a := range ta {
@@ -183,6 +183,16 @@ func ConvertToThanosAlertmanagerConfiguration(ta []AdditionalAlertmanagerConfig)
 
 		cfg.StaticConfigs = a.StaticConfigs
 
+		switch cfg.Scheme {
+		case "http":
+			if proxy := f.proxy.HTTPProxy(); proxy != "" {
+				cfg.ProxyURL = proxy
+			}
+		case "https":
+			if proxy := f.proxy.HTTPSProxy(); proxy != "" {
+				cfg.ProxyURL = proxy
+			}
+		}
 		result[i] = cfg
 	}
 

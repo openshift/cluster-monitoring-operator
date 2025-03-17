@@ -1161,6 +1161,17 @@ func (f *Factory) ThanosRulerAlertmanagerConfigSecret() (*v1.Secret, error) {
 		return nil, err
 	}
 
+	switch alertingConfiguration.Alertmanagers[0].Scheme {
+	case "http":
+		if proxy := f.proxy.HTTPProxy(); proxy != "" {
+			alertingConfiguration.Alertmanagers[0].ProxyURL = proxy
+		}
+	case "https":
+		if proxy := f.proxy.HTTPSProxy(); proxy != "" {
+			alertingConfiguration.Alertmanagers[0].ProxyURL = proxy
+		}
+	}
+
 	if f.config.UserWorkloadConfiguration.Alertmanager.Enabled {
 		alertingConfiguration.Alertmanagers[0].HTTPConfig.TLSConfig.ServerName = fmt.Sprintf(
 			"%s.%s.svc",
@@ -1177,7 +1188,7 @@ func (f *Factory) ThanosRulerAlertmanagerConfigSecret() (*v1.Secret, error) {
 		alertingConfiguration.Alertmanagers = []thanosAlertmanagerConfiguration{}
 	}
 
-	additionalConfigs, err := ConvertToThanosAlertmanagerConfiguration(f.config.GetThanosRulerAlertmanagerConfigs())
+	additionalConfigs, err := f.ConvertToThanosAlertmanagerConfiguration(f.config.GetThanosRulerAlertmanagerConfigs())
 	if err != nil {
 		return nil, err
 	}
@@ -3225,8 +3236,6 @@ func (f *Factory) ThanosRulerCustomResource(
 
 	for i, container := range t.Spec.Containers {
 		switch container.Name {
-		case "thanos-ruler":
-			f.injectProxyVariables(&t.Spec.Containers[i])
 		case "kube-rbac-proxy-metrics", "kube-rbac-proxy-web":
 			t.Spec.Containers[i].Image = f.config.Images.KubeRbacProxy
 			t.Spec.Containers[i].Args = f.setTLSSecurityConfiguration(container.Args, KubeRbacProxyTLSCipherSuitesFlag, KubeRbacProxyMinTLSVersionFlag)
