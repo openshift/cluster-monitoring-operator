@@ -196,8 +196,6 @@ func (f *Factory) ConvertToThanosAlertmanagerConfiguration(ta []AdditionalAlertm
 		result[i] = cfg
 	}
 
-	// todo mariofer proxyURL
-
 	return result, nil
 }
 
