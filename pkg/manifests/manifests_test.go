@@ -2535,6 +2535,33 @@ func TestThanosRulerAdditionalAlertManagerConfigsSecret(t *testing.T) {
   proxy_url: http://example.com:8080/
 `,
 		},
+		{
+			name: "no proxy",
+			userWorkloadConfig: `thanosRuler:
+  additionalAlertmanagerConfigs:
+  - apiVersion: v2
+    pathPrefix: /path-prefix
+    scheme: http
+    staticConfigs:
+    - local.example.com
+`,
+			expected: `alertmanagers:
+- scheme: https
+  api_version: v2
+  http_config:
+    bearer_token_file: /var/run/secrets/kubernetes.io/serviceaccount/token
+    tls_config:
+      ca_file: /etc/prometheus/configmaps/serving-certs-ca-bundle/service-ca.crt
+      server_name: alertmanager-main.openshift-monitoring.svc
+  static_configs:
+  - dnssrv+_web._tcp.alertmanager-operated.openshift-monitoring.svc
+- scheme: http
+  path_prefix: /path-prefix
+  api_version: v2
+  static_configs:
+  - local.example.com
+`,
+		},
 	}
 
 	for _, tt := range testCases {

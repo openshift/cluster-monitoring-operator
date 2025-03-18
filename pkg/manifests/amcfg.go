@@ -2,7 +2,9 @@ package manifests
 
 import (
 	"fmt"
+	"net/url"
 
+	"golang.org/x/net/http/httpproxy"
 	v1 "k8s.io/api/core/v1"
 )
 
@@ -183,16 +185,30 @@ func (f *Factory) ConvertToThanosAlertmanagerConfiguration(ta []AdditionalAlertm
 
 		cfg.StaticConfigs = a.StaticConfigs
 
-		switch cfg.Scheme {
-		case "http":
-			if proxy := f.proxy.HTTPProxy(); proxy != "" {
-				cfg.ProxyURL = proxy
+		httpConfig := httpproxy.Config{
+			HTTPProxy:  f.proxy.HTTPProxy(),
+			HTTPSProxy: f.proxy.HTTPSProxy(),
+			NoProxy:    f.proxy.NoProxy(),
+		}
+
+		proxyFunc := httpConfig.ProxyFunc()
+
+		if len(cfg.StaticConfigs) > 0 && cfg.StaticConfigs[0] != "" {
+			u := &url.URL{
+				Scheme: cfg.Scheme,
+				Host:   cfg.StaticConfigs[0],
 			}
-		case "https":
-			if proxy := f.proxy.HTTPSProxy(); proxy != "" {
-				cfg.ProxyURL = proxy
+
+			proxyURL, err := proxyFunc(u)
+			if err != nil {
+				return nil, err
+			}
+
+			if proxyURL != nil {
+				cfg.ProxyURL = proxyURL.String()
 			}
 		}
+
 		result[i] = cfg
 	}
 
