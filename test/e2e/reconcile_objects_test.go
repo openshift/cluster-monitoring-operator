@@ -42,6 +42,10 @@ func TestSecretsReconciliation(t *testing.T) {
 			Namespace: f.Ns,
 		},
 		{
+			Name:      "telemeter-client",
+			Namespace: f.Ns,
+		},
+		{
 			Name:      "alertmanager-main",
 			Namespace: f.Ns,
 		},
