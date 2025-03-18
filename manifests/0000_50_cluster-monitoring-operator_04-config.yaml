@@ -1230,6 +1230,16 @@ data:
     # Expected labels:
     # - severity: "critical", "warning", "info" or "none".
     - '{__name__="cluster:health:group_severity:count", severity=~"critical|warning|info|none"}'
+    #
+    # owners: (https://github.com/openshift/microshift, @openshift/team-microshift)
+    #
+    # microshift_version reports what RHEL version, MicroShift version and
+    # deployment type (bootc, rpm, ostree) the cluster is being configured to
+    # and is used to identify what versions are on a cluster.
+    # This metric is only reported by MicroShift clusters.
+    #
+    # consumers: (https://github.com/openshift/microshift, @openshift/team-microshift)
+    - '{__name__="microshift_version"}'
 kind: ConfigMap
 metadata:
   name: telemetry-config
