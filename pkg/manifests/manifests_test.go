@@ -2260,7 +2260,6 @@ func TestThanosRulerAdditionalAlertManagerConfigsSecret(t *testing.T) {
       server_name: alertmanager-main.openshift-monitoring.svc
   static_configs:
   - dnssrv+_web._tcp.alertmanager-operated.openshift-monitoring.svc
-  proxy_url: https://example.com:8080/
 `,
 		},
 		{
@@ -2278,7 +2277,6 @@ func TestThanosRulerAdditionalAlertManagerConfigsSecret(t *testing.T) {
       server_name: alertmanager-user-workload.openshift-user-workload-monitoring.svc
   static_configs:
   - dnssrv+_web._tcp.alertmanager-operated.openshift-user-workload-monitoring.svc
-  proxy_url: https://example.com:8080/
 `,
 		},
 		{
@@ -2299,7 +2297,6 @@ func TestThanosRulerAdditionalAlertManagerConfigsSecret(t *testing.T) {
       server_name: alertmanager-main.openshift-monitoring.svc
   static_configs:
   - dnssrv+_web._tcp.alertmanager-operated.openshift-monitoring.svc
-  proxy_url: https://example.com:8080/
 - static_configs:
   - alertmanager1-remote.com
   - alertmanager1-remotex.com
@@ -2343,7 +2340,6 @@ func TestThanosRulerAdditionalAlertManagerConfigsSecret(t *testing.T) {
       server_name: alertmanager-main.openshift-monitoring.svc
   static_configs:
   - dnssrv+_web._tcp.alertmanager-operated.openshift-monitoring.svc
-  proxy_url: https://example.com:8080/
 - scheme: https
   path_prefix: /path-prefix
   api_version: v2
@@ -2374,7 +2370,6 @@ func TestThanosRulerAdditionalAlertManagerConfigsSecret(t *testing.T) {
       server_name: alertmanager-main.openshift-monitoring.svc
   static_configs:
   - dnssrv+_web._tcp.alertmanager-operated.openshift-monitoring.svc
-  proxy_url: https://example.com:8080/
 - http_config:
     bearer_token_file: /etc/prometheus/secrets/bearer-token/key
   static_configs:
@@ -2411,7 +2406,6 @@ func TestThanosRulerAdditionalAlertManagerConfigsSecret(t *testing.T) {
       server_name: alertmanager-main.openshift-monitoring.svc
   static_configs:
   - dnssrv+_web._tcp.alertmanager-operated.openshift-monitoring.svc
-  proxy_url: https://example.com:8080/
 - http_config:
     tls_config:
       ca_file: /etc/prometheus/secrets/alertmanager-tls/tls.ca
@@ -2452,7 +2446,6 @@ func TestThanosRulerAdditionalAlertManagerConfigsSecret(t *testing.T) {
       server_name: alertmanager-main.openshift-monitoring.svc
   static_configs:
   - dnssrv+_web._tcp.alertmanager-operated.openshift-monitoring.svc
-  proxy_url: https://example.com:8080/
 - http_config:
     tls_config:
       ca_file: /etc/prometheus/secrets/alertmanager-ca-tls/tls.ca
@@ -2497,7 +2490,6 @@ func TestThanosRulerAdditionalAlertManagerConfigsSecret(t *testing.T) {
       server_name: alertmanager-main.openshift-monitoring.svc
   static_configs:
   - dnssrv+_web._tcp.alertmanager-operated.openshift-monitoring.svc
-  proxy_url: https://example.com:8080/
 - scheme: https
   api_version: v2
   http_config:
@@ -2511,6 +2503,36 @@ func TestThanosRulerAdditionalAlertManagerConfigsSecret(t *testing.T) {
   - alertmanager1-remote.com
   - alertmanager1-remotex.com
   proxy_url: https://example.com:8080/
+`,
+		},
+		{
+			name: "proxy env http",
+			userWorkloadConfig: `thanosRuler:
+  additionalAlertmanagerConfigs:
+  - apiVersion: v2
+    pathPrefix: /path-prefix
+    scheme: http
+    staticConfigs:
+    - alertmanager1-remote.com
+    - alertmanager1-remotex.com
+`,
+			expected: `alertmanagers:
+- scheme: https
+  api_version: v2
+  http_config:
+    bearer_token_file: /var/run/secrets/kubernetes.io/serviceaccount/token
+    tls_config:
+      ca_file: /etc/prometheus/configmaps/serving-certs-ca-bundle/service-ca.crt
+      server_name: alertmanager-main.openshift-monitoring.svc
+  static_configs:
+  - dnssrv+_web._tcp.alertmanager-operated.openshift-monitoring.svc
+- scheme: http
+  path_prefix: /path-prefix
+  api_version: v2
+  static_configs:
+  - alertmanager1-remote.com
+  - alertmanager1-remotex.com
+  proxy_url: http://example.com:8080/
 `,
 		},
 	}

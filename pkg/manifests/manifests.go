@@ -1161,17 +1161,6 @@ func (f *Factory) ThanosRulerAlertmanagerConfigSecret() (*v1.Secret, error) {
 		return nil, err
 	}
 
-	switch alertingConfiguration.Alertmanagers[0].Scheme {
-	case "http":
-		if proxy := f.proxy.HTTPProxy(); proxy != "" {
-			alertingConfiguration.Alertmanagers[0].ProxyURL = proxy
-		}
-	case "https":
-		if proxy := f.proxy.HTTPSProxy(); proxy != "" {
-			alertingConfiguration.Alertmanagers[0].ProxyURL = proxy
-		}
-	}
-
 	if f.config.UserWorkloadConfiguration.Alertmanager.Enabled {
 		alertingConfiguration.Alertmanagers[0].HTTPConfig.TLSConfig.ServerName = fmt.Sprintf(
 			"%s.%s.svc",
@@ -1808,7 +1797,7 @@ func (f *Factory) PrometheusUserWorkload(grpcTLS *v1.Secret) (*monv1.Prometheus,
 				PeriodSeconds:    15,
 				FailureThreshold: 240,
 			}
-
+			// Inject the proxy env vars into the Prometheus container for configuring external Alertmanagers
 			f.injectProxyVariables(&p.Spec.Containers[i])
 		case "kube-rbac-proxy-metrics", "kube-rbac-proxy-federate", "kube-rbac-proxy-thanos":
 			p.Spec.Containers[i].Image = f.config.Images.KubeRbacProxy
