@@ -38,10 +38,6 @@ func TestSecretsReconciliation(t *testing.T) {
 	// List of secrets that should not be synced during operator's reconciliation.
 	unsyncedSecrets := []types.NamespacedName{
 		{
-			Name:      "grpc-tls",
-			Namespace: f.Ns,
-		},
-		{
 			Name:      "telemeter-client",
 			Namespace: f.Ns,
 		},
