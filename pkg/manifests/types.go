@@ -702,6 +702,10 @@ type PrometheusRestrictedConfig struct {
 type ThanosRulerConfig struct {
 	// Configures how the Thanos Ruler component communicates
 	// with additional Alertmanager instances.
+	// The Cluster Monitoring Operator reads the cluster-wide proxy settings and configures
+	// the appropriate Proxy URL for the Alertmanager endpoints.
+	// All Alertmanager endpoints in this group are expected to resolve to the same Proxy URL.
+	// If certain endpoints should bypass the cluster proxy, they should be placed in a separate group.
 	// The default value is `nil`.
 	AlertmanagersConfigs []AdditionalAlertmanagerConfig `json:"additionalAlertmanagerConfigs,omitempty"`
 	// Configures the default interval between Prometheus rule evaluations in case the `PrometheusRule` resource does not specify any value.
