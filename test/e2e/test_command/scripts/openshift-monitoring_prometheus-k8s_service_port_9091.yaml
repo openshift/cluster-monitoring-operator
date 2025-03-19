@@ -1,0 +1,43 @@
+# TODO: fix doc cluster-monitoring-view should be bound in openshift-monitoring
+# TODO: add that cluster-monitoring-metrics-api gives access as well.
+tests:
+  - header: >-
+      # cluster-monitoring-view grants permissions.
+    setUp:
+      - run: "oc create namespace test-cluster-monitoring-view-prom"
+      - run: "oc create serviceaccount prom-client --namespace=test-cluster-monitoring-view-prom"
+      - run: >-
+          oc create rolebinding test-cluster-monitoring-view-prom \
+            --namespace=openshift-monitoring \
+            --clusterrole=cluster-monitoring-view \
+            --serviceaccount=test-cluster-monitoring-view-prom:prom-client
+      - run: "oc create token prom-client --namespace=test-cluster-monitoring-view-prom"
+        toEnvVar: TOKEN
+      - run: "oc get route prometheus-k8s --namespace=openshift-monitoring -ojsonpath={.spec.host}"
+        toEnvVar: ROUTE
+    checks:
+      - run: >
+          curl -k --fail-with-body -H "Authorization: Bearer $TOKEN" "https://$ROUTE/api/v1/query?query=up"
+    tearDown:
+      - run: "oc delete rolebinding test-cluster-monitoring-view-prom --namespace=openshift-monitoring"
+      - run: "oc delete namespace test-cluster-monitoring-view-prom --wait=false"
+  - header: >-
+      # cluster-monitoring-metrics-api grants permissions.
+    setUp:
+      - run: "oc create namespace test-cluster-monitoring-metrics-api-prom"
+      - run: "oc create serviceaccount prom-client --namespace=test-cluster-monitoring-metrics-api-prom"
+      - run: >-
+          oc create rolebinding test-cluster-monitoring-metrics-api-prom \
+            --namespace=openshift-monitoring \
+            --role=cluster-monitoring-metrics-api  \
+            --serviceaccount=test-cluster-monitoring-metrics-api-prom:prom-client
+      - run: "oc create token prom-client --namespace=test-cluster-monitoring-metrics-api-prom"
+        toEnvVar: TOKEN
+      - run: "oc get route prometheus-k8s --namespace=openshift-monitoring -ojsonpath={.spec.host}"
+        toEnvVar: ROUTE
+    checks:
+      - run: >
+          curl -k --fail-with-body -H "Authorization: Bearer $TOKEN" "https://$ROUTE/api/v1/query?query=up"
+    tearDown:
+      - run: "oc delete rolebinding test-cluster-monitoring-metrics-api-prom --namespace=openshift-monitoring"
+      - run: "oc delete namespace test-cluster-monitoring-metrics-api-prom --wait=false"
