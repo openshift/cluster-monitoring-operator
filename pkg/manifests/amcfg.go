@@ -208,6 +208,7 @@ func (f *Factory) ConvertToThanosAlertmanagerConfiguration(ta []AdditionalAlertm
 				return nil, err
 			}
 
+			// Assumes that all hosts share the same proxy policy
 			if proxyURL != nil {
 				cfg.ProxyURL = proxyURL.String()
 				break
