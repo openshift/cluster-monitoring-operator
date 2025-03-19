@@ -193,10 +193,14 @@ func (f *Factory) ConvertToThanosAlertmanagerConfiguration(ta []AdditionalAlertm
 
 		proxyFunc := httpConfig.ProxyFunc()
 
-		if len(cfg.StaticConfigs) > 0 && cfg.StaticConfigs[0] != "" {
+		for _, host := range cfg.StaticConfigs {
+			if host == "" {
+				continue
+			}
+
 			u := &url.URL{
 				Scheme: cfg.Scheme,
-				Host:   cfg.StaticConfigs[0],
+				Host:   host,
 			}
 
 			proxyURL, err := proxyFunc(u)
@@ -206,6 +210,7 @@ func (f *Factory) ConvertToThanosAlertmanagerConfiguration(ta []AdditionalAlertm
 
 			if proxyURL != nil {
 				cfg.ProxyURL = proxyURL.String()
+				break
 			}
 		}
 
