@@ -1177,7 +1177,7 @@ func (f *Factory) ThanosRulerAlertmanagerConfigSecret() (*v1.Secret, error) {
 		alertingConfiguration.Alertmanagers = []thanosAlertmanagerConfiguration{}
 	}
 
-	additionalConfigs, err := ConvertToThanosAlertmanagerConfiguration(f.config.GetThanosRulerAlertmanagerConfigs())
+	additionalConfigs, err := f.ConvertToThanosAlertmanagerConfiguration(f.config.GetThanosRulerAlertmanagerConfigs())
 	if err != nil {
 		return nil, err
 	}
@@ -1460,6 +1460,9 @@ func (f *Factory) PrometheusK8s(grpcTLS *v1.Secret, telemetrySecret *v1.Secret) 
 
 	for i, container := range p.Spec.Containers {
 		switch container.Name {
+		case "prometheus":
+			// Inject the proxy env vars into the Prometheus container for configuring external Alertmanagers
+			f.injectProxyVariables(&p.Spec.Containers[i])
 		case "kube-rbac-proxy", "kube-rbac-proxy-web", "kube-rbac-proxy-thanos":
 			p.Spec.Containers[i].Image = f.config.Images.KubeRbacProxy
 			p.Spec.Containers[i].Args = f.setTLSSecurityConfiguration(container.Args, KubeRbacProxyTLSCipherSuitesFlag, KubeRbacProxyMinTLSVersionFlag)
@@ -1794,7 +1797,8 @@ func (f *Factory) PrometheusUserWorkload(grpcTLS *v1.Secret) (*monv1.Prometheus,
 				PeriodSeconds:    15,
 				FailureThreshold: 240,
 			}
-
+			// Inject the proxy env vars into the Prometheus container for configuring external Alertmanagers
+			f.injectProxyVariables(&p.Spec.Containers[i])
 		case "kube-rbac-proxy-metrics", "kube-rbac-proxy-federate", "kube-rbac-proxy-thanos":
 			p.Spec.Containers[i].Image = f.config.Images.KubeRbacProxy
 			p.Spec.Containers[i].Args = f.setTLSSecurityConfiguration(container.Args, KubeRbacProxyTLSCipherSuitesFlag, KubeRbacProxyMinTLSVersionFlag)

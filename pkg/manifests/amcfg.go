@@ -2,7 +2,9 @@ package manifests
 
 import (
 	"fmt"
+	"net/url"
 
+	"golang.org/x/net/http/httpproxy"
 	v1 "k8s.io/api/core/v1"
 )
 
@@ -29,13 +31,14 @@ func (a PrometheusAdditionalAlertmanagerConfigs) MarshalYAML() (interface{}, err
 
 // amConfigPrometheus is our internal representation of the Prometheus alerting configuration.
 type amConfigPrometheus struct {
-	Scheme        string                  `yaml:"scheme,omitempty"`
-	PathPrefix    string                  `yaml:"path_prefix,omitempty"`
-	Timeout       *string                 `yaml:"timeout,omitempty"`
-	APIVersion    string                  `yaml:"api_version,omitempty"`
-	Authorization amConfigAuthorization   `yaml:"authorization,omitempty"`
-	TLSConfig     amConfigTLS             `yaml:"tls_config,omitempty"`
-	StaticConfigs []amConfigStaticConfigs `yaml:"static_configs,omitempty"`
+	Scheme               string                  `yaml:"scheme,omitempty"`
+	PathPrefix           string                  `yaml:"path_prefix,omitempty"`
+	Timeout              *string                 `yaml:"timeout,omitempty"`
+	APIVersion           string                  `yaml:"api_version,omitempty"`
+	Authorization        amConfigAuthorization   `yaml:"authorization,omitempty"`
+	TLSConfig            amConfigTLS             `yaml:"tls_config,omitempty"`
+	StaticConfigs        []amConfigStaticConfigs `yaml:"static_configs,omitempty"`
+	ProxyFromEnvironment bool                    `yaml:"proxy_from_environment,omitempty"`
 }
 
 type amConfigAuthorization struct {
@@ -64,10 +67,11 @@ type prometheusAdditionalAlertmanagerConfig AdditionalAlertmanagerConfig
 // compatible with the Prometheus configuration.
 func (a prometheusAdditionalAlertmanagerConfig) MarshalYAML() (interface{}, error) {
 	cfg := amConfigPrometheus{
-		Scheme:     a.Scheme,
-		PathPrefix: a.PathPrefix,
-		Timeout:    a.Timeout,
-		APIVersion: a.APIVersion,
+		Scheme:               a.Scheme,
+		PathPrefix:           a.PathPrefix,
+		Timeout:              a.Timeout,
+		APIVersion:           a.APIVersion,
+		ProxyFromEnvironment: true,
 		TLSConfig: amConfigTLS{
 			CA:                 "",
 			Cert:               "",
@@ -126,6 +130,7 @@ type thanosAlertmanagerConfiguration struct {
 	APIVersion    string       `yaml:"api_version,omitempty"`
 	HTTPConfig    amHTTPConfig `yaml:"http_config,omitempty"`
 	StaticConfigs []string     `yaml:"static_configs,omitempty"`
+	ProxyURL      string       `yaml:"proxy_url,omitempty"`
 }
 
 type amHTTPConfig struct {
@@ -133,7 +138,7 @@ type amHTTPConfig struct {
 	TLSConfig       amConfigTLS `yaml:"tls_config,omitempty"`
 }
 
-func ConvertToThanosAlertmanagerConfiguration(ta []AdditionalAlertmanagerConfig) ([]thanosAlertmanagerConfiguration, error) {
+func (f *Factory) ConvertToThanosAlertmanagerConfiguration(ta []AdditionalAlertmanagerConfig) ([]thanosAlertmanagerConfiguration, error) {
 	result := make([]thanosAlertmanagerConfiguration, len(ta))
 
 	for i, a := range ta {
@@ -179,6 +184,36 @@ func ConvertToThanosAlertmanagerConfiguration(ta []AdditionalAlertmanagerConfig)
 		cfg.HTTPConfig.BearerTokenFile = bearerTokenPath
 
 		cfg.StaticConfigs = a.StaticConfigs
+
+		httpConfig := httpproxy.Config{
+			HTTPProxy:  f.proxy.HTTPProxy(),
+			HTTPSProxy: f.proxy.HTTPSProxy(),
+			NoProxy:    f.proxy.NoProxy(),
+		}
+
+		proxyFunc := httpConfig.ProxyFunc()
+
+		for _, host := range cfg.StaticConfigs {
+			if host == "" {
+				continue
+			}
+
+			u := &url.URL{
+				Scheme: cfg.Scheme,
+				Host:   host,
+			}
+
+			proxyURL, err := proxyFunc(u)
+			if err != nil {
+				return nil, err
+			}
+
+			// Assumes that all hosts share the same proxy policy
+			if proxyURL != nil {
+				cfg.ProxyURL = proxyURL.String()
+				break
+			}
+		}
 
 		result[i] = cfg
 	}
