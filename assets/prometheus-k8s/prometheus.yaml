@@ -9,7 +9,7 @@ metadata:
     app.kubernetes.io/managed-by: cluster-monitoring-operator
     app.kubernetes.io/name: prometheus
     app.kubernetes.io/part-of: openshift-monitoring
-    app.kubernetes.io/version: 2.55.1
+    app.kubernetes.io/version: 3.0.1
   name: k8s
   namespace: openshift-monitoring
 spec:
@@ -56,7 +56,7 @@ spec:
     - --tls-private-key-file=/etc/tls/private/tls.key
     - --tls-cipher-suites=TLS_ECDHE_RSA_WITH_AES_128_GCM_SHA256,TLS_ECDHE_ECDSA_WITH_AES_128_GCM_SHA256,TLS_ECDHE_RSA_WITH_AES_256_GCM_SHA384,TLS_ECDHE_ECDSA_WITH_AES_256_GCM_SHA384,TLS_ECDHE_RSA_WITH_CHACHA20_POLY1305,TLS_ECDHE_ECDSA_WITH_CHACHA20_POLY1305
     - --ignore-paths=/-/healthy,/-/ready
-    image: quay.io/brancz/kube-rbac-proxy:v0.18.2
+    image: quay.io/brancz/kube-rbac-proxy:v0.19.0
     name: kube-rbac-proxy-web
     ports:
     - containerPort: 9091
@@ -85,7 +85,7 @@ spec:
     - --tls-private-key-file=/etc/tls/private/tls.key
     - --client-ca-file=/etc/tls/client/client-ca.crt
     - --tls-cipher-suites=TLS_ECDHE_RSA_WITH_AES_128_GCM_SHA256,TLS_ECDHE_ECDSA_WITH_AES_128_GCM_SHA256,TLS_ECDHE_RSA_WITH_AES_256_GCM_SHA384,TLS_ECDHE_ECDSA_WITH_AES_256_GCM_SHA384,TLS_ECDHE_RSA_WITH_CHACHA20_POLY1305,TLS_ECDHE_ECDSA_WITH_CHACHA20_POLY1305
-    image: quay.io/brancz/kube-rbac-proxy:v0.18.2
+    image: quay.io/brancz/kube-rbac-proxy:v0.19.0
     name: kube-rbac-proxy
     ports:
     - containerPort: 9092
@@ -117,7 +117,7 @@ spec:
       valueFrom:
         fieldRef:
           fieldPath: status.podIP
-    image: quay.io/brancz/kube-rbac-proxy:v0.18.2
+    image: quay.io/brancz/kube-rbac-proxy:v0.19.0
     name: kube-rbac-proxy-thanos
     ports:
     - containerPort: 10903
@@ -170,7 +170,7 @@ spec:
   - delayed-compaction
   externalLabels: {}
   externalURL: https://prometheus-k8s.openshift-monitoring.svc:9091
-  image: quay.io/prometheus/prometheus:v2.55.1
+  image: quay.io/prometheus/prometheus:v3.0.1
   listenLocal: true
   maximumStartupDurationSeconds: 3600
   nodeSelector:
@@ -184,7 +184,7 @@ spec:
       app.kubernetes.io/instance: k8s
       app.kubernetes.io/name: prometheus
       app.kubernetes.io/part-of: openshift-monitoring
-      app.kubernetes.io/version: 2.55.1
+      app.kubernetes.io/version: 3.0.1
   podMonitorNamespaceSelector:
     matchLabels:
       openshift.io/cluster-monitoring: "true"
@@ -234,7 +234,7 @@ spec:
         cpu: 1m
         memory: 100Mi
     version: 0.37.2
-  version: 2.55.1
+  version: 3.0.1
   volumes:
   - configMap:
       items:
