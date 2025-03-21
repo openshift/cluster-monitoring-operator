@@ -611,7 +611,7 @@ The `ThanosRulerConfig` resource defines configuration for the Thanos Ruler inst
 
 | Property | Type | Description |
 | -------- | ---- | ----------- |
-| additionalAlertmanagerConfigs | [][AdditionalAlertmanagerConfig](#additionalalertmanagerconfig) | Configures how the Thanos Ruler component communicates with additional Alertmanager instances. The default value is `nil`. |
+| additionalAlertmanagerConfigs | [][AdditionalAlertmanagerConfig](#additionalalertmanagerconfig) | Configures how the Thanos Ruler component communicates with additional Alertmanager instances. The Cluster Monitoring Operator reads the cluster-wide proxy settings and configures the appropriate proxy URL for the Alertmanager endpoints. All Alertmanager endpoints in this group are expected to use the same proxy URL. Endpoints that bypass the cluster proxy should be placed in a separate group. The default value is `nil`. |
 | evaluationInterval | string | Configures the default interval between Prometheus rule evaluations in case the `PrometheusRule` resource does not specify any value. The interval must be set between 5 seconds and 5 minutes. The value can be expressed in: seconds (for example `30s`.), minutes (for example `1m`.) or a mix of minutes and seconds (for example `1m30s`.). It applies to `PrometheusRule` resources without the `openshift.io/prometheus-rule-evaluation-scope=\"leaf-prometheus\"` label. The default value is `15s`. |
 | logLevel | string | Defines the log level setting for Thanos Ruler. The possible values are `error`, `warn`, `info`, and `debug`. The default value is `info`. |
 | nodeSelector | map[string]string | Defines the nodes on which the Pods are scheduled. |
