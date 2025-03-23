@@ -861,27 +861,27 @@ data:
     # owners: (@tracing-team)
     #
     # Number of OpenTelemetry collectors using certain receiver types.
-    - '{__name__="type:opentelemetry_collector_receivers:sum",type=~"jaegerreceiver|hostmetricsreceiver|opencensusreceiver|prometheusreceiver|zipkinreceiver|kafkareceiver|filelogreceiver|journaldreceiver|k8seventsreceiver|kubeletstatsreceiver|k8sclusterreceiver|k8sobjectsreceiver"}'
+    - '{__name__="type:opentelemetry_collector_receivers:sum",type=~"jaeger|hostmetrics|opencensus|prometheus|zipkin|kafka|filelog|journald|k8sevents|kubeletstats|k8scluster|k8sobjects|otlp"}'
     #
     # owners: (@tracing-team)
     #
     # Number of OpenTelemetry collectors used certain exporter type
-    - '{__name__="type:opentelemetry_collector_exporters:sum",type=~"debugexporter|loggingexporter|otlpexporter|otlphttpexporter|prometheusexporter|lokiexporter|kafkaexporter|awscloudwatchlogsexporter|loadbalancingexporter"}'
+    - '{__name__="type:opentelemetry_collector_exporters:sum",type=~"debug|logging|otlp|otlphttp|prometheus|lokiexporter|kafka|awscloudwatchlogs|loadbalancing"}'
     #
     # owners: (@tracing-team)
     #
     # Number of OpenTelemetry collectors used certain processor type
-    - '{__name__="type:opentelemetry_collector_processors:sum",type=~"batchprocessor|memorylimiterprocessor|attributesprocessor|resourceprocessor|spanprocessor|k8sattributesprocessor|resourcedetectionprocessor|filterprocessor|routingprocessor|cumulativetodeltaprocessor|groupbyattrsprocessor"}'
+    - '{__name__="type:opentelemetry_collector_processors:sum",type=~"batch|memorylimiter|attributes|resource|span|k8sattributes|resourcedetection|filter|routing|cumulativetodelta|groupbyattrs"}'
     #
     # owners: (@tracing-team)
     #
     # Number of OpenTelemetry collectors used certain extension type
-    - '{__name__="type:opentelemetry_collector_extensions:sum",type=~"zpagesextension|ballastextension|memorylimiterextension|jaegerremotesampling|healthcheckextension|pprofextension|oauth2clientauthextension|oidcauthextension|bearertokenauthextension|filestorage"}'
+    - '{__name__="type:opentelemetry_collector_extensions:sum",type=~"zpages|ballast|memorylimiter|jaegerremotesampling|healthcheck|pprof|oauth2clientauth|oidcauth|bearertokenauth|filestorage"}'
     #
     # owners: (@tracing-team)
     #
     # Number of OpenTelemetry collectors used certain connector type
-    - '{__name__="type:opentelemetry_collector_connectors:sum",type=~"spanmetricsconnector|forwardconnector"}'
+    - '{__name__="type:opentelemetry_collector_connectors:sum",type=~"spanmetrics|forward"}'
     #
     # owners: (@tracing-team)
     #
