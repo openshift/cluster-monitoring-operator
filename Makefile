@@ -12,7 +12,7 @@ GOPROXY?=http://proxy.golang.org
 export GO111MODULE
 export GOPROXY
 
-# go pakages for unit tests, excluding e2e tests
+# go packages for unit tests, excluding e2e tests
 PKGS=$(shell go list ./... | grep -v /test/e2e)
 GOLANG_FILES:=$(shell find . -name \*.go -print)
 # NOTE: grep -v %.yaml is needed  because "%s-policy.yaml" is used
@@ -248,6 +248,10 @@ check-runbooks:
 ###########
 # Testing #
 ###########
+
+.PHONY: bench
+bench:
+	go test -run NONE -bench=. -benchmem $(PKGS)
 
 .PHONY: test
 test: test-unit test-rules test-e2e
