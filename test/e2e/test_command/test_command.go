@@ -25,7 +25,6 @@ import (
 
 	"strings"
 
-	"github.com/mattn/go-shellwords"
 	"github.com/stretchr/testify/require"
 )
 
@@ -115,14 +114,12 @@ func (stc *SetUpTearDownCommand) Run(t *testing.T, wDir, kubeConfigPath string) 
 	ctx, cancel := context.WithTimeout(context.Background(), commandTimeout)
 	defer cancel()
 
-	args, err := shellwords.Parse(stc.Command)
-	require.NoError(t, err)
-
-	cmd := exec.CommandContext(ctx, args[0], args[1:]...)
+	cmd := exec.CommandContext(ctx, shell(), "-c", stc.Command)
 	cmd.Stderr = bytes.NewBuffer(nil)
 	cmd.Dir = wDir
 	cmd.Env = append(os.Environ(), fmt.Sprintf("KUBECONFIG=%s", kubeConfigPath))
 
+	// Get the output into the env var.
 	if stc.EnvVar != "" {
 		out, err := cmd.Output()
 		require.NoError(t, err, "getting stdout failed: %v: command stderr %v", err, cmd.Stderr)
@@ -139,18 +136,23 @@ func (cc *CheckCommand) Run(t *testing.T, wDir, kubeConfigPath string, envVars m
 	ctx, cancel := context.WithTimeout(context.Background(), commandTimeout)
 	defer cancel()
 
-	parser := shellwords.NewParser()
-	// To avoid running a shell.
-	parser.ParseEnv = true
-	envVars["KUBECONFIG"] = kubeConfigPath
-	parser.Getenv = func(s string) string { return envVars[s] }
-	args, err := parser.Parse(cc.Command)
-	require.NoError(t, err)
-
-	cmd := exec.CommandContext(ctx, args[0], args[1:]...)
+	cmd := exec.CommandContext(ctx, shell(), "-c", cc.Command)
 	cmd.Stderr = bytes.NewBuffer(nil)
 	cmd.Dir = wDir
+	envVarsPairs := []string{fmt.Sprintf("KUBECONFIG=%s", kubeConfigPath)}
+	for key, value := range envVars {
+		envVarsPairs = append(envVarsPairs, fmt.Sprintf("%s=%s", key, value))
+	}
+	cmd.Env = append(os.Environ(), envVarsPairs...)
 
 	require.NoError(t, cmd.Run(), "running %s failed: command stderr: %v", cc.Command, cmd.Stderr)
 	return nil
+}
+
+func shell() string {
+	shell := os.Getenv("SHELL")
+	if shell == "" {
+		shell = "sh"
+	}
+	return shell
 }
