@@ -15,6 +15,7 @@
 package e2e
 
 import (
+	"context"
 	"fmt"
 	"os"
 	"path/filepath"
@@ -25,6 +26,35 @@ import (
 	"gopkg.in/yaml.v3"
 )
 
+
+const (
+	testNamespace = "test-doc-examples-in-cluster"
+	serviceAccount = "tester"
+	clusterRoleBinding = "tester"
+)
+
+
+func setUpInClusterTester(t *testing.T) {
+	cleanupNS, err := f.CreateNamespace(testNamespace)
+	require.NoError(t, err)
+	t.Cleanup(func() {
+		require.NoError(t, cleanupNS())
+	})
+
+	cleanupSA, err := f.CreateServiceAccount(testNamespace, serviceAccount)
+	require.NoError(t, err)
+	t.Cleanup(func() {
+		require.NoError(t, cleanupSA())
+	})
+
+	cleanupBinding, err := f.CreateClusterRoleBinding(testNamespace, clusterRoleBinding, "admin")
+	require.NoError(t, err)
+	t.Cleanup(func() {
+		require.NoError(t, cleanupBinding())
+	})
+}
+
+
 func TestDocExamples(t *testing.T) {
 	filesDir := "test_command/scripts/"
 	tempDir := t.TempDir()
@@ -34,6 +64,8 @@ func TestDocExamples(t *testing.T) {
 	require.NoError(t, err)
 	// In case there is a wiring issue.
 	require.Greater(t, len(scripts), 0)
+
+	setUpInClusterTester(t)
 
 	for _, script := range scripts {
 		t.Run(script.Name(), func(t *testing.T) {
@@ -57,6 +89,22 @@ func TestDocExamples(t *testing.T) {
 					})
 
 					if test.InCluster {
+						ctx := context.Background()
+
+						pod := client.V1Pod{
+							Metadata: &client.V1ObjectMeta{
+								Name:      "my-pod",
+								Namespace: "default",
+							},
+							Spec: &client.V1PodSpec{
+								Containers: []client.V1Container{
+									client.V1Container{
+										Name:  "www",
+										Image: "nginx",
+									},
+								},
+							},
+						}
 						
 					} else {
 						test_command.RunScript(t, test.Script, tempDir, kubeConfigPath)
