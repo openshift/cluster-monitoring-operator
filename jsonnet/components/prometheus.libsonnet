@@ -589,6 +589,7 @@ function(params)
               keyFile: '/etc/prometheus/secrets/metrics-client-certs/tls.key',
               insecureSkipVerify: false,
             },
+            fallbackScrapeProtocol: 'PrometheusText0.0.4',
           },
         ],
         volumes+: [
