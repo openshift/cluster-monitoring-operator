@@ -1,9 +1,6 @@
 run:
   timeout: 5m
   tests: true
-  skip-dirs:
-    - vendor
-    - test
   modules-download-mode: vendor
 
 linters:
@@ -13,7 +10,6 @@ linters:
     - errcheck
     - errorlint
     - bodyclose
-    - exportloopref
     - gosimple
     - govet
     - ineffassign
@@ -21,7 +17,7 @@ linters:
     - nolintlint
     - nosprintfhostport
     - staticcheck
-    - tenv
+    - usetesting
     - typecheck
     - unconvert
     - unused
@@ -30,6 +26,9 @@ linters:
     - gci
 
 issues:
+  exclude-dirs:
+    - vendor
+    - test
   exclude-rules:
     - path: _test\.go
       linters:
@@ -39,14 +38,13 @@ issues:
         - errcheck
         - errorlint
         - bodyclose
-        - exportloopref
         - gosimple
         - ineffassign
         - misspell
         - nolintlint
         - nosprintfhostport
         - staticcheck
-        - tenv
+        - usetesting
         - typecheck
         - unconvert
         - unused
