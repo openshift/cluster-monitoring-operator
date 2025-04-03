@@ -3,10 +3,10 @@
 package v1
 
 import (
-	"context"
+	context "context"
 
-	v1 "github.com/openshift/api/monitoring/v1"
-	monitoringv1 "github.com/openshift/client-go/monitoring/applyconfigurations/monitoring/v1"
+	monitoringv1 "github.com/openshift/api/monitoring/v1"
+	applyconfigurationsmonitoringv1 "github.com/openshift/client-go/monitoring/applyconfigurations/monitoring/v1"
 	scheme "github.com/openshift/client-go/monitoring/clientset/versioned/scheme"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	types "k8s.io/apimachinery/pkg/types"
@@ -22,36 +22,37 @@ type AlertRelabelConfigsGetter interface {
 
 // AlertRelabelConfigInterface has methods to work with AlertRelabelConfig resources.
 type AlertRelabelConfigInterface interface {
-	Create(ctx context.Context, alertRelabelConfig *v1.AlertRelabelConfig, opts metav1.CreateOptions) (*v1.AlertRelabelConfig, error)
-	Update(ctx context.Context, alertRelabelConfig *v1.AlertRelabelConfig, opts metav1.UpdateOptions) (*v1.AlertRelabelConfig, error)
+	Create(ctx context.Context, alertRelabelConfig *monitoringv1.AlertRelabelConfig, opts metav1.CreateOptions) (*monitoringv1.AlertRelabelConfig, error)
+	Update(ctx context.Context, alertRelabelConfig *monitoringv1.AlertRelabelConfig, opts metav1.UpdateOptions) (*monitoringv1.AlertRelabelConfig, error)
 	// Add a +genclient:noStatus comment above the type to avoid generating UpdateStatus().
-	UpdateStatus(ctx context.Context, alertRelabelConfig *v1.AlertRelabelConfig, opts metav1.UpdateOptions) (*v1.AlertRelabelConfig, error)
+	UpdateStatus(ctx context.Context, alertRelabelConfig *monitoringv1.AlertRelabelConfig, opts metav1.UpdateOptions) (*monitoringv1.AlertRelabelConfig, error)
 	Delete(ctx context.Context, name string, opts metav1.DeleteOptions) error
 	DeleteCollection(ctx context.Context, opts metav1.DeleteOptions, listOpts metav1.ListOptions) error
-	Get(ctx context.Context, name string, opts metav1.GetOptions) (*v1.AlertRelabelConfig, error)
-	List(ctx context.Context, opts metav1.ListOptions) (*v1.AlertRelabelConfigList, error)
+	Get(ctx context.Context, name string, opts metav1.GetOptions) (*monitoringv1.AlertRelabelConfig, error)
+	List(ctx context.Context, opts metav1.ListOptions) (*monitoringv1.AlertRelabelConfigList, error)
 	Watch(ctx context.Context, opts metav1.ListOptions) (watch.Interface, error)
-	Patch(ctx context.Context, name string, pt types.PatchType, data []byte, opts metav1.PatchOptions, subresources ...string) (result *v1.AlertRelabelConfig, err error)
-	Apply(ctx context.Context, alertRelabelConfig *monitoringv1.AlertRelabelConfigApplyConfiguration, opts metav1.ApplyOptions) (result *v1.AlertRelabelConfig, err error)
+	Patch(ctx context.Context, name string, pt types.PatchType, data []byte, opts metav1.PatchOptions, subresources ...string) (result *monitoringv1.AlertRelabelConfig, err error)
+	Apply(ctx context.Context, alertRelabelConfig *applyconfigurationsmonitoringv1.AlertRelabelConfigApplyConfiguration, opts metav1.ApplyOptions) (result *monitoringv1.AlertRelabelConfig, err error)
 	// Add a +genclient:noStatus comment above the type to avoid generating ApplyStatus().
-	ApplyStatus(ctx context.Context, alertRelabelConfig *monitoringv1.AlertRelabelConfigApplyConfiguration, opts metav1.ApplyOptions) (result *v1.AlertRelabelConfig, err error)
+	ApplyStatus(ctx context.Context, alertRelabelConfig *applyconfigurationsmonitoringv1.AlertRelabelConfigApplyConfiguration, opts metav1.ApplyOptions) (result *monitoringv1.AlertRelabelConfig, err error)
 	AlertRelabelConfigExpansion
 }
 
 // alertRelabelConfigs implements AlertRelabelConfigInterface
 type alertRelabelConfigs struct {
-	*gentype.ClientWithListAndApply[*v1.AlertRelabelConfig, *v1.AlertRelabelConfigList, *monitoringv1.AlertRelabelConfigApplyConfiguration]
+	*gentype.ClientWithListAndApply[*monitoringv1.AlertRelabelConfig, *monitoringv1.AlertRelabelConfigList, *applyconfigurationsmonitoringv1.AlertRelabelConfigApplyConfiguration]
 }
 
 // newAlertRelabelConfigs returns a AlertRelabelConfigs
 func newAlertRelabelConfigs(c *MonitoringV1Client, namespace string) *alertRelabelConfigs {
 	return &alertRelabelConfigs{
-		gentype.NewClientWithListAndApply[*v1.AlertRelabelConfig, *v1.AlertRelabelConfigList, *monitoringv1.AlertRelabelConfigApplyConfiguration](
+		gentype.NewClientWithListAndApply[*monitoringv1.AlertRelabelConfig, *monitoringv1.AlertRelabelConfigList, *applyconfigurationsmonitoringv1.AlertRelabelConfigApplyConfiguration](
 			"alertrelabelconfigs",
 			c.RESTClient(),
 			scheme.ParameterCodec,
 			namespace,
-			func() *v1.AlertRelabelConfig { return &v1.AlertRelabelConfig{} },
-			func() *v1.AlertRelabelConfigList { return &v1.AlertRelabelConfigList{} }),
+			func() *monitoringv1.AlertRelabelConfig { return &monitoringv1.AlertRelabelConfig{} },
+			func() *monitoringv1.AlertRelabelConfigList { return &monitoringv1.AlertRelabelConfigList{} },
+		),
 	}
 }

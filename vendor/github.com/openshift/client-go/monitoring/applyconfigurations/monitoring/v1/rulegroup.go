@@ -3,14 +3,14 @@
 package v1
 
 import (
-	v1 "github.com/openshift/api/monitoring/v1"
+	monitoringv1 "github.com/openshift/api/monitoring/v1"
 )
 
 // RuleGroupApplyConfiguration represents a declarative configuration of the RuleGroup type for use
 // with apply.
 type RuleGroupApplyConfiguration struct {
 	Name     *string                  `json:"name,omitempty"`
-	Interval *v1.Duration             `json:"interval,omitempty"`
+	Interval *monitoringv1.Duration   `json:"interval,omitempty"`
 	Rules    []RuleApplyConfiguration `json:"rules,omitempty"`
 }
 
@@ -31,7 +31,7 @@ func (b *RuleGroupApplyConfiguration) WithName(value string) *RuleGroupApplyConf
 // WithInterval sets the Interval field in the declarative configuration to the given value
 // and returns the receiver, so that objects can be built by chaining "With" function invocations.
 // If called multiple times, the Interval field is set to the value of the last call.
-func (b *RuleGroupApplyConfiguration) WithInterval(value v1.Duration) *RuleGroupApplyConfiguration {
+func (b *RuleGroupApplyConfiguration) WithInterval(value monitoringv1.Duration) *RuleGroupApplyConfiguration {
 	b.Interval = &value
 	return b
 }

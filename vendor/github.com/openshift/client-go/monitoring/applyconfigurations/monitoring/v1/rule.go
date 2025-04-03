@@ -3,18 +3,18 @@
 package v1
 
 import (
-	v1 "github.com/openshift/api/monitoring/v1"
+	monitoringv1 "github.com/openshift/api/monitoring/v1"
 	intstr "k8s.io/apimachinery/pkg/util/intstr"
 )
 
 // RuleApplyConfiguration represents a declarative configuration of the Rule type for use
 // with apply.
 type RuleApplyConfiguration struct {
-	Alert       *string             `json:"alert,omitempty"`
-	Expr        *intstr.IntOrString `json:"expr,omitempty"`
-	For         *v1.Duration        `json:"for,omitempty"`
-	Labels      map[string]string   `json:"labels,omitempty"`
-	Annotations map[string]string   `json:"annotations,omitempty"`
+	Alert       *string                `json:"alert,omitempty"`
+	Expr        *intstr.IntOrString    `json:"expr,omitempty"`
+	For         *monitoringv1.Duration `json:"for,omitempty"`
+	Labels      map[string]string      `json:"labels,omitempty"`
+	Annotations map[string]string      `json:"annotations,omitempty"`
 }
 
 // RuleApplyConfiguration constructs a declarative configuration of the Rule type for use with
@@ -42,7 +42,7 @@ func (b *RuleApplyConfiguration) WithExpr(value intstr.IntOrString) *RuleApplyCo
 // WithFor sets the For field in the declarative configuration to the given value
 // and returns the receiver, so that objects can be built by chaining "With" function invocations.
 // If called multiple times, the For field is set to the value of the last call.
-func (b *RuleApplyConfiguration) WithFor(value v1.Duration) *RuleApplyConfiguration {
+func (b *RuleApplyConfiguration) WithFor(value monitoringv1.Duration) *RuleApplyConfiguration {
 	b.For = &value
 	return b
 }

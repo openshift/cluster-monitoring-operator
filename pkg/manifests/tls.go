@@ -29,7 +29,7 @@ import (
 	"k8s.io/klog/v2"
 )
 
-const certificateLifetime = time.Duration(crypto.DefaultCertificateLifetimeInDays) * 24 * time.Hour
+const certificateLifetime = crypto.DefaultCertificateLifetimeDuration
 
 // Taken from
 // https://github.com/openshift/library-go/blob/08c2fd1b452520da35ad210930ea9d100545589a/pkg/operator/certrotation/signer.go#L68-L86
@@ -173,7 +173,7 @@ func RotateGRPCSecret(s *v1.Secret) error {
 	if curCA == nil {
 		newCAConfig, err := crypto.MakeSelfSignedCAConfig(
 			fmt.Sprintf("%s@%d", "openshift-cluster-monitoring", time.Now().Unix()),
-			crypto.DefaultCertificateLifetimeInDays,
+			crypto.DefaultCertificateLifetimeDuration,
 		)
 		if err != nil {
 			return fmt.Errorf("error generating self signed CA: %w", err)
@@ -217,7 +217,7 @@ func RotateGRPCSecret(s *v1.Secret) error {
 			&user.DefaultInfo{
 				Name: "thanos-querier",
 			},
-			time.Duration(crypto.DefaultCertificateLifetimeInDays)*24*time.Hour,
+			crypto.DefaultCertificateLifetimeDuration,
 		)
 		if err != nil {
 			return fmt.Errorf("error making client certificate: %w", err)
@@ -234,7 +234,7 @@ func RotateGRPCSecret(s *v1.Secret) error {
 	{
 		cfg, err := newCA.MakeServerCert(
 			sets.New("prometheus-grpc"),
-			crypto.DefaultCertificateLifetimeInDays,
+			crypto.DefaultCertificateLifetimeDuration,
 		)
 		if err != nil {
 			return fmt.Errorf("error making server certificate: %w", err)

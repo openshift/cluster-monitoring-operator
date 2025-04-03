@@ -83,7 +83,7 @@ func getThanosRules(body []byte, expGroupName, expRuleName string) error {
 func createSelfSignedMTLSArtifacts(s *v1.Secret) error {
 	newCAConfig, err := crypto.MakeSelfSignedCAConfig(
 		fmt.Sprintf("%s@%d", "openshift-cluster-monitoring-test", time.Now().Unix()),
-		crypto.DefaultCertificateLifetimeInDays,
+		crypto.DefaultCertificateLifetimeDuration,
 	)
 	if err != nil {
 		return fmt.Errorf("error generating self signed CA: %w", err)
@@ -105,7 +105,7 @@ func createSelfSignedMTLSArtifacts(s *v1.Secret) error {
 	{
 		cfg, err := newCA.MakeServerCert(
 			sets.New(string(s.Data["serving-cert-url"])),
-			crypto.DefaultCertificateLifetimeInDays,
+			crypto.DefaultCertificateLifetimeDuration,
 		)
 		if err != nil {
 			return fmt.Errorf("error making server certificate: %w", err)
@@ -125,7 +125,7 @@ func createSelfSignedMTLSArtifacts(s *v1.Secret) error {
 			&user.DefaultInfo{
 				Name: string(s.Data["client-cert-name"]),
 			},
-			time.Duration(crypto.DefaultCertificateLifetimeInDays)*24*time.Hour,
+			crypto.DefaultCertificateLifetimeDuration,
 		)
 		if err != nil {
 			return fmt.Errorf("error making client certificate: %w", err)
