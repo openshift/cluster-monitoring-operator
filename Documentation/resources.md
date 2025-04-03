@@ -256,7 +256,56 @@ $ curl -k --fail-with-body -H "Authorization: Bearer $TOKEN" "https://$ROUTE/api
 ```
 
 * Port 9092 provides access to the `/api/v1/query`, `/api/v1/query_range/`, `/api/v1/labels`, `/api/v1/label/*/values`, and `/api/v1/series` endpoints restricted to a given project. Granting access requires binding a user to the `view` cluster role in the project.
+```
+# view grants view permissions.
+$ oc create namespace test-thanos-querier-tenancy-view
+$ oc create serviceaccount thanos-client --namespace=test-thanos-querier-tenancy-view
+$ oc create rolebinding test-thanos-querier-tenancy-view \
+  --namespace=test-thanos-querier-tenancy-view \
+  --clusterrole=view \
+  --serviceaccount=test-thanos-querier-tenancy-view:thanos-client
+$ TOKEN=$(oc create token thanos-client --namespace=test-thanos-querier-tenancy-view)
+$ curl -k --fail -H "Authorization: Bearer $TOKEN" "https://thanos-querier.openshift-monitoring:9092/api/v1/query?query=up&namespace=test-thanos-querier-tenancy-view"
+```
+
 * Port 9093 provides access to the `/api/v1/alerts`, and `/api/v1/rules` endpoints restricted to a given project. Granting access requires binding a user to the `monitoring-rules-edit` cluster role or `monitoring-edit` cluster role or `monitoring-rules-view` cluster role in the project.
+```
+# monitoring-rules-edit grants view permissions.
+$ oc create namespace test-thanos-querier-tenancy-rules-monitoring-rules-edit
+$ oc create serviceaccount thanos-client --namespace=test-thanos-querier-tenancy-rules-monitoring-rules-edit
+$ oc create rolebinding test-thanos-querier-tenancy-rules-monitoring-rules-edit \
+  --namespace=test-thanos-querier-tenancy-rules-monitoring-rules-edit \
+  --clusterrole=monitoring-rules-edit \
+  --serviceaccount=test-thanos-querier-tenancy-rules-monitoring-rules-edit:thanos-client
+$ TOKEN=$(oc create token thanos-client --namespace=test-thanos-querier-tenancy-rules-monitoring-rules-edit)
+$ curl -k --fail -H "Authorization: Bearer $TOKEN" "https://thanos-querier.openshift-monitoring:9093/api/v1/rules?namespace=test-thanos-querier-tenancy-rules-monitoring-rules-edit"
+$ curl -k --fail -H "Authorization: Bearer $TOKEN" "https://thanos-querier.openshift-monitoring:9093/api/v1/alerts?namespace=test-thanos-querier-tenancy-rules-monitoring-rules-edit"
+```
+```
+# monitoring-edit grants view permissions.
+$ oc create namespace test-thanos-querier-tenancy-rules-monitoring-edit
+$ oc create serviceaccount thanos-client --namespace=test-thanos-querier-tenancy-rules-monitoring-edit
+$ oc create rolebinding test-thanos-querier-tenancy-rules-monitoring-edit \
+  --namespace=test-thanos-querier-tenancy-rules-monitoring-edit \
+  --clusterrole=monitoring-edit \
+  --serviceaccount=test-thanos-querier-tenancy-rules-monitoring-edit:thanos-client
+$ TOKEN=$(oc create token thanos-client --namespace=test-thanos-querier-tenancy-rules-monitoring-edit)
+$ curl -k --fail -H "Authorization: Bearer $TOKEN" "https://thanos-querier.openshift-monitoring:9093/api/v1/rules?namespace=test-thanos-querier-tenancy-rules-monitoring-edit"
+$ curl -k --fail -H "Authorization: Bearer $TOKEN" "https://thanos-querier.openshift-monitoring:9093/api/v1/alerts?namespace=test-thanos-querier-tenancy-rules-monitoring-edit"
+```
+```
+# monitoring-rules-view grants view permissions.
+$ oc create namespace test-thanos-querier-tenancy-rules-monitoring-rules-view
+$ oc create serviceaccount thanos-client --namespace=test-thanos-querier-tenancy-rules-monitoring-rules-view
+$ oc create rolebinding test-thanos-querier-tenancy-rules-monitoring-rules-view \
+  --namespace=test-thanos-querier-tenancy-rules-monitoring-rules-view \
+  --clusterrole=monitoring-rules-view \
+  --serviceaccount=test-thanos-querier-tenancy-rules-monitoring-rules-view:thanos-client
+$ TOKEN=$(oc create token thanos-client --namespace=test-thanos-querier-tenancy-rules-monitoring-rules-view)
+$ curl -k --fail -H "Authorization: Bearer $TOKEN" "https://thanos-querier.openshift-monitoring:9093/api/v1/rules?namespace=test-thanos-querier-tenancy-rules-monitoring-rules-view"
+$ curl -k --fail -H "Authorization: Bearer $TOKEN" "https://thanos-querier.openshift-monitoring:9093/api/v1/alerts?namespace=test-thanos-querier-tenancy-rules-monitoring-rules-view"
+```
+
 * Port 9094 provides access to the `/metrics` endpoint only. This port is for internal use, and no other usage is guaranteed.
 
 ### openshift-user-workload-monitoring/thanos-ruler
