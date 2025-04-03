@@ -202,7 +202,9 @@ function(params)
             * Port %d provides access to all the Thanos Querier endpoints. %s
             %s
             * Port %d provides access to the `/api/v1/query`, `/api/v1/query_range/`, `/api/v1/labels`, `/api/v1/label/*/values`, and `/api/v1/series` endpoints restricted to a given project. %s
+            %s
             * Port %d provides access to the `/api/v1/alerts`, and `/api/v1/rules` endpoints restricted to a given project. %s
+            %s
             * Port %d provides access to the `/metrics` endpoint only. This port is for internal use, and no other usage is guaranteed.
           ||| % [
             $.service.spec.ports[0].port,
@@ -210,8 +212,10 @@ function(params)
             testFilePlaceholder('openshift-monitoring', 'thanos-querier', $.service.spec.ports[0].port),
             $.service.spec.ports[1].port,
             requiredClusterRoles(['view'], false, ''),
+            testFilePlaceholder('openshift-monitoring', 'thanos-querier', $.service.spec.ports[1].port),
             $.service.spec.ports[2].port,
             requiredClusterRoles(['monitoring-rules-edit', 'monitoring-edit', 'monitoring-rules-view'], false, ''),
+            testFilePlaceholder('openshift-monitoring', 'thanos-querier', $.service.spec.ports[2].port),
             $.service.spec.ports[3].port,
           ],
         ),
