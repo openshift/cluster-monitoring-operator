@@ -1,0 +1,14 @@
+tests:
+  - inCluster: true
+    script: |
+      # view grants view permissions.
+      oc create namespace test-thanos-querier-tenancy-view
+      oc create serviceaccount thanos-client --namespace=test-thanos-querier-tenancy-view
+      oc create rolebinding test-thanos-querier-tenancy-view \
+        --namespace=test-thanos-querier-tenancy-view \
+        --clusterrole=view \
+        --serviceaccount=test-thanos-querier-tenancy-view:thanos-client
+      TOKEN=$(oc create token thanos-client --namespace=test-thanos-querier-tenancy-view)
+      curl -k --fail -H "Authorization: Bearer $TOKEN" "https://thanos-querier.openshift-monitoring:9092/api/v1/query?query=up&namespace=test-thanos-querier-tenancy-view"
+    tearDown: |
+      oc delete namespace test-thanos-querier-tenancy-view --wait=false
