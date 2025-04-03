@@ -17,24 +17,35 @@ package e2e
 import (
 	"context"
 	"fmt"
+	"hash/fnv"
 	"os"
 	"path/filepath"
+	"strconv"
 	"testing"
+	"time"
 
+	"github.com/openshift/cluster-monitoring-operator/test/e2e/framework"
 	"github.com/openshift/cluster-monitoring-operator/test/e2e/test_command"
 	"github.com/stretchr/testify/require"
 	"gopkg.in/yaml.v3"
+	corev1 "k8s.io/api/core/v1"
+	v1 "k8s.io/api/core/v1"
+	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
 
-
 const (
-	testNamespace = "test-doc-examples-in-cluster"
-	serviceAccount = "tester"
+	testNamespace      = "test-doc-examples-in-cluster"
+	serviceAccount     = "tester"
 	clusterRoleBinding = "tester"
 )
 
+func toPodName(testName string) string {
+	h := fnv.New64()
+	h.Write([]byte(testName))
+	return "test-" + strconv.FormatUint(h.Sum64(), 32)
+}
 
-func setUpInClusterTester(t *testing.T) {
+func setUpInClusterEnv(t *testing.T) {
 	cleanupNS, err := f.CreateNamespace(testNamespace)
 	require.NoError(t, err)
 	t.Cleanup(func() {
@@ -47,13 +58,12 @@ func setUpInClusterTester(t *testing.T) {
 		require.NoError(t, cleanupSA())
 	})
 
-	cleanupBinding, err := f.CreateClusterRoleBinding(testNamespace, clusterRoleBinding, "admin")
+	cleanupBinding, err := f.CreateClusterRoleBinding(testNamespace, serviceAccount, "cluster-admin")
 	require.NoError(t, err)
 	t.Cleanup(func() {
 		require.NoError(t, cleanupBinding())
 	})
 }
-
 
 func TestDocExamples(t *testing.T) {
 	filesDir := "test_command/scripts/"
@@ -65,12 +75,11 @@ func TestDocExamples(t *testing.T) {
 	// In case there is a wiring issue.
 	require.Greater(t, len(scripts), 0)
 
-	setUpInClusterTester(t)
+	setUpInClusterEnv(t)
 
 	for _, script := range scripts {
 		t.Run(script.Name(), func(t *testing.T) {
-			// TODO
-			// t.Parallel()
+			t.Parallel()
 			file, err := os.Open(filepath.Join(filesDir, script.Name()))
 			require.NoError(t, err)
 			defer file.Close()
@@ -81,31 +90,68 @@ func TestDocExamples(t *testing.T) {
 			require.NoError(t, decoder.Decode(&suite))
 
 			for i, test := range suite.Tests {
-				t.Run(fmt.Sprintf("suite-%d", i), func(t *testing.T) {
-					// TODO
-					// t.Parallel()
+				t.Run(fmt.Sprintf("test-%d", i), func(t *testing.T) {
+					t.Parallel()
 					t.Cleanup(func() {
 						test_command.RunScript(t, test.TearDown, tempDir, kubeConfigPath)
 					})
 
 					if test.InCluster {
 						ctx := context.Background()
+						podName := toPodName(t.Name())
+						containerName := "test"
 
-						pod := client.V1Pod{
-							Metadata: &client.V1ObjectMeta{
-								Name:      "my-pod",
-								Namespace: "default",
+						pod := &corev1.Pod{
+							ObjectMeta: metav1.ObjectMeta{
+								Name:      podName,
+								Namespace: testNamespace,
 							},
-							Spec: &client.V1PodSpec{
-								Containers: []client.V1Container{
-									client.V1Container{
-										Name:  "www",
-										Image: "nginx",
+							Spec: corev1.PodSpec{
+								ServiceAccountName: serviceAccount,
+								RestartPolicy:      corev1.RestartPolicyNever,
+								Containers: []corev1.Container{
+									{
+										Name:            containerName,
+										Image:           "registry.redhat.io/openshift4/ose-cli:latest",
+										ImagePullPolicy: corev1.PullIfNotPresent,
+										Command:         []string{"bash", "-c", test.Script},
+										SecurityContext: &corev1.SecurityContext{
+											Capabilities: &corev1.Capabilities{
+												Drop: []corev1.Capability{"ALL"},
+											},
+											SeccompProfile: &v1.SeccompProfile{
+												Type: v1.SeccompProfileTypeRuntimeDefault,
+											},
+										},
 									},
 								},
 							},
 						}
-						
+
+						pod, err := f.KubeClient.CoreV1().Pods(testNamespace).Create(ctx, pod, metav1.CreateOptions{})
+						require.NoError(t, err)
+						t.Cleanup(func() {
+							err := f.KubeClient.CoreV1().Pods(testNamespace).Delete(context.Background(), podName, metav1.DeleteOptions{})
+							require.NoError(t, err)
+						})
+
+						err = framework.Poll(time.Second, time.Minute, func() error {
+							pod, err = f.KubeClient.CoreV1().Pods(testNamespace).Get(ctx, podName, metav1.GetOptions{})
+							if err != nil {
+								return err
+							}
+							if pod.Status.Phase != corev1.PodSucceeded && pod.Status.Phase != corev1.PodFailed {
+								return fmt.Errorf("waiting for pod")
+							}
+							return nil
+						})
+
+						if pod.Status.Phase != corev1.PodSucceeded {
+							l, err := f.GetLogs(testNamespace, podName, containerName)
+							require.NoError(t, err)
+							t.Log(l)
+							require.Fail(t, "pod failed to execute script")
+						}
 					} else {
 						test_command.RunScript(t, test.Script, tempDir, kubeConfigPath)
 					}

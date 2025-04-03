@@ -1,0 +1,31 @@
+# TODO: fix doc cluster-monitoring-view should be bound in openshift-monitoring
+# TODO: add that cluster-monitoring-metrics-api gives access as well.
+tests:
+  - script: |
+      # cluster-monitoring-view grants permissions.
+      oc create namespace test-thanos-querier-web-cluster-monitoring-view
+      oc create serviceaccount thanos-client --namespace=test-thanos-querier-web-cluster-monitoring-view
+      oc create rolebinding test-thanos-querier-web-cluster-monitoring-view \
+        --namespace=openshift-monitoring \
+        --clusterrole=cluster-monitoring-view \
+        --serviceaccount=test-thanos-querier-web-cluster-monitoring-view:thanos-client
+      TOKEN=$(oc create token thanos-client --namespace=test-thanos-querier-web-cluster-monitoring-view)
+      ROUTE=$(oc get route thanos-querier --namespace=openshift-monitoring -ojsonpath={.spec.host})
+      curl -k --fail-with-body -H "Authorization: Bearer $TOKEN" "https://$ROUTE/api/v1/query?query=up"
+    tearDown: |
+      oc delete rolebinding test-thanos-querier-web-cluster-monitoring-view --namespace=openshift-monitoring
+      oc delete namespace test-thanos-querier-web-cluster-monitoring-view --wait=false
+  - script: |
+      # cluster-monitoring-metrics-api grants permissions.
+      oc create namespace test-thanos-querier-web-cluster-monitoring-metrics-api
+      oc create serviceaccount thanos-client --namespace=test-thanos-querier-web-cluster-monitoring-metrics-api
+      oc create rolebinding test-thanos-querier-web-cluster-monitoring-metrics-api \
+        --namespace=openshift-monitoring \
+        --role=cluster-monitoring-metrics-api  \
+        --serviceaccount=test-thanos-querier-web-cluster-monitoring-metrics-api:thanos-client
+      TOKEN=$(oc create token thanos-client --namespace=test-thanos-querier-web-cluster-monitoring-metrics-api)
+      ROUTE=$(oc get route thanos-querier --namespace=openshift-monitoring -ojsonpath={.spec.host})
+      curl -k --fail-with-body -H "Authorization: Bearer $TOKEN" "https://$ROUTE/api/v1/query?query=up"
+    tearDown: |
+      oc delete rolebinding test-thanos-querier-web-cluster-monitoring-metrics-api --namespace=openshift-monitoring
+      oc delete namespace test-thanos-querier-web-cluster-monitoring-metrics-api --wait=false

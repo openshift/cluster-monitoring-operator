@@ -1,6 +1,7 @@
 local generateSecret = import '../utils/generate-secret.libsonnet';
 local querier = import 'github.com/thanos-io/kube-thanos/jsonnet/kube-thanos/kube-thanos-query.libsonnet';
 local withDescription = (import '../utils/add-annotations.libsonnet').withDescription;
+local testFilePlaceholder = (import '../utils/add-annotations.libsonnet').testFilePlaceholder;
 local requiredRoles = (import '../utils/add-annotations.libsonnet').requiredRoles;
 local requiredClusterRoles = (import '../utils/add-annotations.libsonnet').requiredClusterRoles;
 
@@ -199,12 +200,14 @@ function(params)
           |||
             Expose the Thanos Querier web server within the cluster on the following ports:
             * Port %d provides access to all the Thanos Querier endpoints. %s
+            %s
             * Port %d provides access to the `/api/v1/query`, `/api/v1/query_range/`, `/api/v1/labels`, `/api/v1/label/*/values`, and `/api/v1/series` endpoints restricted to a given project. %s
             * Port %d provides access to the `/api/v1/alerts`, and `/api/v1/rules` endpoints restricted to a given project. %s
             * Port %d provides access to the `/metrics` endpoint only. This port is for internal use, and no other usage is guaranteed.
           ||| % [
             $.service.spec.ports[0].port,
             requiredClusterRoles(['cluster-monitoring-view'], true),
+            testFilePlaceholder('openshift-monitoring', 'thanos-querier', $.service.spec.ports[0].port),
             $.service.spec.ports[1].port,
             requiredClusterRoles(['view'], false, ''),
             $.service.spec.ports[2].port,
