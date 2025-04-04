@@ -19,17 +19,17 @@ import (
 	"compress/gzip"
 	"fmt"
 	"io"
-	"os"
 	"testing"
 
-	"github.com/go-kit/log"
 	routev1 "github.com/openshift/api/route/v1"
 	monitoringv1 "github.com/prometheus-operator/prometheus-operator/pkg/apis/monitoring/v1"
+	"github.com/prometheus/common/promslog"
 	promConfig "github.com/prometheus/prometheus/config"
 	"github.com/stretchr/testify/require"
 	v1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/util/intstr"
+	"k8s.io/utils/ptr"
 )
 
 func (f Framework) MakePrometheusWithWebTLSRemoteReceive(name, tlsSecretName string, image *string) *monitoringv1.Prometheus {
@@ -77,7 +77,7 @@ func (f Framework) MakePrometheusWithWebTLSRemoteReceive(name, tlsSecretName str
 								},
 								Key: "server.key",
 							},
-							ClientAuthType: "VerifyClientCertIfGiven",
+							ClientAuthType: ptr.To("VerifyClientCertIfGiven"),
 						},
 					},
 				},
@@ -148,7 +148,7 @@ func (f Framework) PrometheusConfigFromSecret(t *testing.T, namespace, secretNam
 	require.NoError(t, err)
 	unzippedData, err := io.ReadAll(reader)
 	require.NoError(t, err)
-	prometheusConfig, err := promConfig.Load(string(unzippedData), false, log.NewLogfmtLogger(log.NewSyncWriter(os.Stderr)))
+	prometheusConfig, err := promConfig.Load(string(unzippedData), promslog.New(&promslog.Config{}))
 	require.NoError(t, err, "failed to load the config.")
 	return prometheusConfig
 }
