@@ -911,7 +911,7 @@ k8sPrometheusAdapter:`
 func expectTolerationsEqual(exp int) framework.PodAssertion {
 	return func(pod v1.Pod) error {
 		if got := len(pod.Spec.Tolerations); got != exp {
-			return fmt.Errorf("expected to find %d tolerations in %s but found %d", exp, pod.Name, got)
+			return fmt.Errorf("expected to find %d tolerations in %s but found %d %+v", exp, pod.Name, got, pod.Spec.Tolerations)
 		}
 		return nil
 	}

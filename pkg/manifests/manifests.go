@@ -3444,8 +3444,6 @@ func addRemoteWriteConfigs(clusterID string, rw []monv1.RemoteWriteSpec, rwTarge
 		writeRelabelConfigs = append(writeRelabelConfigs, tmpRelabelDrop)
 		rwConf := monv1.RemoteWriteSpec{
 			URL:                 target.URL,
-			Name:                target.Name,
-			RemoteTimeout:       monv1.Duration(target.RemoteTimeout),
 			Headers:             target.Headers,
 			QueueConfig:         target.QueueConfig,
 			WriteRelabelConfigs: writeRelabelConfigs,
@@ -3455,6 +3453,12 @@ func addRemoteWriteConfigs(clusterID string, rw []monv1.RemoteWriteSpec, rwTarge
 			MetadataConfig:      target.MetadataConfig,
 			OAuth2:              target.OAuth2,
 			SendExemplars:       target.SendExemplars,
+		}
+		if target.Name != "" {
+			rwConf.Name = ptr.To(target.Name)
+		}
+		if target.RemoteTimeout != "" {
+			rwConf.RemoteTimeout = ptr.To(monv1.Duration(target.RemoteTimeout))
 		}
 		if target.ProxyURL != "" {
 			rwConf.ProxyConfig.ProxyURL = ptr.To(target.ProxyURL)
