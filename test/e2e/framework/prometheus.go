@@ -30,6 +30,7 @@ import (
 	v1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/util/intstr"
+	"k8s.io/utils/ptr"
 )
 
 func (f Framework) MakePrometheusWithWebTLSRemoteReceive(name, tlsSecretName string, image *string) *monitoringv1.Prometheus {
@@ -77,7 +78,7 @@ func (f Framework) MakePrometheusWithWebTLSRemoteReceive(name, tlsSecretName str
 								},
 								Key: "server.key",
 							},
-							ClientAuthType: "VerifyClientCertIfGiven",
+							ClientAuthType: ptr.To("VerifyClientCertIfGiven"),
 						},
 					},
 				},
