@@ -3747,7 +3747,7 @@ func TestKubeStateMetrics(t *testing.T) {
 }
 
 func TestOpenShiftStateMetrics(t *testing.T) {
-	config := `openShiftStateMetrics:
+	config := `openshiftStateMetrics:
   resources:
     requests:
       cpu: 100m

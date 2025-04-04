@@ -88,7 +88,7 @@ func TestHandle(t *testing.T) {
 				},
 			},
 			allowed: false,
-			message: "failed to parse data at key \"config.yaml\": error unmarshaling JSON: while decoding JSON: json: unknown field \"prometheus_operator\"",
+			message: "failed to parse data at key \"config.yaml\": error unmarshaling: unknown field \"prometheus_operator\"",
 		},
 		{
 			name: "non monitoring configmap",
