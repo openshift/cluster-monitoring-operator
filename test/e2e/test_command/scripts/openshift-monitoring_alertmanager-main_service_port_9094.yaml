@@ -10,7 +10,8 @@ tests:
       # TODO: use Route's status.
       TOKEN=$(oc create token am-client --namespace=test-alertmanager-web-monitoring-alertmanager-view)
       ROUTE=$(oc get route alertmanager-main --namespace=openshift-monitoring -ojsonpath={.spec.host})
-      curl -k --fail-with-body -H "Authorization: Bearer $TOKEN" "https://$ROUTE/api/v2/alerts?filter=alertname=Watchdog"
+      CA_CERT=$(oc get secret router-certs-default -n openshift-ingress -o jsonpath='{.data.tls\.crt}' | base64 --decode)
+      curl --cacert <(printf "%s" "$CA_CERT") --fail-with-body -H "Authorization: Bearer $TOKEN" "https://$ROUTE/api/v2/alerts?filter=alertname=Watchdog"
     tearDown: |
       oc delete rolebinding test-alertmanager-web-monitoring-alertmanager-view --namespace=openshift-monitoring
       oc delete namespace test-alertmanager-web-monitoring-alertmanager-view --wait=false
@@ -24,7 +25,8 @@ tests:
         --serviceaccount=test-alertmanager-web-monitoring-alertmanager-edit:am-client
       TOKEN=$(oc create token am-client --namespace=test-alertmanager-web-monitoring-alertmanager-edit)
       ROUTE=$(oc get route alertmanager-main --namespace=openshift-monitoring -ojsonpath={.spec.host})
-      curl -k -X POST --fail-with-body "https://$ROUTE/api/v2/silences" \
+      CA_CERT=$(oc get secret router-certs-default -n openshift-ingress -o jsonpath='{.data.tls\.crt}' | base64 --decode)
+      curl --cacert <(printf "%s" "$CA_CERT") -X POST --fail-with-body "https://$ROUTE/api/v2/silences" \
         -H "Authorization: Bearer $TOKEN" -H "Content-Type: application/json" \
         -d '{
           "matchers": [

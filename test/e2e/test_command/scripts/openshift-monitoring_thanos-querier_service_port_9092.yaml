@@ -9,6 +9,7 @@ tests:
         --clusterrole=view \
         --serviceaccount=test-thanos-querier-tenancy-view:thanos-client
       TOKEN=$(oc create token thanos-client --namespace=test-thanos-querier-tenancy-view)
-      curl -k --fail -H "Authorization: Bearer $TOKEN" "https://thanos-querier.openshift-monitoring:9092/api/v1/query?query=up&namespace=test-thanos-querier-tenancy-view"
+      CA_CERT=$(oc get secret router-certs-default -n openshift-ingress -o jsonpath='{.data.tls\.crt}' | base64 --decode)
+      curl --cacert <(printf "%s" "$CA_CERT") --fail -H "Authorization: Bearer $TOKEN" "https://thanos-querier.openshift-monitoring:9092/api/v1/query?query=up&namespace=test-thanos-querier-tenancy-view"
     tearDown: |
       oc delete namespace test-thanos-querier-tenancy-view --wait=false

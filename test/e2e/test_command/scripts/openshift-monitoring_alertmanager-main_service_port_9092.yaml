@@ -9,8 +9,9 @@ tests:
         --clusterrole=monitoring-rules-edit \
         --serviceaccount=test-alertmanager-tenancy-monitoring-rules-edit:am-client
       TOKEN=$(oc create token am-client --namespace=test-alertmanager-tenancy-monitoring-rules-edit)
-      curl -k --fail -H "Authorization: Bearer $TOKEN" "https://alertmanager-main.openshift-monitoring:9092/api/v2/alerts?namespace=test-alertmanager-tenancy-monitoring-rules-edit"
-      curl -k -X POST --fail "https://alertmanager-main.openshift-monitoring:9092/api/v2/silences?namespace=test-alertmanager-tenancy-monitoring-rules-edit" \
+      CA_CERT=$(oc get secret router-certs-default -n openshift-ingress -o jsonpath='{.data.tls\.crt}' | base64 --decode)
+      curl --cacert <(printf "%s" "$CA_CERT") --fail -H "Authorization: Bearer $TOKEN" "https://alertmanager-main.openshift-monitoring:9092/api/v2/alerts?namespace=test-alertmanager-tenancy-monitoring-rules-edit"
+      curl --cacert <(printf "%s" "$CA_CERT") -X POST --fail "https://alertmanager-main.openshift-monitoring:9092/api/v2/silences?namespace=test-alertmanager-tenancy-monitoring-rules-edit" \
         -H "Authorization: Bearer $TOKEN" -H "Content-Type: application/json" \
         -d '{
           "matchers": [
@@ -37,8 +38,9 @@ tests:
         --clusterrole=monitoring-edit \
         --serviceaccount=test-alertmanager-tenancy-monitoring-edit:am-client
       TOKEN=$(oc create token am-client --namespace=test-alertmanager-tenancy-monitoring-edit)
-      curl -k --fail -H "Authorization: Bearer $TOKEN" "https://alertmanager-main.openshift-monitoring:9092/api/v2/alerts?namespace=test-alertmanager-tenancy-monitoring-edit"
-      curl -k -X POST --fail "https://alertmanager-main.openshift-monitoring:9092/api/v2/silences?namespace=test-alertmanager-tenancy-monitoring-edit" \
+      CA_CERT=$(oc get secret router-certs-default -n openshift-ingress -o jsonpath='{.data.tls\.crt}' | base64 --decode)
+      curl --cacert <(printf "%s" "$CA_CERT") --fail -H "Authorization: Bearer $TOKEN" "https://alertmanager-main.openshift-monitoring:9092/api/v2/alerts?namespace=test-alertmanager-tenancy-monitoring-edit"
+      curl --cacert <(printf "%s" "$CA_CERT") -X POST --fail "https://alertmanager-main.openshift-monitoring:9092/api/v2/silences?namespace=test-alertmanager-tenancy-monitoring-edit" \
         -H "Authorization: Bearer $TOKEN" -H "Content-Type: application/json" \
         -d '{
           "matchers": [

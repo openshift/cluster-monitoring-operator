@@ -11,7 +11,8 @@ tests:
         --serviceaccount=test-thanos-querier-web-cluster-monitoring-view:thanos-client
       TOKEN=$(oc create token thanos-client --namespace=test-thanos-querier-web-cluster-monitoring-view)
       ROUTE=$(oc get route thanos-querier --namespace=openshift-monitoring -ojsonpath={.spec.host})
-      curl -k --fail-with-body -H "Authorization: Bearer $TOKEN" "https://$ROUTE/api/v1/query?query=up"
+      CA_CERT=$(oc get secret router-certs-default -n openshift-ingress -o jsonpath='{.data.tls\.crt}' | base64 --decode)
+      curl --cacert <(printf "%s" "$CA_CERT") --fail-with-body -H "Authorization: Bearer $TOKEN" "https://$ROUTE/api/v1/query?query=up"
     tearDown: |
       oc delete rolebinding test-thanos-querier-web-cluster-monitoring-view --namespace=openshift-monitoring
       oc delete namespace test-thanos-querier-web-cluster-monitoring-view --wait=false
@@ -25,7 +26,8 @@ tests:
         --serviceaccount=test-thanos-querier-web-cluster-monitoring-metrics-api:thanos-client
       TOKEN=$(oc create token thanos-client --namespace=test-thanos-querier-web-cluster-monitoring-metrics-api)
       ROUTE=$(oc get route thanos-querier --namespace=openshift-monitoring -ojsonpath={.spec.host})
-      curl -k --fail-with-body -H "Authorization: Bearer $TOKEN" "https://$ROUTE/api/v1/query?query=up"
+      CA_CERT=$(oc get secret router-certs-default -n openshift-ingress -o jsonpath='{.data.tls\.crt}' | base64 --decode)
+      curl --cacert <(printf "%s" "$CA_CERT") --fail-with-body -H "Authorization: Bearer $TOKEN" "https://$ROUTE/api/v1/query?query=up"
     tearDown: |
       oc delete rolebinding test-thanos-querier-web-cluster-monitoring-metrics-api --namespace=openshift-monitoring
       oc delete namespace test-thanos-querier-web-cluster-monitoring-metrics-api --wait=false
