@@ -27,10 +27,12 @@ import (
 	configv1 "github.com/openshift/api/config/v1"
 	"github.com/prometheus/common/model"
 	v1 "k8s.io/api/core/v1"
-	k8syaml "k8s.io/apimachinery/pkg/util/yaml"
+	jsonutil "k8s.io/apimachinery/pkg/util/json"
 	auditv1 "k8s.io/apiserver/pkg/apis/audit/v1"
 	"k8s.io/klog/v2"
 	"k8s.io/utils/ptr"
+	kjson "sigs.k8s.io/json"
+	kyaml "sigs.k8s.io/yaml"
 
 	"github.com/openshift/cluster-monitoring-operator/pkg/metrics"
 )
@@ -313,10 +315,51 @@ func (cps CollectionProfiles) String() string {
 	return sb.String()
 }
 
+// Copied from k8s.io/apimachinery/pkg/util/yaml.UnmarshalStrict but using
+// sigs.k8s.io/json.UnmarshalStrict instead of encoding/json.UnmarshalStrict
+// to enforce case-sensitive unmarshalling and provide more detailed error context.
+// This also allows for simpler error messages.
+func UnmarshalStrict(data []byte, v interface{}) error {
+	unmarshalStrict := func(yamlBytes []byte, obj interface{}) error {
+		jsonBytes, err := kyaml.YAMLToJSONStrict(yamlBytes)
+		if err != nil {
+			return err
+		}
+		strictErrs, err := kjson.UnmarshalStrict(jsonBytes, obj)
+		if err != nil {
+			return fmt.Errorf("error unmarshaling: %w", err)
+		}
+		if len(strictErrs) != 0 {
+			return fmt.Errorf("error unmarshaling: %w", errors.Join(strictErrs...))
+		}
+		return nil
+	}
+	// Kept for backward compatibility.
+	switch v := v.(type) {
+	case *map[string]interface{}:
+		if err := unmarshalStrict(data, v); err != nil {
+			return err
+		}
+		return jsonutil.ConvertMapNumbers(*v, 0)
+	case *[]interface{}:
+		if err := unmarshalStrict(data, v); err != nil {
+			return err
+		}
+		return jsonutil.ConvertSliceNumbers(*v, 0)
+	case *interface{}:
+		if err := unmarshalStrict(data, v); err != nil {
+			return err
+		}
+		return jsonutil.ConvertInterfaceNumbers(v, 0)
+	default:
+		return unmarshalStrict(data, v)
+	}
+}
+
 func newConfig(content []byte, collectionProfilesFeatureGateEnabled bool) (*Config, error) {
 	c := Config{CollectionProfilesFeatureGateEnabled: collectionProfilesFeatureGateEnabled}
 	cmc := defaultClusterMonitoringConfiguration()
-	err := k8syaml.UnmarshalStrict(content, &cmc)
+	err := UnmarshalStrict(content, &cmc)
 	if err != nil {
 		return nil, err
 	}
@@ -679,7 +722,7 @@ func NewUserConfigFromString(content string) (*UserWorkloadConfiguration, error)
 		return NewDefaultUserWorkloadMonitoringConfig(), nil
 	}
 	u := &UserWorkloadConfiguration{}
-	err := k8syaml.UnmarshalStrict([]byte(content), &u)
+	err := UnmarshalStrict([]byte(content), &u)
 	if err != nil {
 		return nil, err
 	}

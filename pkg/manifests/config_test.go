@@ -29,7 +29,7 @@ func TestNewConfigFromString(t *testing.T) {
 	tcs := []struct {
 		name         string
 		configString func() string
-		shouldFail   bool
+		err          string
 		configCheck  func(*Config)
 	}{
 		{
@@ -54,14 +54,21 @@ func TestNewConfigFromString(t *testing.T) {
 			configString: func() string {
 				return `{"prometheusK8ss": {}}`
 			},
-			shouldFail: true,
+			err: "error unmarshaling: unknown field \"prometheusK8ss\"",
+		},
+		{
+			name: "json string with root field of the wrong case",
+			configString: func() string {
+				return `{"PROMETHEUSK8S": {}}`
+			},
+			err: "error unmarshaling: unknown field \"PROMETHEUSK8S\"",
 		},
 		{
 			name: "json string with unknown field",
 			configString: func() string {
 				return `{"prometheusK8s": {"unknown": "bar"}}`
 			},
-			shouldFail: true,
+			err: "error unmarshaling: unknown field \"prometheusK8s.unknown\"",
 		},
 		{
 			name: "json string with duplicated field",
@@ -69,7 +76,7 @@ func TestNewConfigFromString(t *testing.T) {
 			configString: func() string {
 				return `{"prometheusK8s": {"foo": {}}, "prometheusK8s": {"bar": {}}}`
 			},
-			shouldFail: true,
+			err: "yaml: unmarshal errors:\n  line 1: key \"prometheusK8s\" already set in map",
 		},
 		{
 			name: "empty json string",
@@ -88,7 +95,14 @@ func TestNewConfigFromString(t *testing.T) {
 			configString: func() string {
 				return `metricsServe:`
 			},
-			shouldFail: true,
+			err: "error unmarshaling: unknown field \"metricsServe\"",
+		},
+		{
+			name: "yaml string with root field of the wrong case",
+			configString: func() string {
+				return `metricserver:`
+			},
+			err: "error unmarshaling: unknown field \"metricserver\"",
 		},
 		{
 			name: "yaml string with unknown field",
@@ -97,7 +111,7 @@ func TestNewConfigFromString(t *testing.T) {
 metricsServer:
   unknown:`
 			},
-			shouldFail: true,
+			err: "error unmarshaling: unknown field \"metricsServer.unknown\"",
 		},
 		{
 			name: "yaml string with duplicated field",
@@ -108,7 +122,13 @@ metricsServer:
 metricsServer:
   bar:`
 			},
-			shouldFail: true,
+			err: "yaml: unmarshal errors:\n  line 5: key \"metricsServer\" already set in map",
+		},
+		{
+			name: "empty yaml string",
+			configString: func() string {
+				return ``
+			},
 		},
 		{
 			name: "empty yaml string",
@@ -121,8 +141,8 @@ metricsServer:
 	for _, tc := range tcs {
 		t.Run(tc.name, func(t *testing.T) {
 			c, err := NewConfigFromString(tc.configString(), false)
-			if tc.shouldFail {
-				require.Error(t, err)
+			if tc.err != "" {
+				require.ErrorContains(t, err, tc.err)
 				return
 			}
 			require.NoError(t, err)
@@ -137,7 +157,7 @@ func TestNewUserConfigFromString(t *testing.T) {
 	tcs := []struct {
 		name         string
 		configString func() string
-		shouldFail   bool
+		err          string
 		configCheck  func(*UserWorkloadConfiguration)
 	}{
 		{
@@ -163,14 +183,21 @@ func TestNewUserConfigFromString(t *testing.T) {
 			configString: func() string {
 				return `{"unknown": {}}`
 			},
-			shouldFail: true,
+			err: "error unmarshaling: unknown field \"unknown\"",
 		},
 		{
 			name: "json string with unknown field",
 			configString: func() string {
 				return `{"prometheusOperator": {"unknown": "bar"}}`
 			},
-			shouldFail: true,
+			err: "error unmarshaling: unknown field \"prometheusOperator.unknown\"",
+		},
+		{
+			name: "json string with field of wrong case",
+			configString: func() string {
+				return `{"prometheusOperator": {"nodeselector": ""}}`
+			},
+			err: "error unmarshaling: unknown field \"prometheusOperator.nodeselector\"",
 		},
 		{
 			name: "json string with duplicated field",
@@ -178,7 +205,7 @@ func TestNewUserConfigFromString(t *testing.T) {
 			configString: func() string {
 				return `{"prometheus": {"foo": {}}, "prometheus": {"bar": {}}}`
 			},
-			shouldFail: true,
+			err: "yaml: unmarshal errors:\n  line 1: key \"prometheus\"",
 		},
 		{
 			name: "empty json string",
@@ -197,7 +224,7 @@ func TestNewUserConfigFromString(t *testing.T) {
 			configString: func() string {
 				return `unknown:`
 			},
-			shouldFail: true,
+			err: "error unmarshaling: unknown field \"unknown\"",
 		},
 		{
 			name: "yaml string with unknown field",
@@ -206,7 +233,16 @@ func TestNewUserConfigFromString(t *testing.T) {
 prometheusOperator:
   unknown:`
 			},
-			shouldFail: true,
+			err: "error unmarshaling: unknown field \"prometheusOperator.unknown\"",
+		},
+		{
+			name: "yaml string with field of wrong case",
+			configString: func() string {
+				return `
+prometheusOperator:
+  nodeselector:`
+			},
+			err: "error unmarshaling: unknown field \"prometheusOperator.nodeselector\"",
 		},
 		{
 			name: "yaml string with duplicated field",
@@ -217,7 +253,7 @@ thanosRuler:
 thanosRuler:
   bar:`
 			},
-			shouldFail: true,
+			err: "yaml: unmarshal errors:\n  line 5: key \"thanosRuler\"",
 		},
 		{
 			name: "empty yaml string",
@@ -230,8 +266,8 @@ thanosRuler:
 	for _, tc := range tcs {
 		t.Run(tc.name, func(t *testing.T) {
 			c, err := NewUserConfigFromString(tc.configString())
-			if tc.shouldFail {
-				require.Error(t, err)
+			if tc.err != "" {
+				require.ErrorContains(t, err, tc.err)
 				return
 			}
 			require.NoError(t, err)
@@ -729,7 +765,7 @@ func TestCollectionProfilePreCheck(t *testing.T) {
 		},
 		{
 			name: "full_profile",
-			config: `prometheusk8s:
+			config: `prometheusK8s:
   collectionProfile: full
   `,
 			expected:      CollectionProfile("full"),
@@ -737,7 +773,7 @@ func TestCollectionProfilePreCheck(t *testing.T) {
 		},
 		{
 			name: "minimal_profile",
-			config: `prometheusk8s:
+			config: `prometheusK8s:
   collectionProfile: minimal
   `,
 			expected:      CollectionProfile("minimal"),
@@ -745,7 +781,7 @@ func TestCollectionProfilePreCheck(t *testing.T) {
 		},
 		{
 			name: "incorrect_profile",
-			config: `prometheusk8s:
+			config: `prometheusK8s:
   collectionProfile: foo
   `,
 			expected:      "",
@@ -831,7 +867,7 @@ func TestUnsupportedAlertmanagerVersion(t *testing.T) {
 			name: "using default value",
 			config: `prometheusK8s:
   additionalAlertmanagerConfigs:
-    - Scheme: foo
+    - scheme: foo
   `,
 		},
 	} {
