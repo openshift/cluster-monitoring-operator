@@ -65,14 +65,12 @@ import (
 	"k8s.io/klog/v2"
 	apiregistrationv1 "k8s.io/kube-aggregator/pkg/apis/apiregistration/v1"
 	aggregatorclient "k8s.io/kube-aggregator/pkg/client/clientset_generated/clientset"
-	"k8s.io/utils/ptr"
 )
 
 const (
-	deleteTimeout                        = 10 * time.Minute
-	metadataPrefix                       = "monitoring.openshift.io/"
-	clusterConsole                       = "cluster"
-	VerticalPodAutoscalerCRDMetadataName = "verticalpodautoscalers.autoscaling.k8s.io"
+	deleteTimeout  = 10 * time.Minute
+	metadataPrefix = "monitoring.openshift.io/"
+	clusterConsole = "cluster"
 )
 
 type Client struct {
@@ -276,10 +274,6 @@ func (c *Client) KubernetesInterface() kubernetes.Interface {
 	return c.kclient
 }
 
-func (c *Client) ApiExtensionsInterface() apiextensionsclient.Interface {
-	return c.eclient
-}
-
 func (c *Client) EventRecorder() events.Recorder {
 	return c.eventRecorder
 }
@@ -419,21 +413,6 @@ func (c *Client) ClusterOperatorListWatch(ctx context.Context, name string) *cac
 				metav1.ListOptions{
 					FieldSelector: fields.OneTermEqualSelector("metadata.name", name).String(),
 				})
-		},
-	}
-}
-
-func (c *Client) VerticalPodAutoscalerCRDListWatch(ctx context.Context) *cache.ListWatch {
-	return &cache.ListWatch{
-		ListFunc: func(options metav1.ListOptions) (runtime.Object, error) {
-			return c.eclient.ApiextensionsV1().CustomResourceDefinitions().List(ctx, metav1.ListOptions{
-				FieldSelector: fields.OneTermEqualSelector("metadata.name", VerticalPodAutoscalerCRDMetadataName).String(),
-			})
-		},
-		WatchFunc: func(options metav1.ListOptions) (watch.Interface, error) {
-			return c.eclient.ApiextensionsV1().CustomResourceDefinitions().Watch(ctx, metav1.ListOptions{
-				FieldSelector: fields.OneTermEqualSelector("metadata.name", VerticalPodAutoscalerCRDMetadataName).String(),
-			})
 		},
 	}
 }
@@ -1848,29 +1827,6 @@ func (c *Client) RegisterConsolePlugin(ctx context.Context, name string) error {
 		return fmt.Errorf("registering console-plugin %q with console %q failed: %w", name, clusterConsole, err)
 	}
 	return nil
-}
-
-// VPACustomResourceDefinitionPresent checks if VerticalPodAutoscaler CRD is present in the cluster.
-func (c *Client) VPACustomResourceDefinitionPresent(ctx context.Context, lastKnownVPACustomResourceDefinitionPresent *bool) (*bool, error) {
-	_, err := c.ApiExtensionsInterface().ApiextensionsV1().CustomResourceDefinitions().Get(ctx, VerticalPodAutoscalerCRDMetadataName, metav1.GetOptions{})
-	if err != nil {
-		// VPA CRD is absent.
-		if apierrors.IsNotFound(err) {
-			return ptr.To(false), nil
-		}
-
-		// See if we have an idea of the state of the CRD's presence before the transient error occurred.
-		// If we do, resort to that since we do not want this to cause unnecessary reconciles.
-		if lastKnownVPACustomResourceDefinitionPresent != nil {
-			return lastKnownVPACustomResourceDefinitionPresent, nil
-		}
-
-		// If we don't, throw.
-		return nil, fmt.Errorf("failed to get %s CRD: %w", VerticalPodAutoscalerCRDMetadataName, err)
-	}
-
-	// VPA CRD is present.
-	return ptr.To(true), nil
 }
 
 // mergeMetadata merges labels and annotations from `existing` map into `required` one where `required` has precedence
