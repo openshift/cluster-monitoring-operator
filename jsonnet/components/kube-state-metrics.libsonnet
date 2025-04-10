@@ -173,8 +173,8 @@ function(params)
     kubeRbacProxySecret: generateSecret.staticAuthSecret(cfg.namespace, cfg.commonLabels, 'kube-state-metrics-kube-rbac-proxy-config'),
 
     // This removes the upstream addon-resizer and all resource requests and
-    // limits. Additionally configures the kube-rbac-proxies to use the serving
-    // cert configured on the `Service` above.
+    // limits. Additionally, it configures the kube-rbac-proxies to use the serving
+    // cert configured on the `Service` above, and enables CRD metrics.
     //
     // The upstream kube-state-metrics Dockerfile defines a `VOLUME` directive
     // in `/tmp`. Although this is unused it will take some time for it to get
@@ -237,6 +237,7 @@ function(params)
                   else
                     c {
                       args+: [
+                        '--custom-resource-state-config-file=/etc/kube-state-metrics/custom-resource-state-configmap.yaml',
                         |||
                           --metric-denylist=
                           ^kube_secret_labels$,
@@ -259,7 +260,6 @@ function(params)
                           name: tmpVolumeName,
                           readOnly: false,
                         },
-                        // The custom resource state configmap is always mounted in the kube-state-metrics container and only when the VPA CRD is installed, CMO will add `--custom-resource-state-config-file` to the container arguments list.
                         {
                           mountPath: '/etc/kube-state-metrics',
                           name: crsVolumeName,
