@@ -42,17 +42,17 @@ function(params)
 
     clusterRole+: {
       rules+: [
-        {
-          apiGroups: ['autoscaling.k8s.io'],
-          resources: ['verticalpodautoscalers'],
-          verbs: ['list', 'watch'],
-        },
         // CRD read permissions are required for kube-state-metrics to support the CRS feature-set.
         // Refer: https://github.com/kubernetes/kube-state-metrics/pull/1851/files#diff-916e6863e1245c673b4e5965c98dc27bafbd72650fdb38ce65ea73ee6304e027R45-R47
         {
           apiGroups: ['apiextensions.k8s.io'],
           resources: ['customresourcedefinitions'],
           verbs: ['get', 'list', 'watch'],
+        },
+        {
+          apiGroups: ['autoscaling.k8s.io'],
+          resources: ['verticalpodautoscalers'],
+          verbs: ['list', 'watch'],
         },
       ],
     },
