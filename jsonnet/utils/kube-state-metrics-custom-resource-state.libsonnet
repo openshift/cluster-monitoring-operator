@@ -85,6 +85,44 @@ local vpaMetrics = [
   vpaMetric('verticalpodautoscaler_spec_resourcepolicy_container_policies_maxallowed_memory', 'Minimum memory resources the VerticalPodAutoscaler can set for containers matching the name.', 'gauge'),
 ];
 
+local gatewayClassMetrics = [
+  {
+    name: 'gateway_class',
+    help: 'Information about GatewayClasses',
+    each: {
+      type: 'Info',
+      info: {
+        labelsFromPath: {
+          namespace: ['metadata', 'namespace'],
+          gateway_class: ['metadata', 'name'],
+          controller_name: ['spec', 'controllerName'],
+          accepted: ['status', 'conditions', '[type=Accepted]', 'status'],
+          reason: ['status', 'conditions', '[type=Accepted]', 'reason']
+        }
+      }
+    }
+  },
+];
+
+local gatewayMetrics = [
+  {
+    name: 'gateway',
+    help: 'Information about Gateways',
+    each: {
+      type: 'Info',
+      info: {
+        labelsFromPath: {
+          namespace: ['metadata', 'namespace'],
+          gateway: ['metadata', 'name'],
+          gateway_class_name: ['spec', 'gatewayClassName'],
+          programmed: ['status', 'conditions', '[type=Programmed]', 'status'],
+          reason: ['status', 'conditions', '[type=Programmed]', 'reason']
+        }
+      }
+    }
+  },
+];
+
 local crsConfig = {
   kind: 'CustomResourceStateMetrics',
   spec: {
@@ -96,6 +134,22 @@ local crsConfig = {
           kind: 'VerticalPodAutoscaler',
         },
         metrics: vpaMetrics,
+      },
+      {
+        groupVersionKind: {
+          group: 'gateway.networking.k8s.io',
+          version: 'v1',
+          kind: 'GatewayClass',
+        },
+        metrics: gatewayClassMetrics,
+      },
+      {
+        groupVersionKind: {
+          group: 'gateway.networking.k8s.io',
+          version: 'v1',
+          kind: 'Gateway',
+        },
+        metrics: gatewayMetrics,
       },
     ],
   },
