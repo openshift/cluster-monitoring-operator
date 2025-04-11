@@ -488,6 +488,66 @@ data:
             - "metadata"
             - "name"
           "name": "verticalpodautoscaler_spec_resourcepolicy_container_policies_maxallowed_memory"
+      - "groupVersionKind":
+          "group": "gateway.networking.k8s.io"
+          "kind": "GatewayClass"
+          "version": "v1"
+        "metrics":
+        - "each":
+            "info":
+              "labelsFromPath":
+                "accepted":
+                - "status"
+                - "conditions"
+                - "[type=Accepted]"
+                - "status"
+                "controller_name":
+                - "spec"
+                - "controllerName"
+                "gateway_class":
+                - "metadata"
+                - "name"
+                "namespace":
+                - "metadata"
+                - "namespace"
+                "reason":
+                - "status"
+                - "conditions"
+                - "[type=Accepted]"
+                - "reason"
+            "type": "Info"
+          "help": "Information about GatewayClasses"
+          "name": "gateway_class"
+      - "groupVersionKind":
+          "group": "gateway.networking.k8s.io"
+          "kind": "Gateway"
+          "version": "v1"
+        "metrics":
+        - "each":
+            "info":
+              "labelsFromPath":
+                "gateway":
+                - "metadata"
+                - "name"
+                "gateway_class_name":
+                - "spec"
+                - "gatewayClassName"
+                "namespace":
+                - "metadata"
+                - "namespace"
+                "programmed":
+                - "status"
+                - "conditions"
+                - "[type=Programmed]"
+                - "status"
+                "reason":
+                - "status"
+                - "conditions"
+                - "[type=Programmed]"
+                - "reason"
+            "type": "Info"
+          "help": "Information about Gateways"
+          "name": "gateway"
 kind: ConfigMap
 metadata:
   labels:
