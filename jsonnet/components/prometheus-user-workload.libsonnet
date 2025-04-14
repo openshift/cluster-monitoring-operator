@@ -581,6 +581,15 @@ function(params)
             ],
           },
         ],
+        // As we do not have control over the targets, this is meant to maintain the v2 behavior.
+        // We will discuss later whether and how we want to enable the v3 behavior.
+        scrapeClasses: [
+          {
+            name: 'global-config',
+            default: true,
+            fallbackScrapeProtocol: 'PrometheusText1.0.0',
+          },
+        ],
         volumes+: [
           {
             name: $.trustedCaBundle.metadata.name,

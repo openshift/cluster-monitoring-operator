@@ -260,6 +260,10 @@ spec:
       operator: In
       values:
       - leaf-prometheus
+  scrapeClasses:
+  - default: true
+    fallbackScrapeProtocol: PrometheusText1.0.0
+    name: global-config
   scrapeConfigNamespaceSelector: null
   scrapeConfigSelector: null
   secrets:
