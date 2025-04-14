@@ -1719,6 +1719,11 @@ func TestPrometheusUserWorkloadConfiguration(t *testing.T) {
 	if !volumeMountsConfigured(container.VolumeMounts, volumeName) {
 		t.Fatalf("trusted CA bundle volume mount for %s is not configured correctly", container.Name)
 	}
+
+	// The FallbackScrapeProtocol default scrape class is set as expected.
+	require.Len(t, p.Spec.ScrapeClasses, 1)
+	require.Equal(t, p.Spec.ScrapeClasses[0].Default, ptr.To(true))
+	require.Equal(t, p.Spec.ScrapeClasses[0].FallbackScrapeProtocol, ptr.To(monv1.PrometheusText1_0_0))
 }
 
 func TestPrometheusQueryLogFileConfig(t *testing.T) {
