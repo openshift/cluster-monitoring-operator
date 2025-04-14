@@ -1230,6 +1230,18 @@ data:
     # Expected labels:
     # - severity: "critical", "warning", "info" or "none".
     - '{__name__="cluster:health:group_severity:count", severity=~"critical|warning|info|none"}'
+    #
+    # owners: (https://github.com/openshift/cluster-kube-apiserver-operator/)
+    #
+    # cluster:controlplane_topology:info shows the clusters control plane
+    # topology
+    - '{__name__="cluster:controlplane_topology:info", mode=~"HighlyAvailable|HighlyAvailableArbiter|SingleReplica|DualReplica|External"}'
+    #
+    # owners: (https://github.com/openshift/cluster-kube-apiserver-operator/)
+    #
+    # cluster:infrastructure_topology:info shows the clusters infrastructure
+    # topology
+    - '{__name__="cluster:infrastructure_topology:info", mode=~"HighlyAvailable|SingleReplica"}'
 kind: ConfigMap
 metadata:
   name: telemetry-config
