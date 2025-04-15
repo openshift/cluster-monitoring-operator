@@ -28,6 +28,7 @@ import (
 	"github.com/prometheus/common/model"
 	v1 "k8s.io/api/core/v1"
 	jsonutil "k8s.io/apimachinery/pkg/util/json"
+	k8syaml "k8s.io/apimachinery/pkg/util/yaml"
 	auditv1 "k8s.io/apiserver/pkg/apis/audit/v1"
 	"k8s.io/klog/v2"
 	"k8s.io/utils/ptr"
@@ -54,6 +55,15 @@ const (
 )
 
 var reservedPrometheusExternalLabels = []string{"prometheus", "prometheus_replica", "cluster"}
+
+type InvalidConfigWarning struct {
+	ConfigMap string
+	Err       error
+}
+
+func (e *InvalidConfigWarning) Warning() string {
+	return fmt.Sprintf("configuration in the %q ConfigMap is invalid and should be fixed: %s", e.ConfigMap, e.Err)
+}
 
 type Config struct {
 	Images                               *Images `json:"-"`
@@ -326,19 +336,27 @@ func UnmarshalStrict(data []byte, v interface{}) error {
 	}
 }
 
-func newConfig(content []byte, collectionProfilesFeatureGateEnabled bool) (*Config, error) {
+func newConfig(content []byte, collectionProfilesFeatureGateEnabled bool) (*Config, *InvalidConfigWarning, error) {
 	c := Config{CollectionProfilesFeatureGateEnabled: collectionProfilesFeatureGateEnabled}
+
+	var warning *InvalidConfigWarning
+	wCmc := defaultClusterMonitoringConfiguration()
+	wErr := UnmarshalStrict(content, &wCmc)
+	if wErr != nil {
+		warning = &InvalidConfigWarning{ConfigMap: "openshift-monitoring/cluster-monitoring-config", Err: wErr}
+	}
+
 	cmc := defaultClusterMonitoringConfiguration()
-	err := UnmarshalStrict(content, &cmc)
+	err := k8syaml.UnmarshalStrict(content, &cmc)
 	if err != nil {
-		return nil, err
+		return nil, warning, err
 	}
 
 	c.ClusterMonitoringConfiguration = &cmc
 	c.applyDefaults()
 	c.UserWorkloadConfiguration = NewDefaultUserWorkloadMonitoringConfig()
 
-	return &c, nil
+	return &c, warning, nil
 }
 
 func defaultClusterMonitoringConfiguration() ClusterMonitoringConfiguration {
@@ -623,26 +641,26 @@ func calculateBodySizeLimit(podCapacity int) string {
 // structure that facilitates programmatical checks of that configuration. The
 // content of the data structure might change if TechPreview is enabled (tp), as
 // some features are only meant for TechPreview.
-func NewConfigFromString(content string, collectionProfilesFeatureGateEnabled bool) (*Config, error) {
+func NewConfigFromString(content string, collectionProfilesFeatureGateEnabled bool) (*Config, *InvalidConfigWarning, error) {
 	if content == "" {
-		return NewDefaultConfig(), nil
+		return NewDefaultConfig(), nil, nil
 	}
 
 	return newConfig([]byte(content), collectionProfilesFeatureGateEnabled)
 }
 
-func NewConfigFromConfigMap(c *v1.ConfigMap, collectionProfilesFeatureGateEnabled bool) (*Config, error) {
+func NewConfigFromConfigMap(c *v1.ConfigMap, collectionProfilesFeatureGateEnabled bool) (*Config, *InvalidConfigWarning, error) {
 	configContent, found := c.Data[configKey]
 
 	if !found {
-		return nil, fmt.Errorf("%q key not found in the configmap", configKey)
+		return nil, nil, fmt.Errorf("%q key not found in the configmap", configKey)
 	}
 
-	cParsed, err := NewConfigFromString(configContent, collectionProfilesFeatureGateEnabled)
+	cParsed, warning, err := NewConfigFromString(configContent, collectionProfilesFeatureGateEnabled)
 	if err != nil {
-		return nil, fmt.Errorf("failed to parse data at key %q: %w", configKey, err)
+		return nil, warning, fmt.Errorf("failed to parse data at key %q: %w", configKey, err)
 	}
-	return cParsed, nil
+	return cParsed, warning, nil
 }
 
 func NewDefaultConfig() *Config {
@@ -669,38 +687,49 @@ func (u *UserWorkloadConfiguration) applyDefaults() {
 	}
 }
 
-func NewUserConfigFromString(content string) (*UserWorkloadConfiguration, error) {
+func NewUserConfigFromString(content string) (*UserWorkloadConfiguration, *InvalidConfigWarning, error) {
 	if content == "" {
-		return NewDefaultUserWorkloadMonitoringConfig(), nil
+		return NewDefaultUserWorkloadMonitoringConfig(), nil, nil
 	}
+
+	var warning *InvalidConfigWarning
+	wU := &UserWorkloadConfiguration{}
+	wErr := UnmarshalStrict([]byte(content), &wU)
+	if wErr != nil {
+		warning = &InvalidConfigWarning{
+			ConfigMap: "openshift-user-workload-monitoring/user-workload-monitoring-config",
+			Err:       wErr,
+		}
+	}
+
 	u := &UserWorkloadConfiguration{}
-	err := UnmarshalStrict([]byte(content), &u)
+	err := k8syaml.UnmarshalStrict([]byte(content), &u)
 	if err != nil {
-		return nil, err
+		return nil, warning, err
 	}
 
 	u.applyDefaults()
 
 	if err := u.check(); err != nil {
-		return nil, err
+		return nil, warning, err
 	}
 
-	return u, nil
+	return u, warning, nil
 }
 
-func NewUserWorkloadConfigFromConfigMap(c *v1.ConfigMap) (*UserWorkloadConfiguration, error) {
+func NewUserWorkloadConfigFromConfigMap(c *v1.ConfigMap) (*UserWorkloadConfiguration, *InvalidConfigWarning, error) {
 	configContent, found := c.Data[configKey]
 
 	if !found {
 		klog.Warningf("the user workload monitoring configmap does not contain the %q key", configKey)
-		return NewDefaultUserWorkloadMonitoringConfig(), nil
+		return NewDefaultUserWorkloadMonitoringConfig(), nil, nil
 	}
 
-	uwc, err := NewUserConfigFromString(configContent)
+	uwc, warning, err := NewUserConfigFromString(configContent)
 	if err != nil {
-		return nil, fmt.Errorf("the user workload monitoring configuration in %q could not be parsed: %w", configKey, err)
+		return nil, warning, fmt.Errorf("the user workload monitoring configuration in %q could not be parsed: %w", configKey, err)
 	}
-	return uwc, nil
+	return uwc, warning, nil
 }
 
 func NewDefaultUserWorkloadMonitoringConfig() *UserWorkloadConfiguration {
