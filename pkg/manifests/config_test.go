@@ -349,7 +349,7 @@ prometheus:
 		t.Run(tc.name, func(t *testing.T) {
 			_, err := NewUserConfigFromString(tc.configString())
 			if tc.shouldFail {
-				require.ErrorIs(t, err, errAlertmanagerV1NotSupported)
+				require.ErrorIs(t, err, ErrAlertmanagerV1NotSupported)
 				return
 			}
 			require.NoError(t, err)
@@ -876,7 +876,7 @@ func TestUnsupportedAlertmanagerVersion(t *testing.T) {
 			require.NoError(t, err)
 			err = c.Precheck()
 			if tc.shouldFail {
-				require.ErrorIs(t, err, errAlertmanagerV1NotSupported)
+				require.ErrorIs(t, err, ErrAlertmanagerV1NotSupported)
 			} else {
 				require.NoError(t, err)
 			}
