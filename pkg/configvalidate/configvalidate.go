@@ -36,14 +36,14 @@ type parseConfig func(c *corev1.ConfigMap) error
 
 func configParser(collectionProfilesEnabled bool) parseConfig {
 	return func(c *corev1.ConfigMap) error {
-		_, err := manifests.NewConfigFromConfigMap(c, collectionProfilesEnabled)
+		_, _, err := manifests.NewConfigFromConfigMap(c, collectionProfilesEnabled)
 		return err
 	}
 }
 
 func uwmConfigParser() parseConfig {
 	return func(c *corev1.ConfigMap) error {
-		_, err := manifests.NewUserWorkloadConfigFromConfigMap(c)
+		_, _, err := manifests.NewUserWorkloadConfigFromConfigMap(c)
 		return err
 	}
 }
