@@ -55,6 +55,15 @@ const (
 
 var reservedPrometheusExternalLabels = []string{"prometheus", "prometheus_replica", "cluster"}
 
+type InvalidConfigWarning struct {
+	ConfigMap string
+	Err       error
+}
+
+func (e *InvalidConfigWarning) Warning() string {
+	return fmt.Sprintf("configuration in the %q ConfigMap is invalid and should be fixed: %s", e.ConfigMap, e.Err)
+}
+
 type Config struct {
 	Images                               *Images `json:"-"`
 	RemoteWrite                          bool    `json:"-"`
@@ -328,6 +337,7 @@ func UnmarshalStrict(data []byte, v interface{}) error {
 
 func newConfig(content []byte, collectionProfilesFeatureGateEnabled bool) (*Config, error) {
 	c := Config{CollectionProfilesFeatureGateEnabled: collectionProfilesFeatureGateEnabled}
+
 	cmc := defaultClusterMonitoringConfiguration()
 	err := UnmarshalStrict(content, &cmc)
 	if err != nil {
@@ -673,6 +683,7 @@ func NewUserConfigFromString(content string) (*UserWorkloadConfiguration, error)
 	if content == "" {
 		return NewDefaultUserWorkloadMonitoringConfig(), nil
 	}
+
 	u := &UserWorkloadConfiguration{}
 	err := UnmarshalStrict([]byte(content), &u)
 	if err != nil {

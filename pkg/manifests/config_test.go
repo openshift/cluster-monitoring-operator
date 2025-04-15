@@ -200,6 +200,13 @@ func TestNewUserConfigFromString(t *testing.T) {
 			err: "error unmarshaling: unknown field \"prometheusOperator.nodeselector\"",
 		},
 		{
+			name: "json string with field of wrong case",
+			configString: func() string {
+				return `{"prometheusoperator": {}}`
+			},
+			err: "error unmarshaling: unknown field \"prometheusoperator\"",
+		},
+		{
 			name: "json string with duplicated field",
 			// users should be aware of this as unmarshalling would only take one part into account.
 			configString: func() string {
