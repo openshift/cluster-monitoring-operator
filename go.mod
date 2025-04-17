@@ -18,8 +18,8 @@ require (
 	github.com/openshift/api v0.0.0-20250320170726-75d64d71980b
 	github.com/openshift/client-go v0.0.0-20250125113824-8e1f0b8fa9a7
 	github.com/openshift/library-go v0.0.0-20250402180609-ce2ba53fb2a4
-	github.com/prometheus-operator/prometheus-operator/pkg/apis/monitoring v0.80.1
-	github.com/prometheus-operator/prometheus-operator/pkg/client v0.80.1
+	github.com/prometheus-operator/prometheus-operator/pkg/apis/monitoring v0.81.0
+	github.com/prometheus-operator/prometheus-operator/pkg/client v0.81.0
 	github.com/prometheus/alertmanager v0.27.0
 	github.com/prometheus/client_golang v1.20.4
 	github.com/prometheus/common v0.60.0
@@ -30,18 +30,18 @@ require (
 	golang.org/x/text v0.21.0
 	gopkg.in/yaml.v2 v2.4.0
 	gopkg.in/yaml.v3 v3.0.1
-	k8s.io/api v0.32.1
-	k8s.io/apiextensions-apiserver v0.32.1
-	k8s.io/apimachinery v0.32.1
-	k8s.io/apiserver v0.32.1
+	k8s.io/api v0.32.2
+	k8s.io/apiextensions-apiserver v0.32.2
+	k8s.io/apimachinery v0.32.2
+	k8s.io/apiserver v0.32.2
 	k8s.io/autoscaler/vertical-pod-autoscaler v1.0.0
-	k8s.io/client-go v0.32.1
-	k8s.io/component-base v0.32.1
+	k8s.io/client-go v0.32.2
+	k8s.io/component-base v0.32.2
 	k8s.io/klog/v2 v2.130.1
 	k8s.io/kube-aggregator v0.32.1
 	k8s.io/metrics v0.31.1
 	k8s.io/utils v0.0.0-20241210054802-24370beab758
-	sigs.k8s.io/controller-runtime v0.20.1
+	sigs.k8s.io/controller-runtime v0.20.3
 	sigs.k8s.io/json v0.0.0-20241014173422-cfa47c3a1cc8
 	sigs.k8s.io/yaml v1.4.0
 )
@@ -145,9 +145,9 @@ require (
 	gopkg.in/evanphx/json-patch.v4 v4.12.0 // indirect
 	gopkg.in/inf.v0 v0.9.1 // indirect
 	gopkg.in/natefinch/lumberjack.v2 v2.2.1 // indirect
-	k8s.io/kms v0.32.1 // indirect
+	k8s.io/kms v0.32.2 // indirect
 	k8s.io/kube-openapi v0.0.0-20241212222426-2c72e554b1e7 // indirect
 	sigs.k8s.io/apiserver-network-proxy/konnectivity-client v0.31.0 // indirect
 	sigs.k8s.io/kube-storage-version-migrator v0.0.6-0.20230721195810-5c8923c5ff96 // indirect
-	sigs.k8s.io/structured-merge-diff/v4 v4.5.0 // indirect
+	sigs.k8s.io/structured-merge-diff/v4 v4.6.0 // indirect
 )
