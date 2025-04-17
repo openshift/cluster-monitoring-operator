@@ -907,6 +907,22 @@ func (o *Operator) sync(ctx context.Context, key string) error {
 		klog.Errorf("error occurred while setting status to done: %v", err)
 	}
 
+	// Set Upgradable=False if alertmanager apiVersion: v1 is still specified in cluster-monitoring-config configmap
+	if config.CheckAlertmanagerVersion() != nil {
+		err = o.client.StatusReporter().SetUpgradeable(ctx, configv1.ConditionFalse, "", manifests.ErrAlertmanagerV1NotSupported.Error())
+		if err != nil {
+			klog.Errorf("error occurred while setting Upgradeable status: %v", err)
+		}
+	}
+
+	// Set Upgradable=False if alertmanager apiVersion: v1 is still specified in user-workload-monitoring-config configmap
+	if config.UserWorkloadConfiguration != nil && config.UserWorkloadConfiguration.CheckAlertmanagerVersion() != nil {
+		err = o.client.StatusReporter().SetUpgradeable(ctx, configv1.ConditionFalse, "", manifests.ErrAlertmanagerV1NotSupported.Error())
+		if err != nil {
+			klog.Errorf("error occurred while setting Upgradeable status: %v", err)
+		}
+	}
+
 	// CMO always reports Upgradeable=True.
 	err = o.client.StatusReporter().SetUpgradeable(ctx, configv1.ConditionTrue, "", "")
 	if err != nil {
