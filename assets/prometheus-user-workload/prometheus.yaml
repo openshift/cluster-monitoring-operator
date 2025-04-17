@@ -9,7 +9,7 @@ metadata:
     app.kubernetes.io/managed-by: cluster-monitoring-operator
     app.kubernetes.io/name: prometheus
     app.kubernetes.io/part-of: openshift-monitoring
-    app.kubernetes.io/version: 3.0.1
+    app.kubernetes.io/version: 3.2.1
   name: user-workload
   namespace: openshift-user-workload-monitoring
 spec:
@@ -186,7 +186,7 @@ spec:
   enforcedNamespaceLabel: namespace
   externalLabels: {}
   ignoreNamespaceSelectors: true
-  image: quay.io/prometheus/prometheus:v3.0.1
+  image: quay.io/prometheus/prometheus:v3.2.1
   listenLocal: true
   nodeSelector:
     kubernetes.io/os: linux
@@ -201,7 +201,7 @@ spec:
       app.kubernetes.io/instance: user-workload
       app.kubernetes.io/name: prometheus
       app.kubernetes.io/part-of: openshift-monitoring
-      app.kubernetes.io/version: 3.0.1
+      app.kubernetes.io/version: 3.2.1
   podMonitorNamespaceSelector:
     matchExpressions:
     - key: openshift.io/cluster-monitoring
@@ -301,7 +301,7 @@ spec:
         cpu: 1m
         memory: 100Mi
     version: 0.37.2
-  version: 3.0.1
+  version: 3.2.1
   volumes:
   - configMap:
       items:
