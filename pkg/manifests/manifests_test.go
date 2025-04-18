@@ -647,7 +647,7 @@ func TestSharingConfig(t *testing.T) {
 }
 
 func TestPrometheusOperatorConfiguration(t *testing.T) {
-	c, err := NewConfigFromString(`prometheusOperator:
+	c, warning, err := NewConfigFromString(`prometheusOperator:
   nodeSelector:
     type: master
   resources:
@@ -666,6 +666,7 @@ func TestPrometheusOperatorConfiguration(t *testing.T) {
           foo: bar
 `, false)
 	require.NoError(t, err)
+	require.Nil(t, warning)
 
 	c.SetImages(map[string]string{
 		"prometheus-operator":        "docker.io/openshift/origin-prometheus-operator:latest",
@@ -764,7 +765,7 @@ func TestPrometheusOperatorConfiguration(t *testing.T) {
 }
 
 func TestPrometheusOperatorAdmissionWebhookConfiguration(t *testing.T) {
-	c, err := NewConfigFromString(`prometheusOperator:
+	c, warning, err := NewConfigFromString(`prometheusOperator:
   nodeSelector:
     type: master
 `, false)
@@ -776,6 +777,7 @@ func TestPrometheusOperatorAdmissionWebhookConfiguration(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
+	require.Nil(t, warning)
 
 	f := NewFactory("openshift-monitoring", "openshift-user-workload-monitoring", c, defaultInfrastructureReader(), &fakeProxyReader{}, NewAssets(assetsPath), &APIServerConfig{}, &configv1.Console{})
 	d, err := f.PrometheusOperatorAdmissionWebhookDeployment()
@@ -829,7 +831,7 @@ func TestPrometheusOperatorAdmissionWebhookConfiguration(t *testing.T) {
 }
 
 func TestPrometheusOperatorAdmissionWebhookOwnConfiguration(t *testing.T) {
-	c, err := NewConfigFromString(`
+	c, warning, err := NewConfigFromString(`
 prometheusOperatorAdmissionWebhook:
   resources:
     requests:
@@ -855,6 +857,7 @@ prometheusOperatorAdmissionWebhook:
 	if err != nil {
 		t.Fatal(err)
 	}
+	require.Nil(t, warning)
 
 	if d.Spec.Template.Spec.TopologySpreadConstraints[0].MaxSkew != 1 {
 		t.Fatal("prometheus-operator-admission-webhook topology spread constraints MaxSkew not configured correctly")
@@ -926,10 +929,11 @@ func TestPrometheusK8sRemoteWriteClusterIDRelabel(t *testing.T) {
 			name: "simple remote write",
 
 			config: func() *Config {
-				c, err := NewConfigFromString("", false)
+				c, warning, err := NewConfigFromString("", false)
 				if err != nil {
 					t.Fatal(err)
 				}
+				require.Nil(t, warning)
 
 				c.ClusterMonitoringConfiguration.PrometheusK8sConfig.RemoteWrite = []RemoteWriteSpec{{URL: "http://custom"}}
 
@@ -953,10 +957,11 @@ func TestPrometheusK8sRemoteWriteClusterIDRelabel(t *testing.T) {
 			name: "simple remote write with relabel config",
 
 			config: func() *Config {
-				c, err := NewConfigFromString("", false)
+				c, warning, err := NewConfigFromString("", false)
 				if err != nil {
 					t.Fatal(err)
 				}
+				require.Nil(t, warning)
 
 				c.ClusterMonitoringConfiguration.PrometheusK8sConfig.RemoteWrite = []RemoteWriteSpec{
 					{
@@ -994,10 +999,11 @@ func TestPrometheusK8sRemoteWriteClusterIDRelabel(t *testing.T) {
 			name: "multiple remote write with relabel config",
 
 			config: func() *Config {
-				c, err := NewConfigFromString("", false)
+				c, warning, err := NewConfigFromString("", false)
 				if err != nil {
 					t.Fatal(err)
 				}
+				require.Nil(t, warning)
 
 				c.ClusterMonitoringConfiguration.PrometheusK8sConfig.RemoteWrite = []RemoteWriteSpec{
 					{
@@ -1235,7 +1241,7 @@ func TestPrometheusK8sRemoteWriteOauth2(t *testing.T) {
 			"param2": "value2",
 		},
 	}
-	c, err := NewConfigFromString(`prometheusK8s:
+	c, warning, err := NewConfigFromString(`prometheusK8s:
   remoteWrite:
     - url: https://test.remotewrite.com/api/write
       remoteTimeout: 30s
@@ -1258,6 +1264,7 @@ func TestPrometheusK8sRemoteWriteOauth2(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
+	require.Nil(t, warning)
 
 	f := NewFactory("openshift-monitoring", "openshift-user-workload-monitoring", c, defaultInfrastructureReader(), &fakeProxyReader{}, NewAssets(assetsPath), &APIServerConfig{}, &configv1.Console{})
 	p, err := f.PrometheusK8s(
@@ -1397,10 +1404,11 @@ func TestRemoteWriteAuthorizationConfig(t *testing.T) {
 		},
 	} {
 		t.Run(tc.name, func(t *testing.T) {
-			c, err := NewConfigFromString(tc.config, false)
+			c, warning, err := NewConfigFromString(tc.config, false)
 			if err != nil {
 				t.Fatal(err)
 			}
+			require.Nil(t, warning)
 			f := NewFactory("openshift-monitoring", "openshift-user-workload-monitoring", c, defaultInfrastructureReader(), &fakeProxyReader{}, NewAssets(assetsPath), &APIServerConfig{}, &configv1.Console{})
 			p, err := f.PrometheusK8s(
 				&v1.Secret{ObjectMeta: metav1.ObjectMeta{Name: "foo"}},
@@ -1424,10 +1432,11 @@ func TestRemoteWriteAuthorizationConfig(t *testing.T) {
 func TestPrometheusRemoteWriteProxy(t *testing.T) {
 	// This is not required, as the configuration is overridden below, set to maintain consistency.
 	config := func() *Config {
-		c, err := NewConfigFromString(`
+		c, warning, err := NewConfigFromString(`
 enableUserWorkload: true
 `, false)
 		require.NoError(t, err)
+		require.Nil(t, warning)
 		c.ClusterMonitoringConfiguration.PrometheusK8sConfig.RemoteWrite = []RemoteWriteSpec{{URL: "http://custom1"}}
 		c.UserWorkloadConfiguration.Prometheus.RemoteWrite = []RemoteWriteSpec{{URL: "http://custom2"}}
 		return c
@@ -1499,7 +1508,7 @@ enableUserWorkload: true
 }
 
 func TestPrometheusK8sConfiguration(t *testing.T) {
-	c, err := NewConfigFromString(`prometheusK8s:
+	c, warning, err := NewConfigFromString(`prometheusK8s:
   retention: 25h
   nodeSelector:
     type: master
@@ -1535,6 +1544,7 @@ func TestPrometheusK8sConfiguration(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
+	require.Nil(t, warning)
 	c.SetImages(map[string]string{
 		"prometheus":       "docker.io/openshift/origin-prometheus:latest",
 		"kube-rbac-proxy":  "docker.io/openshift/origin-kube-rbac-proxy:latest",
@@ -1649,7 +1659,7 @@ func TestPrometheusK8sConfiguration(t *testing.T) {
 func TestPrometheusUserWorkloadConfiguration(t *testing.T) {
 	c := NewDefaultConfig()
 
-	uwc, err := NewUserConfigFromString(`prometheus:
+	uwc, warning, err := NewUserConfigFromString(`prometheus:
   scrapeInterval: 15s
   evaluationInterval: 15s
   resources:
@@ -1671,6 +1681,7 @@ func TestPrometheusUserWorkloadConfiguration(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
+	require.Nil(t, warning)
 	f := NewFactory("openshift-monitoring", "openshift-user-workload-monitoring", c, defaultInfrastructureReader(), &fakeProxyReader{}, NewAssets(assetsPath), &APIServerConfig{}, &configv1.Console{})
 	p, err := f.PrometheusUserWorkload(
 		&v1.Secret{ObjectMeta: metav1.ObjectMeta{Name: "foo"}},
@@ -1951,7 +1962,7 @@ func TestPrometheusK8sConfigurationBodySizeLimit(t *testing.T) {
 	}
 	ctx := context.Background()
 
-	c, err := NewConfigFromString(`
+	c, warning, err := NewConfigFromString(`
 prometheusK8s:
     enforcedBodySizeLimit: "10MB"
   `, false)
@@ -1959,6 +1970,7 @@ prometheusK8s:
 	if err != nil {
 		t.Fatal(err)
 	}
+	require.Nil(t, warning)
 
 	err = c.LoadEnforcedBodySizeLimit(pcr, ctx)
 
@@ -2166,10 +2178,11 @@ func TestPrometheusK8sAdditionalAlertManagerConfigsSecret(t *testing.T) {
 
 	for _, tt := range testCases {
 		t.Run(tt.name, func(t *testing.T) {
-			c, err := NewConfigFromString(tt.config, false)
+			c, warning, err := NewConfigFromString(tt.config, false)
 			if err != nil {
 				t.Fatal(err)
 			}
+			require.Nil(t, warning)
 			f := NewFactory("openshift-monitoring", "openshift-user-workload-monitoring", c, defaultInfrastructureReader(), &fakeProxyReader{}, NewAssets(assetsPath), &APIServerConfig{}, &configv1.Console{})
 
 			p, err := f.PrometheusK8s(
@@ -2485,15 +2498,17 @@ func TestThanosRulerAdditionalAlertManagerConfigsSecret(t *testing.T) {
 
 	for _, tt := range testCases {
 		t.Run(tt.name, func(t *testing.T) {
-			c, err := NewConfigFromString(tt.config, false)
+			c, warning, err := NewConfigFromString(tt.config, false)
 			if err != nil {
 				t.Fatal(err)
 			}
+			require.Nil(t, warning)
 
-			uwc, err := NewUserConfigFromString(tt.userWorkloadConfig)
+			uwc, warning, err := NewUserConfigFromString(tt.userWorkloadConfig)
 			if err != nil {
 				t.Fatal(err)
 			}
+			require.Nil(t, warning)
 			c.UserWorkloadConfiguration = uwc
 
 			f := NewFactory("openshift-monitoring", "openshift-user-workload-monitoring", c, defaultInfrastructureReader(), &fakeProxyReader{}, NewAssets(assetsPath), &APIServerConfig{}, &configv1.Console{})
@@ -2546,10 +2561,11 @@ metricsServer:
   - effect: PreferNoSchedule
     operator: Exists`
 
-	c, err := NewConfigFromString(config, true)
+	c, warning, err := NewConfigFromString(config, true)
 	if err != nil {
 		t.Fatal(err)
 	}
+	require.Nil(t, warning)
 
 	c.SetImages(map[string]string{
 		"kube-metrics-server": "docker.io/openshift/origin-kube-metrics-server:latest",
@@ -2642,10 +2658,11 @@ metricsServer:
 }
 
 func TestMetricsServerReadinessProbe(t *testing.T) {
-	c, err := NewConfigFromString("", true)
+	c, warning, err := NewConfigFromString("", true)
 	if err != nil {
 		t.Fatal(err)
 	}
+	require.Nil(t, warning)
 
 	c.SetImages(map[string]string{
 		"kube-metrics-server": "docker.io/openshift/origin-kube-metrics-server:latest",
@@ -2776,11 +2793,12 @@ metricsServer:
 
 	for _, test := range tt {
 		t.Run(test.scenario, func(t *testing.T) {
-			c, err := NewConfigFromString(test.config, false)
+			c, warning, err := NewConfigFromString(test.config, false)
 			if err != nil {
 				t.Logf("%s\n\n", test.config)
 				t.Fatal(err)
 			}
+			require.Nil(t, warning)
 
 			f := NewFactory("openshift-monitoring", "openshift-user-workload-monitoring",
 				c, defaultInfrastructureReader(), &fakeProxyReader{},
@@ -2877,10 +2895,11 @@ func TestAlertmanagerMainStartupProbe(t *testing.T) {
 		},
 	} {
 		t.Run(tc.name, func(t *testing.T) {
-			c, err := NewConfigFromString(tc.config, false)
+			c, warning, err := NewConfigFromString(tc.config, false)
 			if err != nil {
 				t.Fatal(err)
 			}
+			require.Nil(t, warning)
 			f := NewFactory("openshift-monitoring", "openshift-user-workload-monitoring", c, tc.infrastructure, &fakeProxyReader{}, NewAssets(assetsPath), &APIServerConfig{}, &configv1.Console{})
 			a, err := f.AlertmanagerMain()
 			if err != nil {
@@ -2912,7 +2931,7 @@ func TestAlertmanagerMainStartupProbe(t *testing.T) {
 }
 
 func TestAlertmanagerMainConfiguration(t *testing.T) {
-	c, err := NewConfigFromString(`alertmanagerMain:
+	c, warning, err := NewConfigFromString(`alertmanagerMain:
   logLevel: debug
   enableUserAlertmanagerConfig: true
   nodeSelector:
@@ -2946,6 +2965,7 @@ func TestAlertmanagerMainConfiguration(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
+	require.Nil(t, warning)
 	c.SetImages(map[string]string{
 		"alertmanager": "docker.io/openshift/origin-prometheus-alertmanager:latest",
 	})
@@ -3100,7 +3120,7 @@ func TestAlertmanagerMainConfiguration(t *testing.T) {
 
 func TestAlertManagerUserWorkloadConfiguration(t *testing.T) {
 	c := NewDefaultConfig()
-	uwc, err := NewUserConfigFromString(`alertmanager:
+	uwc, warning, err := NewUserConfigFromString(`alertmanager:
   resources:
     requests:
       cpu: 100m
@@ -3128,6 +3148,7 @@ func TestAlertManagerUserWorkloadConfiguration(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
+	require.Nil(t, warning)
 
 	if !reflect.DeepEqual(a.Spec.Resources, *f.config.UserWorkloadConfiguration.Alertmanager.Resources) {
 		t.Fatal("Alertmanager resources are not configured correctly")
@@ -3171,10 +3192,11 @@ func TestAlertManagerUserWorkloadConfiguration(t *testing.T) {
 }
 
 func TestNodeExporter(t *testing.T) {
-	c, err := NewConfigFromString(``, false)
+	c, warning, err := NewConfigFromString(``, false)
 	if err != nil {
 		t.Fatal(err)
 	}
+	require.Nil(t, warning)
 	c.SetImages(map[string]string{
 		"node-exporter":   "docker.io/openshift/origin-prometheus-node-exporter:latest",
 		"kube-rbac-proxy": "docker.io/openshift/origin-kube-rbac-proxy:latest",
@@ -3435,10 +3457,11 @@ nodeExporter:
 
 	for _, test := range tests {
 		t.Run(test.name, func(st *testing.T) {
-			c, err := NewConfigFromString(test.config, false)
+			c, warning, err := NewConfigFromString(test.config, false)
 			if err != nil {
 				t.Fatal(err)
 			}
+			require.Nil(t, warning)
 			c.SetImages(map[string]string{
 				"node-exporter":   "docker.io/openshift/origin-prometheus-node-exporter:latest",
 				"kube-rbac-proxy": "docker.io/openshift/origin-kube-rbac-proxy:latest",
@@ -3486,10 +3509,11 @@ nodeExporter:
       - /\
 `
 	t.Run(testName, func(st *testing.T) {
-		c, err := NewConfigFromString(config, false)
+		c, warning, err := NewConfigFromString(config, false)
 		if err != nil {
 			t.Fatal(err)
 		}
+		require.Nil(t, warning)
 		c.SetImages(map[string]string{
 			"node-exporter":   "docker.io/openshift/origin-prometheus-node-exporter:latest",
 			"kube-rbac-proxy": "docker.io/openshift/origin-kube-rbac-proxy:latest",
@@ -3530,10 +3554,11 @@ nodeExporter:
 
 	for _, test := range tests {
 		t.Run(test.name, func(st *testing.T) {
-			c, err := NewConfigFromString(test.config, false)
+			c, warning, err := NewConfigFromString(test.config, false)
 			if err != nil {
 				t.Fatal(err)
 			}
+			require.Nil(t, warning)
 			c.SetImages(map[string]string{
 				"node-exporter":   "docker.io/openshift/origin-prometheus-node-exporter:latest",
 				"kube-rbac-proxy": "docker.io/openshift/origin-kube-rbac-proxy:latest",
@@ -3585,10 +3610,11 @@ func TestKubeStateMetrics(t *testing.T) {
       matchLabels:
         foo: bar`
 
-	c, err := NewConfigFromString(config, false)
+	c, warning, err := NewConfigFromString(config, false)
 	if err != nil {
 		t.Fatal(err)
 	}
+	require.Nil(t, warning)
 	c.SetImages(map[string]string{
 		"kube-state-metrics": "docker.io/openshift/origin-kube-state-metrics:latest",
 		"kube-rbac-proxy":    "docker.io/openshift/origin-kube-rbac-proxy:latest",
@@ -3662,7 +3688,7 @@ func TestKubeStateMetrics(t *testing.T) {
 }
 
 func TestOpenShiftStateMetrics(t *testing.T) {
-	config := `openShiftStateMetrics:
+	config := `openshiftStateMetrics:
   resources:
     requests:
       cpu: 100m
@@ -3678,11 +3704,12 @@ func TestOpenShiftStateMetrics(t *testing.T) {
       matchLabels:
         foo: bar`
 
-	c, err := NewConfigFromString(config, false)
+	c, warning, err := NewConfigFromString(config, false)
 
 	if err != nil {
 		t.Fatal(err)
 	}
+	require.Nil(t, warning)
 	c.SetImages(map[string]string{
 		"openshift-state-metrics": "docker.io/openshift/origin-openshift-state-metrics:latest",
 		"kube-rbac-proxy":         "docker.io/openshift/origin-kube-rbac-proxy:latest",
@@ -3792,7 +3819,7 @@ func TestPrometheusK8sControlPlaneRulesFiltered(t *testing.T) {
 }
 
 func TestThanosQuerierConfiguration(t *testing.T) {
-	c, err := NewConfigFromString(`thanosQuerier:
+	c, warning, err := NewConfigFromString(`thanosQuerier:
   nodeSelector:
     type: foo
   tolerations:
@@ -3819,6 +3846,7 @@ func TestThanosQuerierConfiguration(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
+	require.Nil(t, warning)
 
 	f := NewFactory("openshift-monitoring", "openshift-user-workload-monitoring", c, defaultInfrastructureReader(), &fakeProxyReader{}, NewAssets(assetsPath), &APIServerConfig{}, &configv1.Console{})
 	d, err := f.ThanosQuerierDeployment(
@@ -3985,10 +4013,11 @@ func TestTelemeterConfiguration(t *testing.T) {
       matchLabels:
         foo: bar`
 
-	c, err := NewConfigFromString(config, false)
+	c, warning, err := NewConfigFromString(config, false)
 	if err != nil {
 		t.Fatal(err)
 	}
+	require.Nil(t, warning)
 	f := NewFactory("openshift-monitoring", "openshift-user-workload-monitoring", c, defaultInfrastructureReader(), &fakeProxyReader{}, NewAssets(assetsPath), &APIServerConfig{}, &configv1.Console{})
 	d, err := f.TelemeterClientDeployment(&v1.ConfigMap{ObjectMeta: metav1.ObjectMeta{Name: "foo"}}, &v1.Secret{Data: map[string][]byte{"token": []byte("test")}})
 	if err != nil {
@@ -4095,10 +4124,11 @@ func TestTelemeterClientSecret(t *testing.T) {
 		},
 	} {
 		t.Run(tc.name, func(t *testing.T) {
-			c, err := NewConfigFromString(tc.config, false)
+			c, warning, err := NewConfigFromString(tc.config, false)
 			if err != nil {
 				t.Fatal(err)
 			}
+			require.Nil(t, warning)
 			c.UserWorkloadConfiguration = NewDefaultUserWorkloadMonitoringConfig()
 			f := NewFactory("openshift-monitoring", "openshift-user-workload-monitoring", c, defaultInfrastructureReader(), &fakeProxyReader{}, NewAssets(assetsPath), &APIServerConfig{}, &configv1.Console{})
 			generatedS, err := f.TelemeterClientSecret()
@@ -4129,8 +4159,10 @@ func TestTelemeterClientSecret(t *testing.T) {
 }
 
 func TestThanosRulerConfiguration(t *testing.T) {
-	c, err := NewConfigFromString(``, false)
-	uwc, err := NewUserConfigFromString(`thanosRuler:
+	c, warning, err := NewConfigFromString(``, false)
+	require.NoError(t, err)
+	require.Nil(t, warning)
+	uwc, warning, err := NewUserConfigFromString(`thanosRuler:
   evaluationInterval: 20s
   resources:
     requests:
@@ -4151,6 +4183,7 @@ func TestThanosRulerConfiguration(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
+	require.Nil(t, warning)
 	f := NewFactory("openshift-monitoring", "openshift-user-workload-monitoring", c, defaultInfrastructureReader(), &fakeProxyReader{}, NewAssets(assetsPath), &APIServerConfig{}, &configv1.Console{Status: configv1.ConsoleStatus{ConsoleURL: "https://console-openshift-console.apps.foo.devcluster.openshift.com"}})
 	tr, err := f.ThanosRulerCustomResource(
 		&v1.Secret{ObjectMeta: metav1.ObjectMeta{Name: "foo"}},
@@ -4586,7 +4619,7 @@ func TestPodDisruptionBudget(t *testing.T) {
 
 func TestPrometheusOperatorUserWorkloadConfiguration(t *testing.T) {
 	c := NewDefaultConfig()
-	uwc, err := NewUserConfigFromString(`prometheusOperator:
+	uwc, warning, err := NewUserConfigFromString(`prometheusOperator:
   topologySpreadConstraints:
   - maxSkew: 1
     topologyKey: type
@@ -4595,6 +4628,7 @@ func TestPrometheusOperatorUserWorkloadConfiguration(t *testing.T) {
       matchLabels:
         foo: bar
   `)
+	require.Nil(t, warning)
 
 	c.UserWorkloadConfiguration = uwc
 
@@ -4704,12 +4738,13 @@ func TestPrometheusOperatorNodeSelector(t *testing.T) {
 		},
 	} {
 		t.Run(tc.name, func(t *testing.T) {
-			c, err := NewConfigFromString(`
+			c, warning, err := NewConfigFromString(`
 enableUserWorkload: true
 `, false)
 			if err != nil {
 				t.Fatal(err)
 			}
+			require.Nil(t, warning)
 			f := NewFactory("openshift-monitoring", "openshift-user-workload-monitoring", c, tc.infrastructure, &fakeProxyReader{}, NewAssets(assetsPath), &APIServerConfig{}, &configv1.Console{})
 			d, err := f.PrometheusOperatorDeployment()
 			if err != nil {
