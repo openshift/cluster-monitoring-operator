@@ -29,7 +29,8 @@ func TestNewConfigFromString(t *testing.T) {
 	tcs := []struct {
 		name         string
 		configString func() string
-		shouldFail   bool
+		err          string
+		warning      string
 		configCheck  func(*Config)
 	}{
 		{
@@ -54,14 +55,23 @@ func TestNewConfigFromString(t *testing.T) {
 			configString: func() string {
 				return `{"prometheusK8ss": {}}`
 			},
-			shouldFail: true,
+			err:     "error unmarshaling JSON: while decoding JSON: json: unknown field \"prometheusK8ss\"",
+			warning: "configuration in the \"openshift-monitoring/cluster-monitoring-config\" ConfigMap is invalid and should be fixed: error unmarshaling: unknown field \"prometheusK8ss\"",
+		},
+		{
+			name: "json string with root field of the wrong case",
+			configString: func() string {
+				return `{"PROMETHEUSK8S": {}}`
+			},
+			warning: "configuration in the \"openshift-monitoring/cluster-monitoring-config\" ConfigMap is invalid and should be fixed: error unmarshaling: unknown field \"PROMETHEUSK8S\"",
 		},
 		{
 			name: "json string with unknown field",
 			configString: func() string {
 				return `{"prometheusK8s": {"unknown": "bar"}}`
 			},
-			shouldFail: true,
+			err:     "error unmarshaling JSON: while decoding JSON: json: unknown field \"unknown\"",
+			warning: "configuration in the \"openshift-monitoring/cluster-monitoring-config\" ConfigMap is invalid and should be fixed: error unmarshaling: unknown field \"prometheusK8s.unknown\"",
 		},
 		{
 			name: "json string with duplicated field",
@@ -69,7 +79,8 @@ func TestNewConfigFromString(t *testing.T) {
 			configString: func() string {
 				return `{"prometheusK8s": {"foo": {}}, "prometheusK8s": {"bar": {}}}`
 			},
-			shouldFail: true,
+			err:     "error converting YAML to JSON: yaml: unmarshal errors:\n  line 1: key \"prometheusK8s\" already set in map",
+			warning: "configuration in the \"openshift-monitoring/cluster-monitoring-config\" ConfigMap is invalid and should be fixed: yaml: unmarshal errors:\n  line 1: key \"prometheusK8s\" already set in map",
 		},
 		{
 			name: "empty json string",
@@ -88,7 +99,16 @@ func TestNewConfigFromString(t *testing.T) {
 			configString: func() string {
 				return `metricsServe:`
 			},
-			shouldFail: true,
+			err:     "error unmarshaling JSON: while decoding JSON: json: unknown field \"metricsServe\"",
+			warning: "configuration in the \"openshift-monitoring/cluster-monitoring-config\" ConfigMap is invalid and should be fixed: error unmarshaling: unknown field \"metricsServe\"",
+		},
+		{
+			name: "yaml string with root field of the wrong case",
+			configString: func() string {
+				return `metricserver:`
+			},
+			err:     "error unmarshaling JSON: while decoding JSON: json: unknown field \"metricserver\"",
+			warning: "configuration in the \"openshift-monitoring/cluster-monitoring-config\" ConfigMap is invalid and should be fixed: error unmarshaling: unknown field \"metricserver\"",
 		},
 		{
 			name: "yaml string with unknown field",
@@ -97,7 +117,8 @@ func TestNewConfigFromString(t *testing.T) {
 metricsServer:
   unknown:`
 			},
-			shouldFail: true,
+			err:     "error unmarshaling JSON: while decoding JSON: json: unknown field \"unknown\"",
+			warning: "configuration in the \"openshift-monitoring/cluster-monitoring-config\" ConfigMap is invalid and should be fixed: error unmarshaling: unknown field \"metricsServer.unknown\"",
 		},
 		{
 			name: "yaml string with duplicated field",
@@ -108,7 +129,14 @@ metricsServer:
 metricsServer:
   bar:`
 			},
-			shouldFail: true,
+			err:     "yaml: unmarshal errors:\n  line 5: key \"metricsServer\" already set in map",
+			warning: "configuration in the \"openshift-monitoring/cluster-monitoring-config\" ConfigMap is invalid and should be fixed: yaml: unmarshal errors:\n  line 5: key \"metricsServer\" already set in map",
+		},
+		{
+			name: "empty yaml string",
+			configString: func() string {
+				return ``
+			},
 		},
 		{
 			name: "empty yaml string",
@@ -120,9 +148,14 @@ metricsServer:
 
 	for _, tc := range tcs {
 		t.Run(tc.name, func(t *testing.T) {
-			c, err := NewConfigFromString(tc.configString(), false)
-			if tc.shouldFail {
-				require.Error(t, err)
+			c, warning, err := NewConfigFromString(tc.configString(), false)
+			if tc.warning != "" {
+				require.Equal(t, tc.warning, warning.Warning())
+			} else {
+				require.Empty(t, warning)
+			}
+			if tc.err != "" {
+				require.ErrorContains(t, err, tc.err)
 				return
 			}
 			require.NoError(t, err)
@@ -137,7 +170,8 @@ func TestNewUserConfigFromString(t *testing.T) {
 	tcs := []struct {
 		name         string
 		configString func() string
-		shouldFail   bool
+		err          string
+		warning      string
 		configCheck  func(*UserWorkloadConfiguration)
 	}{
 		{
@@ -163,14 +197,23 @@ func TestNewUserConfigFromString(t *testing.T) {
 			configString: func() string {
 				return `{"unknown": {}}`
 			},
-			shouldFail: true,
+			err:     "error unmarshaling JSON: while decoding JSON: json: unknown field \"unknown\"",
+			warning: "configuration in the \"openshift-user-workload-monitoring/user-workload-monitoring-config\" ConfigMap is invalid and should be fixed: error unmarshaling: unknown field \"unknown\"",
 		},
 		{
 			name: "json string with unknown field",
 			configString: func() string {
 				return `{"prometheusOperator": {"unknown": "bar"}}`
 			},
-			shouldFail: true,
+			err:     "error unmarshaling JSON: while decoding JSON: json: unknown field \"unknown\"",
+			warning: "configuration in the \"openshift-user-workload-monitoring/user-workload-monitoring-config\" ConfigMap is invalid and should be fixed: error unmarshaling: unknown field \"prometheusOperator.unknown\"",
+		},
+		{
+			name: "json string with field of wrong case",
+			configString: func() string {
+				return `{"prometheusoperator": {}}`
+			},
+			warning: "configuration in the \"openshift-user-workload-monitoring/user-workload-monitoring-config\" ConfigMap is invalid and should be fixed: error unmarshaling: unknown field \"prometheusoperator\"",
 		},
 		{
 			name: "json string with duplicated field",
@@ -178,7 +221,8 @@ func TestNewUserConfigFromString(t *testing.T) {
 			configString: func() string {
 				return `{"prometheus": {"foo": {}}, "prometheus": {"bar": {}}}`
 			},
-			shouldFail: true,
+			err:     "yaml: unmarshal errors:\n  line 1: key \"prometheus\"",
+			warning: "configuration in the \"openshift-user-workload-monitoring/user-workload-monitoring-config\" ConfigMap is invalid and should be fixed: yaml: unmarshal errors:\n  line 1: key \"prometheus\" already set in map",
 		},
 		{
 			name: "empty json string",
@@ -197,7 +241,8 @@ func TestNewUserConfigFromString(t *testing.T) {
 			configString: func() string {
 				return `unknown:`
 			},
-			shouldFail: true,
+			err:     "error unmarshaling JSON: while decoding JSON: json: unknown field \"unknown\"",
+			warning: "configuration in the \"openshift-user-workload-monitoring/user-workload-monitoring-config\" ConfigMap is invalid and should be fixed: error unmarshaling: unknown field \"unknown\"",
 		},
 		{
 			name: "yaml string with unknown field",
@@ -206,7 +251,17 @@ func TestNewUserConfigFromString(t *testing.T) {
 prometheusOperator:
   unknown:`
 			},
-			shouldFail: true,
+			err:     "error unmarshaling JSON: while decoding JSON: json: unknown field \"unknown\"",
+			warning: "configuration in the \"openshift-user-workload-monitoring/user-workload-monitoring-config\" ConfigMap is invalid and should be fixed: error unmarshaling: unknown field \"prometheusOperator.unknown\"",
+		},
+		{
+			name: "yaml string with field of wrong case",
+			configString: func() string {
+				return `
+prometheusOperator:
+  nodeselector:`
+			},
+			warning: "configuration in the \"openshift-user-workload-monitoring/user-workload-monitoring-config\" ConfigMap is invalid and should be fixed: error unmarshaling: unknown field \"prometheusOperator.nodeselector\"",
 		},
 		{
 			name: "yaml string with duplicated field",
@@ -217,7 +272,8 @@ thanosRuler:
 thanosRuler:
   bar:`
 			},
-			shouldFail: true,
+			err:     "yaml: unmarshal errors:\n  line 5: key \"thanosRuler\"",
+			warning: "configuration in the \"openshift-user-workload-monitoring/user-workload-monitoring-config\" ConfigMap is invalid and should be fixed: yaml: unmarshal errors:\n  line 5: key \"thanosRuler\" already set in map",
 		},
 		{
 			name: "empty yaml string",
@@ -229,9 +285,14 @@ thanosRuler:
 
 	for _, tc := range tcs {
 		t.Run(tc.name, func(t *testing.T) {
-			c, err := NewUserConfigFromString(tc.configString())
-			if tc.shouldFail {
-				require.Error(t, err)
+			c, warning, err := NewUserConfigFromString(tc.configString())
+			if tc.warning != "" {
+				require.Equal(t, tc.warning, warning.Warning())
+			} else {
+				require.Empty(t, warning)
+			}
+			if tc.err != "" {
+				require.ErrorContains(t, err, tc.err)
 				return
 			}
 			require.NoError(t, err)
@@ -348,7 +409,7 @@ func TestHttpProxyConfig(t *testing.T) {
   noProxy: https://example.com
 `
 
-	c, err := NewConfigFromString(conf, false)
+	c, _, err := NewConfigFromString(conf, false)
 	if err != nil {
 		t.Errorf("expected no error parsing config - %v", err)
 	}
@@ -459,7 +520,7 @@ func TestLoadEnforcedBodySizeLimit(t *testing.T) {
 		},
 	} {
 		t.Run(tt.name, func(t *testing.T) {
-			c, err := NewConfigFromString(tt.config, false)
+			c, _, err := NewConfigFromString(tt.config, false)
 			if err != nil {
 				t.Fatalf("config parsing error")
 			}
@@ -532,7 +593,7 @@ func TestScrapeIntervalUWM(t *testing.T) {
 		},
 	} {
 		t.Run(tc.name, func(t *testing.T) {
-			_, err := NewUserConfigFromString(tc.uwmconfig)
+			_, _, err := NewUserConfigFromString(tc.uwmconfig)
 			if tc.expectedError {
 				require.Error(t, err)
 				return
@@ -625,7 +686,7 @@ func TestEvaluationIntervalUWM(t *testing.T) {
 		},
 	} {
 		t.Run(tc.name, func(t *testing.T) {
-			_, err := NewUserConfigFromString(tc.uwmconfig)
+			_, _, err := NewUserConfigFromString(tc.uwmconfig)
 			if tc.expectedError {
 				require.Error(t, err)
 				return
@@ -674,7 +735,7 @@ func TestCollectionProfilePreCheck(t *testing.T) {
 		},
 	} {
 		t.Run(tc.name, func(t *testing.T) {
-			c, err := NewConfigFromString(tc.config, true)
+			c, _, err := NewConfigFromString(tc.config, true)
 			require.NoError(t, err)
 			err = c.Precheck()
 			if err != nil && tc.expectedError {
@@ -715,7 +776,7 @@ func TestDeprecatedConfig(t *testing.T) {
 		},
 	} {
 		t.Run(tc.name, func(t *testing.T) {
-			c, err := NewConfigFromString(tc.config, true)
+			c, _, err := NewConfigFromString(tc.config, true)
 			require.NoError(t, err)
 			err = c.Precheck()
 			require.NoError(t, err)
