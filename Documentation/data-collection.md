@@ -533,6 +533,20 @@ data:
     # at least max of one instance with  k8s.v1.cni.cncf.io/networks annotation, labelled by networks (any or sriov).
     - '{__name__="cluster:network_attachment_definition_enabled_instance_up:max"}'
     #
+    # owners: (@openshift/networking)
+    #
+    # cluster:ovnkube_clustermanager_user_defined_networks:max gives the count of
+    # UserDefinedNetworks objects in the cluster, broken down by role and
+    # topology.
+    - '{__name__="cluster:ovnkube_clustermanager_user_defined_networks:max",role=~"Primary|Secondary",topology=~"Layer2|Layer3"}'
+    #
+    # owners: (@openshift/networking)
+    #
+    # cluster:ovnkube_clustermanager_cluster_user_defined_networks:max gives the count of
+    # ClusterUserDefinedNetworks objects in the cluster, broken down by role and
+    # topology.
+    - '{__name__="cluster:ovnkube_clustermanager_cluster_user_defined_networks:max",role=~"Primary|Secondary",topology=~"Layer2|Layer3"}'
+    #
     # owners: (@openshift/network-edge)
     #
     # cluster:ingress_controller_aws_nlb_active:sum informs how many NLBs are active in AWS.
