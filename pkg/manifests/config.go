@@ -53,7 +53,7 @@ const (
 	configKey = "config.yaml"
 )
 
-var errAlertmanagerV1NotSupported = errors.New("alertmanager's apiVersion=v1 is no longer supported, v2 has been available since Alertmanager 0.16.0")
+var ErrAlertmanagerV1NotSupported = errors.New("alertmanager's apiVersion=v1 is no longer supported, v2 has been available since Alertmanager 0.16.0")
 
 type Config struct {
 	Images                               *Images `json:"-"`
@@ -201,18 +201,18 @@ func (u *UserWorkloadConfiguration) checkThanosRulerEvaluationInterval() error {
 	return nil
 }
 
-func (u *UserWorkloadConfiguration) checkAlertmanagerVersion() error {
+func (u *UserWorkloadConfiguration) CheckAlertmanagerVersion() error {
 	if u.Prometheus != nil {
 		for _, amConfig := range u.Prometheus.AlertmanagerConfigs {
 			if alertmanagerV1(amConfig.APIVersion) {
-				return fmt.Errorf("%w: found in prometheus.additionalAlertmanagerConfigs", errAlertmanagerV1NotSupported)
+				return fmt.Errorf("%w: found in prometheus.additionalAlertmanagerConfigs", ErrAlertmanagerV1NotSupported)
 			}
 		}
 	}
 	if u.ThanosRuler != nil {
 		for _, amConfig := range u.ThanosRuler.AlertmanagersConfigs {
 			if alertmanagerV1(amConfig.APIVersion) {
-				return fmt.Errorf("%w: found in thanosRuler.additionalAlertmanagerConfigs", errAlertmanagerV1NotSupported)
+				return fmt.Errorf("%w: found in thanosRuler.additionalAlertmanagerConfigs", ErrAlertmanagerV1NotSupported)
 			}
 		}
 	}
@@ -245,7 +245,7 @@ func (u *UserWorkloadConfiguration) check() error {
 
 	// TODO: remove after 4.19
 	// Only to assist with the migration to Prometheus 3; fail early if Alertmanager v1 is still in use.
-	if err := u.checkAlertmanagerVersion(); err != nil {
+	if err := u.CheckAlertmanagerVersion(); err != nil {
 		return err
 	}
 
@@ -603,14 +603,14 @@ func (c *Config) LoadEnforcedBodySizeLimit(pcr PodCapacityReader, ctx context.Co
 	return nil
 }
 
-func (c *Config) checkAlertmanagerVersion() error {
+func (c *Config) CheckAlertmanagerVersion() error {
 	if c.ClusterMonitoringConfiguration == nil || c.ClusterMonitoringConfiguration.PrometheusK8sConfig == nil {
 		return nil
 	}
 
 	for _, amConfig := range c.ClusterMonitoringConfiguration.PrometheusK8sConfig.AlertmanagerConfigs {
 		if alertmanagerV1(amConfig.APIVersion) {
-			return fmt.Errorf("%w: found in prometheusK8s.additionalAlertmanagerConfigs", errAlertmanagerV1NotSupported)
+			return fmt.Errorf("%w: found in prometheusK8s.additionalAlertmanagerConfigs", ErrAlertmanagerV1NotSupported)
 		}
 	}
 	return nil
@@ -646,7 +646,7 @@ func (c *Config) Precheck() error {
 
 	// TODO: remove after 4.19
 	// Only to assist with the migration to Prometheus 3; fail early if Alertmanager v1 is still in use.
-	if err := c.checkAlertmanagerVersion(); err != nil {
+	if err := c.CheckAlertmanagerVersion(); err != nil {
 		return err
 	}
 
