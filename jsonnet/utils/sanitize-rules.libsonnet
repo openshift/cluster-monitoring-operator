@@ -167,6 +167,28 @@ local patchedRules = [
         labels: {
           severity: 'warning',
         },
+        expr: |||
+          min by (namespace,service, integration) (
+            rate(alertmanager_notifications_failed_total{job=~"alertmanager-main|alertmanager-user-workload", integration=~`.*`}[15m])
+          /
+            ignoring (reason) group_left rate(alertmanager_notifications_total{job=~"alertmanager-main|alertmanager-user-workload", integration=~`.*`}[15m])
+          )
+          > 0.01
+        |||,
+      },
+      {
+        alert: 'AlertmanagerFailedToSendAlerts',
+        labels: {
+          severity: 'warning',
+        },
+        expr: |||
+          (
+            rate(alertmanager_notifications_failed_total{job=~"alertmanager-main|alertmanager-user-workload"}[15m])
+          /
+            ignoring (reason) group_left rate(alertmanager_notifications_total{job=~"alertmanager-main|alertmanager-user-workload"}[15m])
+          )
+          > 0.01
+        |||,
       },
       {
         alert: 'AlertmanagerConfigInconsistent',
