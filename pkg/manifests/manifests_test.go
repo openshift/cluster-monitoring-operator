@@ -2630,6 +2630,7 @@ metricsServer:
     limits:
       cpu: 200m
       memory: 200Mi
+  verbosity: 3
   nodeSelector:
     node: linux
   tolerations:
@@ -2695,6 +2696,8 @@ metricsServer:
 			if !reflect.DeepEqual(container.Resources, *f.config.ClusterMonitoringConfiguration.MetricsServerConfig.Resources) {
 				t.Fatal("metrics-server resources are not configured correctly")
 			}
+
+			require.Contains(t, container.Args, "--v=3")
 		}
 	}
 

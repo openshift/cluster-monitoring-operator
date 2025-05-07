@@ -148,6 +148,10 @@ type MetricsServerConfig struct {
 	NodeSelector map[string]string `json:"nodeSelector,omitempty"`
 	// Defines tolerations for the pods.
 	Tolerations []v1.Toleration `json:"tolerations,omitempty"`
+	// Defines the verbosity of log messages for Metrics Server.
+	// Valid values are positive integers, values over 10 are usually unnecessary.
+	// The default value is `0`.
+	Verbosity uint8 `json:"verbosity,omitempty"`
 	// Defines resource requests and limits for the Metrics Server container.
 	Resources *v1.ResourceRequirements `json:"resources,omitempty"`
 	// Defines a pod's topology spread constraints.
