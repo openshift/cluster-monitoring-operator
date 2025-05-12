@@ -367,6 +367,9 @@ type NodeExporterCollectorConfig struct {
 	// Defines the configuration of the `processes` collector, which collects statistics from processes and threads running in the system.
 	// Disabled by default.
 	Processes NodeExporterCollectorProcessesConfig `json:"processes,omitempty"`
+	// Defines the configuration of the `sysctl` collector, which collects sysctl metrics.
+	// Disabled by default.
+	Sysctl NodeExporterCollectorSysctlConfig `json:"sysctl,omitempty"`
 	// Defines the configuration of the `systemd` collector, which collects statistics on the systemd daemon and its managed services.
 	// Disabled by default.
 	Systemd NodeExporterCollectorSystemdConfig `json:"systemd,omitempty"`
@@ -390,6 +393,38 @@ type NodeExporterCollectorCpufreqConfig struct {
 type NodeExporterCollectorTcpStatConfig struct {
 	// A Boolean flag that enables or disables the `tcpstat` collector.
 	Enabled bool `json:"enabled,omitempty"`
+}
+
+// The `NodeExporterCollectorSysctlConfig` resource works as an on/off switch for
+// the `sysctl` collector of the `node-exporter` agent.
+// Caution! Exposing metrics like kernel.random.uuid can disrupt Prometheus, as it generates new data series with every scrape. Use this option judiciously!
+// By default, the `sysctl` collector is disabled.
+type NodeExporterCollectorSysctlConfig struct {
+	// A Boolean flag that enables or disables the `sysctl` collector.
+	Enabled bool `json:"enabled,omitempty"`
+	// A list of numeric sysctl values.
+	// Note that a sysctl can contain multiple values, for example:
+	// `net.ipv4.tcp_rmem = 4096	131072	6291456`.
+	// Using `includeSysctlMetrics: ['net.ipv4.tcp_rmem']` the collector will expose:
+	// `node_sysctl_net_ipv4_tcp_rmem{index="0"} 4096`,
+	// `node_sysctl_net_ipv4_tcp_rmem{index="1"} 131072`,
+	// `node_sysctl_net_ipv4_tcp_rmem{index="2"} 6291456`.
+	// If the indexes have defined meaning like in this case, the values can be mapped to multiple metrics:
+	// `includeSysctlMetrics: ['net.ipv4.tcp_rmem:min,default,max']`.
+	// The collector will expose these metrics as such:
+	// `node_sysctl_net_ipv4_tcp_rmem_min 4096`,
+	// `node_sysctl_net_ipv4_tcp_rmem_default 131072`,
+	// `node_sysctl_net_ipv4_tcp_rmem_max 6291456`.
+	IncludeSysctlMetrics []string `json:"includeSysctlMetrics,omitempty"`
+	// A list of string sysctl values.
+	// For example:
+	// `includeSysctlMetrics: ['kernel.core_pattern', 'kernel.seccomp.actions_avail = kill_process kill_thread']`.
+	// The collector will expose these metrics as such:
+	// `node_sysctl_info{name="kernel.core_pattern", value="core"} 1`,
+	// `node_sysctl_info{name="kernel.seccomp.actions_avail", index="0", value="kill_process"} 1`,
+	// `node_sysctl_info{name="kernel.seccomp.actions_avail", index="1", value="kill_thread"} 1`,
+	// ...
+	IncludeInfoSysctlMetrics []string `json:"includeInfoSysctlMetrics,omitempty"`
 }
 
 // The `NodeExporterCollectorNetDevConfig` resource works as an on/off switch for
