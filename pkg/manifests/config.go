@@ -635,21 +635,6 @@ func (c *Config) Precheck() error {
 		}
 	}
 
-	// Highlight deprecated config fields.
-	var d float64
-	if c.ClusterMonitoringConfiguration.K8sPrometheusAdapter != nil {
-		klog.Infof("k8sPrometheusAdapter is a deprecated config use metricsServer instead")
-		d = 1
-	}
-	// Prometheus-Adapter is replaced with Metrics Server by default from 4.16
-	metrics.DeprecatedConfig.WithLabelValues("openshift-monitoring/cluster-monitoring-config", "k8sPrometheusAdapter", "4.16").Set(d)
-
-	// TODO: remove after 4.19
-	// Only to assist with the migration to Prometheus 3; fail early if Alertmanager v1 is still in use.
-	if err := c.checkAlertmanagerVersion(); err != nil {
-		return err
-	}
-
 	return nil
 }
 

@@ -43,8 +43,6 @@ type ClusterMonitoringConfiguration struct {
 	UserWorkload *UserWorkloadConfig `json:"userWorkload,omitempty"`
 	// OmitFromDoc
 	HTTPConfig *HTTPConfig `json:"http,omitempty"`
-	// OmitFromDoc: `K8sPrometheusAdapter` defines settings for the Prometheus Adapter component.
-	K8sPrometheusAdapter *K8sPrometheusAdapter `json:"k8sPrometheusAdapter,omitempty"`
 	// `MetricsServer` defines settings for the MetricsServer component.
 	MetricsServerConfig *MetricsServerConfig `json:"metricsServer,omitempty"`
 	// `KubeStateMetricsConfig` defines settings for the `kube-state-metrics` agent.
@@ -116,26 +114,6 @@ type AlertmanagerMainConfig struct {
 	// configure the persistent volume claim, including storage class, volume
 	// size, and name.
 	VolumeClaimTemplate *monv1.EmbeddedPersistentVolumeClaim `json:"volumeClaimTemplate,omitempty"`
-}
-
-// The `K8sPrometheusAdapter` resource defines settings for the Prometheus Adapter component.
-// This is deprecated config, setting this has no effect and will be removed in a future version.
-// TODO: Remove this in 4.19. We should block upgrades till config is been removed
-type K8sPrometheusAdapter struct {
-	// Defines the audit configuration used by the Prometheus Adapter instance.
-	// Possible profile values are: `metadata`, `request`, `requestresponse`, and `none`.
-	// The default value is `metadata`.
-	Audit *Audit `json:"audit,omitempty"`
-	// Defines the nodes on which the pods are scheduled.
-	NodeSelector map[string]string `json:"nodeSelector,omitempty"`
-	// Defines resource requests and limits for the PrometheusAdapter container.
-	Resources *v1.ResourceRequirements `json:"resources,omitempty"`
-	// Defines tolerations for the pods.
-	Tolerations []v1.Toleration `json:"tolerations,omitempty"`
-	// Defines a pod's topology spread constraints.
-	TopologySpreadConstraints []v1.TopologySpreadConstraint `json:"topologySpreadConstraints,omitempty"`
-	// OmitFromDoc: Defines dedicated service monitors.
-	DedicatedServiceMonitors *DedicatedServiceMonitors `json:"dedicatedServiceMonitors,omitempty"`
 }
 
 // The `MetricsServerConfig` resource defines settings for the Metrics Server component.
