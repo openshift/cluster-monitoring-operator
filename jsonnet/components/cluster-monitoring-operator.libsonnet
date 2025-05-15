@@ -119,6 +119,9 @@ function(params) {
     metadata: {
       name: 'metrics-client-ca',
       namespace: cfg.namespace,
+      annotations: {
+        'openshift.io/component': 'Monitoring',
+      },
     },
     data: {},
   },
