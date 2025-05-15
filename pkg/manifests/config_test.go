@@ -17,6 +17,7 @@ package manifests
 import (
 	"context"
 	"errors"
+	"fmt"
 	"os"
 	"testing"
 
@@ -781,6 +782,62 @@ func TestDeprecatedConfig(t *testing.T) {
 			err = c.Precheck()
 			require.NoError(t, err)
 			require.Equal(t, tc.expectedMetricValue, prom_testutil.ToFloat64(metrics.DeprecatedConfig))
+		})
+	}
+}
+
+// TestUnsupportedAlertmanagerVersion
+// Verify it doesn't fail if Alertmanager v1 is still in use in 4.18.
+func TestUnsupportedAlertmanagerVersion(t *testing.T) {
+	for _, p := range []struct {
+		promFieldName string
+		parser        func(string) (*InvalidConfigWarning, error)
+	}{
+		// platform and UWM
+		{promFieldName: "prometheusK8s", parser: func(s string) (*InvalidConfigWarning, error) {
+			_, warn, err := NewConfigFromString(s, false)
+			return warn, err
+		}},
+		{promFieldName: "prometheus", parser: func(s string) (*InvalidConfigWarning, error) {
+			_, warn, err := NewUserConfigFromString(s)
+			return warn, err
+		}},
+	} {
+		t.Run(p.promFieldName, func(t *testing.T) {
+			for _, tc := range []struct {
+				name       string
+				template   string
+				shouldWarn bool
+			}{
+				{
+					name: "alertmanager api version v1",
+					template: `%s:
+  additionalAlertmanagerConfigs:
+    - apiVersion: v1
+`,
+					shouldWarn: true,
+				},
+				{
+					name: "alertmanager api version v2",
+					template: `%s:
+  additionalAlertmanagerConfigs:
+    - apiVersion: v2
+`,
+					shouldWarn: false,
+				},
+			} {
+				t.Run(tc.name, func(t *testing.T) {
+					config := fmt.Sprintf(tc.template, p.promFieldName)
+					warn, err := p.parser(config)
+					if tc.shouldWarn {
+						require.Error(t, warn.Err)
+						// Ensure we’re testing what we intend.
+						require.ErrorContains(t, warn.Err, errAlertmanagerV1NotSupported.Error())
+						return
+					}
+					require.NoError(t, err)
+				})
+			}
 		})
 	}
 }

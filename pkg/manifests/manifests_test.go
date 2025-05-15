@@ -1998,6 +1998,7 @@ func TestPrometheusK8sAdditionalAlertManagerConfigsSecret(t *testing.T) {
 		name           string
 		config         string
 		expected       string
+		shouldWarn     bool
 		mountedSecrets []string
 	}{
 		{
@@ -2040,6 +2041,7 @@ func TestPrometheusK8sAdditionalAlertManagerConfigsSecret(t *testing.T) {
     - alertmanager1-remote.com
     - alertmanager1-remotex.com
 `,
+			shouldWarn:     true,
 			mountedSecrets: []string{},
 		},
 		{
@@ -2182,7 +2184,12 @@ func TestPrometheusK8sAdditionalAlertManagerConfigsSecret(t *testing.T) {
 			if err != nil {
 				t.Fatal(err)
 			}
-			require.Nil(t, warning)
+			if tt.shouldWarn {
+				require.NotNil(t, warning)
+			}
+			if !tt.shouldWarn {
+				require.Nil(t, warning)
+			}
 			f := NewFactory("openshift-monitoring", "openshift-user-workload-monitoring", c, defaultInfrastructureReader(), &fakeProxyReader{}, NewAssets(assetsPath), &APIServerConfig{}, &configv1.Console{})
 
 			p, err := f.PrometheusK8s(
@@ -2229,6 +2236,7 @@ func TestThanosRulerAdditionalAlertManagerConfigsSecret(t *testing.T) {
 		name               string
 		config             string
 		userWorkloadConfig string
+		shouldWarn         bool
 
 		expected string
 	}{
@@ -2321,6 +2329,7 @@ func TestThanosRulerAdditionalAlertManagerConfigsSecret(t *testing.T) {
     - alertmanager1-remote.com
     - alertmanager1-remotex.com
 `,
+			shouldWarn: true,
 			expected: `alertmanagers:
 - scheme: https
   api_version: v2
@@ -2508,7 +2517,14 @@ func TestThanosRulerAdditionalAlertManagerConfigsSecret(t *testing.T) {
 			if err != nil {
 				t.Fatal(err)
 			}
-			require.Nil(t, warning)
+
+			if tt.shouldWarn {
+				require.NotNil(t, warning)
+			}
+
+			if !tt.shouldWarn {
+				require.Nil(t, warning)
+			}
 			c.UserWorkloadConfiguration = uwc
 
 			f := NewFactory("openshift-monitoring", "openshift-user-workload-monitoring", c, defaultInfrastructureReader(), &fakeProxyReader{}, NewAssets(assetsPath), &APIServerConfig{}, &configv1.Console{})
