@@ -765,7 +765,13 @@ func (o *Operator) sync(ctx context.Context, key string) error {
 	} else {
 		o.setUpgradeable(ctx, configv1.ConditionTrue, "", "")
 	}
+
 	if err != nil {
+		if errors.Is(err, manifests.ErrAlertmanagerV1NotSupported) {
+			reason = "InvalidConfiguration"
+			o.setUpgradeable(ctx, configv1.ConditionFalse, fmt.Sprintf("%v.", err), reason)
+		}
+
 		if errors.Is(err, ErrUserWorkloadInvalidConfiguration) {
 			reason = "UserWorkloadInvalidConfiguration"
 		}
