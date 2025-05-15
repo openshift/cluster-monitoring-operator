@@ -2182,6 +2182,10 @@ func TestPrometheusK8sAdditionalAlertManagerConfigsSecret(t *testing.T) {
 			if err != nil {
 				t.Fatal(err)
 			}
+			if c.checkAlertmanagerVersion() != nil {
+				require.NotNil(t, warning)
+				return
+			}
 			require.Nil(t, warning)
 			f := NewFactory("openshift-monitoring", "openshift-user-workload-monitoring", c, defaultInfrastructureReader(), &fakeProxyReader{}, NewAssets(assetsPath), &APIServerConfig{}, &configv1.Console{})
 
@@ -2507,6 +2511,11 @@ func TestThanosRulerAdditionalAlertManagerConfigsSecret(t *testing.T) {
 			uwc, warning, err := NewUserConfigFromString(tt.userWorkloadConfig)
 			if err != nil {
 				t.Fatal(err)
+			}
+
+			if uwc.checkAlertmanagerVersion() != nil {
+				require.NotNil(t, warning)
+				return
 			}
 			require.Nil(t, warning)
 			c.UserWorkloadConfiguration = uwc
