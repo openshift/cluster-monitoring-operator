@@ -191,6 +191,7 @@ The `MetricsServerConfig` resource defines settings for the Metrics Server compo
 | audit | *Audit | Defines the audit configuration used by the Metrics Server instance. Possible profile values are: `metadata`, `request`, `requestresponse`, and `none`. The default value is `metadata`. |
 | nodeSelector | map[string]string | Defines the nodes on which the pods are scheduled. |
 | tolerations | [][v1.Toleration](https://kubernetes.io/docs/reference/generated/kubernetes-api/v1.32/#toleration-v1-core) | Defines tolerations for the pods. |
+| verbosity | uint8 | Defines the verbosity of log messages for Metrics Server. Valid values are positive integers, values over 10 are usually unnecessary. The default value is `0`. |
 | resources | *[v1.ResourceRequirements](https://kubernetes.io/docs/reference/generated/kubernetes-api/v1.32/#resourcerequirements-v1-core) | Defines resource requests and limits for the Metrics Server container. |
 | topologySpreadConstraints | []v1.TopologySpreadConstraint | Defines a pod's topology spread constraints. |
 

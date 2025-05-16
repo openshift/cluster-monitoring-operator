@@ -2020,6 +2020,12 @@ func (f *Factory) MetricsServerDeployment(apiAuthSecretName string, kubeletCABun
 		containers[idx].Resources = *config.Resources
 	}
 
+	if config.Verbosity != 0 {
+		containers[idx].Args = append(containers[idx].Args,
+			fmt.Sprintf("--v=%d", config.Verbosity),
+		)
+	}
+
 	if len(config.TopologySpreadConstraints) > 0 {
 		podSpec.TopologySpreadConstraints = config.TopologySpreadConstraints
 	}

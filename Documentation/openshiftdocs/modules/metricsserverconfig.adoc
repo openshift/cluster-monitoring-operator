@@ -24,6 +24,8 @@ Appears in: link:clustermonitoringconfiguration.adoc[ClusterMonitoringConfigurat
 
 |tolerations|[]v1.Toleration|Defines tolerations for the pods.
 
+|verbosity|uint8|Defines the verbosity of log messages for Metrics Server. Valid values are positive integers, values over 10 are usually unnecessary. The default value is `0`.
+
 |resources|*v1.ResourceRequirements|Defines resource requests and limits for the Metrics Server container.
 
 |topologySpreadConstraints|[]v1.TopologySpreadConstraint|Defines a pod's topology spread constraints.
