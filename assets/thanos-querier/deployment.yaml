@@ -169,7 +169,7 @@ spec:
         - --enable-label-apis
         - --error-on-replace
         - --rules-with-active-alerts
-        image: quay.io/prometheuscommunity/prom-label-proxy:v0.11.0
+        image: quay.io/prometheuscommunity/prom-label-proxy:v0.11.1
         name: prom-label-proxy
         resources:
           requests:
