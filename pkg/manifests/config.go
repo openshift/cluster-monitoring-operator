@@ -603,19 +603,6 @@ func (c *Config) LoadEnforcedBodySizeLimit(pcr PodCapacityReader, ctx context.Co
 	return nil
 }
 
-func (c *Config) checkAlertmanagerVersion() error {
-	if c.ClusterMonitoringConfiguration == nil || c.ClusterMonitoringConfiguration.PrometheusK8sConfig == nil {
-		return nil
-	}
-
-	for _, amConfig := range c.ClusterMonitoringConfiguration.PrometheusK8sConfig.AlertmanagerConfigs {
-		if alertmanagerV1(amConfig.APIVersion) {
-			return fmt.Errorf("%w: found in prometheusK8s.additionalAlertmanagerConfigs", errAlertmanagerV1NotSupported)
-		}
-	}
-	return nil
-}
-
 func (c *Config) Precheck() error {
 	if c.ClusterMonitoringConfiguration.PrometheusK8sConfig.CollectionProfile != FullCollectionProfile && !c.CollectionProfilesFeatureGateEnabled {
 		return fmt.Errorf("%w: collectionProfiles is currently a TechPreview feature behind the \"MetricsCollectionProfiles\" feature-gate, to be able to use a profile different from the default (\"full\") please enable it first", ErrConfigValidation)
