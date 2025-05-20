@@ -22,7 +22,6 @@ Configuring Cluster Monitoring is optional. If the config does not exist or is e
 * [AlertmanagerMainConfig](#alertmanagermainconfig)
 * [AlertmanagerUserWorkloadConfig](#alertmanageruserworkloadconfig)
 * [ClusterMonitoringConfiguration](#clustermonitoringconfiguration)
-* [K8sPrometheusAdapter](#k8sprometheusadapter)
 * [KubeStateMetricsConfig](#kubestatemetricsconfig)
 * [MetricsServerConfig](#metricsserverconfig)
 * [MonitoringPluginConfig](#monitoringpluginconfig)
@@ -140,22 +139,6 @@ The `ClusterMonitoringConfiguration` resource defines settings that customize th
 | thanosQuerier | *[ThanosQuerierConfig](#thanosquerierconfig) | `ThanosQuerierConfig` defines settings for the Thanos Querier component. |
 | nodeExporter | [NodeExporterConfig](#nodeexporterconfig) | `NodeExporterConfig` defines settings for the `node-exporter` agent. |
 | monitoringPlugin | *[MonitoringPluginConfig](#monitoringpluginconfig) | `MonitoringPluginConfig` defines settings for the monitoring `console-plugin`. |
-
-[Back to TOC](#table-of-contents)
-
-## K8sPrometheusAdapter
-
-#### Description
-
-The `K8sPrometheusAdapter` resource defines settings for the Prometheus Adapter component. This is deprecated config, setting this has no effect and will be removed in a future version.
-
-| Property | Type | Description |
-| -------- | ---- | ----------- |
-| audit | *Audit | Defines the audit configuration used by the Prometheus Adapter instance. Possible profile values are: `metadata`, `request`, `requestresponse`, and `none`. The default value is `metadata`. |
-| nodeSelector | map[string]string | Defines the nodes on which the pods are scheduled. |
-| resources | *[v1.ResourceRequirements](https://kubernetes.io/docs/reference/generated/kubernetes-api/v1.32/#resourcerequirements-v1-core) | Defines resource requests and limits for the PrometheusAdapter container. |
-| tolerations | [][v1.Toleration](https://kubernetes.io/docs/reference/generated/kubernetes-api/v1.32/#toleration-v1-core) | Defines tolerations for the pods. |
-| topologySpreadConstraints | []v1.TopologySpreadConstraint | Defines a pod's topology spread constraints. |
 
 [Back to TOC](#table-of-contents)
 

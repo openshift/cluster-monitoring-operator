@@ -20,8 +20,6 @@ import (
 	"os"
 	"testing"
 
-	"github.com/openshift/cluster-monitoring-operator/pkg/metrics"
-	prom_testutil "github.com/prometheus/client_golang/prometheus/testutil"
 	"github.com/stretchr/testify/require"
 )
 
@@ -797,44 +795,6 @@ func TestCollectionProfilePreCheck(t *testing.T) {
 			}
 			require.NoError(t, err)
 			require.Equal(t, tc.expected, c.ClusterMonitoringConfiguration.PrometheusK8sConfig.CollectionProfile)
-		})
-	}
-}
-
-func TestDeprecatedConfig(t *testing.T) {
-	for _, tc := range []struct {
-		name                string
-		config              string
-		expectedMetricValue float64
-	}{
-		{
-			name: "setting a field in k8sPrometheusAdapter",
-			config: `k8sPrometheusAdapter:
-  resources:
-    requests:
-      cpu: 1m
-      memory: 20Mi
-  `,
-			expectedMetricValue: 1,
-		},
-		{
-			name: "k8sPrometheusAdapter nil",
-			config: `k8sPrometheusAdapter:
-  `,
-			expectedMetricValue: 0,
-		},
-		{
-			name:                "no config set",
-			config:              "",
-			expectedMetricValue: 0,
-		},
-	} {
-		t.Run(tc.name, func(t *testing.T) {
-			c, err := NewConfigFromString(tc.config, true)
-			require.NoError(t, err)
-			err = c.Precheck()
-			require.NoError(t, err)
-			require.Equal(t, tc.expectedMetricValue, prom_testutil.ToFloat64(metrics.DeprecatedConfig))
 		})
 	}
 }
