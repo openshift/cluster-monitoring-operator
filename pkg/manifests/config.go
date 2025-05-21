@@ -54,6 +54,7 @@ const (
 )
 
 var errAlertmanagerV1NotSupported = errors.New("alertmanager's apiVersion=v1 is no longer supported, v2 has been available since Alertmanager 0.16.0")
+var reservedPrometheusExternalLabels = []string{"prometheus", "prometheus_replica", "cluster", "managed_cluster"}
 
 type Config struct {
 	Images                               *Images `json:"-"`
@@ -755,4 +756,18 @@ func NewDefaultUserWorkloadMonitoringConfig() *UserWorkloadConfiguration {
 	u := &UserWorkloadConfiguration{}
 	u.applyDefaults()
 	return u
+}
+
+func (lb *ExternalLabels) UnmarshalJSON(data []byte) error {
+	var v map[string]string
+	if err := json.Unmarshal(data, &v); err != nil {
+		return err
+	}
+	for _, r := range reservedPrometheusExternalLabels {
+		if _, ok := v[r]; ok {
+			return fmt.Errorf("reserved keys %v cannot be set as external labels", reservedPrometheusExternalLabels)
+		}
+	}
+	*lb = v
+	return nil
 }

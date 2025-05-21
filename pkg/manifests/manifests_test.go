@@ -1665,7 +1665,10 @@ func TestPrometheusUserWorkloadConfiguration(t *testing.T) {
     whenUnsatisfiable: DoNotSchedule
     labelSelector:
       matchLabels:
-        foo: bar`)
+        foo: bar
+  externalLabels:
+    foo: bar
+    oof: rab`)
 
 	c.UserWorkloadConfiguration = uwc
 	if err != nil {
@@ -1724,6 +1727,8 @@ func TestPrometheusUserWorkloadConfiguration(t *testing.T) {
 	require.Len(t, p.Spec.ScrapeClasses, 1)
 	require.Equal(t, p.Spec.ScrapeClasses[0].Default, ptr.To(true))
 	require.Equal(t, p.Spec.ScrapeClasses[0].FallbackScrapeProtocol, ptr.To(monv1.PrometheusText1_0_0))
+
+	require.Equal(t, p.Spec.ExternalLabels, map[string]string{"foo": "bar", "oof": "rab"})
 }
 
 func TestPrometheusQueryLogFileConfig(t *testing.T) {
@@ -5202,6 +5207,79 @@ func TestSetTLSSecurityConfiguration(t *testing.T) {
 				&configv1.Console{},
 			)
 			require.Equal(t, tt.finalArgs, f.setTLSSecurityConfiguration(tt.initialArgs, tt.tlsCipherSuitesArg, tt.tlsMinVersionArg))
+		})
+	}
+}
+
+func TestPromConfigurationExternalLabels(t *testing.T) {
+	for _, p := range []struct {
+		promFieldName string
+		parser        func(string) error
+	}{
+		// platform and UWM
+		{promFieldName: "prometheusK8s", parser: func(s string) error {
+			_, err := NewConfigFromString(s, false)
+			return err
+		}},
+		{promFieldName: "prometheus", parser: func(s string) error {
+			_, err := NewUserConfigFromString(s)
+			return err
+		}},
+	} {
+		t.Run(p.promFieldName, func(t *testing.T) {
+			for _, tc := range []struct {
+				name       string
+				template   string
+				shouldFail bool
+			}{
+				{
+					name: "all reserved labels",
+					template: `%s:
+  externalLabels:
+    prometheus: foo
+    prometheus_replica: bar
+`,
+					shouldFail: true,
+				},
+				{
+					name: "no reserved",
+					template: `%s:
+  externalLabels:
+    foo: bar
+    bar: foo
+`,
+				},
+				{
+					name: "one reserved",
+					template: `%s:
+  externalLabels:
+    cluster: bar
+    bar: foo
+`,
+					shouldFail: true,
+				},
+				{
+					name: "one rempty reserved",
+					template: `%s:
+  externalLabels:
+    managed_cluster:
+    bar: foo
+`,
+					shouldFail: true,
+				},
+			} {
+				t.Run(tc.name, func(t *testing.T) {
+					config := fmt.Sprintf(tc.template, p.promFieldName)
+					err := p.parser(config)
+					if tc.shouldFail {
+						require.Error(t, err)
+						// Ensure we’re testing what we intend.
+						require.ErrorContains(t, err, "cannot be set as external labels")
+						return
+					}
+					require.NoError(t, err)
+				})
+			}
 		})
 	}
 }
