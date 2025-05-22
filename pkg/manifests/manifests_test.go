@@ -272,7 +272,7 @@ func TestUnconfiguredManifests(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	_, err = f.KubeStateMetricsDeployment(false)
+	_, err = f.KubeStateMetricsDeployment()
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -3694,14 +3694,13 @@ func TestKubeStateMetrics(t *testing.T) {
 
 	f := NewFactory("openshift-monitoring", "openshift-user-workload-monitoring", c, defaultInfrastructureReader(), &fakeProxyReader{}, NewAssets(assetsPath), &APIServerConfig{}, &configv1.Console{})
 
-	d, err := f.KubeStateMetricsDeployment(true)
+	d, err := f.KubeStateMetricsDeployment()
 	if err != nil {
 		t.Fatal(err)
 	}
 
 	kubeRbacProxyTLSCipherSuitesArg := ""
 	kubeRbacProxyMinTLSVersionArg := ""
-	gotKubeStateMetricsCustomResourceStateConfigFile := ""
 	for _, container := range d.Spec.Template.Spec.Containers {
 		switch container.Name {
 		case "kube-state-metrics":
@@ -3712,7 +3711,6 @@ func TestKubeStateMetrics(t *testing.T) {
 				t.Fatal("kube-state-metrics resources incorrectly configured")
 			}
 
-			gotKubeStateMetricsCustomResourceStateConfigFile = getContainerArgValue(d.Spec.Template.Spec.Containers, kubeStateMetricsCustomResourceStateConfigFileFlag, container.Name)
 		case "kube-rbac-proxy-self", "kube-rbac-proxy-main":
 			if container.Image != "docker.io/openshift/origin-kube-rbac-proxy:latest" {
 				t.Fatalf("%s image incorrectly configured", container.Name)
@@ -3745,11 +3743,7 @@ func TestKubeStateMetrics(t *testing.T) {
 		t.Fatal("kube-state-metrics topology spread constraints WhenUnsatisfiable not configured correctly")
 	}
 
-	if gotKubeStateMetricsCustomResourceStateConfigFile != kubeStateMetricsCustomResourceStateConfigFileFlag+kubeStateMetricsCustomResourceStateConfigFile {
-		t.Fatal("expected kube-state-metrics to enable custom-resource-state metrics")
-	}
-
-	d2, err := f.KubeStateMetricsDeployment(true)
+	d2, err := f.KubeStateMetricsDeployment()
 	if err != nil {
 		t.Fatal(err)
 	}
