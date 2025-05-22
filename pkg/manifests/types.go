@@ -21,6 +21,7 @@ import (
 
 type CollectionProfile string
 type CollectionProfiles []CollectionProfile
+type ExternalLabels map[string]string
 
 const (
 	FullCollectionProfile    = "full"
@@ -195,7 +196,7 @@ type PrometheusK8sConfig struct {
 	// Defines labels to be added to any time series or alerts when
 	// communicating with external systems such as federation, remote storage,
 	// and Alertmanager. By default, no labels are added.
-	ExternalLabels map[string]string `json:"externalLabels,omitempty"`
+	ExternalLabels ExternalLabels `json:"externalLabels,omitempty"`
 	// Defines the log level setting for Prometheus.
 	// The possible values are: `error`, `warn`, `info`, and `debug`.
 	// The default value is `info`.
@@ -659,7 +660,7 @@ type PrometheusRestrictedConfig struct {
 	// communicating with external systems such as federation, remote storage,
 	// and Alertmanager.
 	// By default, no labels are added.
-	ExternalLabels map[string]string `json:"externalLabels,omitempty"`
+	ExternalLabels ExternalLabels `json:"externalLabels,omitempty"`
 	// Defines the log level setting for Prometheus.
 	// The possible values are `error`, `warn`, `info`, and `debug`.
 	// The default setting is `info`.
