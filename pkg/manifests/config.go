@@ -604,19 +604,6 @@ func (c *Config) LoadEnforcedBodySizeLimit(pcr PodCapacityReader, ctx context.Co
 	return nil
 }
 
-func (c *Config) checkAlertmanagerVersion() error {
-	if c.ClusterMonitoringConfiguration == nil || c.ClusterMonitoringConfiguration.PrometheusK8sConfig == nil {
-		return nil
-	}
-
-	for _, amConfig := range c.ClusterMonitoringConfiguration.PrometheusK8sConfig.AlertmanagerConfigs {
-		if alertmanagerV1(amConfig.APIVersion) {
-			return fmt.Errorf("%w: found in prometheusK8s.additionalAlertmanagerConfigs", errAlertmanagerV1NotSupported)
-		}
-	}
-	return nil
-}
-
 func (c *Config) Precheck() error {
 	if c.ClusterMonitoringConfiguration.PrometheusK8sConfig.CollectionProfile != FullCollectionProfile && !c.CollectionProfilesFeatureGateEnabled {
 		return fmt.Errorf("%w: collectionProfiles is currently a TechPreview feature behind the \"MetricsCollectionProfiles\" feature-gate, to be able to use a profile different from the default (\"full\") please enable it first", ErrConfigValidation)
@@ -634,21 +621,6 @@ func (c *Config) Precheck() error {
 		if !slices.Contains(SupportedCollectionProfiles, c.ClusterMonitoringConfiguration.PrometheusK8sConfig.CollectionProfile) {
 			return fmt.Errorf(`%q is not supported, supported collection profiles are: %q: %w`, c.ClusterMonitoringConfiguration.PrometheusK8sConfig.CollectionProfile, SupportedCollectionProfiles.String(), ErrConfigValidation)
 		}
-	}
-
-	// Highlight deprecated config fields.
-	var d float64
-	if c.ClusterMonitoringConfiguration.K8sPrometheusAdapter != nil {
-		klog.Infof("k8sPrometheusAdapter is a deprecated config use metricsServer instead")
-		d = 1
-	}
-	// Prometheus-Adapter is replaced with Metrics Server by default from 4.16
-	metrics.DeprecatedConfig.WithLabelValues("openshift-monitoring/cluster-monitoring-config", "k8sPrometheusAdapter", "4.16").Set(d)
-
-	// TODO: remove after 4.19
-	// Only to assist with the migration to Prometheus 3; fail early if Alertmanager v1 is still in use.
-	if err := c.checkAlertmanagerVersion(); err != nil {
-		return err
 	}
 
 	return nil
