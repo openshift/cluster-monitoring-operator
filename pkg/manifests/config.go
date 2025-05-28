@@ -765,7 +765,8 @@ func (lb *ExternalLabels) UnmarshalJSON(data []byte) error {
 	}
 	for _, r := range reservedPrometheusExternalLabels {
 		if _, ok := v[r]; ok {
-			return fmt.Errorf("reserved keys %v cannot be set as external labels", reservedPrometheusExternalLabels)
+			// We’re assuming that the field is called "externalLabels", that's all the context we can easily provide.
+			return fmt.Errorf("reserved key %q (one of %v) cannot be set in externalLabels", r, reservedPrometheusExternalLabels)
 		}
 	}
 	*lb = v

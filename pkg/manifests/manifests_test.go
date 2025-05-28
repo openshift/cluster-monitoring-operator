@@ -5274,7 +5274,7 @@ func TestPromConfigurationExternalLabels(t *testing.T) {
 					if tc.shouldFail {
 						require.Error(t, err)
 						// Ensure we’re testing what we intend.
-						require.ErrorContains(t, err, "cannot be set as external labels")
+						require.ErrorContains(t, err, "cannot be set in externalLabels")
 						return
 					}
 					require.NoError(t, err)
