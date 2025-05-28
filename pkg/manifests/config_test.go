@@ -784,3 +784,47 @@ func TestDeprecatedConfig(t *testing.T) {
 		})
 	}
 }
+
+// TestUnsupportedAlertmanagerVersion
+// Verify it doesn't fail if Alertmanager v1 is still in use in 4.18.
+func TestUnsupportedAlertmanagerVersion(t *testing.T) {
+	for _, tc := range []struct {
+		name       string
+		config     string
+		shouldFail bool
+	}{
+		{
+			name: "using unsupported Alertmanager v1 API",
+			config: `prometheusK8s:
+  additionalAlertmanagerConfigs:
+    - apiVersion: v1
+  `,
+			shouldFail: false,
+		},
+		{
+			name: "using supported Alertmanager v2 API",
+			config: `prometheusK8s:
+  additionalAlertmanagerConfigs:
+    - apiVersion: v2
+  `,
+		},
+		{
+			name: "using default value",
+			config: `prometheusK8s:
+  additionalAlertmanagerConfigs:
+    - Scheme: foo
+  `,
+		},
+	} {
+		t.Run(tc.name, func(t *testing.T) {
+			c, _, err := NewConfigFromString(tc.config, true)
+			require.NoError(t, err)
+			err = c.Precheck()
+			if tc.shouldFail {
+				require.ErrorIs(t, err, errAlertmanagerV1NotSupported)
+			} else {
+				require.NoError(t, err)
+			}
+		})
+	}
+}
