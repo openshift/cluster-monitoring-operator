@@ -496,6 +496,7 @@ local includeRunbooks = {
   PrometheusOperatorRejectedResources: openShiftRunbookCMO('PrometheusOperatorRejectedResources.md'),
   PrometheusDuplicateTimestamps: openShiftRunbookCMO('PrometheusDuplicateTimestamps.md'),
   PrometheusPossibleNarrowSelectors: openShiftRunbookCMO('PrometheusPossibleNarrowSelectors.md'),
+  PrometheusKubernetesListWatchFailures: openShiftRunbookCMO('PrometheusKubernetesListWatchFailures.md'),
   PrometheusRuleFailures: openShiftRunbookCMO('PrometheusRuleFailures.md'),
   PrometheusRemoteStorageFailures: openShiftRunbookCMO('PrometheusRemoteStorageFailures.md'),
   PrometheusScrapeBodySizeLimitHit: openShiftRunbookCMO('PrometheusScrapeBodySizeLimitHit.md'),
