@@ -35,7 +35,7 @@ function(params) {
             description: 'Queries or/and relabel configs on Prometheus/Thanos {{$labels.namespace}}/{{$labels.pod}} could be too restrictive.',
             summary: |||
               Some queries or/and relabel configs with selectors on the values of the "le" label of classic histograms or/and the "quantile" label of summaries
-              may not take into account that values could also be floats, they may need to be adjusted. If assistance is needed, please let us know at https://issues.redhat.com/browse/MON-4129.
+              may not take into account that values could also be floats, they may need to be adjusted.
             |||,
           },
           labels: {
