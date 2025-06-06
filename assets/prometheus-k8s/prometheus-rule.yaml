@@ -39,6 +39,7 @@ spec:
     - alert: PrometheusKubernetesListWatchFailures
       annotations:
         description: Kubernetes service discovery of Prometheus {{$labels.namespace}}/{{$labels.pod}} is experiencing {{ printf "%.0f" $value }} failures with LIST/WATCH requests to the Kubernetes API in the last 5 minutes.
+        runbook_url: https://github.com/openshift/runbooks/blob/master/alerts/cluster-monitoring-operator/PrometheusKubernetesListWatchFailures.md
         summary: Requests in Kubernetes SD are failing.
       expr: |
         increase(prometheus_sd_kubernetes_failures_total{job=~"prometheus-k8s|prometheus-user-workload"}[5m]) > 0
