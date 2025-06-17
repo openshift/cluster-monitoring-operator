@@ -2,7 +2,7 @@ local tmpVolumeName = 'volume-directive-shadow';
 local tlsVolumeName = 'kube-state-metrics-tls';
 local crsVolumeName = 'kube-state-metrics-custom-resource-state-configmap';
 
-local kubeStateMetrics = import 'github.com/prometheus-operator/kube-prometheus/jsonnet/kube-prometheus/components/kube-state-metrics.libsonnet';
+local kubeStateMetrics = import 'github.com/slashpai/kube-prometheus/jsonnet/kube-prometheus/components/kube-state-metrics.libsonnet';
 local kubeStateMetricsCRS = import '../utils/kube-state-metrics-custom-resource-state.libsonnet';
 local generateSecret = import '../utils/generate-secret.libsonnet';
 local generateServiceMonitor = import '../utils/generate-service-monitors.libsonnet';

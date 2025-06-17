@@ -2,7 +2,7 @@ local metrics = import 'github.com/openshift/telemeter/jsonnet/telemeter/metrics
 
 local generateCertInjection = import '../utils/generate-certificate-injection.libsonnet';
 local generateSecret = import '../utils/generate-secret.libsonnet';
-local prometheus = import 'github.com/prometheus-operator/kube-prometheus/jsonnet/kube-prometheus/components/prometheus.libsonnet';
+local prometheus = import 'github.com/slashpai/kube-prometheus/jsonnet/kube-prometheus/components/prometheus.libsonnet';
 local withDescription = (import '../utils/add-annotations.libsonnet').withDescription;
 local requiredClusterRoles = (import '../utils/add-annotations.libsonnet').requiredClusterRoles;
 

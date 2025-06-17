@@ -432,7 +432,7 @@ local inCluster =
     openshiftStateMetrics: openshiftStateMetrics($.values.openshiftStateMetrics),
   } +
   (import './utils/anti-affinity.libsonnet') +
-  (import 'github.com/prometheus-operator/kube-prometheus/jsonnet/kube-prometheus/addons/ksm-lite.libsonnet') +
+  (import 'github.com/slashpai/kube-prometheus/jsonnet/kube-prometheus/addons/ksm-lite.libsonnet') +
   (import './utils/ibm-cloud-managed-profile.libsonnet') +
   (import './components/metrics-server-audit.libsonnet') +
   {};  // Including empty object to simplify adding and removing imports during development

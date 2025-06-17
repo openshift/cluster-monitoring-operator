@@ -90,7 +90,7 @@ local acceleratorsConfigData = [
 
 ];
 
-local nodeExporter = import 'github.com/prometheus-operator/kube-prometheus/jsonnet/kube-prometheus/components/node-exporter.libsonnet';
+local nodeExporter = import 'github.com/slashpai/kube-prometheus/jsonnet/kube-prometheus/components/node-exporter.libsonnet';
 local generateSecret = import '../utils/generate-secret.libsonnet';
 local generateServiceMonitor = import '../utils/generate-service-monitors.libsonnet';
 local withDescription = (import '../utils/add-annotations.libsonnet').withDescription;

@@ -3,7 +3,7 @@ local generateSecret = import '../utils/generate-secret.libsonnet';
 local withDescription = (import '../utils/add-annotations.libsonnet').withDescription;
 local requiredClusterRoles = (import '../utils/add-annotations.libsonnet').requiredClusterRoles;
 
-local prometheus = import 'github.com/prometheus-operator/kube-prometheus/jsonnet/kube-prometheus/components/prometheus.libsonnet';
+local prometheus = import 'github.com/slashpai/kube-prometheus/jsonnet/kube-prometheus/components/prometheus.libsonnet';
 
 function(params)
   local cfg = params;
