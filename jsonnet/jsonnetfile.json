@@ -4,11 +4,11 @@
     {
       "source": {
         "git": {
-          "remote": "https://github.com/prometheus-operator/kube-prometheus",
+          "remote": "https://github.com/slashpai/kube-prometheus",
           "subdir": "jsonnet/kube-prometheus"
         }
       },
-      "version": "main"
+      "version": "endpoint-slice"
     },
     {
       "source": {
