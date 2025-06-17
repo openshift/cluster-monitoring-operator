@@ -34,8 +34,8 @@ spec:
       - args:
         - --kubelet-service=kube-system/kubelet
         - --prometheus-config-reloader=quay.io/prometheus-operator/prometheus-config-reloader:v0.81.0
-        - --kubelet-endpoints=true
-        - --kubelet-endpointslice=false
+        - --kubelet-endpoints=false
+        - --kubelet-endpointslice=true
         - --prometheus-instance-namespaces=openshift-monitoring
         - --thanos-ruler-instance-namespaces=openshift-monitoring
         - --alertmanager-instance-namespaces=openshift-monitoring
