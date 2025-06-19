@@ -52,7 +52,12 @@ const (
 	automaticBodySizeLimit = "automatic"
 
 	configKey = "config.yaml"
+
+	clusterMonitorConfigMapName      = "openshift-monitoring/cluster-monitoring-config"
+	userWorkloadMonitorConfigMapName = "openshift-user-workload-monitoring/user-workload-monitoring-config"
 )
+
+var errAlertmanagerV1NotSupported = errors.New("alertmanager's apiVersion=v1 is no longer supported, v2 has been available since Alertmanager 0.16.0")
 
 type InvalidConfigWarning struct {
 	ConfigMap string
@@ -209,6 +214,31 @@ func (u *UserWorkloadConfiguration) checkThanosRulerEvaluationInterval() error {
 	return nil
 }
 
+func (u *UserWorkloadConfiguration) checkAlertmanagerVersion() error {
+	if u.Prometheus != nil {
+		for _, amConfig := range u.Prometheus.AlertmanagerConfigs {
+			if alertmanagerV1(amConfig.APIVersion) {
+				return fmt.Errorf("%w: found in prometheus.additionalAlertmanagerConfigs", errAlertmanagerV1NotSupported)
+			}
+		}
+	}
+	if u.ThanosRuler != nil {
+		for _, amConfig := range u.ThanosRuler.AlertmanagersConfigs {
+			if alertmanagerV1(amConfig.APIVersion) {
+				return fmt.Errorf("%w: found in thanosRuler.additionalAlertmanagerConfigs", errAlertmanagerV1NotSupported)
+			}
+		}
+	}
+
+	return nil
+}
+
+func alertmanagerV1(version string) bool {
+	// Only meant to guide users by failing early in case v1 Alertmanager is still referenced,
+	// this is not meant to validate the apiVersion field.
+	return version == "v1"
+}
+
 func (u *UserWorkloadConfiguration) check() error {
 	if u == nil {
 		return nil
@@ -340,7 +370,7 @@ func newConfig(content []byte, collectionProfilesFeatureGateEnabled bool) (*Conf
 	wCmc := defaultClusterMonitoringConfiguration()
 	wErr := UnmarshalStrict(content, &wCmc)
 	if wErr != nil {
-		warning = &InvalidConfigWarning{ConfigMap: "openshift-monitoring/cluster-monitoring-config", Err: wErr}
+		warning = &InvalidConfigWarning{ConfigMap: clusterMonitorConfigMapName, Err: wErr}
 	}
 
 	cmc := defaultClusterMonitoringConfiguration()
@@ -351,6 +381,18 @@ func newConfig(content []byte, collectionProfilesFeatureGateEnabled bool) (*Conf
 
 	c.ClusterMonitoringConfiguration = &cmc
 	c.applyDefaults()
+
+	// Only to assist with the migration to Prometheus 3; fail early if Alertmanager v1 is still in use.
+	if wErr := c.checkAlertmanagerVersion(); wErr != nil {
+		if warning != nil {
+			wErr = errors.Join(warning.Err, wErr)
+		}
+		warning = &InvalidConfigWarning{
+			ConfigMap: clusterMonitorConfigMapName,
+			Err:       wErr,
+		}
+	}
+
 	c.UserWorkloadConfiguration = NewDefaultUserWorkloadMonitoringConfig()
 
 	return &c, warning, nil
@@ -588,6 +630,19 @@ func (c *Config) LoadEnforcedBodySizeLimit(pcr PodCapacityReader, ctx context.Co
 	return nil
 }
 
+func (c *Config) checkAlertmanagerVersion() error {
+	if c.ClusterMonitoringConfiguration == nil || c.ClusterMonitoringConfiguration.PrometheusK8sConfig == nil {
+		return nil
+	}
+
+	for _, amConfig := range c.ClusterMonitoringConfiguration.PrometheusK8sConfig.AlertmanagerConfigs {
+		if alertmanagerV1(amConfig.APIVersion) {
+			return fmt.Errorf("%w: found in prometheusK8s.additionalAlertmanagerConfigs", errAlertmanagerV1NotSupported)
+		}
+	}
+	return nil
+}
+
 func (c *Config) Precheck() error {
 	if c.ClusterMonitoringConfiguration.PrometheusK8sConfig.CollectionProfile != FullCollectionProfile && !c.CollectionProfilesFeatureGateEnabled {
 		return fmt.Errorf("%w: collectionProfiles is currently a TechPreview feature behind the \"MetricsCollectionProfiles\" feature-gate, to be able to use a profile different from the default (\"full\") please enable it first", ErrConfigValidation)
@@ -614,7 +669,7 @@ func (c *Config) Precheck() error {
 		d = 1
 	}
 	// Prometheus-Adapter is replaced with Metrics Server by default from 4.16
-	metrics.DeprecatedConfig.WithLabelValues("openshift-monitoring/cluster-monitoring-config", "k8sPrometheusAdapter", "4.16").Set(d)
+	metrics.DeprecatedConfig.WithLabelValues(clusterMonitorConfigMapName, "k8sPrometheusAdapter", "4.16").Set(d)
 	return nil
 }
 
@@ -692,7 +747,7 @@ func NewUserConfigFromString(content string) (*UserWorkloadConfiguration, *Inval
 	wErr := UnmarshalStrict([]byte(content), &wU)
 	if wErr != nil {
 		warning = &InvalidConfigWarning{
-			ConfigMap: "openshift-user-workload-monitoring/user-workload-monitoring-config",
+			ConfigMap: userWorkloadMonitorConfigMapName,
 			Err:       wErr,
 		}
 	}
@@ -707,6 +762,17 @@ func NewUserConfigFromString(content string) (*UserWorkloadConfiguration, *Inval
 
 	if err := u.check(); err != nil {
 		return nil, warning, err
+	}
+
+	// Only to assist with the migration to Prometheus 3; fail early if Alertmanager v1 is still in use.
+	if wErr := u.checkAlertmanagerVersion(); wErr != nil {
+		if warning != nil {
+			wErr = errors.Join(warning.Err, wErr)
+		}
+		warning = &InvalidConfigWarning{
+			ConfigMap: userWorkloadMonitorConfigMapName,
+			Err:       wErr,
+		}
 	}
 
 	return u, warning, nil
