@@ -234,9 +234,10 @@ type PrometheusK8sConfig struct {
 	// Defines the metrics collection profile that Prometheus uses to collect
 	// metrics from the platform components. Supported values are `full` or
 	// `minimal`. In the `full` profile (default), Prometheus collects all
-	// metrics that are exposed by the platform components. In the `minimal`
-	// profile, Prometheus only collects metrics necessary for the default
-	// platform alerts, recording rules, telemetry and console dashboards.
+	// metrics that are exposed by the platform components (same behavior as
+	// before) . In the `minimal` profile, Prometheus only collects metrics
+	// necessary for the default platform alerts, recording rules, telemetry
+	// and console dashboards. When unset, the default value is `full`.
 	CollectionProfile CollectionProfile `json:"collectionProfile,omitempty"`
 	// Defines persistent storage for Prometheus. Use this setting to
 	// configure the persistent volume claim, including storage class,
