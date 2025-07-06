@@ -245,8 +245,18 @@
           "subdir": "jsonnet/kube-prometheus"
         }
       },
-      "version": "6c65499088f062bd078ae384dad2b8ef679145a3",
-      "sum": "H+iQqVw9X3y7xaR/qF7bceHh6VB8o3PJzeqvHoUPCRA="
+      "version": "a8542720ec22d0147fe6e7dacaddfa576d14ccae",
+      "sum": "1M76lVs3dZGYl52Wy3vg59zyL/qGcii3E+JYsL+kF0M="
+    },
+    {
+      "source": {
+        "git": {
+          "remote": "https://github.com/slashpai/prometheus-operator.git",
+          "subdir": "jsonnet/prometheus-operator"
+        }
+      },
+      "version": "f8960863958daef20c77e7be24d99e0d6c2aa6b6",
+      "sum": "Afa/g9EOG+6CGLMuMHLh9IdaWQHDWXbREOHNT9ndJ2w="
     },
     {
       "source": {
