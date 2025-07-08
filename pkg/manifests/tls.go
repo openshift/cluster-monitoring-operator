@@ -100,7 +100,6 @@ func (f *Factory) MetricsClientCACM(apiAuthConfigmap *v1.ConfigMap) (*v1.ConfigM
 
 	cm.Namespace = f.namespace
 	cm.Data = make(map[string]string)
-	cm.Annotations = make(map[string]string)
 
 	clientCA, ok := apiAuthConfigmap.Data["client-ca-file"]
 	if !ok {
