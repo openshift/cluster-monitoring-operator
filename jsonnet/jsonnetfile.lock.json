@@ -177,16 +177,6 @@
     {
       "source": {
         "git": {
-          "remote": "https://github.com/prometheus-operator/kube-prometheus.git",
-          "subdir": "jsonnet/kube-prometheus"
-        }
-      },
-      "version": "7e5a571a3fb735c78e17c76a637eb7e8bb5dd086",
-      "sum": "uTw/Mj+X91S+oqUpAX81xcfWPDlox0tdSZY/YBw7nGE="
-    },
-    {
-      "source": {
-        "git": {
           "remote": "https://github.com/prometheus-operator/prometheus-operator.git",
           "subdir": "jsonnet/mixin"
         }
@@ -247,6 +237,26 @@
       "version": "d723f4d1a066dd657e9d09c46a158519dda0faa8",
       "sum": "cxAPQovFkM16zNB5/94O+sk/n3SETk6ao6Oas2Sa6RE=",
       "name": "pyrra"
+    },
+    {
+      "source": {
+        "git": {
+          "remote": "https://github.com/slashpai/kube-prometheus.git",
+          "subdir": "jsonnet/kube-prometheus"
+        }
+      },
+      "version": "a8542720ec22d0147fe6e7dacaddfa576d14ccae",
+      "sum": "1M76lVs3dZGYl52Wy3vg59zyL/qGcii3E+JYsL+kF0M="
+    },
+    {
+      "source": {
+        "git": {
+          "remote": "https://github.com/slashpai/prometheus-operator.git",
+          "subdir": "jsonnet/prometheus-operator"
+        }
+      },
+      "version": "f8960863958daef20c77e7be24d99e0d6c2aa6b6",
+      "sum": "Afa/g9EOG+6CGLMuMHLh9IdaWQHDWXbREOHNT9ndJ2w="
     },
     {
       "source": {
