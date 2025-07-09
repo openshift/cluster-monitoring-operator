@@ -773,7 +773,7 @@ func (f *Factory) KubeStateMetricsDeployment(enableCRSMetrics bool) (*appsv1.Dep
 				allowListValidator := ksmpkg.LabelsAllowList{}
 				err = allowListValidator.Set(*additionalAllowList)
 				if err != nil {
-					return nil, fmt.Errorf("error parsing allowlist: %v", err)
+					return nil, fmt.Errorf("error parsing allowlist: %w", err)
 				}
 				for i = range container.Args {
 					if strings.HasPrefix(container.Args[i], "--metric-labels-allowlist=") {
