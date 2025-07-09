@@ -49,6 +49,7 @@ import (
 	"k8s.io/apimachinery/pkg/util/sets"
 	auditv1 "k8s.io/apiserver/pkg/apis/audit/v1"
 	apiregistrationv1 "k8s.io/kube-aggregator/pkg/apis/apiregistration/v1"
+	ksmpkg "k8s.io/kube-state-metrics/v2/pkg/options"
 	"k8s.io/utils/ptr"
 	k8syaml "sigs.k8s.io/yaml"
 
@@ -766,6 +767,19 @@ func (f *Factory) KubeStateMetricsDeployment(enableCRSMetrics bool) (*appsv1.Dep
 			}
 			if enableCRSMetrics {
 				d.Spec.Template.Spec.Containers[i].Args = append(container.Args, flagCRSConfigFile)
+			}
+			additionalAllowList := f.config.ClusterMonitoringConfiguration.KubeStateMetricsConfig.AdditionalLabelsAllowList
+			if additionalAllowList != nil && *additionalAllowList != "" {
+				allowListValidator := ksmpkg.LabelsAllowList{}
+				err = allowListValidator.Set(*additionalAllowList)
+				if err != nil {
+					return nil, fmt.Errorf("error parsing allowlist: %w", err)
+				}
+				for i = range container.Args {
+					if strings.HasPrefix(container.Args[i], "--metric-labels-allowlist=") {
+						container.Args[i] += "," + *additionalAllowList
+					}
+				}
 			}
 		}
 	}
