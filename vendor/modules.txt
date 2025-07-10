@@ -338,6 +338,8 @@ github.com/mwitkow/go-conntrack
 # github.com/oklog/ulid v1.3.1
 ## explicit
 github.com/oklog/ulid
+# github.com/openshift-eng/openshift-tests-extension v0.0.0-20250702172817-97309544869d
+## explicit; go 1.23.0
 # github.com/openshift/api v0.0.0-20250320170726-75d64d71980b
 ## explicit; go 1.23.0
 github.com/openshift/api
@@ -775,7 +777,7 @@ google.golang.org/genproto/googleapis/api
 google.golang.org/genproto/googleapis/api/annotations
 google.golang.org/genproto/googleapis/api/expr/v1alpha1
 google.golang.org/genproto/googleapis/api/httpbody
-# google.golang.org/genproto/googleapis/rpc v0.0.0-20240826202546-f6391c0de4c7
+# google.golang.org/genproto/googleapis/rpc v0.0.0-20240924160255-9d4c2d233b61
 ## explicit; go 1.21
 google.golang.org/genproto/googleapis/rpc/errdetails
 google.golang.org/genproto/googleapis/rpc/status
