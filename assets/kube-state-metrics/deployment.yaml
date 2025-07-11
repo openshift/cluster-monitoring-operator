@@ -36,6 +36,7 @@ spec:
         - --port=8081
         - --telemetry-host=127.0.0.1
         - --telemetry-port=8082
+        - --custom-resource-state-config-file=/etc/kube-state-metrics/custom-resource-state-configmap.yaml
         - |
           --metric-denylist=
           ^kube_secret_labels$,

@@ -316,9 +316,6 @@ var (
 	KubeRbacProxyTLSCipherSuitesFlag                     = "--tls-cipher-suites="
 	KubeRbacProxyMinTLSVersionFlag                       = "--tls-min-version="
 
-	kubeStateMetricsCustomResourceStateConfigFileFlag = "--custom-resource-state-config-file="
-	kubeStateMetricsCustomResourceStateConfigFile     = "/etc/kube-state-metrics/custom-resource-state-configmap.yaml"
-
 	AuthProxyExternalURLFlag  = "-external-url="
 	AuthProxyCookieDomainFlag = "-cookie-domain="
 	AuthProxyRedirectURLFlag  = "-redirect-url="
@@ -748,8 +745,7 @@ func (f *Factory) KubeStateMetricsMinimalServiceMonitor() (*monv1.ServiceMonitor
 	return f.NewServiceMonitor(f.assets.MustNewAssetSlice(KubeStateMetricsMinimalServiceMonitor))
 }
 
-func (f *Factory) KubeStateMetricsDeployment(enableCRSMetrics bool) (*appsv1.Deployment, error) {
-	flagCRSConfigFile := kubeStateMetricsCustomResourceStateConfigFileFlag + kubeStateMetricsCustomResourceStateConfigFile
+func (f *Factory) KubeStateMetricsDeployment() (*appsv1.Deployment, error) {
 	d, err := f.NewDeployment(f.assets.MustNewAssetSlice(KubeStateMetricsDeployment))
 	if err != nil {
 		return nil, err
@@ -763,9 +759,6 @@ func (f *Factory) KubeStateMetricsDeployment(enableCRSMetrics bool) (*appsv1.Dep
 			d.Spec.Template.Spec.Containers[i].Image = f.config.Images.KubeStateMetrics
 			if f.config.ClusterMonitoringConfiguration.KubeStateMetricsConfig.Resources != nil {
 				d.Spec.Template.Spec.Containers[i].Resources = *f.config.ClusterMonitoringConfiguration.KubeStateMetricsConfig.Resources
-			}
-			if enableCRSMetrics {
-				d.Spec.Template.Spec.Containers[i].Args = append(container.Args, flagCRSConfigFile)
 			}
 		}
 	}
