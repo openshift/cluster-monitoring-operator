@@ -4,7 +4,7 @@ FROM registry.ci.openshift.org/ocp/builder:rhel-9-golang-1.23-openshift-4.19 AS 
 WORKDIR /go/src/github.com/openshift/cluster-monitoring-operator
 COPY . .
 ENV GOFLAGS="-mod=vendor"
-RUN make operator-no-deps
+RUN make operator-no-deps && make tests-ext-build && gzip tests-ext
 
 FROM registry.ci.openshift.org/ocp/4.19:base-rhel9
 LABEL io.k8s.display-name="OpenShift cluster-monitoring-operator" \
@@ -15,6 +15,7 @@ LABEL io.k8s.display-name="OpenShift cluster-monitoring-operator" \
       maintainer="OpenShift Monitoring Team <team-monitoring@redhat.com>"
 
 COPY --from=builder /go/src/github.com/openshift/cluster-monitoring-operator/operator /usr/bin/
+COPY --from=builder /go/src/github.com/openshift/cluster-monitoring-operator/tests-ext.gz /usr/bin/cluster-monitoring-operator-tests-ext.gz
 COPY manifests /manifests
 COPY assets /assets
 USER 1001
