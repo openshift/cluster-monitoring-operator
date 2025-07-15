@@ -1,0 +1,12 @@
+[
+  {
+    "name": "[Jira:Monitoring][sig-instrumentation] sanity test should always pass [Suite:openshift/cluster-monitoring-operator/conformance/parallel]",
+    "labels": {},
+    "resources": {
+      "isolation": {}
+    },
+    "source": "openshift:payload:cluster-monitoring-operator",
+    "lifecycle": "blocking",
+    "environmentSelector": {}
+  }
+]

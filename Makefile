@@ -56,6 +56,13 @@ GO_BUILD_RECIPE=GOOS=$(GOOS) GOARCH=$(GOARCH) CGO_ENABLED=0 go build --ldflags="
 MARKDOWN_DOCS=$(shell find . -type f -name '*.md' ! -path '*/vendor/*' ! -path './git/*'  \
 				! -name 'data-collection.md' ! -name 'sample-metrics.md' | sort)
 
+TESTS_EXT_GIT_COMMIT := $(shell git rev-parse --short HEAD)
+TESTS_EXT_BUILD_DATE := $(shell date -u +'%Y-%m-%dT%H:%M:%SZ')
+TESTS_EXT_GIT_TREE_STATE := $(shell if git diff --quiet; then echo clean; else echo dirty; fi)
+TESTS_EXT_LDFLAGS := -X 'github.com/openshift-eng/openshift-tests-extension/pkg/version.CommitFromGit=$(TESTS_EXT_GIT_COMMIT)' \
+           -X 'github.com/openshift-eng/openshift-tests-extension/pkg/version.BuildDate=$(TESTS_EXT_BUILD_DATE)' \
+           -X 'github.com/openshift-eng/openshift-tests-extension/pkg/version.GitTreeState=$(TESTS_EXT_GIT_TREE_STATE)'
+
 .PHONY: all
 all: clean format generate build test
 
@@ -82,7 +89,7 @@ run-local: build
 	fi
 
 .PHONY: build
-build: operator
+build: operator tests-ext-build
 
 .PHONY: operator
 operator: $(GOLANG_FILES)
@@ -93,6 +100,19 @@ operator: $(GOLANG_FILES)
 .PHONY: operator-no-deps
 operator-no-deps:
 	$(GO_BUILD_RECIPE) -o operator $(GO_PKG)/cmd/operator
+
+.PHONY: tests-ext-build
+tests-ext-build:
+	# GO_COMPLIANCE_POLICY="exempt_all" must only be used for test related binaries.
+	# It prevents various FIPS compliance policies from being applied to this compilation.
+	GOOS=$(GOOS) GOARCH=$(GOARCH) GO_COMPLIANCE_POLICY="exempt_all" CGO_ENABLED=0 go build -o tests-ext -ldflags "$(TESTS_EXT_LDFLAGS)" $(GO_PKG)/cmd/tests-ext
+
+# Metadata validation: https://github.com/openshift/enhancements/blob/master/enhancements/testing/openshift-tests-extension.md#update---metadata-validation
+.PHONY: tests-ext-update
+tests-ext-update: tests-ext-build
+	./tests-ext update
+	# TODO: temp remove .codeLocations as they depend on the env where "update" in run, see https://issues.redhat.com/browse/TRT-2186.
+	for f in .openshift-tests-extension/*.json; do jq 'map(del(.codeLocations))' "$$f" > tmpp && mv tmpp "$$f"; done
 
 .PHONY: image
 image: .hack-operator-image
@@ -126,7 +146,7 @@ update: $(JB_BIN)
 	cd jsonnet && $(JB_BIN) update $(COMPONENTS)
 
 .PHONY: generate
-generate: build-jsonnet docs
+generate: build-jsonnet docs tests-ext-update
 
 .PHONY: verify
 verify: check-assets check-rules check-runbooks
