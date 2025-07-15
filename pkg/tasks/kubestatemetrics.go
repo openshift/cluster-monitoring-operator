@@ -23,16 +23,14 @@ import (
 )
 
 type KubeStateMetricsTask struct {
-	client           *client.Client
-	factory          *manifests.Factory
-	enableCRSMetrics bool
+	client  *client.Client
+	factory *manifests.Factory
 }
 
-func NewKubeStateMetricsTask(client *client.Client, factory *manifests.Factory, enableCRSMetrics bool) *KubeStateMetricsTask {
+func NewKubeStateMetricsTask(client *client.Client, factory *manifests.Factory) *KubeStateMetricsTask {
 	return &KubeStateMetricsTask{
-		client:           client,
-		factory:          factory,
-		enableCRSMetrics: enableCRSMetrics,
+		client:  client,
+		factory: factory,
 	}
 }
 
@@ -97,7 +95,7 @@ func (t *KubeStateMetricsTask) Run(ctx context.Context) error {
 		return fmt.Errorf("reconciling %s/%s ConfigMap failed: %w", cm.Namespace, cm.Name, err)
 	}
 
-	dep, err := t.factory.KubeStateMetricsDeployment(t.enableCRSMetrics)
+	dep, err := t.factory.KubeStateMetricsDeployment()
 	if err != nil {
 		return fmt.Errorf("initializing kube-state-metrics Deployment failed: %w", err)
 	}
