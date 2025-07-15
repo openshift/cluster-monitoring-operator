@@ -513,10 +513,17 @@ rules:
   - create
   - update
 - apiGroups:
+  - discovery.k8s.io
+  resources:
+  - endpointslices
+  verbs:
+  - get
+  - list
+  - watch
+- apiGroups:
   - ""
   resources:
   - services
-  - endpoints
   - pods
   verbs:
   - get
@@ -539,10 +546,17 @@ rules:
   - list
   - watch
 - apiGroups:
+  - discovery.k8s.io
+  resources:
+  - endpointslices
+  verbs:
+  - get
+  - list
+  - watch
+- apiGroups:
   - ""
   resources:
   - services
-  - endpoints
   - pods
   verbs:
   - get
@@ -565,10 +579,17 @@ rules:
   - list
   - watch
 - apiGroups:
+  - discovery.k8s.io
+  resources:
+  - endpointslices
+  verbs:
+  - get
+  - list
+  - watch
+- apiGroups:
   - ""
   resources:
   - services
-  - endpoints
   - pods
   verbs:
   - get
@@ -591,10 +612,17 @@ rules:
   - list
   - watch
 - apiGroups:
+  - discovery.k8s.io
+  resources:
+  - endpointslices
+  verbs:
+  - get
+  - list
+  - watch
+- apiGroups:
   - ""
   resources:
   - services
-  - endpoints
   - pods
   verbs:
   - get
@@ -636,6 +664,7 @@ rules:
   - thanosrulers/finalizers
   - thanosrulers/status
   - servicemonitors
+  - servicemonitors/status
   - podmonitors
   - probes
   - prometheusrules
@@ -708,12 +737,13 @@ rules:
   verbs:
   - get
 - apiGroups:
-  - ""
+  - discovery.k8s.io
   resources:
-  - endpoints
+  - endpointslices
   verbs:
   - get
   - create
+  - list
   - update
   - delete
 - apiGroups:
