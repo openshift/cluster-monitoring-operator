@@ -23,6 +23,7 @@ rules:
   - thanosrulers/finalizers
   - thanosrulers/status
   - servicemonitors
+  - servicemonitors/status
   - podmonitors
   - probes
   - prometheusrules
