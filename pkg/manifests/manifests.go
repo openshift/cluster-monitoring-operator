@@ -2557,7 +2557,9 @@ func (f *Factory) NewService(manifest []byte) (*v1.Service, error) {
 	return &s, nil
 }
 
+//nolint:staticcheck //SA1019 MON-4216 to track migration from Endpoints to EndpointSlice
 func (f *Factory) NewEndpoints(manifest []byte) (*v1.Endpoints, error) {
+	//nolint:staticcheck //SA1019 MON-4216 to track migration from Endpoints to EndpointSlice
 	e := v1.Endpoints{}
 	err := decodeYAML(manifest, &e)
 	if err != nil {
