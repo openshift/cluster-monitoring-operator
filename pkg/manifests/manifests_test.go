@@ -40,6 +40,12 @@ import (
 type fakeInfrastructureReader struct {
 	highlyAvailableInfrastructure bool
 	hostedControlPlane            bool
+	singleNodeControlPlane        bool
+	twoNodeControlPlane           bool
+}
+
+func (f *fakeInfrastructureReader) HighlyAvailableControlPlane() bool {
+	return !f.singleNodeControlPlane && !f.twoNodeControlPlane
 }
 
 func (f *fakeInfrastructureReader) HighlyAvailableInfrastructure() bool {
@@ -50,8 +56,21 @@ func (f *fakeInfrastructureReader) HostedControlPlane() bool {
 	return f.hostedControlPlane
 }
 
+func (f *fakeInfrastructureReader) TwoNodeControlPlane() bool {
+	return f.twoNodeControlPlane
+}
+
+func (f *fakeInfrastructureReader) SingleNodeControlPlane() bool {
+	return f.singleNodeControlPlane
+}
+
 func defaultInfrastructureReader() InfrastructureReader {
-	return &fakeInfrastructureReader{highlyAvailableInfrastructure: true, hostedControlPlane: false}
+	return &fakeInfrastructureReader{
+		highlyAvailableInfrastructure: true,
+		hostedControlPlane:            false,
+		singleNodeControlPlane:        false,
+		twoNodeControlPlane:           false,
+	}
 }
 
 type fakeProxyReader struct {

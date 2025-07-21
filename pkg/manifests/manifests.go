@@ -346,6 +346,9 @@ type Factory struct {
 type InfrastructureReader interface {
 	HighlyAvailableInfrastructure() bool
 	HostedControlPlane() bool
+	SingleNodeControlPlane() bool
+	TwoNodeControlPlane() bool
+	HighlyAvailableControlPlane() bool
 }
 
 // ProxyReader has methods to describe the proxy configuration.
@@ -2475,22 +2478,36 @@ func (f *Factory) ControlPlanePrometheusRule() (*monv1.PrometheusRule, error) {
 
 	r.Namespace = f.namespace
 
-	if f.infrastructure.HostedControlPlane() {
-		groups := []monv1.RuleGroup{}
-		for _, g := range r.Spec.Groups {
-			switch g.Name {
-			case "kubernetes-system-apiserver",
-				"kubernetes-system-controller-manager",
-				"kubernetes-system-scheduler":
-				// skip
-			default:
-				groups = append(groups, g)
-			}
-		}
-		r.Spec.Groups = groups
+	switch {
+	case f.infrastructure.HostedControlPlane():
+		r.Spec.Groups = filterRuleGroups(r, []string{
+			"kubernetes-system-apiserver",
+			"kubernetes-system-controller-manager",
+			"kubernetes-system-scheduler",
+		})
+	case !f.infrastructure.HighlyAvailableControlPlane():
+		r.Spec.Groups = filterRuleGroups(r, []string{
+			// This group supports the SNO cluster configuration currently, but not TNO ones (TNA and TNF). This is
+			// because upstream is only concerned with the broader HA and non-HA scenarios, and not any
+			// OpenShift-specific cluster configurations.
+			"kubernetes-resources",
+		})
 	}
 
 	return r, nil
+}
+
+func filterRuleGroups(rule *monv1.PrometheusRule, ignoreGroups []string) (groups []monv1.RuleGroup) {
+	for _, g := range rule.Spec.Groups {
+		if slices.ContainsFunc(ignoreGroups, func(ig string) bool {
+			return g.Name == ig
+		}) {
+			continue
+		}
+		groups = append(groups, g)
+	}
+
+	return
 }
 
 func (f *Factory) ControlPlaneKubeletServiceMonitors() ([]*monv1.ServiceMonitor, error) {
