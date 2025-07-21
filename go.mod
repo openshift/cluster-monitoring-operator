@@ -18,9 +18,9 @@ require (
 	github.com/onsi/ginkgo/v2 v2.22.0
 	github.com/onsi/gomega v1.36.1
 	github.com/openshift-eng/openshift-tests-extension v0.0.0-20250702172817-97309544869d
-	github.com/openshift/api v0.0.0-20250320170726-75d64d71980b
-	github.com/openshift/client-go v0.0.0-20250125113824-8e1f0b8fa9a7
-	github.com/openshift/library-go v0.0.0-20250402180609-ce2ba53fb2a4
+	github.com/openshift/api v0.0.0-20250710004639-926605d3338b
+	github.com/openshift/client-go v0.0.0-20250710075018-396b36f983ee
+	github.com/openshift/library-go v0.0.0-20250711143941-47604345e7ea
 	github.com/prometheus-operator/prometheus-operator/pkg/apis/monitoring v0.84.0
 	github.com/prometheus-operator/prometheus-operator/pkg/client v0.84.0
 	github.com/prometheus/alertmanager v0.27.0
@@ -42,7 +42,7 @@ require (
 	k8s.io/client-go v0.33.2
 	k8s.io/component-base v0.33.2
 	k8s.io/klog/v2 v2.130.1
-	k8s.io/kube-aggregator v0.32.1
+	k8s.io/kube-aggregator v0.33.2
 	k8s.io/metrics v0.31.1
 	k8s.io/utils v0.0.0-20250604170112-4c0f3b243397
 	sigs.k8s.io/controller-runtime v0.21.0

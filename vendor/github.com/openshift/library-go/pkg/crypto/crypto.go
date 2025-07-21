@@ -110,15 +110,6 @@ func DefaultTLSVersion() uint16 {
 	return tls.VersionTLS12
 }
 
-// ciphersTLS13 copies golang 1.13 implementation, where TLS1.3 suites are not
-// configurable (cipherSuites field is ignored for TLS1.3 flows and all of the
-// below three - and none other - are used)
-var ciphersTLS13 = map[string]uint16{
-	"TLS_AES_128_GCM_SHA256":       tls.TLS_AES_128_GCM_SHA256,
-	"TLS_AES_256_GCM_SHA384":       tls.TLS_AES_256_GCM_SHA384,
-	"TLS_CHACHA20_POLY1305_SHA256": tls.TLS_CHACHA20_POLY1305_SHA256,
-}
-
 var ciphers = map[string]uint16{
 	"TLS_RSA_WITH_RC4_128_SHA":                      tls.TLS_RSA_WITH_RC4_128_SHA,
 	"TLS_RSA_WITH_3DES_EDE_CBC_SHA":                 tls.TLS_RSA_WITH_3DES_EDE_CBC_SHA,
@@ -144,6 +135,9 @@ var ciphers = map[string]uint16{
 	"TLS_ECDHE_ECDSA_WITH_CHACHA20_POLY1305":        tls.TLS_ECDHE_ECDSA_WITH_CHACHA20_POLY1305_SHA256,
 	"TLS_ECDHE_RSA_WITH_CHACHA20_POLY1305_SHA256":   tls.TLS_ECDHE_RSA_WITH_CHACHA20_POLY1305_SHA256,
 	"TLS_ECDHE_ECDSA_WITH_CHACHA20_POLY1305_SHA256": tls.TLS_ECDHE_ECDSA_WITH_CHACHA20_POLY1305_SHA256,
+	"TLS_AES_128_GCM_SHA256":                        tls.TLS_AES_128_GCM_SHA256,
+	"TLS_AES_256_GCM_SHA384":                        tls.TLS_AES_256_GCM_SHA384,
+	"TLS_CHACHA20_POLY1305_SHA256":                  tls.TLS_CHACHA20_POLY1305_SHA256,
 }
 
 // openSSLToIANACiphersMap maps OpenSSL cipher suite names to IANA names
@@ -223,10 +217,6 @@ func CipherSuite(cipherName string) (uint16, error) {
 		return cipher, nil
 	}
 
-	if _, ok := ciphersTLS13[cipherName]; ok {
-		return 0, fmt.Errorf("all golang TLSv1.3 ciphers are always used for TLSv1.3 flows")
-	}
-
 	return 0, fmt.Errorf("unknown cipher name %q", cipherName)
 }
 
@@ -281,6 +271,9 @@ func DefaultCiphers() []uint16 {
 		// tls.TLS_RSA_WITH_3DES_EDE_CBC_SHA,       // forbidden by http/2, disabled to mitigate SWEET32 attack
 		tls.TLS_RSA_WITH_AES_128_CBC_SHA, // forbidden by http/2
 		tls.TLS_RSA_WITH_AES_256_CBC_SHA, // forbidden by http/2
+		tls.TLS_AES_128_GCM_SHA256,
+		tls.TLS_AES_256_GCM_SHA384,
+		tls.TLS_CHACHA20_POLY1305_SHA256,
 	}
 }
 
@@ -636,7 +629,7 @@ func MakeSelfSignedCAConfig(name string, lifetime time.Duration) (*TLSCertificat
 func MakeSelfSignedCAConfigForSubject(subject pkix.Name, lifetime time.Duration) (*TLSCertificateConfig, error) {
 	if lifetime <= 0 {
 		lifetime = DefaultCACertificateLifetimeDuration
-		fmt.Fprintf(os.Stderr, "Validity period of the certificate for %q is unset, resetting to %d years!\n", subject.CommonName, lifetime)
+		fmt.Fprintf(os.Stderr, "Validity period of the certificate for %q is unset, resetting to %s!\n", subject.CommonName, lifetime.String())
 	}
 
 	if lifetime > DefaultCACertificateLifetimeDuration {
@@ -1025,7 +1018,7 @@ func newSigningCertificateTemplateForDuration(subject pkix.Name, caLifetime time
 func newServerCertificateTemplate(subject pkix.Name, hosts []string, lifetime time.Duration, currentTime func() time.Time, authorityKeyId, subjectKeyId []byte) *x509.Certificate {
 	if lifetime <= 0 {
 		lifetime = DefaultCertificateLifetimeDuration
-		fmt.Fprintf(os.Stderr, "Validity period of the certificate for %q is unset, resetting to %d years!\n", subject.CommonName, lifetime)
+		fmt.Fprintf(os.Stderr, "Validity period of the certificate for %q is unset, resetting to %s!\n", subject.CommonName, lifetime.String())
 	}
 
 	if lifetime > DefaultCertificateLifetimeDuration {
@@ -1112,7 +1105,7 @@ func CertsFromPEM(pemCerts []byte) ([]*x509.Certificate, error) {
 func NewClientCertificateTemplate(subject pkix.Name, lifetime time.Duration, currentTime func() time.Time) *x509.Certificate {
 	if lifetime <= 0 {
 		lifetime = DefaultCertificateLifetimeDuration
-		fmt.Fprintf(os.Stderr, "Validity period of the certificate for %q is unset, resetting to %d years!\n", subject.CommonName, lifetime)
+		fmt.Fprintf(os.Stderr, "Validity period of the certificate for %q is unset, resetting to %s!\n", subject.CommonName, lifetime.String())
 	}
 
 	if lifetime > DefaultCertificateLifetimeDuration {
