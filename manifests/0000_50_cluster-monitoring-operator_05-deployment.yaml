@@ -74,6 +74,7 @@ spec:
         - "-images=thanos=quay.io/openshift/origin-thanos:latest"
         - "-images=monitoring-plugin=quay.io/openshift/origin-monitoring-plugin:latest"
         - "-images=kube-metrics-server=quay.io/openshift/origin-kube-metrics-server:latest"
+        - "-images=debug-tools="
         env:
         - name: RELEASE_VERSION
           value: "0.0.1-snapshot"
@@ -100,3 +101,31 @@ spec:
         - mountPath: /etc/cluster-monitoring-operator/telemetry
           name: telemetry-config
           readOnly: true
+      # DEBUG TOOLS SIDECAR (OPTIONAL)
+      # Uncomment the debug-tools container below to enable debugging capabilities
+      # 
+      # To enable:
+      # 1. Uncomment the debug-tools container below
+      # 2. Replace the image with your debug tools image (optional - UBI minimal works)
+      # 3. Apply the updated deployment
+      #
+      # Usage: kubectl exec -n openshift-monitoring deployment/cluster-monitoring-operator -c debug-tools -- /bin/bash
+      #
+      # - name: debug-tools
+      #   # TODO: Replace with your debug tools image at quay.io/openshift/[debug-image-name]:latest
+      #   # The debug image should include: curl, wget, nc, dig, ps, top, tcpdump, ss, strace, lsof, jq, yq
+      #   image: registry.redhat.io/ubi8/ubi-minimal:latest  # Fallback image - works out of the box
+      #   command: ["/bin/sleep", "infinity"]
+      #   resources:
+      #     requests:
+      #       cpu: 10m
+      #       memory: 32Mi
+      #     limits:
+      #       cpu: 50m
+      #       memory: 128Mi
+      #   securityContext:
+      #     allowPrivilegeEscalation: false
+      #     capabilities:
+      #       drop: ["ALL"]
+      #     runAsNonRoot: true
+      #   terminationMessagePolicy: FallbackToLogsOnError
