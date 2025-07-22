@@ -882,7 +882,7 @@ func (o *Operator) reportFailed(ctx context.Context, report runReport) {
 	// Rate limit to avoid unnecessary status updates for temporary or transient errors that may resolve themselves within a few attempts.
 	// Ensure you have thoroughly considered all implications before adjusting the threshold.
 	// See: https://issues.redhat.com/browse/OCPBUGS-23745
-	maxAttempts := 3
+	maxAttempts := 4
 	if o.failedReconcileAttempts < maxAttempts {
 		klog.Infof("%d reconciliation(s) failed, %d more attempt(s) will be made before reporting failures.", o.failedReconcileAttempts, maxAttempts-o.failedReconcileAttempts)
 		return
