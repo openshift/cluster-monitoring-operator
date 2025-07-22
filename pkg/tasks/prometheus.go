@@ -346,15 +346,10 @@ func (t *PrometheusTask) create(ctx context.Context) error {
 		return fmt.Errorf("initializing Prometheus telemetry secret failed: %w", err)
 	}
 
-	if t.config.ClusterMonitoringConfiguration.TelemeterClientConfig.IsEnabled() && t.config.RemoteWrite {
+	if t.config.ClusterMonitoringConfiguration.TelemeterClientConfig.IsEnabled() {
 		klog.V(4).Info("updating Prometheus telemetry secret")
 		if err = t.client.CreateOrUpdateSecret(ctx, telemetrySecret); err != nil {
 			return fmt.Errorf("reconciling Prometheus telemetry secret failed: %w", err)
-		}
-	} else {
-		klog.V(4).Info("deleting Prometheus telemetry secret")
-		if err = t.client.DeleteSecret(ctx, telemetrySecret); err != nil {
-			return fmt.Errorf("deleting Prometheus telemetry secret failed: %w", err)
 		}
 	}
 
