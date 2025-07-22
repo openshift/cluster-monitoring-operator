@@ -1110,8 +1110,11 @@ func TestPrometheusK8sRemoteWriteURLs(t *testing.T) {
 
 				return c
 			},
+			telemetrySecret: telemetrySecret,
 
-			expectedRemoteWriteURLs: nil,
+			expectedRemoteWriteURLs: []string{
+				"https://infogw.api.openshift.com/metrics/v1/receive",
+			},
 		},
 		{
 			name: "legacy telemetry and custom remote write",
@@ -1124,9 +1127,11 @@ func TestPrometheusK8sRemoteWriteURLs(t *testing.T) {
 
 				return c
 			},
+			telemetrySecret: telemetrySecret,
 
 			expectedRemoteWriteURLs: []string{
 				"http://custom",
+				"https://infogw.api.openshift.com/metrics/v1/receive",
 			},
 		},
 		{
