@@ -1627,9 +1627,8 @@ func (f *Factory) setupPrometheusRemoteWriteProxy(p *monv1.Prometheus) {
 
 func (f *Factory) PrometheusK8sAdditionalAlertManagerConfigsSecret() (*v1.Secret, error) {
 	amConfigs := f.config.ClusterMonitoringConfiguration.PrometheusK8sConfig.AlertmanagerConfigs
-	prometheusAmConfigs := PrometheusAdditionalAlertmanagerConfigs(amConfigs)
 
-	config, err := yaml2.Marshal(prometheusAmConfigs)
+	config, err := f.MarshalPrometheusAdditionalAlertmanagerConfigs(amConfigs)
 	if err != nil {
 		return nil, err
 	}
@@ -1647,8 +1646,8 @@ func (f *Factory) PrometheusK8sAdditionalAlertManagerConfigsSecret() (*v1.Secret
 
 func (f *Factory) PrometheusUserWorkloadAdditionalAlertManagerConfigsSecret() (*v1.Secret, error) {
 	amConfigs := f.config.AdditionalAlertmanagerConfigsForPrometheusUserWorkload()
-	prometheusAmConfigs := PrometheusAdditionalAlertmanagerConfigs(amConfigs)
-	config, err := yaml2.Marshal(prometheusAmConfigs)
+
+	config, err := f.MarshalPrometheusAdditionalAlertmanagerConfigs(amConfigs)
 	if err != nil {
 		return nil, err
 	}
