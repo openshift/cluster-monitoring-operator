@@ -80,7 +80,7 @@ func (t *NodeExporterTask) Run(ctx context.Context) error {
 		return fmt.Errorf("intializing node-exporter rbac proxy secret failed: %w", err)
 	}
 
-	err = t.client.CreateIfNotExistSecret(ctx, nes)
+	err = t.client.CreateOrUpdateSecret(ctx, nes)
 	if err != nil {
 		return fmt.Errorf("creating node-exporter rbac proxy secret failed: %w", err)
 	}
