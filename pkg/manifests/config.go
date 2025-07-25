@@ -268,6 +268,7 @@ type Images struct {
 	TelemeterClient                    string
 	Thanos                             string
 	MonitoringPlugin                   string
+	DebugTools                         string
 }
 
 type HTTPConfig struct {
@@ -505,6 +506,7 @@ func (c *Config) SetImages(images map[string]string) {
 	c.Images.OpenShiftStateMetrics = images["openshift-state-metrics"]
 	c.Images.Thanos = images["thanos"]
 	c.Images.MonitoringPlugin = images["monitoring-plugin"]
+	c.Images.DebugTools = images["debug-tools"]
 }
 
 func (c *Config) SetTelemetryMatches(matches []string) {

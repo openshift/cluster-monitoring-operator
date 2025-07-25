@@ -62,6 +62,11 @@ spec:
     from:
       kind: DockerImage
       name: quay.io/openshift/origin-monitoring-plugin:latest
+  - name: debug-tools
+    from:
+      kind: DockerImage
+      # TODO: Create debug tools image at quay.io/openshift/[debug-image-name]:latest
+      name: ""
   - name: kube-metrics-server
     from:
       kind: DockerImage
