@@ -42,8 +42,18 @@ func (a PrometheusAdditionalAlertmanagerConfigs) MarshalYAMLWithTLSConfig(cipher
 // MarshalPrometheusAdditionalAlertmanagerConfigs marshals the configs with secure TLS settings
 func (f *Factory) MarshalPrometheusAdditionalAlertmanagerConfigs(amConfigs []AdditionalAlertmanagerConfig) ([]byte, error) {
 	prometheusAmConfigs := PrometheusAdditionalAlertmanagerConfigs(amConfigs)
-	cipherSuites := f.APIServerConfig.TLSCiphers()
-	minTLSVersion := f.APIServerConfig.MinTLSVersion()
+
+	// Handle nil APIServerConfig during cluster bootstrap - use secure defaults
+	var cipherSuites []string
+	var minTLSVersion string
+	if f.APIServerConfig != nil {
+		cipherSuites = f.APIServerConfig.TLSCiphers()
+		minTLSVersion = f.APIServerConfig.MinTLSVersion()
+	} else {
+		// Use OpenShift Intermediate TLS profile defaults during bootstrap
+		cipherSuites = APIServerDefaultTLSCiphers
+		minTLSVersion = string(APIServerDefaultMinTLSVersion)
+	}
 
 	result, err := prometheusAmConfigs.MarshalYAMLWithTLSConfig(cipherSuites, minTLSVersion)
 	if err != nil {
@@ -182,8 +192,17 @@ type amHTTPConfig struct {
 func (f *Factory) ConvertToThanosAlertmanagerConfiguration(ta []AdditionalAlertmanagerConfig) ([]thanosAlertmanagerConfiguration, error) {
 	result := make([]thanosAlertmanagerConfiguration, len(ta))
 
-	cipherSuites := f.APIServerConfig.TLSCiphers()
-	minTLSVersion := f.APIServerConfig.MinTLSVersion()
+	// Handle nil APIServerConfig during cluster bootstrap - use secure defaults
+	var cipherSuites []string
+	var minTLSVersion string
+	if f.APIServerConfig != nil {
+		cipherSuites = f.APIServerConfig.TLSCiphers()
+		minTLSVersion = f.APIServerConfig.MinTLSVersion()
+	} else {
+		// Use OpenShift Intermediate TLS profile defaults during bootstrap
+		cipherSuites = APIServerDefaultTLSCiphers
+		minTLSVersion = string(APIServerDefaultMinTLSVersion)
+	}
 
 	for i, a := range ta {
 		cfg := thanosAlertmanagerConfiguration{

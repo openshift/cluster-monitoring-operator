@@ -767,7 +767,7 @@ func (o *Operator) sync(ctx context.Context, key string) error {
 	var proxyConfig = getProxyReader(ctx, config, o.loadProxyConfig)
 
 	var apiServerConfig *manifests.APIServerConfig
-	apiServerConfig, err = o.loadApiServerConfig(ctx)
+	apiServerConfig, err = o.LoadApiServerConfig(ctx)
 
 	if err != nil {
 		o.reportFailed(ctx, newRunReportForError("APIServerConfigError", err))
@@ -926,13 +926,16 @@ func (o *Operator) loadProxyConfig(ctx context.Context) (*ProxyConfig, error) {
 	return o.lastKnowProxyConfig, nil
 }
 
-func (o *Operator) loadApiServerConfig(ctx context.Context) (*manifests.APIServerConfig, error) {
+func (o *Operator) LoadApiServerConfig(ctx context.Context) (*manifests.APIServerConfig, error) {
 	config, err := o.client.GetAPIServerConfig(ctx, "cluster")
 	if err != nil {
 		klog.Warningf("failed to get api server config: %v", err)
 
 		if o.lastKnownApiServerConfig == nil {
-			return nil, fmt.Errorf("no last known api server configuration")
+			// During cluster bootstrap, API server config may not be available yet.
+			// Return nil config which manifests generation handles gracefully with secure defaults.
+			klog.Infof("API server config not available during bootstrap, using secure TLS defaults")
+			return nil, nil
 		}
 	} else {
 		o.lastKnownApiServerConfig = manifests.NewAPIServerConfig(config)

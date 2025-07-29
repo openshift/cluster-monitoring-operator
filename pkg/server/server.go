@@ -33,6 +33,7 @@ import (
 	"k8s.io/klog/v2"
 
 	"github.com/openshift/cluster-monitoring-operator/pkg/configvalidate"
+	"github.com/openshift/cluster-monitoring-operator/pkg/manifests"
 )
 
 const webhookPathPrefix = "/validate-webhook"
@@ -42,21 +43,23 @@ type Server struct {
 	kubeClient        *kubernetes.Clientset
 	kubeConfig        string
 	certFile, keyFile string
+	apiServerConfig   *manifests.APIServerConfig
 }
 
 // NewServer returns a functional Server.
-func NewServer(name string, config *rest.Config, kubeConfig, certFile, keyFile string) (*Server, error) {
+func NewServer(name string, config *rest.Config, kubeConfig, certFile, keyFile string, apiServerConfig *manifests.APIServerConfig) (*Server, error) {
 	kubeClient, err := kubernetes.NewForConfig(config)
 	if err != nil {
 		return nil, err
 	}
 
 	return &Server{
-		name:       name,
-		kubeClient: kubeClient,
-		kubeConfig: kubeConfig,
-		certFile:   certFile,
-		keyFile:    keyFile,
+		name:            name,
+		kubeClient:      kubeClient,
+		kubeConfig:      kubeConfig,
+		certFile:        certFile,
+		keyFile:         keyFile,
+		apiServerConfig: apiServerConfig,
 	}, nil
 }
 
@@ -73,6 +76,20 @@ func (s *Server) Run(ctx context.Context, collectionProfilesEnabled bool) error 
 	// Don't set a CA file for client certificates because the CA is read from
 	// the kube-system/extension-apiserver-authentication ConfigMap.
 	servingInfo.ServingInfo.ClientCA = ""
+
+	// Override the configdefaults with secure OpenShift TLS settings.
+	// The configdefaults.SetRecommendedHTTPServingInfoDefaults() uses crypto.DefaultCiphers()
+	// which includes insecure ciphers that generate warnings which now we
+	// replace with OpenShift Intermediate TLS profile.
+	if s.apiServerConfig != nil {
+		servingInfo.ServingInfo.CipherSuites = s.apiServerConfig.TLSCiphers()
+		servingInfo.ServingInfo.MinTLSVersion = s.apiServerConfig.MinTLSVersion()
+	} else {
+		// During bootstrap when API server config is not available, use secure defaults
+		// from OpenShift Intermediate TLS profile instead of crypto.DefaultCiphers()
+		servingInfo.ServingInfo.CipherSuites = manifests.APIServerDefaultTLSCiphers
+		servingInfo.ServingInfo.MinTLSVersion = string(manifests.APIServerDefaultMinTLSVersion)
+	}
 
 	serverConfig, err := serving.ToServerConfig(
 		ctx,

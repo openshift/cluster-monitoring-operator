@@ -203,7 +203,9 @@ func Main() int {
 
 	wg.Go(func() error { return o.Run(ctx) })
 
-	srv, err := server.NewServer("cluster-monitoring-operator", config, *kubeconfigPath, *certFile, *keyFile)
+	// TEMPORARY TEST: Pass nil directly to test if NewAPIServerConfig(nil) is causing the crash
+	// If this fixes the crash, then the issue is in NewAPIServerConfig(nil) behavior
+	srv, err := server.NewServer("cluster-monitoring-operator", config, *kubeconfigPath, *certFile, *keyFile, nil)
 	if err != nil {
 		fmt.Fprint(os.Stderr, err)
 		return 1

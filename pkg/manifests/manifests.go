@@ -2329,7 +2329,16 @@ func (m *minTLSVersionEnforcer) MinTLSVersion() string {
 }
 
 func (f *Factory) setTLSSecurityConfigurationWithMinTLSVersion(args []string, tlsCipherSuitesArg string, minTLSversionArg string, versioner minTLSVersioner) []string {
-	cipherSuites := strings.Join(crypto.OpenSSLToIANACipherSuites(f.APIServerConfig.TLSCiphers()), ",")
+	// Handle nil APIServerConfig during cluster bootstrap - use secure defaults
+	var tlsCiphers []string
+	if f.APIServerConfig != nil {
+		tlsCiphers = f.APIServerConfig.TLSCiphers()
+	} else {
+		// Use OpenShift Intermediate TLS profile defaults during bootstrap
+		tlsCiphers = APIServerDefaultTLSCiphers
+	}
+
+	cipherSuites := strings.Join(crypto.OpenSSLToIANACipherSuites(tlsCiphers), ",")
 	args = setArg(args, tlsCipherSuitesArg, cipherSuites)
 
 	args = setArg(args, minTLSversionArg, versioner.MinTLSVersion())
