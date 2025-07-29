@@ -10,6 +10,7 @@ local alertmanager = import './components/alertmanager.libsonnet';
 local alertmanagerUserWorkload = import './components/alertmanager-user-workload.libsonnet';
 local dashboards = import './components/dashboards.libsonnet';
 local kubeStateMetrics = import './components/kube-state-metrics.libsonnet';
+local ksmLite = import 'github.com/prometheus-operator/kube-prometheus/jsonnet/kube-prometheus/addons/ksm-lite.libsonnet';
 local controlPlane = import './components/control-plane.libsonnet';
 local nodeExporter = import './components/node-exporter.libsonnet';
 local metricsServer = import './components/metrics-server.libsonnet';
@@ -432,7 +433,23 @@ local inCluster =
     openshiftStateMetrics: openshiftStateMetrics($.values.openshiftStateMetrics),
   } +
   (import './utils/anti-affinity.libsonnet') +
-  (import 'github.com/prometheus-operator/kube-prometheus/jsonnet/kube-prometheus/addons/ksm-lite.libsonnet') +
+  (ksmLite {
+    ksmConfig: {
+        ksmDenyList: [
+            '^kube_(?=namespace).*_created$',
+            '^kube_.+_metadata_resource_version$',
+            '^kube_replicaset_metadata_generation$',
+            '^kube_replicaset_status_observed_generation$',
+            '^kube_pod_restart_policy$',
+            '^kube_pod_init_container_status_terminated$',
+            '^kube_pod_init_container_status_running$',
+            '^kube_pod_container_status_terminated$',
+            '^kube_pod_container_status_running$',
+            '^kube_pod_completion_time$',
+            '^kube_pod_status_scheduled$',
+        ],
+    },
+  }) +
   (import './utils/ibm-cloud-managed-profile.libsonnet') +
   (import './components/metrics-server-audit.libsonnet') +
   {};  // Including empty object to simplify adding and removing imports during development
