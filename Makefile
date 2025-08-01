@@ -12,8 +12,8 @@ GOPROXY?=http://proxy.golang.org
 export GO111MODULE
 export GOPROXY
 
-# go pakages for unit tests, excluding e2e tests
-PKGS=$(shell go list ./... | grep -v /test/e2e)
+# go pakages for unit tests, excluding e2e and ex-openshift-private tests
+PKGS=$(shell go list ./... | grep -vE '/test/(e2e|monitoring)')
 GOLANG_FILES:=$(shell find . -name \*.go -print)
 # NOTE: grep -v %.yaml is needed  because "%s-policy.yaml" is used
 # in manifest.go and that isn't a valid asset.
@@ -29,8 +29,8 @@ BIN_DIR ?= $(shell pwd)/tmp/bin
 
 # Docgen related variables
 TYPES_TARGET=pkg/manifests/types.go
-K8S_VERSION=$(shell echo -n v1. &&  cat go.mod | grep -w "k8s.io/api" | awk '{ print $$2 }' | cut -d "." -f 2)
-PO_VERSION=$(shell cat go.mod | grep "github.com/prometheus-operator/prometheus-operator[^=>]\+$$" | awk '{ print $$2 }' | sort -u)
+K8S_VERSION=$(shell go list -m -json k8s.io/api | jq -r '.Version | split(".")[1] | "v1." + .')
+PO_VERSION=$(shell go list  -m -json github.com/prometheus-operator/prometheus-operator/pkg/apis/monitoring | jq -r ".Version")
 
 EMBEDMD_BIN=$(BIN_DIR)/embedmd
 JB_BIN=$(BIN_DIR)/jb
@@ -270,7 +270,7 @@ check-runbooks:
 ###########
 
 .PHONY: test
-test: test-unit test-rules test-e2e
+test: test-unit test-rules test-e2e test-ginkgo
 
 .PHONY: test-unit
 test-unit:
@@ -280,6 +280,11 @@ test-unit:
 test-e2e: KUBECONFIG?=$(HOME)/.kube/config
 test-e2e:
 	go test -v -timeout=150m ./test/e2e/ --kubeconfig $(KUBECONFIG)
+
+.PHONY: test-ginkgo
+test-ginkgo: KUBECONFIG?=$(HOME)/.kube/config
+test-ginkgo:
+	KUBECONFIG=$(KUBECONFIG) go test -v -timeout=150m ./test/monitoring/
 
 $(BIN_DIR):
 	mkdir -p $(BIN_DIR)
