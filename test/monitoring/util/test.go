@@ -1,5 +1,7 @@
 // Derived from code originally published in
-//   https://github.com/openshift/openshift-tests-private
+//
+//	https://github.com/openshift/openshift-tests-private
+//
 // at commit 6a0f010cade029b805c2de02b6ee82532f03b0ab.
 package util
 
@@ -25,6 +27,7 @@ import (
 	conformancetestdata "k8s.io/kubernetes/test/conformance/testdata"
 	e2e "k8s.io/kubernetes/test/e2e/framework"
 )
+
 const (
 	EnvIsExternalOIDCCluster = "ENV_IS_EXTERNAL_OIDC_CLUSTER"
 	EnvIsKubernetesCluster   = "ENV_IS_KUBERNETES_CLUSTER"

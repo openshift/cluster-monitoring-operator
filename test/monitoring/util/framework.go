@@ -1,5 +1,7 @@
 // Derived from code originally published in
-//   https://github.com/openshift/openshift-tests-private
+//
+//	https://github.com/openshift/openshift-tests-private
+//
 // at commit 6a0f010cade029b805c2de02b6ee82532f03b0ab.
 package util
 
@@ -76,7 +78,7 @@ var (
 )
 
 // FixturePath returns an absolute path to a fixture file in testdata/
-// TODO: the tests will run locally now, we can just pass a relative path. 
+// TODO: the tests will run locally now, we can just pass a relative path.
 func FixturePath(dir, subdir string) string {
 	fixtureDirLock.Do(func() {
 		fixtureDir = filepath.Join(os.TempDir(), "fixtures")
@@ -90,7 +92,7 @@ func FixturePath(dir, subdir string) string {
 			return os.WriteFile(fullPath, data, 0644)
 		})
 	})
-	
+
 	fullPath := filepath.Join(fixtureDir, dir, subdir)
 	if _, err := os.Stat(fullPath); err != nil {
 		panic(err)

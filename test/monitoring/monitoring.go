@@ -1,5 +1,7 @@
 // Derived from code originally published in
-//   https://github.com/openshift/openshift-tests-private
+//
+//	https://github.com/openshift/openshift-tests-private
+//
 // at commit 6a0f010cade029b805c2de02b6ee82532f03b0ab.
 package monitoring
 
@@ -32,7 +34,7 @@ func initProvider(provider string, dryRun bool) error {
 	// reale2e.SetViperConfig(os.Getenv("VIPERCONFIG"))
 
 	// Not needed
-/* 	if err := initCSITests(dryRun); err != nil {
+	/* 	if err := initCSITests(dryRun); err != nil {
 		return err
 	} */
 

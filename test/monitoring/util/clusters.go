@@ -1,5 +1,7 @@
 // Derived from code originally published in
-//   https://github.com/openshift/openshift-tests-private
+//
+//	https://github.com/openshift/openshift-tests-private
+//
 // at commit 6a0f010cade029b805c2de02b6ee82532f03b0ab.
 package util
 
@@ -58,6 +60,7 @@ func IsKeycloakExtOIDCCluster() bool {
 	}
 	return false
 }
+
 // IsOpenShiftCluster checks if the active cluster is OpenShift or a derivative
 func IsOpenShiftCluster(ctx context.Context, c corev1client.NamespaceInterface) (bool, error) {
 	switch _, err := c.Get(ctx, "openshift-controller-manager", metav1.GetOptions{}); {
