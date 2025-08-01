@@ -12,8 +12,8 @@ GOPROXY?=http://proxy.golang.org
 export GO111MODULE
 export GOPROXY
 
-# go pakages for unit tests, excluding e2e tests
-PKGS=$(shell go list ./... | grep -v /test/e2e)
+# go pakages for unit tests, excluding e2e and ex-openshift-private tests
+PKGS= $(shell go list ./... | grep -vE '/test/(e2e|monitoring)')
 GOLANG_FILES:=$(shell find . -name \*.go -print)
 # NOTE: grep -v %.yaml is needed  because "%s-policy.yaml" is used
 # in manifest.go and that isn't a valid asset.
@@ -270,7 +270,7 @@ check-runbooks:
 ###########
 
 .PHONY: test
-test: test-unit test-rules test-e2e
+test: test-unit test-rules test-e2e test-e2e-ginkgo
 
 .PHONY: test-unit
 test-unit:
@@ -279,7 +279,14 @@ test-unit:
 .PHONY: test-e2e
 test-e2e: KUBECONFIG?=$(HOME)/.kube/config
 test-e2e:
-	go test -v -timeout=150m ./test/e2e/ --kubeconfig $(KUBECONFIG)
+	KUBECONFIG=$(KUBECONFIG) go test -v -timeout=300m ./test/monitoring/
+	# TODO: test-e2e-ginkgo will have its own job
+	# go test -v -timeout=150m ./test/e2e/ --kubeconfig $(KUBECONFIG)
+
+.PHONY: test-e2e-ginkgo
+test-e2e-ginkgo: KUBECONFIG?=$(HOME)/.kube/config
+test-e2e-ginkgo:
+	KUBECONFIG=$(KUBECONFIG) go test -v -timeout=300m ./test/monitoring/
 
 $(BIN_DIR):
 	mkdir -p $(BIN_DIR)

@@ -17,6 +17,7 @@ import (
 func main() {
 	registry := e.NewRegistry()
 
+	// Tests should only be run as part of or via openshift-tests, running tests via the extension is not supported.
 	ext := e.NewExtension("openshift", "payload", "cluster-monitoring-operator")
 	ext.AddSuite(e.Suite{
 		Name: "openshift/cluster-monitoring-operator/conformance/parallel",
