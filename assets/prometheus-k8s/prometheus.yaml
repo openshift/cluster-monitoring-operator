@@ -168,6 +168,7 @@ spec:
       name: prometheus-trusted-ca-bundle
   enableFeatures:
   - delayed-compaction
+  - use-uncached-io
   externalLabels: {}
   externalURL: https://prometheus-k8s.openshift-monitoring.svc:9091
   image: quay.io/prometheus/prometheus:v3.5.0
