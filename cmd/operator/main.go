@@ -203,7 +203,14 @@ func Main() int {
 
 	wg.Go(func() error { return o.Run(ctx) })
 
-	srv, err := server.NewServer("cluster-monitoring-operator", config, *kubeconfigPath, *certFile, *keyFile)
+	// Load APIServerConfig for secure TLS configuration
+	apiServerConfig, err := o.LoadApiServerConfig(ctx)
+	if err != nil {
+		klog.Warningf("failed to load API server config, using defaults: %v", err)
+		apiServerConfig = manifests.NewAPIServerConfig(nil)
+	}
+
+	srv, err := server.NewServer("cluster-monitoring-operator", config, *kubeconfigPath, *certFile, *keyFile, apiServerConfig)
 	if err != nil {
 		fmt.Fprint(os.Stderr, err)
 		return 1

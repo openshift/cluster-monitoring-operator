@@ -768,7 +768,7 @@ func (o *Operator) sync(ctx context.Context, key string) error {
 	var proxyConfig = getProxyReader(ctx, config, o.loadProxyConfig)
 
 	var apiServerConfig *manifests.APIServerConfig
-	apiServerConfig, err = o.loadApiServerConfig(ctx)
+	apiServerConfig, err = o.LoadApiServerConfig(ctx)
 
 	if err != nil {
 		o.reportFailed(ctx, newRunReportForError("APIServerConfigError", err))
@@ -927,7 +927,7 @@ func (o *Operator) loadProxyConfig(ctx context.Context) (*ProxyConfig, error) {
 	return o.lastKnowProxyConfig, nil
 }
 
-func (o *Operator) loadApiServerConfig(ctx context.Context) (*manifests.APIServerConfig, error) {
+func (o *Operator) LoadApiServerConfig(ctx context.Context) (*manifests.APIServerConfig, error) {
 	config, err := o.client.GetAPIServerConfig(ctx, "cluster")
 	if err != nil {
 		klog.Warningf("failed to get api server config: %v", err)
