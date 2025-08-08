@@ -54,7 +54,7 @@ const (
 )
 
 var errAlertmanagerV1NotSupported = errors.New("alertmanager's apiVersion=v1 is no longer supported, v2 has been available since Alertmanager 0.16.0")
-var reservedPrometheusExternalLabels = []string{"prometheus", "prometheus_replica", "cluster", "managed_cluster"}
+var reservedPrometheusExternalLabels = []string{"prometheus", "prometheus_replica", "cluster"}
 
 type Config struct {
 	Images                               *Images `json:"-"`
