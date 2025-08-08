@@ -513,6 +513,7 @@ function(params)
                   '--enable-label-apis',
                   '--error-on-replace',
                   '--rules-with-active-alerts',
+                  '--enable-label-matchers-for-rules-api',
                 ],
                 resources: {
                   requests: {
