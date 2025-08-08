@@ -105,6 +105,8 @@ data:
         "pciID": "0x56c0"
       - "modelName": "Intel Data Center GPU Flex 140"
         "pciID": "0x56c1"
+      - "modelName": "Intel IPU Data Path"
+        "pciID": "0x1452"
       "vendorID": "0x8086"
       "vendorName": "Intel"
     - "models":
@@ -114,6 +116,16 @@ data:
         "pciID": "0xa080"
       "vendorID": "0x17cb"
       "vendorName": "Qualcomm"
+    - "models":
+      - "modelName": "Marvell OCTEON 10 CN10XXX"
+        "pciID": "0xb900"
+      "vendorID": "0x177d"
+      "vendorName": "Marvell"
+    - "models":
+      - "modelName": "BlueField-3 integrated ConnectX-7"
+        "pciID": "0xa2dc"
+      "vendorID": "0x15b3"
+      "vendorName": "Mellanox"
 kind: ConfigMap
 metadata:
   labels:

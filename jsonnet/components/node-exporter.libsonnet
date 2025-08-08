@@ -77,6 +77,7 @@ local acceleratorsConfigData = [
       { pciID: '0x0bda', modelName: 'Intel Data Center GPU Max 1100' },
       { pciID: '0x56c0', modelName: 'Intel Data Center GPU Flex 170' },
       { pciID: '0x56c1', modelName: 'Intel Data Center GPU Flex 140' },
+      { pciID: '0x1452', modelName: 'Intel IPU Data Path' },
     ],
   },
   {
@@ -85,6 +86,20 @@ local acceleratorsConfigData = [
     models: [
       { pciID: '0xa100', modelName: 'Qualcomm AI 100' },
       { pciID: '0xa080', modelName: 'Qualcomm AI 80' },
+    ],
+  },
+  {
+    vendorName: 'Marvell',
+    vendorID: '0x177d',
+    models: [
+      { pciID: '0xb900', modelName: 'Marvell OCTEON 10 CN10XXX' },
+    ],
+  },
+  {
+    vendorName: 'Mellanox',
+    vendorID: '0x15b3',
+    models: [
+      { pciID: '0xa2dc', modelName: 'BlueField-3 integrated ConnectX-7' },
     ],
   },
 

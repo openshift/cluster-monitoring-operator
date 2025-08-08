@@ -645,8 +645,8 @@ data:
     # vendor_model:node_accelerator_cards:sum reports the total number of accelerator cards
     # in the cluster per vendor and model.
     # Possible label values are:
-    #   vendor: NVIDIA, AMD, GAUDI, INTEL, QUALCOMM
-    - '{__name__="vendor_model:node_accelerator_cards:sum",vendor=~"NVIDIA|AMD|GAUDI|INTEL|QUALCOMM"}'
+    #   vendor: NVIDIA, AMD, GAUDI, INTEL, QUALCOMM, Marvell, Mellanox
+    - '{__name__="vendor_model:node_accelerator_cards:sum",vendor=~"NVIDIA|AMD|GAUDI|INTEL|QUALCOMM|Marvell|Mellanox"}'
     #
     # owners: (https://github.com/integr8ly, @david-martin)
     #
