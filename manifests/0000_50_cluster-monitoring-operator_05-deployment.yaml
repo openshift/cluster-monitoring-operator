@@ -100,3 +100,31 @@ spec:
         - mountPath: /etc/cluster-monitoring-operator/telemetry
           name: telemetry-config
           readOnly: true
+      # DEBUG TOOLS SIDECAR (OPTIONAL)
+      # Uncomment the debug-tools container below to enable debugging capabilities
+      # 
+      # To enable:
+      # 1. Uncomment the debug-tools container below
+      # 2. Replace the image with your debug tools image (optional - UBI minimal works)
+      # 3. Apply the updated deployment
+      #
+      # Usage: kubectl exec -n openshift-monitoring deployment/cluster-monitoring-operator -c debug-tools -- /bin/bash
+      #
+      # - name: debug-tools
+      #   # TODO: Replace with your debug tools image at quay.io/openshift/[debug-image-name]:latest
+      #   # UBI9 includes dnf and more packages. Can upgrade curl and install debugging tools.
+      #   image: registry.redhat.io/ubi9/ubi:latest  # Full UBI9 with dnf package manager  
+      #   command: ["/bin/bash", "-c", "dnf swap -y libcurl-minimal libcurl && sleep infinity"]
+      #   resources:
+      #     requests:
+      #       cpu: 10m
+      #       memory: 32Mi
+      #     limits:
+      #       cpu: 50m
+      #       memory: 128Mi
+      #   securityContext:
+      #     allowPrivilegeEscalation: false
+      #     capabilities:
+      #       drop: ["ALL"]
+      #     runAsNonRoot: true
+      #   terminationMessagePolicy: FallbackToLogsOnError
