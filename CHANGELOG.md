@@ -3,6 +3,7 @@
 ## 4.20
 
 - [#2595](https://github.com/openshift/cluster-monitoring-operator/pull/2595) Multi-tenant support for KSM's CRS feature-set downstream.
+- [#2625](https://github.com/openshift/cluster-monitoring-operator/pull/2625) Support lookarounds in KSM's deny-list and white-list `kube_namespace_created`.
 
 ## 4.18
 
