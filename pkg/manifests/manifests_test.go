@@ -5285,7 +5285,7 @@ func TestPromConfigurationExternalLabels(t *testing.T) {
 					name: "one rempty reserved",
 					template: `%s:
   externalLabels:
-    managed_cluster:
+    cluster:
     bar: foo
 `,
 					shouldFail: true,
