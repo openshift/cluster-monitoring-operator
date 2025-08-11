@@ -58,6 +58,8 @@ import (
 type InfrastructureConfig struct {
 	highlyAvailableInfrastructure bool
 	hostedControlPlane            bool
+	singleNodeControlPlane        bool
+	twoNodeControlPlane           bool
 }
 
 var (
@@ -96,6 +98,8 @@ func NewDefaultInfrastructureConfig() *InfrastructureConfig {
 	return &InfrastructureConfig{
 		highlyAvailableInfrastructure: true,
 		hostedControlPlane:            false,
+		singleNodeControlPlane:        false,
+		twoNodeControlPlane:           false,
 	}
 }
 
@@ -103,13 +107,34 @@ func NewDefaultInfrastructureConfig() *InfrastructureConfig {
 func NewInfrastructureConfig(i *configv1.Infrastructure) *InfrastructureConfig {
 	ic := NewDefaultInfrastructureConfig()
 
+	// Data plane topology modes
+	// SNO
 	if i.Status.InfrastructureTopology == configv1.SingleReplicaTopologyMode {
 		ic.highlyAvailableInfrastructure = false
 	}
+
+	// TNO includes DualReplica and TNF topology modes. The latter is not exposed in openshift/api/config/v1 yet.
+	// TNA has a third etcd node, and considered to be highly available.
+	if i.Status.InfrastructureTopology == configv1.DualReplicaTopologyMode {
+		ic.highlyAvailableInfrastructure = false
+	}
+
+	// Control plane topology modes
+	// SNO
+	if i.Status.ControlPlaneTopology == configv1.SingleReplicaTopologyMode {
+		ic.singleNodeControlPlane = true
+	}
+
+	// TNO includes DualReplica and TNF topology modes. The latter is not exposed in openshift/api/config/v1 yet.
+	// TNA has a third etcd node, and considered to be highly available.
+	if i.Status.ControlPlaneTopology == configv1.DualReplicaTopologyMode {
+		ic.twoNodeControlPlane = true
+	}
+
+	// External topology mode is used for hosted control planes.
 	if i.Status.ControlPlaneTopology == configv1.ExternalTopologyMode {
 		ic.hostedControlPlane = true
 	}
-
 	return ic
 }
 
@@ -121,6 +146,24 @@ func (ic *InfrastructureConfig) HighlyAvailableInfrastructure() bool {
 // HostedControlPlane implements the InfrastructureReader interface.
 func (ic *InfrastructureConfig) HostedControlPlane() bool {
 	return ic.hostedControlPlane
+}
+
+// TwoNodeControlPlane implements the InfrastructureReader interface.
+func (ic *InfrastructureConfig) TwoNodeControlPlane() bool {
+	return ic.twoNodeControlPlane
+}
+
+// SingleNodeControlPlane implements the InfrastructureReader interface.
+func (ic *InfrastructureConfig) SingleNodeControlPlane() bool {
+	return ic.singleNodeControlPlane
+}
+
+// HighlyAvailableControlPlane implements the InfrastructureReader interface.
+func (ic *InfrastructureConfig) HighlyAvailableControlPlane() bool {
+	// Following the same pattern as we do for HighlyAvailableInfrastructure, i.e.,
+	// assuming topologies other than the currently known non-HA ones to be HA.
+	// Additionally, a cluster may have a non-HA control plane and an HA infrastructure, and vice versa.
+	return !ic.singleNodeControlPlane && !ic.twoNodeControlPlane
 }
 
 // ProxyConfig stores information about the proxy configuration.
