@@ -1123,6 +1123,18 @@ data:
     # os_image_url_override:sum tells whether cluster is using default OS image or has been overridden by user
     - '{__name__="os_image_url_override:sum"}'
     #
+    # owners: (https://github.com/openshift/machine-config-operator/)
+    #
+    # cluster:mcd_total_unsupported_packages:sum is the total count of all
+    # unsupported packages across all nodes in the cluster.
+    - '{__name__="cluster:mcd_total_unsupported_packages:sum"}'
+    #
+    # owners: (https://github.com/openshift/machine-config-operator/)
+    #
+    # cluster:mcd_nodes_with_unsupported_packages:count is the total number of
+    # nodes that have one or more unsupported packages installed.
+    - '{__name__="cluster:mcd_nodes_with_unsupported_packages:count"}'
+    #
     # owners: (https://github.com/openshift/vmware-vsphere-csi-driver-operator, @openshift/storage)
     #
     # cluster:vsphere_topology_tags:max shows how many vSphere topology tag categories are configured.
