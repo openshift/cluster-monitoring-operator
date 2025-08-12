@@ -3,7 +3,10 @@
 ## 4.20
 
 - [#2595](https://github.com/openshift/cluster-monitoring-operator/pull/2595) Multi-tenant support for KSM's CRS feature-set downstream.
-- [#2360](https://github.com/openshift/cluster-monitoring-operator/pull/2630) Make `KubeCPUOvercommit` and `KubeMemoryOvercommit` alerts accommodate for non-HA scenarios, in addition to HA ones.
+- [#2360](https://github.com/openshift/cluster-monitoring-operator/pull/2630) Make `KubeCPUOvercommit` and `KubeMemoryOvercommit` alerts accommodate for non-HA scenarios, in addition to HA ones. Also, the following alerts were added:
+  - `KubePdbNotEnoughHealthyPods`
+  - `KubeNodePressure`
+  - `KubeNodeEviction`
 
 ## 4.18
 
