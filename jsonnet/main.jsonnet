@@ -383,7 +383,7 @@ local inCluster =
             pvExcludedSelector: 'label_alerts_k8s_io_kube_persistent_volume_filling_up="disabled"',
             containerfsSelector: 'id!=""',
             clusterLabel: $.values.common.dashboardClusterLabel,
-            showMultiCluster: false, // Opt-out of multi-cluster dashboards (opted-in by midstream kube-prometheus)
+            showMultiCluster: false,  // Opt-out of multi-cluster dashboards (opted-in by midstream kube-prometheus)
           },
         },
       },
