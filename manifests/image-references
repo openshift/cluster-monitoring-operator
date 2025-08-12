@@ -62,6 +62,7 @@ spec:
     from:
       kind: DockerImage
       name: quay.io/openshift/origin-monitoring-plugin:latest
+
   - name: kube-metrics-server
     from:
       kind: DockerImage

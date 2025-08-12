@@ -258,7 +258,6 @@ func New(
 		configMapName:             configMapName,
 		userWorkloadConfigMapName: userWorkloadConfigMapName,
 		remoteWrite:               remoteWrite,
-		CollectionProfilesEnabled: false,
 		namespace:                 namespace,
 		namespaceUserWorkload:     namespaceUserWorkload,
 		client:                    c,
