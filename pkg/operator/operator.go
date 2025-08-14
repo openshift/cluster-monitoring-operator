@@ -542,14 +542,18 @@ func (o *Operator) Run(ctx context.Context) error {
 	stopc := ctx.Done()
 	defer o.queue.ShutDown()
 
+	klog.Infof("Starting cluster monitoring operator")
+
 	errChan := make(chan error)
 	go func() {
+		klog.V(4).Infof("Attempting to connect to API server...")
 		v, err := o.client.KubernetesInterface().Discovery().ServerVersion()
 		if err != nil {
+			klog.Errorf("Failed to connect to API server: %v", err)
 			errChan <- fmt.Errorf("communicating with server failed: %w", err)
 			return
 		}
-		klog.V(4).Infof("Connection established (cluster-version: %s)", v)
+		klog.Infof("Connection established (cluster-version: %s)", v)
 
 		errChan <- nil
 	}()
@@ -557,9 +561,11 @@ func (o *Operator) Run(ctx context.Context) error {
 	select {
 	case err := <-errChan:
 		if err != nil {
+			klog.Errorf("Operator startup failed during API server connection: %v", err)
 			return err
 		}
 	case <-stopc:
+		klog.Infof("Operator stopped during startup")
 		return nil
 	}
 
@@ -573,15 +579,17 @@ func (o *Operator) Run(ctx context.Context) error {
 		f.Start(stopc)
 	}
 
-	klog.V(4).Info("Waiting for initial cache sync.")
+	klog.Infof("Waiting for initial cache sync...")
 	ok := cache.WaitForCacheSync(stopc, synced...)
 	if !ok {
+		klog.Errorf("Failed to sync informers - this may indicate API server connectivity issues")
 		return errors.New("failed to sync informers")
 	}
+	klog.V(4).Infof("Informer cache sync completed, waiting for factory cache sync...")
 	for _, f := range o.informerFactories {
 		f.WaitForCacheSync(stopc)
 	}
-	klog.V(4).Info("Initial cache sync done.")
+	klog.Infof("Initial cache sync completed successfully")
 
 	for _, r := range o.controllersToRunFunc {
 		go r(ctx, 1)
