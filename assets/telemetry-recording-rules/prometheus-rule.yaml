@@ -1,0 +1,406 @@
+apiVersion: monitoring.coreos.com/v1
+kind: PrometheusRule
+metadata:
+  labels:
+    app.kubernetes.io/managed-by: cluster-monitoring-operator
+    app.kubernetes.io/part-of: openshift-monitoring
+    role: telemetry-rules
+  name: telemetry-recording-rules
+  namespace: openshift-monitoring
+spec:
+  groups:
+  - interval: 4m30s
+    name: telemetry-recording.rules
+    rules:
+    - expr: label_replace({__name__=~"cluster:usage:.*"},"original_name_label","$1","__name__", "(.+)")
+      record: telemetry:metric
+    - expr: label_replace({__name__="count:up0"},"original_name_label","$1","__name__", "(.+)")
+      record: telemetry:metric
+    - expr: label_replace({__name__="count:up1"},"original_name_label","$1","__name__", "(.+)")
+      record: telemetry:metric
+    - expr: label_replace({__name__="cluster_version"},"original_name_label","$1","__name__", "(.+)")
+      record: telemetry:metric
+    - expr: label_replace({__name__="cluster_version_available_updates"},"original_name_label","$1","__name__", "(.+)")
+      record: telemetry:metric
+    - expr: label_replace({__name__="cluster_version_capability"},"original_name_label","$1","__name__", "(.+)")
+      record: telemetry:metric
+    - expr: label_replace({__name__="cluster_operator_up"},"original_name_label","$1","__name__", "(.+)")
+      record: telemetry:metric
+    - expr: label_replace({__name__="cluster_operator_conditions"},"original_name_label","$1","__name__", "(.+)")
+      record: telemetry:metric
+    - expr: label_replace({__name__="cluster_version_payload"},"original_name_label","$1","__name__", "(.+)")
+      record: telemetry:metric
+    - expr: label_replace({__name__="cluster_installer"},"original_name_label","$1","__name__", "(.+)")
+      record: telemetry:metric
+    - expr: label_replace({__name__="cluster_infrastructure_provider"},"original_name_label","$1","__name__", "(.+)")
+      record: telemetry:metric
+    - expr: label_replace({__name__="cluster_feature_set"},"original_name_label","$1","__name__", "(.+)")
+      record: telemetry:metric
+    - expr: label_replace({__name__="instance:etcd_object_counts:sum"},"original_name_label","$1","__name__", "(.+)")
+      record: telemetry:metric
+    - expr: label_replace({__name__="ALERTS",alertstate="firing",severity=~"critical|warning|info|none"},"original_name_label","$1","__name__", "(.+)")
+      record: telemetry:metric
+    - expr: label_replace({__name__="code:apiserver_request_total:rate:sum"},"original_name_label","$1","__name__", "(.+)")
+      record: telemetry:metric
+    - expr: label_replace({__name__="cluster:capacity_cpu_cores:sum"},"original_name_label","$1","__name__", "(.+)")
+      record: telemetry:metric
+    - expr: label_replace({__name__="cluster:capacity_memory_bytes:sum"},"original_name_label","$1","__name__", "(.+)")
+      record: telemetry:metric
+    - expr: label_replace({__name__="cluster:cpu_usage_cores:sum"},"original_name_label","$1","__name__", "(.+)")
+      record: telemetry:metric
+    - expr: label_replace({__name__="cluster:memory_usage_bytes:sum"},"original_name_label","$1","__name__", "(.+)")
+      record: telemetry:metric
+    - expr: label_replace({__name__="openshift:cpu_usage_cores:sum"},"original_name_label","$1","__name__", "(.+)")
+      record: telemetry:metric
+    - expr: label_replace({__name__="openshift:memory_usage_bytes:sum"},"original_name_label","$1","__name__", "(.+)")
+      record: telemetry:metric
+    - expr: label_replace({__name__="workload:cpu_usage_cores:sum"},"original_name_label","$1","__name__", "(.+)")
+      record: telemetry:metric
+    - expr: label_replace({__name__="workload:memory_usage_bytes:sum"},"original_name_label","$1","__name__", "(.+)")
+      record: telemetry:metric
+    - expr: label_replace({__name__="cluster:virt_platform_nodes:sum"},"original_name_label","$1","__name__", "(.+)")
+      record: telemetry:metric
+    - expr: label_replace({__name__="cluster:node_instance_type_count:sum"},"original_name_label","$1","__name__", "(.+)")
+      record: telemetry:metric
+    - expr: label_replace({__name__="cnv:vmi_status_running:count"},"original_name_label","$1","__name__", "(.+)")
+      record: telemetry:metric
+    - expr: label_replace({__name__="cnv_abnormal", reason=~"memory_working_set_delta_from_request|memory_rss_delta_from_request"},"original_name_label","$1","__name__", "(.+)")
+      record: telemetry:metric
+    - expr: label_replace({__name__="cluster:vmi_request_cpu_cores:sum"},"original_name_label","$1","__name__", "(.+)")
+      record: telemetry:metric
+    - expr: label_replace({__name__="node_role_os_version_machine:cpu_capacity_cores:sum"},"original_name_label","$1","__name__", "(.+)")
+      record: telemetry:metric
+    - expr: label_replace({__name__="node_role_os_version_machine:cpu_capacity_sockets:sum"},"original_name_label","$1","__name__", "(.+)")
+      record: telemetry:metric
+    - expr: label_replace({__name__="subscription_sync_total"},"original_name_label","$1","__name__", "(.+)")
+      record: telemetry:metric
+    - expr: label_replace({__name__="olm_resolution_duration_seconds"},"original_name_label","$1","__name__", "(.+)")
+      record: telemetry:metric
+    - expr: label_replace({__name__="csv_succeeded"},"original_name_label","$1","__name__", "(.+)")
+      record: telemetry:metric
+    - expr: label_replace({__name__="csv_abnormal"},"original_name_label","$1","__name__", "(.+)")
+      record: telemetry:metric
+    - expr: label_replace({__name__="cluster:kube_persistentvolumeclaim_resource_requests_storage_bytes:provisioner:sum"},"original_name_label","$1","__name__", "(.+)")
+      record: telemetry:metric
+    - expr: label_replace({__name__="cluster:kubelet_volume_stats_used_bytes:provisioner:sum"},"original_name_label","$1","__name__", "(.+)")
+      record: telemetry:metric
+    - expr: label_replace({__name__="ceph_cluster_total_bytes"},"original_name_label","$1","__name__", "(.+)")
+      record: telemetry:metric
+    - expr: label_replace({__name__="ceph_cluster_total_used_raw_bytes"},"original_name_label","$1","__name__", "(.+)")
+      record: telemetry:metric
+    - expr: label_replace({__name__="ceph_health_status"},"original_name_label","$1","__name__", "(.+)")
+      record: telemetry:metric
+    - expr: label_replace({__name__="odf_system_raw_capacity_total_bytes"},"original_name_label","$1","__name__", "(.+)")
+      record: telemetry:metric
+    - expr: label_replace({__name__="odf_system_raw_capacity_used_bytes"},"original_name_label","$1","__name__", "(.+)")
+      record: telemetry:metric
+    - expr: label_replace({__name__="odf_system_health_status"},"original_name_label","$1","__name__", "(.+)")
+      record: telemetry:metric
+    - expr: label_replace({__name__="job:ceph_osd_metadata:count"},"original_name_label","$1","__name__", "(.+)")
+      record: telemetry:metric
+    - expr: label_replace({__name__="job:kube_pv:count"},"original_name_label","$1","__name__", "(.+)")
+      record: telemetry:metric
+    - expr: label_replace({__name__="job:odf_system_pvs:count"},"original_name_label","$1","__name__", "(.+)")
+      record: telemetry:metric
+    - expr: label_replace({__name__="job:ceph_pools_iops:total"},"original_name_label","$1","__name__", "(.+)")
+      record: telemetry:metric
+    - expr: label_replace({__name__="job:ceph_pools_iops_bytes:total"},"original_name_label","$1","__name__", "(.+)")
+      record: telemetry:metric
+    - expr: label_replace({__name__="job:ceph_versions_running:count"},"original_name_label","$1","__name__", "(.+)")
+      record: telemetry:metric
+    - expr: label_replace({__name__="job:noobaa_total_unhealthy_buckets:sum"},"original_name_label","$1","__name__", "(.+)")
+      record: telemetry:metric
+    - expr: label_replace({__name__="job:noobaa_bucket_count:sum"},"original_name_label","$1","__name__", "(.+)")
+      record: telemetry:metric
+    - expr: label_replace({__name__="job:noobaa_total_object_count:sum"},"original_name_label","$1","__name__", "(.+)")
+      record: telemetry:metric
+    - expr: label_replace({__name__="odf_system_bucket_count", system_type="OCS", system_vendor="Red Hat"},"original_name_label","$1","__name__", "(.+)")
+      record: telemetry:metric
+    - expr: label_replace({__name__="odf_system_objects_total", system_type="OCS", system_vendor="Red Hat"},"original_name_label","$1","__name__", "(.+)")
+      record: telemetry:metric
+    - expr: label_replace({__name__="noobaa_accounts_num"},"original_name_label","$1","__name__", "(.+)")
+      record: telemetry:metric
+    - expr: label_replace({__name__="noobaa_total_usage"},"original_name_label","$1","__name__", "(.+)")
+      record: telemetry:metric
+    - expr: label_replace({__name__="console_url"},"original_name_label","$1","__name__", "(.+)")
+      record: telemetry:metric
+    - expr: label_replace({__name__="cluster:console_auth_login_requests_total:sum"},"original_name_label","$1","__name__", "(.+)")
+      record: telemetry:metric
+    - expr: label_replace({__name__="cluster:console_auth_login_successes_total:sum"},"original_name_label","$1","__name__", "(.+)")
+      record: telemetry:metric
+    - expr: label_replace({__name__="cluster:console_auth_login_failures_total:sum"},"original_name_label","$1","__name__", "(.+)")
+      record: telemetry:metric
+    - expr: label_replace({__name__="cluster:console_auth_logout_requests_total:sum"},"original_name_label","$1","__name__", "(.+)")
+      record: telemetry:metric
+    - expr: label_replace({__name__="cluster:console_usage_users:max"},"original_name_label","$1","__name__", "(.+)")
+      record: telemetry:metric
+    - expr: label_replace({__name__="cluster:console_plugins_info:max"},"original_name_label","$1","__name__", "(.+)")
+      record: telemetry:metric
+    - expr: label_replace({__name__="cluster:console_customization_perspectives_info:max"},"original_name_label","$1","__name__", "(.+)")
+      record: telemetry:metric
+    - expr: label_replace({__name__="cluster:ovnkube_controller_egress_routing_via_host:max"},"original_name_label","$1","__name__", "(.+)")
+      record: telemetry:metric
+    - expr: label_replace({__name__="cluster:ovnkube_controller_admin_network_policies_db_objects:max",table_name=~"ACL|Address_Set"},"original_name_label","$1","__name__", "(.+)")
+      record: telemetry:metric
+    - expr: label_replace({__name__="cluster:ovnkube_controller_baseline_admin_network_policies_db_objects:max",table_name=~"ACL|Address_Set"},"original_name_label","$1","__name__", "(.+)")
+      record: telemetry:metric
+    - expr: label_replace({__name__="cluster:ovnkube_controller_admin_network_policies_rules:max",direction=~"Ingress|Egress",action=~"Pass|Allow|Deny"},"original_name_label","$1","__name__", "(.+)")
+      record: telemetry:metric
+    - expr: label_replace({__name__="cluster:ovnkube_controller_baseline_admin_network_policies_rules:max",direction=~"Ingress|Egress",action=~"Allow|Deny"},"original_name_label","$1","__name__", "(.+)")
+      record: telemetry:metric
+    - expr: label_replace({__name__="cluster:network_attachment_definition_instances:max"},"original_name_label","$1","__name__", "(.+)")
+      record: telemetry:metric
+    - expr: label_replace({__name__="cluster:network_attachment_definition_enabled_instance_up:max"},"original_name_label","$1","__name__", "(.+)")
+      record: telemetry:metric
+    - expr: label_replace({__name__="cluster:ingress_controller_aws_nlb_active:sum"},"original_name_label","$1","__name__", "(.+)")
+      record: telemetry:metric
+    - expr: label_replace({__name__="cluster:route_metrics_controller_routes_per_shard:min"},"original_name_label","$1","__name__", "(.+)")
+      record: telemetry:metric
+    - expr: label_replace({__name__="cluster:route_metrics_controller_routes_per_shard:max"},"original_name_label","$1","__name__", "(.+)")
+      record: telemetry:metric
+    - expr: label_replace({__name__="cluster:route_metrics_controller_routes_per_shard:avg"},"original_name_label","$1","__name__", "(.+)")
+      record: telemetry:metric
+    - expr: label_replace({__name__="cluster:route_metrics_controller_routes_per_shard:median"},"original_name_label","$1","__name__", "(.+)")
+      record: telemetry:metric
+    - expr: label_replace({__name__="cluster:openshift_route_info:tls_termination:sum"},"original_name_label","$1","__name__", "(.+)")
+      record: telemetry:metric
+    - expr: label_replace({__name__="insightsclient_request_send_total"},"original_name_label","$1","__name__", "(.+)")
+      record: telemetry:metric
+    - expr: label_replace({__name__="cam_app_workload_migrations"},"original_name_label","$1","__name__", "(.+)")
+      record: telemetry:metric
+    - expr: label_replace({__name__="cluster:apiserver_current_inflight_requests:sum:max_over_time:2m"},"original_name_label","$1","__name__", "(.+)")
+      record: telemetry:metric
+    - expr: label_replace({__name__="cluster:alertmanager_integrations:max"},"original_name_label","$1","__name__", "(.+)")
+      record: telemetry:metric
+    - expr: label_replace({__name__="cluster:telemetry_selected_series:count"},"original_name_label","$1","__name__", "(.+)")
+      record: telemetry:metric
+    - expr: label_replace({__name__="openshift:prometheus_tsdb_head_series:sum"},"original_name_label","$1","__name__", "(.+)")
+      record: telemetry:metric
+    - expr: label_replace({__name__="openshift:prometheus_tsdb_head_samples_appended_total:sum"},"original_name_label","$1","__name__", "(.+)")
+      record: telemetry:metric
+    - expr: label_replace({__name__="monitoring:container_memory_working_set_bytes:sum"},"original_name_label","$1","__name__", "(.+)")
+      record: telemetry:metric
+    - expr: label_replace({__name__="namespace_job:scrape_series_added:topk3_sum1h"},"original_name_label","$1","__name__", "(.+)")
+      record: telemetry:metric
+    - expr: label_replace({__name__="namespace_job:scrape_samples_post_metric_relabeling:topk3"},"original_name_label","$1","__name__", "(.+)")
+      record: telemetry:metric
+    - expr: label_replace({__name__="monitoring:haproxy_server_http_responses_total:sum"},"original_name_label","$1","__name__", "(.+)")
+      record: telemetry:metric
+    - expr: label_replace({__name__="profile:cluster_monitoring_operator_collection_profile:max"},"original_name_label","$1","__name__", "(.+)")
+      record: telemetry:metric
+    - expr: label_replace({__name__="vendor_model:node_accelerator_cards:sum",vendor=~"NVIDIA|AMD|GAUDI|INTEL|QUALCOMM"},"original_name_label","$1","__name__", "(.+)")
+      record: telemetry:metric
+    - expr: label_replace({__name__="rhmi_status"},"original_name_label","$1","__name__", "(.+)")
+      record: telemetry:metric
+    - expr: label_replace({__name__="status:upgrading:version:rhoam_state:max"},"original_name_label","$1","__name__", "(.+)")
+      record: telemetry:metric
+    - expr: label_replace({__name__="state:rhoam_critical_alerts:max"},"original_name_label","$1","__name__", "(.+)")
+      record: telemetry:metric
+    - expr: label_replace({__name__="state:rhoam_warning_alerts:max"},"original_name_label","$1","__name__", "(.+)")
+      record: telemetry:metric
+    - expr: label_replace({__name__="rhoam_7d_slo_percentile:max"},"original_name_label","$1","__name__", "(.+)")
+      record: telemetry:metric
+    - expr: label_replace({__name__="rhoam_7d_slo_remaining_error_budget:max"},"original_name_label","$1","__name__", "(.+)")
+      record: telemetry:metric
+    - expr: label_replace({__name__="cluster_legacy_scheduler_policy"},"original_name_label","$1","__name__", "(.+)")
+      record: telemetry:metric
+    - expr: label_replace({__name__="cluster_master_schedulable"},"original_name_label","$1","__name__", "(.+)")
+      record: telemetry:metric
+    - expr: label_replace({__name__="che_workspace_status"},"original_name_label","$1","__name__", "(.+)")
+      record: telemetry:metric
+    - expr: label_replace({__name__="che_workspace_started_total"},"original_name_label","$1","__name__", "(.+)")
+      record: telemetry:metric
+    - expr: label_replace({__name__="che_workspace_failure_total"},"original_name_label","$1","__name__", "(.+)")
+      record: telemetry:metric
+    - expr: label_replace({__name__="che_workspace_start_time_seconds_sum"},"original_name_label","$1","__name__", "(.+)")
+      record: telemetry:metric
+    - expr: label_replace({__name__="che_workspace_start_time_seconds_count"},"original_name_label","$1","__name__", "(.+)")
+      record: telemetry:metric
+    - expr: label_replace({__name__="cco_credentials_mode"},"original_name_label","$1","__name__", "(.+)")
+      record: telemetry:metric
+    - expr: label_replace({__name__="cluster:kube_persistentvolume_plugin_type_counts:sum"},"original_name_label","$1","__name__", "(.+)")
+      record: telemetry:metric
+    - expr: label_replace({__name__="acm_managed_cluster_info"},"original_name_label","$1","__name__", "(.+)")
+      record: telemetry:metric
+    - expr: label_replace({__name__="acm_managed_cluster_worker_cores:max"},"original_name_label","$1","__name__", "(.+)")
+      record: telemetry:metric
+    - expr: label_replace({__name__="acm_console_page_count:sum", page=~"overview-classic|overview-fleet|search|search-details|clusters|application|governance"},"original_name_label","$1","__name__", "(.+)")
+      record: telemetry:metric
+    - expr: label_replace({__name__="cluster:vsphere_vcenter_info:sum"},"original_name_label","$1","__name__", "(.+)")
+      record: telemetry:metric
+    - expr: label_replace({__name__="cluster:vsphere_esxi_version_total:sum"},"original_name_label","$1","__name__", "(.+)")
+      record: telemetry:metric
+    - expr: label_replace({__name__="cluster:vsphere_node_hw_version_total:sum"},"original_name_label","$1","__name__", "(.+)")
+      record: telemetry:metric
+    - expr: label_replace({__name__="openshift:build_by_strategy:sum"},"original_name_label","$1","__name__", "(.+)")
+      record: telemetry:metric
+    - expr: label_replace({__name__="rhods_aggregate_availability"},"original_name_label","$1","__name__", "(.+)")
+      record: telemetry:metric
+    - expr: label_replace({__name__="rhods_total_users"},"original_name_label","$1","__name__", "(.+)")
+      record: telemetry:metric
+    - expr: label_replace({__name__="instance:etcd_disk_wal_fsync_duration_seconds:histogram_quantile",quantile="0.99"},"original_name_label","$1","__name__", "(.+)")
+      record: telemetry:metric
+    - expr: label_replace({__name__="instance:etcd_mvcc_db_total_size_in_bytes:sum"},"original_name_label","$1","__name__", "(.+)")
+      record: telemetry:metric
+    - expr: label_replace({__name__="instance:etcd_network_peer_round_trip_time_seconds:histogram_quantile",quantile="0.99"},"original_name_label","$1","__name__", "(.+)")
+      record: telemetry:metric
+    - expr: label_replace({__name__="instance:etcd_mvcc_db_total_size_in_use_in_bytes:sum"},"original_name_label","$1","__name__", "(.+)")
+      record: telemetry:metric
+    - expr: label_replace({__name__="instance:etcd_disk_backend_commit_duration_seconds:histogram_quantile",quantile="0.99"},"original_name_label","$1","__name__", "(.+)")
+      record: telemetry:metric
+    - expr: label_replace({__name__="jaeger_operator_instances_storage_types"},"original_name_label","$1","__name__", "(.+)")
+      record: telemetry:metric
+    - expr: label_replace({__name__="jaeger_operator_instances_strategies"},"original_name_label","$1","__name__", "(.+)")
+      record: telemetry:metric
+    - expr: label_replace({__name__="jaeger_operator_instances_agent_strategies"},"original_name_label","$1","__name__", "(.+)")
+      record: telemetry:metric
+    - expr: label_replace({__name__="type:tempo_operator_tempostack_storage_backend:sum",type=~"azure|gcs|s3"},"original_name_label","$1","__name__", "(.+)")
+      record: telemetry:metric
+    - expr: label_replace({__name__="state:tempo_operator_tempostack_managed:sum",state=~"Managed|Unmanaged"},"original_name_label","$1","__name__", "(.+)")
+      record: telemetry:metric
+    - expr: label_replace({__name__="type:tempo_operator_tempostack_multi_tenancy:sum",type=~"static|openshift|disabled"},"original_name_label","$1","__name__", "(.+)")
+      record: telemetry:metric
+    - expr: label_replace({__name__="enabled:tempo_operator_tempostack_jaeger_ui:sum",enabled=~"true|false"},"original_name_label","$1","__name__", "(.+)")
+      record: telemetry:metric
+    - expr: label_replace({__name__="type:opentelemetry_collector_receivers:sum",type=~"jaeger|hostmetrics|opencensus|prometheus|zipkin|kafka|filelog|journald|k8sevents|kubeletstats|k8scluster|k8sobjects|otlp"},"original_name_label","$1","__name__", "(.+)")
+      record: telemetry:metric
+    - expr: label_replace({__name__="type:opentelemetry_collector_exporters:sum",type=~"debug|logging|otlp|otlphttp|prometheus|lokiexporter|kafka|awscloudwatchlogs|loadbalancing"},"original_name_label","$1","__name__", "(.+)")
+      record: telemetry:metric
+    - expr: label_replace({__name__="type:opentelemetry_collector_processors:sum",type=~"batch|memorylimiter|attributes|resource|span|k8sattributes|resourcedetection|filter|routing|cumulativetodelta|groupbyattrs"},"original_name_label","$1","__name__", "(.+)")
+      record: telemetry:metric
+    - expr: label_replace({__name__="type:opentelemetry_collector_extensions:sum",type=~"zpages|ballast|memorylimiter|jaegerremotesampling|healthcheck|pprof|oauth2clientauth|oidcauth|bearertokenauth|filestorage"},"original_name_label","$1","__name__", "(.+)")
+      record: telemetry:metric
+    - expr: label_replace({__name__="type:opentelemetry_collector_connectors:sum",type=~"spanmetrics|forward"},"original_name_label","$1","__name__", "(.+)")
+      record: telemetry:metric
+    - expr: label_replace({__name__="type:opentelemetry_collector_info:sum",type=~"deployment|daemonset|sidecar|statefulset"},"original_name_label","$1","__name__", "(.+)")
+      record: telemetry:metric
+    - expr: label_replace({__name__="appsvcs:cores_by_product:sum"},"original_name_label","$1","__name__", "(.+)")
+      record: telemetry:metric
+    - expr: label_replace({__name__="nto_custom_profiles:count"},"original_name_label","$1","__name__", "(.+)")
+      record: telemetry:metric
+    - expr: label_replace({__name__="openshift_csi_share_configmap"},"original_name_label","$1","__name__", "(.+)")
+      record: telemetry:metric
+    - expr: label_replace({__name__="openshift_csi_share_secret"},"original_name_label","$1","__name__", "(.+)")
+      record: telemetry:metric
+    - expr: label_replace({__name__="openshift_csi_share_mount_failures_total"},"original_name_label","$1","__name__", "(.+)")
+      record: telemetry:metric
+    - expr: label_replace({__name__="openshift_csi_share_mount_requests_total"},"original_name_label","$1","__name__", "(.+)")
+      record: telemetry:metric
+    - expr: label_replace({__name__="eo_es_storage_info"},"original_name_label","$1","__name__", "(.+)")
+      record: telemetry:metric
+    - expr: label_replace({__name__="eo_es_redundancy_policy_info"},"original_name_label","$1","__name__", "(.+)")
+      record: telemetry:metric
+    - expr: label_replace({__name__="eo_es_defined_delete_namespaces_total"},"original_name_label","$1","__name__", "(.+)")
+      record: telemetry:metric
+    - expr: label_replace({__name__="eo_es_misconfigured_memory_resources_info"},"original_name_label","$1","__name__", "(.+)")
+      record: telemetry:metric
+    - expr: label_replace({__name__="cluster:eo_es_data_nodes_total:max"},"original_name_label","$1","__name__", "(.+)")
+      record: telemetry:metric
+    - expr: label_replace({__name__="cluster:eo_es_documents_created_total:sum"},"original_name_label","$1","__name__", "(.+)")
+      record: telemetry:metric
+    - expr: label_replace({__name__="cluster:eo_es_documents_deleted_total:sum"},"original_name_label","$1","__name__", "(.+)")
+      record: telemetry:metric
+    - expr: label_replace({__name__="pod:eo_es_shards_total:max"},"original_name_label","$1","__name__", "(.+)")
+      record: telemetry:metric
+    - expr: label_replace({__name__="eo_es_cluster_management_state_info"},"original_name_label","$1","__name__", "(.+)")
+      record: telemetry:metric
+    - expr: label_replace({__name__="imageregistry:imagestreamtags_count:sum"},"original_name_label","$1","__name__", "(.+)")
+      record: telemetry:metric
+    - expr: label_replace({__name__="imageregistry:operations_count:sum"},"original_name_label","$1","__name__", "(.+)")
+      record: telemetry:metric
+    - expr: label_replace({__name__="log_logging_info"},"original_name_label","$1","__name__", "(.+)")
+      record: telemetry:metric
+    - expr: label_replace({__name__="log_collector_error_count_total"},"original_name_label","$1","__name__", "(.+)")
+      record: telemetry:metric
+    - expr: label_replace({__name__="log_forwarder_pipeline_info"},"original_name_label","$1","__name__", "(.+)")
+      record: telemetry:metric
+    - expr: label_replace({__name__="log_forwarder_input_info"},"original_name_label","$1","__name__", "(.+)")
+      record: telemetry:metric
+    - expr: label_replace({__name__="log_forwarder_output_info"},"original_name_label","$1","__name__", "(.+)")
+      record: telemetry:metric
+    - expr: label_replace({__name__="cluster:log_collected_bytes_total:sum"},"original_name_label","$1","__name__", "(.+)")
+      record: telemetry:metric
+    - expr: label_replace({__name__="cluster:log_logged_bytes_total:sum"},"original_name_label","$1","__name__", "(.+)")
+      record: telemetry:metric
+    - expr: label_replace({__name__="openshift_logging:log_forwarder_pipelines:sum"},"original_name_label","$1","__name__", "(.+)")
+      record: telemetry:metric
+    - expr: label_replace({__name__="openshift_logging:log_forwarders:sum"},"original_name_label","$1","__name__", "(.+)")
+      record: telemetry:metric
+    - expr: label_replace({__name__="openshift_logging:log_forwarder_input_type:sum"},"original_name_label","$1","__name__", "(.+)")
+      record: telemetry:metric
+    - expr: label_replace({__name__="openshift_logging:log_forwarder_output_type:sum"},"original_name_label","$1","__name__", "(.+)")
+      record: telemetry:metric
+    - expr: label_replace({__name__="openshift_logging:vector_component_received_bytes_total:rate5m"},"original_name_label","$1","__name__", "(.+)")
+      record: telemetry:metric
+    - expr: label_replace({__name__="cluster:kata_monitor_running_shim_count:sum"},"original_name_label","$1","__name__", "(.+)")
+      record: telemetry:metric
+    - expr: label_replace({__name__="platform:hypershift_hostedclusters:max"},"original_name_label","$1","__name__", "(.+)")
+      record: telemetry:metric
+    - expr: label_replace({__name__="platform:hypershift_nodepools:max"},"original_name_label","$1","__name__", "(.+)")
+      record: telemetry:metric
+    - expr: label_replace({__name__="cluster_name:hypershift_nodepools_size:sum"},"original_name_label","$1","__name__", "(.+)")
+      record: telemetry:metric
+    - expr: label_replace({__name__="cluster_name:hypershift_nodepools_available_replicas:sum"},"original_name_label","$1","__name__", "(.+)")
+      record: telemetry:metric
+    - expr: label_replace({__name__="namespace:noobaa_unhealthy_bucket_claims:max"},"original_name_label","$1","__name__", "(.+)")
+      record: telemetry:metric
+    - expr: label_replace({__name__="namespace:noobaa_buckets_claims:max"},"original_name_label","$1","__name__", "(.+)")
+      record: telemetry:metric
+    - expr: label_replace({__name__="namespace:noobaa_unhealthy_namespace_resources:max"},"original_name_label","$1","__name__", "(.+)")
+      record: telemetry:metric
+    - expr: label_replace({__name__="namespace:noobaa_namespace_resources:max"},"original_name_label","$1","__name__", "(.+)")
+      record: telemetry:metric
+    - expr: label_replace({__name__="namespace:noobaa_unhealthy_namespace_buckets:max"},"original_name_label","$1","__name__", "(.+)")
+      record: telemetry:metric
+    - expr: label_replace({__name__="namespace:noobaa_namespace_buckets:max"},"original_name_label","$1","__name__", "(.+)")
+      record: telemetry:metric
+    - expr: label_replace({__name__="namespace:noobaa_accounts:max"},"original_name_label","$1","__name__", "(.+)")
+      record: telemetry:metric
+    - expr: label_replace({__name__="namespace:noobaa_usage:max"},"original_name_label","$1","__name__", "(.+)")
+      record: telemetry:metric
+    - expr: label_replace({__name__="namespace:noobaa_system_health_status:max"},"original_name_label","$1","__name__", "(.+)")
+      record: telemetry:metric
+    - expr: label_replace({__name__="ocs_advanced_feature_usage"},"original_name_label","$1","__name__", "(.+)")
+      record: telemetry:metric
+    - expr: label_replace({__name__="os_image_url_override:sum"},"original_name_label","$1","__name__", "(.+)")
+      record: telemetry:metric
+    - expr: label_replace({__name__="cluster:vsphere_topology_tags:max"},"original_name_label","$1","__name__", "(.+)")
+      record: telemetry:metric
+    - expr: label_replace({__name__="cluster:vsphere_infrastructure_failure_domains:max"},"original_name_label","$1","__name__", "(.+)")
+      record: telemetry:metric
+    - expr: label_replace({__name__="apiserver_list_watch_request_success_total:rate:sum", verb=~"LIST|WATCH"},"original_name_label","$1","__name__", "(.+)")
+      record: telemetry:metric
+    - expr: label_replace({__name__="rhacs:telemetry:rox_central_info"},"original_name_label","$1","__name__", "(.+)")
+      record: telemetry:metric
+    - expr: label_replace({__name__="rhacs:telemetry:rox_central_secured_clusters"},"original_name_label","$1","__name__", "(.+)")
+      record: telemetry:metric
+    - expr: label_replace({__name__="rhacs:telemetry:rox_central_secured_nodes"},"original_name_label","$1","__name__", "(.+)")
+      record: telemetry:metric
+    - expr: label_replace({__name__="rhacs:telemetry:rox_central_secured_vcpus"},"original_name_label","$1","__name__", "(.+)")
+      record: telemetry:metric
+    - expr: label_replace({__name__="rhacs:telemetry:rox_sensor_info"},"original_name_label","$1","__name__", "(.+)")
+      record: telemetry:metric
+    - expr: label_replace({__name__="cluster:volume_manager_selinux_pod_context_mismatch_total"},"original_name_label","$1","__name__", "(.+)")
+      record: telemetry:metric
+    - expr: label_replace({__name__="cluster:volume_manager_selinux_volume_context_mismatch_warnings_total"},"original_name_label","$1","__name__", "(.+)")
+      record: telemetry:metric
+    - expr: label_replace({__name__="cluster:volume_manager_selinux_volume_context_mismatch_errors_total"},"original_name_label","$1","__name__", "(.+)")
+      record: telemetry:metric
+    - expr: label_replace({__name__="cluster:volume_manager_selinux_volumes_admitted_total"},"original_name_label","$1","__name__", "(.+)")
+      record: telemetry:metric
+    - expr: label_replace({__name__="ols:provider_model_configuration"},"original_name_label","$1","__name__", "(.+)")
+      record: telemetry:metric
+    - expr: label_replace({__name__="ols:rest_api_query_calls_total:2xx"},"original_name_label","$1","__name__", "(.+)")
+      record: telemetry:metric
+    - expr: label_replace({__name__="ols:rest_api_query_calls_total:4xx"},"original_name_label","$1","__name__", "(.+)")
+      record: telemetry:metric
+    - expr: label_replace({__name__="ols:rest_api_query_calls_total:5xx"},"original_name_label","$1","__name__", "(.+)")
+      record: telemetry:metric
+    - expr: label_replace({__name__="openshift:openshift_network_operator_ipsec_state:info"},"original_name_label","$1","__name__", "(.+)")
+      record: telemetry:metric
+    - expr: label_replace({__name__="cluster:health:group_severity:count", severity=~"critical|warning|info|none"},"original_name_label","$1","__name__", "(.+)")
+      record: telemetry:metric
+    - expr: label_replace({__name__="cluster:controlplane_topology:info", mode=~"HighlyAvailable|HighlyAvailableArbiter|SingleReplica|DualReplica|External"},"original_name_label","$1","__name__", "(.+)")
+      record: telemetry:metric
+    - expr: label_replace({__name__="cluster:infrastructure_topology:info", mode=~"HighlyAvailable|SingleReplica"},"original_name_label","$1","__name__", "(.+)")
+      record: telemetry:metric
