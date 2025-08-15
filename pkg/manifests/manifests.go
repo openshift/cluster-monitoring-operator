@@ -1419,25 +1419,20 @@ func (f *Factory) PrometheusK8s(grpcTLS *v1.Secret, telemetrySecret *v1.Secret) 
 					Action:       "keep",
 				},
 				// To support a regex matcher we track the
-				// original metric name in the recording rule.
+				// original metric names in the recording rule.
 				// Here we reinstate the original name and drop
 				// the temp name.
 				// See also jsonnet/components/telemetry-recording-rules.libsonnet
 				{
-					SourceLabels: []monv1.LabelName{"__name__", "name_label"},
+					SourceLabels: []monv1.LabelName{"__original_name_label__"},
 					TargetLabel:  "__name__",
-					Regex:        "telemetry:.*;(.*)",
+					Regex:        "(.*)",
 					Replacement:  ptr.To("$1"),
 				},
+				// drop unwanted labels
 				{
-					SourceLabels: []monv1.LabelName{"name_label"},
-					Action:       "labeldrop",
-				},
-				{
-					SourceLabels: []monv1.LabelName{"__name__"},
-					TargetLabel:  "__name__",
-					Regex:        "telemetry:(.*)",
-					Replacement:  ptr.To("$1"),
+					Regex:  "__original_name_label__",
+					Action: "labeldrop",
 				},
 				{
 					TargetLabel: "_id",
