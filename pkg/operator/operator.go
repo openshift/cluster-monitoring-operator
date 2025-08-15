@@ -981,7 +981,7 @@ func (o *Operator) Config(ctx context.Context, key string) (*manifests.Config, e
 	}
 
 	// Only fetch the token and cluster ID if they have not been specified in the config.
-	if c.ClusterMonitoringConfiguration.TelemeterClientConfig.ClusterID == "" || c.ClusterMonitoringConfiguration.TelemeterClientConfig.Token == "" {
+	if c.ClusterMonitoringConfiguration.TelemetryConfig.ClusterID == "" || c.ClusterMonitoringConfiguration.TelemetryConfig.Token == "" {
 		err := c.LoadClusterID(func() (*configv1.ClusterVersion, error) {
 			return o.client.GetClusterVersion(ctx, "version")
 		})
