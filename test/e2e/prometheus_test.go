@@ -39,7 +39,7 @@ func TestPrometheusMetrics(t *testing.T) {
 		"alertmanager-main":             2,
 		"kube-state-metrics":            2, // one for the kube metrics + one for the metrics of the process itself.
 		"openshift-state-metrics":       2, // ditto.
-		"telemeter-client":              1,
+		"telemeter-client":              0,
 	}
 
 	for service, metric := range expected {

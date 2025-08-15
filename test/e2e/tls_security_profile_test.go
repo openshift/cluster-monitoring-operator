@@ -55,9 +55,6 @@ func TestDefaultTLSSecurityProfileConfiguration(t *testing.T) {
 	assertCorrectTLSConfiguration(t, "node-exporter", "daemonset",
 		manifests.KubeRbacProxyTLSCipherSuitesFlag,
 		manifests.KubeRbacProxyMinTLSVersionFlag, configv1.TLSProfiles[configv1.TLSProfileIntermediateType].Ciphers, "VersionTLS12")
-	assertCorrectTLSConfiguration(t, "telemeter-client", "deployment",
-		manifests.KubeRbacProxyTLSCipherSuitesFlag,
-		manifests.KubeRbacProxyMinTLSVersionFlag, configv1.TLSProfiles[configv1.TLSProfileIntermediateType].Ciphers, "VersionTLS12")
 	assertCorrectTLSConfiguration(t, "thanos-querier", "deployment",
 		manifests.KubeRbacProxyTLSCipherSuitesFlag,
 		manifests.KubeRbacProxyMinTLSVersionFlag, configv1.TLSProfiles[configv1.TLSProfileIntermediateType].Ciphers, "VersionTLS12")

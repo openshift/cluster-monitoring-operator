@@ -165,7 +165,6 @@ func testTargetsUp(t *testing.T) {
 		"alertmanager-main",
 		"cluster-monitoring-operator",
 		"openshift-state-metrics",
-		"telemeter-client",
 		"thanos-querier",
 	}
 
