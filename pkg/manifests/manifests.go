@@ -1303,8 +1303,8 @@ func (f *Factory) PrometheusK8sTelemetrySecret() (*v1.Secret, error) {
 		return nil, err
 	}
 	compositeToken, err := json.Marshal(map[string]string{
-		"cluster_id":          f.config.ClusterMonitoringConfiguration.TelemeterClientConfig.ClusterID,
-		"authorization_token": f.config.ClusterMonitoringConfiguration.TelemeterClientConfig.Token,
+		"cluster_id":          f.config.ClusterMonitoringConfiguration.TelemetryConfig.ClusterID,
+		"authorization_token": f.config.ClusterMonitoringConfiguration.TelemetryConfig.Token,
 	})
 	if err != nil {
 		return nil, err
@@ -1384,12 +1384,12 @@ func (f *Factory) PrometheusK8s(grpcTLS *v1.Secret, telemetrySecret *v1.Secret) 
 		return nil, err
 	}
 
-	clusterID := f.config.ClusterMonitoringConfiguration.TelemeterClientConfig.ClusterID
-	if f.config.ClusterMonitoringConfiguration.TelemeterClientConfig.IsEnabled() {
+	clusterID := f.config.ClusterMonitoringConfiguration.TelemetryConfig.ClusterID
+	if f.config.ClusterMonitoringConfiguration.TelemetryConfig.IsEnabled() {
 		p.Spec.Secrets = append(p.Spec.Secrets, telemetrySecret.GetName())
 
 		spec := monv1.RemoteWriteSpec{
-			URL:             f.config.ClusterMonitoringConfiguration.TelemeterClientConfig.TelemeterServerURL,
+			URL:             f.config.ClusterMonitoringConfiguration.TelemetryConfig.TelemeterServerURL,
 			BearerTokenFile: fmt.Sprintf("/etc/prometheus/secrets/%s/%s", telemetrySecret.GetName(), telemetryTokenSecretKey),
 			QueueConfig: &monv1.QueueConfig{
 				// Amount of samples to load from the WAL into the in-memory
@@ -1753,7 +1753,7 @@ func (f *Factory) PrometheusUserWorkload(grpcTLS *v1.Secret) (*monv1.Prometheus,
 
 	if len(f.config.UserWorkloadConfiguration.Prometheus.RemoteWrite) > 0 {
 		p.Spec.RemoteWrite = addRemoteWriteConfigs(
-			f.config.ClusterMonitoringConfiguration.TelemeterClientConfig.ClusterID,
+			f.config.ClusterMonitoringConfiguration.TelemetryConfig.ClusterID,
 			p.Spec.RemoteWrite,
 			f.config.UserWorkloadConfiguration.Prometheus.RemoteWrite...)
 
@@ -3024,77 +3024,6 @@ func (f *Factory) TelemeterClientDeployment(proxyCABundleCM *v1.ConfigMap, s *v1
 		return nil, err
 	}
 
-	// Set annotation on deployment to trigger redeployments
-	if s != nil {
-		h := fnv.New64()
-		h.Write(s.Data["token"])
-		d.Spec.Template.Annotations["telemeter-token-hash"] = strconv.FormatUint(h.Sum64(), 32)
-	}
-
-	for i, container := range d.Spec.Template.Spec.Containers {
-		switch container.Name {
-		case "telemeter-client":
-			d.Spec.Template.Spec.Containers[i].Image = f.config.Images.TelemeterClient
-
-			if f.config.ClusterMonitoringConfiguration.TelemeterClientConfig.Resources != nil {
-				d.Spec.Template.Spec.Containers[i].Resources = *f.config.ClusterMonitoringConfiguration.TelemeterClientConfig.Resources
-			}
-
-			if f.config.ClusterMonitoringConfiguration.TelemeterClientConfig.ClusterID != "" {
-				setContainerEnvironmentVariable(&d.Spec.Template.Spec.Containers[i], "ID", f.config.ClusterMonitoringConfiguration.TelemeterClientConfig.ClusterID)
-			}
-			if f.config.ClusterMonitoringConfiguration.TelemeterClientConfig.TelemeterServerURL != "" {
-				setContainerEnvironmentVariable(&d.Spec.Template.Spec.Containers[i], "TO", f.config.ClusterMonitoringConfiguration.TelemeterClientConfig.TelemeterServerURL)
-			}
-
-			f.injectProxyVariables(&d.Spec.Template.Spec.Containers[i])
-
-			cmd := []string{}
-			// Note: matchers are read only during CMO bootstrap. This mechanism was chosen as CMO image will be reloaded during upgrades
-			// and matchers shouldn't change during runtime. It offers similar amount of protection against unwanted configuration changes
-			// while not having any performance penalty. However, it should be changed to usual reconciliation mechanism after CMO performance
-			// issues are solved.
-			for _, a := range d.Spec.Template.Spec.Containers[i].Command {
-				if !strings.HasPrefix(a, "--match=") {
-					cmd = append(cmd, a)
-				}
-			}
-			for _, m := range f.config.ClusterMonitoringConfiguration.PrometheusK8sConfig.TelemetryMatches {
-				cmd = append(cmd, fmt.Sprintf("--match=%s", m))
-			}
-			cmd = append(cmd, "--limit-bytes=5242880")
-			d.Spec.Template.Spec.Containers[i].Command = cmd
-
-			if proxyCABundleCM != nil {
-				volumeName := "telemeter-trusted-ca-bundle"
-				d.Spec.Template.Spec.Containers[i].VolumeMounts = append(d.Spec.Template.Spec.Containers[i].VolumeMounts, trustedCABundleVolumeMount(volumeName))
-				volume := trustedCABundleVolume(proxyCABundleCM.Name, volumeName)
-				volume.VolumeSource.ConfigMap.Items = append(volume.VolumeSource.ConfigMap.Items, v1.KeyToPath{
-					Key:  TrustedCABundleKey,
-					Path: "tls-ca-bundle.pem",
-				})
-				d.Spec.Template.Spec.Volumes = append(d.Spec.Template.Spec.Volumes, volume)
-			}
-
-		case "reload":
-			d.Spec.Template.Spec.Containers[i].Image = f.config.Images.PrometheusConfigReloader
-		case "kube-rbac-proxy":
-			d.Spec.Template.Spec.Containers[i].Image = f.config.Images.KubeRbacProxy
-			d.Spec.Template.Spec.Containers[i].Args = f.setTLSSecurityConfiguration(container.Args, KubeRbacProxyTLSCipherSuitesFlag, KubeRbacProxyMinTLSVersionFlag)
-		}
-	}
-
-	if len(f.config.ClusterMonitoringConfiguration.TelemeterClientConfig.NodeSelector) > 0 {
-		d.Spec.Template.Spec.NodeSelector = f.config.ClusterMonitoringConfiguration.TelemeterClientConfig.NodeSelector
-	}
-	if len(f.config.ClusterMonitoringConfiguration.TelemeterClientConfig.Tolerations) > 0 {
-		d.Spec.Template.Spec.Tolerations = f.config.ClusterMonitoringConfiguration.TelemeterClientConfig.Tolerations
-	}
-	if len(f.config.ClusterMonitoringConfiguration.TelemeterClientConfig.TopologySpreadConstraints) > 0 {
-		d.Spec.Template.Spec.TopologySpreadConstraints =
-			f.config.ClusterMonitoringConfiguration.TelemeterClientConfig.TopologySpreadConstraints
-	}
-	d.Namespace = f.namespace
 	return d, nil
 }
 

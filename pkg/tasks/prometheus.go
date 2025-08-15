@@ -346,7 +346,7 @@ func (t *PrometheusTask) create(ctx context.Context) error {
 		return fmt.Errorf("initializing Prometheus telemetry secret failed: %w", err)
 	}
 
-	if t.config.ClusterMonitoringConfiguration.TelemeterClientConfig.IsEnabled() {
+	if t.config.ClusterMonitoringConfiguration.TelemetryConfig.IsEnabled() {
 		klog.V(4).Info("updating Prometheus telemetry secret")
 		if err = t.client.CreateOrUpdateSecret(ctx, telemetrySecret); err != nil {
 			return fmt.Errorf("reconciling Prometheus telemetry secret failed: %w", err)

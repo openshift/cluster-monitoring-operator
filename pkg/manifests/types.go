@@ -58,7 +58,9 @@ type ClusterMonitoringConfiguration struct {
 	PrometheusOperatorAdmissionWebhookConfig *PrometheusOperatorAdmissionWebhookConfig `json:"prometheusOperatorAdmissionWebhook,omitempty"`
 	// `OpenShiftMetricsConfig` defines settings for the `openshift-state-metrics` agent.
 	OpenShiftMetricsConfig *OpenShiftStateMetricsConfig `json:"openshiftStateMetrics,omitempty"`
-	// `TelemeterClientConfig` defines settings for the Telemeter Client
+	// TelemetryConfig defines settings for telemetry reporting.
+	TelemetryConfig *TelemetryConfig `json:"telemetryConfig,omitempty"`
+	// OmitFromDoc: `TelemeterClientConfig` defines settings for the Telemeter Client
 	// component.
 	TelemeterClientConfig *TelemeterClientConfig `json:"telemeterClient,omitempty"`
 	// `ThanosQuerierConfig` defines settings for the Thanos Querier component.
@@ -278,6 +280,19 @@ type OpenShiftStateMetricsConfig struct {
 	Tolerations []v1.Toleration `json:"tolerations,omitempty"`
 	// Defines a pod's topology spread constraints.
 	TopologySpreadConstraints []v1.TopologySpreadConstraint `json:"topologySpreadConstraints,omitempty"`
+}
+
+// `TelemetryConfig` defines settings for the Telemeter Client
+// component.
+type TelemetryConfig struct {
+	// OmitFromDoc
+	ClusterID string `json:"clusterID,omitempty"`
+	// OmitFromDoc
+	Enabled *bool `json:"enabled,omitempty"`
+	// OmitFromDoc
+	TelemeterServerURL string `json:"telemeterServerURL,omitempty"`
+	// OmitFromDoc
+	Token string `json:"token,omitempty"`
 }
 
 // `TelemeterClientConfig` defines settings for the Telemeter Client

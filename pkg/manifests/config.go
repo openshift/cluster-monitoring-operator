@@ -261,6 +261,20 @@ type Audit struct {
 	Profile auditv1.Level `json:"profile"`
 }
 
+func (cfg *TelemetryConfig) IsEnabled() bool {
+	if cfg == nil {
+		return false
+	}
+
+	if (cfg.Enabled != nil && !*cfg.Enabled) ||
+		cfg.ClusterID == "" ||
+		cfg.Token == "" {
+		return false
+	}
+
+	return true
+}
+
 func (cfg *TelemeterClientConfig) IsEnabled() bool {
 	if cfg == nil {
 		return false
@@ -407,9 +421,18 @@ func (c *Config) applyDefaults() {
 	if c.ClusterMonitoringConfiguration.HTTPConfig == nil {
 		c.ClusterMonitoringConfiguration.HTTPConfig = &HTTPConfig{}
 	}
-	if c.ClusterMonitoringConfiguration.TelemeterClientConfig == nil {
-		c.ClusterMonitoringConfiguration.TelemeterClientConfig = &TelemeterClientConfig{
-			TelemeterServerURL: "https://infogw.api.openshift.com/metrics/v1/receive",
+	if c.ClusterMonitoringConfiguration.TelemetryConfig == nil {
+		if c.ClusterMonitoringConfiguration.TelemeterClientConfig != nil {
+			c.ClusterMonitoringConfiguration.TelemetryConfig = &TelemetryConfig{
+				ClusterID:          c.ClusterMonitoringConfiguration.TelemeterClientConfig.ClusterID,
+				Enabled:            c.ClusterMonitoringConfiguration.TelemeterClientConfig.Enabled,
+				TelemeterServerURL: c.ClusterMonitoringConfiguration.TelemeterClientConfig.TelemeterServerURL,
+				Token:              c.ClusterMonitoringConfiguration.TelemeterClientConfig.Token,
+			}
+		} else {
+			c.ClusterMonitoringConfiguration.TelemetryConfig = &TelemetryConfig{
+				TelemeterServerURL: "https://infogw.api.openshift.com/metrics/v1/receive",
+			}
 		}
 	}
 
@@ -486,7 +509,7 @@ func (c *Config) SetRemoteWrite(rw bool) {
 }
 
 func (c *Config) LoadClusterID(load func() (*configv1.ClusterVersion, error)) error {
-	if c.ClusterMonitoringConfiguration.TelemeterClientConfig.ClusterID != "" {
+	if c.ClusterMonitoringConfiguration.TelemetryConfig.ClusterID != "" {
 		return nil
 	}
 
@@ -495,12 +518,12 @@ func (c *Config) LoadClusterID(load func() (*configv1.ClusterVersion, error)) er
 		return fmt.Errorf("error loading cluster version: %w", err)
 	}
 
-	c.ClusterMonitoringConfiguration.TelemeterClientConfig.ClusterID = string(cv.Spec.ClusterID)
+	c.ClusterMonitoringConfiguration.TelemetryConfig.ClusterID = string(cv.Spec.ClusterID)
 	return nil
 }
 
 func (c *Config) LoadToken(load func() (*v1.Secret, error)) error {
-	if c.ClusterMonitoringConfiguration.TelemeterClientConfig.Token != "" {
+	if c.ClusterMonitoringConfiguration.TelemetryConfig.Token != "" {
 		return nil
 	}
 
@@ -525,7 +548,7 @@ func (c *Config) LoadToken(load func() (*v1.Secret, error)) error {
 		return fmt.Errorf("unmarshaling pull secret failed: %w", err)
 	}
 
-	c.ClusterMonitoringConfiguration.TelemeterClientConfig.Token = ps.Auths.COC.Auth
+	c.ClusterMonitoringConfiguration.TelemetryConfig.Token = ps.Auths.COC.Auth
 	return nil
 }
 
@@ -591,13 +614,23 @@ func (c *Config) Precheck() error {
 	}
 
 	// Highlight deprecated config fields.
-	var d float64
-	if c.ClusterMonitoringConfiguration.K8sPrometheusAdapter != nil {
-		klog.Infof("k8sPrometheusAdapter is a deprecated config use metricsServer instead")
-		d = 1
+	{
+		var d float64
+		if c.ClusterMonitoringConfiguration.K8sPrometheusAdapter != nil {
+			klog.Infof("k8sPrometheusAdapter is a deprecated config use metricsServer instead")
+			d = 1
+		}
+		// Prometheus-Adapter is replaced with Metrics Server by default from 4.16
+		metrics.DeprecatedConfig.WithLabelValues("openshift-monitoring/cluster-monitoring-config", "k8sPrometheusAdapter", "4.16").Set(d)
 	}
-	// Prometheus-Adapter is replaced with Metrics Server by default from 4.16
-	metrics.DeprecatedConfig.WithLabelValues("openshift-monitoring/cluster-monitoring-config", "k8sPrometheusAdapter", "4.16").Set(d)
+	{
+		var d float64
+		if c.ClusterMonitoringConfiguration.TelemeterClientConfig != nil {
+			klog.Infof("telemeterClientConfig is a deprecated config use telemetryConfig instead")
+			d = 1
+		}
+		metrics.DeprecatedConfig.WithLabelValues("openshift-monitoring/cluster-monitoring-config", "telemeterClientConfig", "4.21").Set(d)
+	}
 
 	return nil
 }
