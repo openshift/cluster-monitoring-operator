@@ -24,6 +24,7 @@ import (
 	"github.com/openshift/library-go/pkg/authorization/hardcodedauthorizer"
 	"github.com/openshift/library-go/pkg/config/configdefaults"
 	"github.com/openshift/library-go/pkg/config/serving"
+	"github.com/openshift/library-go/pkg/crypto"
 	"k8s.io/apiserver/pkg/authorization/authorizer"
 	"k8s.io/apiserver/pkg/authorization/union"
 	genericapiserver "k8s.io/apiserver/pkg/server"
@@ -73,6 +74,11 @@ func (s *Server) Run(ctx context.Context, collectionProfilesEnabled bool) error 
 	// Don't set a CA file for client certificates because the CA is read from
 	// the kube-system/extension-apiserver-authentication ConfigMap.
 	servingInfo.ServingInfo.ClientCA = ""
+	// Use intermediate TLS profile cipher suites to avoid insecure cipher warnings
+	// Convert OpenSSL cipher names to IANA names for Kubernetes validation
+	intermediateTLSProfile := configv1.TLSProfiles[configv1.TLSProfileIntermediateType]
+	servingInfo.ServingInfo.CipherSuites = crypto.OpenSSLToIANACipherSuites(intermediateTLSProfile.Ciphers)
+	servingInfo.ServingInfo.MinTLSVersion = string(intermediateTLSProfile.MinTLSVersion)
 
 	serverConfig, err := serving.ToServerConfig(
 		ctx,
