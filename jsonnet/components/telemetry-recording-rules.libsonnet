@@ -11,7 +11,7 @@ local generateTelemetryRules() = [
     # Otherwise Prometheus can log `execution: vector cannot contain metrics with the same labelset`
     # since the metric name is dropped while querying. See also https://github.com/prometheus/prometheus/issues/11397
     # We reset the correct label name in the remote_write config.
-    expr: 'label_replace(%s,"original_name_label","$1","__name__", "(.+)")' % match
+    expr: 'label_replace(sum without(pod, container) (%s),"original_name_label","$1","__name__", "(.+)")' % match
   }
   for match in telemetryMatches
 ];
