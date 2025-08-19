@@ -904,12 +904,14 @@ k8sPrometheusAdapter:
     profile: Request`
 	f.MustCreateOrUpdateConfigMap(t, f.BuildCMOConfigMap(t, data))
 	checkMetricValue(1)
+	f.AssertOperatorCondition(configv1.OperatorUpgradeable, configv1.ConditionFalse)(t)
 
 	// The metric should be reset to 0.
 	data = `
 k8sPrometheusAdapter:`
 	f.MustCreateOrUpdateConfigMap(t, f.BuildCMOConfigMap(t, data))
 	checkMetricValue(0)
+	f.AssertOperatorCondition(configv1.OperatorUpgradeable, configv1.ConditionTrue)(t)
 }
 
 // checks that the toleration is present
