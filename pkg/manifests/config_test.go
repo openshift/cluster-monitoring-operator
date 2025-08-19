@@ -737,7 +737,7 @@ func TestCollectionProfilePreCheck(t *testing.T) {
 		t.Run(tc.name, func(t *testing.T) {
 			c, _, err := NewConfigFromString(tc.config, true)
 			require.NoError(t, err)
-			err = c.Precheck()
+			_, err = c.Precheck()
 			if err != nil && tc.expectedError {
 				return
 			}
@@ -752,6 +752,7 @@ func TestDeprecatedConfig(t *testing.T) {
 		name                string
 		config              string
 		expectedMetricValue float64
+		warning             string
 	}{
 		{
 			name: "setting a field in k8sPrometheusAdapter",
@@ -762,6 +763,7 @@ func TestDeprecatedConfig(t *testing.T) {
       memory: 20Mi
   `,
 			expectedMetricValue: 1,
+			warning:             "configuration in the \"openshift-monitoring/cluster-monitoring-config\" ConfigMap is invalid and should be fixed: k8sPrometheusAdapter is deprecated and usage should be removed, use metricsServer instead",
 		},
 		{
 			name: "k8sPrometheusAdapter nil",
@@ -778,7 +780,10 @@ func TestDeprecatedConfig(t *testing.T) {
 		t.Run(tc.name, func(t *testing.T) {
 			c, _, err := NewConfigFromString(tc.config, true)
 			require.NoError(t, err)
-			err = c.Precheck()
+			warning, err := c.Precheck()
+			if tc.warning != "" {
+				require.Equal(t, tc.warning, warning.Warning())
+			}
 			require.NoError(t, err)
 			require.Equal(t, tc.expectedMetricValue, prom_testutil.ToFloat64(metrics.DeprecatedConfig))
 		})
