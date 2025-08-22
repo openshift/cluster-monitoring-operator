@@ -68,7 +68,7 @@ spec:
         (
           kube_statefulset_status_replicas_ready{namespace=~"(openshift-.*|kube-.*|default)",job="kube-state-metrics"}
             !=
-          kube_statefulset_status_replicas{namespace=~"(openshift-.*|kube-.*|default)",job="kube-state-metrics"}
+          kube_statefulset_replicas{namespace=~"(openshift-.*|kube-.*|default)",job="kube-state-metrics"}
         ) and (
           changes(kube_statefulset_status_replicas_updated{namespace=~"(openshift-.*|kube-.*|default)",job="kube-state-metrics"}[10m])
             ==
@@ -99,13 +99,13 @@ spec:
               unless
             kube_statefulset_status_update_revision{namespace=~"(openshift-.*|kube-.*|default)",job="kube-state-metrics"}
           )
-            *
+            * on(namespace, statefulset, job, cluster)
           (
             kube_statefulset_replicas{namespace=~"(openshift-.*|kube-.*|default)",job="kube-state-metrics"}
               !=
             kube_statefulset_status_replicas_updated{namespace=~"(openshift-.*|kube-.*|default)",job="kube-state-metrics"}
           )
-        )  and (
+        )  and on(namespace, statefulset, job, cluster) (
           changes(kube_statefulset_status_replicas_updated{namespace=~"(openshift-.*|kube-.*|default)",job="kube-state-metrics"}[5m])
             ==
           0
@@ -121,19 +121,19 @@ spec:
         (
           (
             kube_daemonset_status_current_number_scheduled{namespace=~"(openshift-.*|kube-.*|default)",job="kube-state-metrics"}
-             !=
+              !=
             kube_daemonset_status_desired_number_scheduled{namespace=~"(openshift-.*|kube-.*|default)",job="kube-state-metrics"}
           ) or (
             kube_daemonset_status_number_misscheduled{namespace=~"(openshift-.*|kube-.*|default)",job="kube-state-metrics"}
-             !=
+              !=
             0
           ) or (
             kube_daemonset_status_updated_number_scheduled{namespace=~"(openshift-.*|kube-.*|default)",job="kube-state-metrics"}
-             !=
+              !=
             kube_daemonset_status_desired_number_scheduled{namespace=~"(openshift-.*|kube-.*|default)",job="kube-state-metrics"}
           ) or (
             kube_daemonset_status_number_available{namespace=~"(openshift-.*|kube-.*|default)",job="kube-state-metrics"}
-             !=
+              !=
             kube_daemonset_status_desired_number_scheduled{namespace=~"(openshift-.*|kube-.*|default)",job="kube-state-metrics"}
           )
         ) and (
@@ -225,28 +225,58 @@ spec:
       for: 15m
       labels:
         severity: warning
+    - alert: KubePdbNotEnoughHealthyPods
+      annotations:
+        description: PDB {{ $labels.namespace }}/{{ $labels.poddisruptionbudget }} expects {{ $value }} more healthy pods. The desired number of healthy pods has not been met for at least 15m.
+        summary: PDB does not have enough healthy pods.
+      expr: |
+        (
+          kube_poddisruptionbudget_status_desired_healthy{namespace=~"(openshift-.*|kube-.*|default)",job="kube-state-metrics"}
+          -
+          kube_poddisruptionbudget_status_current_healthy{namespace=~"(openshift-.*|kube-.*|default)",job="kube-state-metrics"}
+        )
+        > 0
+      for: 15m
+      labels:
+        severity: warning
   - name: kubernetes-resources
     rules:
     - alert: KubeCPUOvercommit
       annotations:
-        description: Cluster {{ $labels.cluster }} has overcommitted CPU resource requests for Pods by {{ $value }} CPU shares and cannot tolerate node failure.
+        description: Cluster has overcommitted CPU resource requests for Pods by {{ $value }} CPU shares and cannot tolerate node failure.
         summary: Cluster has overcommitted CPU resource requests.
       expr: |
-        sum(namespace_cpu:kube_pod_container_resource_requests:sum{}) by (cluster) - (sum(kube_node_status_allocatable{job="kube-state-metrics",resource="cpu"}) by (cluster) - max(kube_node_status_allocatable{job="kube-state-metrics",resource="cpu"}) by (cluster)) > 0
+        (sum(namespace_cpu:kube_pod_container_resource_requests:sum{}) -
+        sum(kube_node_status_allocatable{resource="cpu", job="kube-state-metrics"}) > 0
         and
-        (sum(kube_node_status_allocatable{job="kube-state-metrics",resource="cpu"}) by (cluster) - max(kube_node_status_allocatable{job="kube-state-metrics",resource="cpu"}) by (cluster)) > 0
+        count(max by (node) (kube_node_role{job="kube-state-metrics", role="control-plane"})) < 3)
+        or
+        (sum(namespace_cpu:kube_pod_container_resource_requests:sum{}) -
+        (sum(kube_node_status_allocatable{resource="cpu", job="kube-state-metrics"}) -
+        max(kube_node_status_allocatable{resource="cpu", job="kube-state-metrics"})) > 0
+        and
+        (sum(kube_node_status_allocatable{resource="cpu", job="kube-state-metrics"}) -
+        max(kube_node_status_allocatable{resource="cpu", job="kube-state-metrics"})) > 0)
       for: 10m
       labels:
         namespace: kube-system
         severity: warning
     - alert: KubeMemoryOvercommit
       annotations:
-        description: Cluster {{ $labels.cluster }} has overcommitted memory resource requests for Pods by {{ $value | humanize }} bytes and cannot tolerate node failure.
+        description: Cluster has overcommitted memory resource requests for Pods by {{ $value | humanize }} bytes and cannot tolerate node failure.
         summary: Cluster has overcommitted memory resource requests.
       expr: |
-        sum(namespace_memory:kube_pod_container_resource_requests:sum{}) by (cluster) - (sum(kube_node_status_allocatable{resource="memory", job="kube-state-metrics"}) by (cluster) - max(kube_node_status_allocatable{resource="memory", job="kube-state-metrics"}) by (cluster)) > 0
+        (sum(namespace_memory:kube_pod_container_resource_requests:sum{}) -
+        sum(kube_node_status_allocatable{resource="memory", job="kube-state-metrics"}) > 0
         and
-        (sum(kube_node_status_allocatable{resource="memory", job="kube-state-metrics"}) by (cluster) - max(kube_node_status_allocatable{resource="memory", job="kube-state-metrics"}) by (cluster)) > 0
+        count(max by (node) (kube_node_role{job="kube-state-metrics", role="control-plane"})) < 3)
+        or
+        (sum(namespace_memory:kube_pod_container_resource_requests:sum{}) -
+        (sum(kube_node_status_allocatable{resource="memory", job="kube-state-metrics"}) -
+        max(kube_node_status_allocatable{resource="memory", job="kube-state-metrics"})) > 0
+        and
+        (sum(kube_node_status_allocatable{resource="memory", job="kube-state-metrics"}) -
+        max(kube_node_status_allocatable{resource="memory", job="kube-state-metrics"})) > 0)
       for: 10m
       labels:
         namespace: kube-system
@@ -291,7 +321,7 @@ spec:
     rules:
     - alert: KubeClientErrors
       annotations:
-        description: Kubernetes API server client '{{ $labels.job }}/{{ $labels.instance }}' is experiencing {{ $value | humanizePercentage }} errors.'
+        description: Kubernetes API server client '{{ $labels.job }}/{{ $labels.instance }}' is experiencing {{ $value | humanizePercentage }} errors.
         summary: Kubernetes API server client is experiencing errors.
       expr: |
         (sum(rate(rest_client_requests_total{job="apiserver",code=~"5.."}[5m])) by (cluster, instance, job, namespace)
@@ -305,11 +335,12 @@ spec:
     rules:
     - alert: KubeAggregatedAPIErrors
       annotations:
-        description: Kubernetes aggregated API {{ $labels.name }}/{{ $labels.namespace }} has reported errors. It has appeared unavailable {{ $value | humanize }} times averaged over the past 10m.
+        description: Kubernetes aggregated API {{ $labels.instance }}/{{ $labels.name }} has reported {{ $labels.reason }} errors.
         runbook_url: https://github.com/openshift/runbooks/blob/master/alerts/cluster-monitoring-operator/KubeAggregatedAPIErrors.md
         summary: Kubernetes aggregated API has reported errors.
       expr: |
-        sum by(name, namespace, cluster)(increase(aggregator_unavailable_apiservice_total{job="apiserver"}[10m])) > 4
+        sum by(cluster, instance, name, reason)(increase(aggregator_unavailable_apiservice_total{job="apiserver"}[1m])) > 0
+      for: 10m
       labels:
         severity: warning
     - alert: KubeAggregatedAPIDown
@@ -349,9 +380,22 @@ spec:
         summary: Node is not ready.
       expr: |
         kube_node_status_condition{job="kube-state-metrics",condition="Ready",status="true"} == 0
+        and on (cluster, node)
+        kube_node_spec_unschedulable{job="kube-state-metrics"} == 0
       for: 15m
       labels:
         severity: warning
+    - alert: KubeNodePressure
+      annotations:
+        description: '{{ $labels.node }} has active Condition {{ $labels.condition }}. This is caused by resource usage exceeding eviction thresholds.'
+        summary: Node has as active Condition.
+      expr: |
+        kube_node_status_condition{job="kube-state-metrics",condition=~"(MemoryPressure|DiskPressure|PIDPressure)",status="true"} == 1
+        and on (cluster, node)
+        kube_node_spec_unschedulable{job="kube-state-metrics"} == 0
+      for: 10m
+      labels:
+        severity: info
     - alert: KubeNodeUnreachable
       annotations:
         description: '{{ $labels.node }} is unreachable and some workloads may be rescheduled.'
@@ -366,12 +410,18 @@ spec:
         description: Kubelet '{{ $labels.node }}' is running at {{ $value | humanizePercentage }} of its Pod capacity.
         summary: Kubelet is running at capacity.
       expr: |
-        count by(cluster, node) (
-          (kube_pod_status_phase{job="kube-state-metrics",phase="Running"} == 1) * on(instance,pod,namespace,cluster) group_left(node) topk by(instance,pod,namespace,cluster) (1, kube_pod_info{job="kube-state-metrics"})
+        (
+          max by (cluster, instance) (
+            kubelet_running_pods{job="kubelet", metrics_path="/metrics"} > 1
+          )
+          * on (cluster, instance) group_left(node)
+          max by (cluster, instance, node) (
+            kubelet_node_name{job="kubelet", metrics_path="/metrics"}
+          )
         )
-        /
-        max by(cluster, node) (
-          kube_node_status_capacity{job="kube-state-metrics",resource="pods"} != 1
+        / on (cluster, node) group_left()
+        max by (cluster, node) (
+          kube_node_status_capacity{job="kube-state-metrics", resource="pods"} != 1
         ) > 0.95
       for: 15m
       labels:
@@ -383,10 +433,26 @@ spec:
         summary: Node readiness status is flapping.
       expr: |
         sum(changes(kube_node_status_condition{job="kube-state-metrics",status="true",condition="Ready"}[15m])) by (cluster, node) > 2
+        and on (cluster, node)
+        kube_node_spec_unschedulable{job="kube-state-metrics"} == 0
       for: 15m
       labels:
         namespace: kube-system
         severity: warning
+    - alert: KubeNodeEviction
+      annotations:
+        description: Node {{ $labels.node }} is evicting Pods due to {{ $labels.eviction_signal }}.  Eviction occurs when eviction thresholds are crossed, typically caused by Pods exceeding RAM/ephemeral-storage limits.
+        summary: Node is evicting pods.
+      expr: |
+        sum(rate(kubelet_evictions{job="kubelet", metrics_path="/metrics"}[15m])) by(cluster, eviction_signal, instance)
+        * on (cluster, instance) group_left(node)
+        max by (cluster, instance, node) (
+          kubelet_node_name{job="kubelet", metrics_path="/metrics"}
+        )
+        > 0
+      for: 0s
+      labels:
+        severity: info
     - alert: KubeletPlegDurationHigh
       annotations:
         description: The Kubelet Pod Lifecycle Event Generator has a 99th percentile duration of {{ $value }} seconds on node {{ $labels.node }}.
@@ -438,6 +504,13 @@ spec:
         severity: critical
   - name: k8s.rules.container_cpu_usage_seconds_total
     rules:
+    - expr: |
+        sum by (cluster, namespace, pod, container) (
+          rate(container_cpu_usage_seconds_total{job="kubelet", metrics_path="/metrics/cadvisor", image!=""}[5m])
+        ) * on (cluster, namespace, pod) group_left(node) topk by (cluster, namespace, pod) (
+          1, max by(cluster, namespace, pod, node) (kube_pod_info{node!=""})
+        )
+      record: node_namespace_pod_container:container_cpu_usage_seconds_total:sum_rate5m
     - expr: |
         sum by (cluster, namespace, pod, container) (
           irate(container_cpu_usage_seconds_total{job="kubelet", metrics_path="/metrics/cadvisor", image!=""}[5m])
@@ -539,8 +612,8 @@ spec:
     - expr: |
         kube_pod_container_resource_limits{resource="cpu",job="kube-state-metrics"}  * on (namespace, pod, cluster)
         group_left() max by (namespace, pod, cluster) (
-         (kube_pod_status_phase{phase=~"Pending|Running"} == 1)
-         )
+          (kube_pod_status_phase{phase=~"Pending|Running"} == 1)
+        )
       record: cluster:namespace:pod_cpu:active:kube_pod_container_resource_limits
     - expr: |
         sum by (namespace, cluster) (
@@ -561,9 +634,26 @@ spec:
             label_replace(
               kube_pod_owner{job="kube-state-metrics", owner_kind="ReplicaSet"},
               "replicaset", "$1", "owner_name", "(.*)"
-            ) * on(replicaset, namespace) group_left(owner_name) topk by(replicaset, namespace) (
-              1, max by (replicaset, namespace, owner_name) (
-                kube_replicaset_owner{job="kube-state-metrics"}
+            ) * on (cluster, replicaset, namespace) group_left(owner_name) topk by(cluster, replicaset, namespace) (
+              1, max by (cluster, replicaset, namespace, owner_name) (
+                kube_replicaset_owner{job="kube-state-metrics", owner_kind=""}
+              )
+            ),
+            "workload", "$1", "replicaset", "(.*)"
+          )
+        )
+      labels:
+        workload_type: replicaset
+      record: namespace_workload_pod:kube_pod_owner:relabel
+    - expr: |
+        max by (cluster, namespace, workload, pod) (
+          label_replace(
+            label_replace(
+              kube_pod_owner{job="kube-state-metrics", owner_kind="ReplicaSet"},
+              "replicaset", "$1", "owner_name", "(.*)"
+            ) * on(replicaset, namespace, cluster) group_left(owner_name) topk by(cluster, replicaset, namespace) (
+              1, max by (cluster, replicaset, namespace, owner_name) (
+                kube_replicaset_owner{job="kube-state-metrics", owner_kind="Deployment"}
               )
             ),
             "workload", "$1", "owner_name", "(.*)"
@@ -586,21 +676,84 @@ spec:
         max by (cluster, namespace, workload, pod) (
           label_replace(
             kube_pod_owner{job="kube-state-metrics", owner_kind="StatefulSet"},
-            "workload", "$1", "owner_name", "(.*)"
-          )
+          "workload", "$1", "owner_name", "(.*)")
         )
       labels:
         workload_type: statefulset
       record: namespace_workload_pod:kube_pod_owner:relabel
     - expr: |
-        max by (cluster, namespace, workload, pod) (
-          label_replace(
-            kube_pod_owner{job="kube-state-metrics", owner_kind="Job"},
-            "workload", "$1", "owner_name", "(.*)"
-          )
+        group by (cluster, namespace, workload, pod) (
+          label_join(
+            group by (cluster, namespace, job_name, pod, owner_name) (
+              label_join(
+                kube_pod_owner{job="kube-state-metrics", owner_kind="Job"}
+              , "job_name", "", "owner_name")
+            )
+            * on (cluster, namespace, job_name) group_left()
+            group by (cluster, namespace, job_name) (
+              kube_job_owner{job="kube-state-metrics", owner_kind=~"Pod|"}
+            )
+          , "workload", "", "owner_name")
         )
       labels:
         workload_type: job
+      record: namespace_workload_pod:kube_pod_owner:relabel
+    - expr: |
+        max by (cluster, namespace, workload, pod) (
+          label_replace(
+            kube_pod_owner{job="kube-state-metrics", owner_kind="", owner_name=""},
+          "workload", "$1", "pod", "(.+)")
+        )
+      labels:
+        workload_type: barepod
+      record: namespace_workload_pod:kube_pod_owner:relabel
+    - expr: |
+        max by (cluster, namespace, workload, pod) (
+          label_replace(
+            kube_pod_owner{job="kube-state-metrics", owner_kind="Node"},
+          "workload", "$1", "pod", "(.+)")
+        )
+      labels:
+        workload_type: staticpod
+      record: namespace_workload_pod:kube_pod_owner:relabel
+    - expr: |
+        group by (cluster, namespace, workload, workload_type, pod) (
+          label_join(
+            label_join(
+              group by (cluster, namespace, job_name, pod) (
+                label_join(
+                  kube_pod_owner{job="kube-state-metrics", owner_kind="Job"}
+                , "job_name", "", "owner_name")
+              )
+              * on (cluster, namespace, job_name) group_left(owner_kind, owner_name)
+              group by (cluster, namespace, job_name, owner_kind, owner_name) (
+                kube_job_owner{job="kube-state-metrics", owner_kind!="Pod", owner_kind!=""}
+              )
+            , "workload", "", "owner_name")
+          , "workload_type", "", "owner_kind")
+
+          OR
+
+          label_replace(
+            label_replace(
+              label_replace(
+                kube_pod_owner{job="kube-state-metrics", owner_kind="ReplicaSet"}
+                , "replicaset", "$1", "owner_name", "(.+)"
+              )
+              * on(cluster, namespace, replicaset) group_left(owner_kind, owner_name)
+              group by (cluster, namespace, replicaset, owner_kind, owner_name) (
+                kube_replicaset_owner{job="kube-state-metrics", owner_kind!="Deployment", owner_kind!=""}
+              )
+            , "workload", "$1", "owner_name", "(.+)")
+            OR
+            label_replace(
+              group by (cluster, namespace, pod, owner_name, owner_kind) (
+                kube_pod_owner{job="kube-state-metrics", owner_kind!="ReplicaSet", owner_kind!="DaemonSet", owner_kind!="StatefulSet", owner_kind!="Job", owner_kind!="Node", owner_kind!=""}
+              )
+              , "workload", "$1", "owner_name", "(.+)"
+            )
+          , "workload_type", "$1", "owner_kind", "(.+)")
+        )
       record: namespace_workload_pod:kube_pod_owner:relabel
   - name: kube-scheduler.rules
     rules:
@@ -683,17 +836,32 @@ spec:
   - name: kubelet.rules
     rules:
     - expr: |
-        histogram_quantile(0.99, sum(rate(kubelet_pleg_relist_duration_seconds_bucket{job="kubelet", metrics_path="/metrics"}[5m])) by (cluster, instance, le) * on(cluster, instance) group_left(node) kubelet_node_name{job="kubelet", metrics_path="/metrics"})
+        histogram_quantile(
+          0.99,
+          sum(rate(kubelet_pleg_relist_duration_seconds_bucket{job="kubelet", metrics_path="/metrics"}[5m])) by (cluster, instance, le)
+          * on(cluster, instance) group_left (node)
+          max by (cluster, instance, node) (kubelet_node_name{job="kubelet", metrics_path="/metrics"})
+        )
       labels:
         quantile: "0.99"
       record: node_quantile:kubelet_pleg_relist_duration_seconds:histogram_quantile
     - expr: |
-        histogram_quantile(0.9, sum(rate(kubelet_pleg_relist_duration_seconds_bucket{job="kubelet", metrics_path="/metrics"}[5m])) by (cluster, instance, le) * on(cluster, instance) group_left(node) kubelet_node_name{job="kubelet", metrics_path="/metrics"})
+        histogram_quantile(
+          0.9,
+          sum(rate(kubelet_pleg_relist_duration_seconds_bucket{job="kubelet", metrics_path="/metrics"}[5m])) by (cluster, instance, le)
+          * on(cluster, instance) group_left (node)
+          max by (cluster, instance, node) (kubelet_node_name{job="kubelet", metrics_path="/metrics"})
+        )
       labels:
         quantile: "0.9"
       record: node_quantile:kubelet_pleg_relist_duration_seconds:histogram_quantile
     - expr: |
-        histogram_quantile(0.5, sum(rate(kubelet_pleg_relist_duration_seconds_bucket{job="kubelet", metrics_path="/metrics"}[5m])) by (cluster, instance, le) * on(cluster, instance) group_left(node) kubelet_node_name{job="kubelet", metrics_path="/metrics"})
+        histogram_quantile(
+          0.5,
+          sum(rate(kubelet_pleg_relist_duration_seconds_bucket{job="kubelet", metrics_path="/metrics"}[5m])) by (cluster, instance, le)
+          * on(cluster, instance) group_left (node)
+          max by (cluster, instance, node) (kubelet_node_name{job="kubelet", metrics_path="/metrics"})
+        )
       labels:
         quantile: "0.5"
       record: node_quantile:kubelet_pleg_relist_duration_seconds:histogram_quantile
