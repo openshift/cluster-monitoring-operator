@@ -30,6 +30,7 @@ func TestNewConfigFromString(t *testing.T) {
 		name         string
 		configString func() string
 		err          string
+		warning      string
 		configCheck  func(*Config)
 	}{
 		{
@@ -54,21 +55,23 @@ func TestNewConfigFromString(t *testing.T) {
 			configString: func() string {
 				return `{"prometheusK8ss": {}}`
 			},
-			err: "error unmarshaling: unknown field \"prometheusK8ss\"",
+			err:     "error unmarshaling JSON: while decoding JSON: json: unknown field \"prometheusK8ss\"",
+			warning: "configuration in the \"openshift-monitoring/cluster-monitoring-config\" ConfigMap is invalid and should be fixed: error unmarshaling: unknown field \"prometheusK8ss\"",
 		},
 		{
 			name: "json string with root field of the wrong case",
 			configString: func() string {
 				return `{"PROMETHEUSK8S": {}}`
 			},
-			err: "error unmarshaling: unknown field \"PROMETHEUSK8S\"",
+			warning: "configuration in the \"openshift-monitoring/cluster-monitoring-config\" ConfigMap is invalid and should be fixed: error unmarshaling: unknown field \"PROMETHEUSK8S\"",
 		},
 		{
 			name: "json string with unknown field",
 			configString: func() string {
 				return `{"prometheusK8s": {"unknown": "bar"}}`
 			},
-			err: "error unmarshaling: unknown field \"prometheusK8s.unknown\"",
+			err:     "error unmarshaling JSON: while decoding JSON: json: unknown field \"unknown\"",
+			warning: "configuration in the \"openshift-monitoring/cluster-monitoring-config\" ConfigMap is invalid and should be fixed: error unmarshaling: unknown field \"prometheusK8s.unknown\"",
 		},
 		{
 			name: "json string with duplicated field",
@@ -76,7 +79,8 @@ func TestNewConfigFromString(t *testing.T) {
 			configString: func() string {
 				return `{"prometheusK8s": {"foo": {}}, "prometheusK8s": {"bar": {}}}`
 			},
-			err: "yaml: unmarshal errors:\n  line 1: key \"prometheusK8s\" already set in map",
+			err:     "error converting YAML to JSON: yaml: unmarshal errors:\n  line 1: key \"prometheusK8s\" already set in map",
+			warning: "configuration in the \"openshift-monitoring/cluster-monitoring-config\" ConfigMap is invalid and should be fixed: yaml: unmarshal errors:\n  line 1: key \"prometheusK8s\" already set in map",
 		},
 		{
 			name: "empty json string",
@@ -95,14 +99,16 @@ func TestNewConfigFromString(t *testing.T) {
 			configString: func() string {
 				return `metricsServe:`
 			},
-			err: "error unmarshaling: unknown field \"metricsServe\"",
+			err:     "error unmarshaling JSON: while decoding JSON: json: unknown field \"metricsServe\"",
+			warning: "configuration in the \"openshift-monitoring/cluster-monitoring-config\" ConfigMap is invalid and should be fixed: error unmarshaling: unknown field \"metricsServe\"",
 		},
 		{
 			name: "yaml string with root field of the wrong case",
 			configString: func() string {
 				return `metricserver:`
 			},
-			err: "error unmarshaling: unknown field \"metricserver\"",
+			err:     "error unmarshaling JSON: while decoding JSON: json: unknown field \"metricserver\"",
+			warning: "configuration in the \"openshift-monitoring/cluster-monitoring-config\" ConfigMap is invalid and should be fixed: error unmarshaling: unknown field \"metricserver\"",
 		},
 		{
 			name: "yaml string with unknown field",
@@ -111,7 +117,8 @@ func TestNewConfigFromString(t *testing.T) {
 metricsServer:
   unknown:`
 			},
-			err: "error unmarshaling: unknown field \"metricsServer.unknown\"",
+			err:     "error unmarshaling JSON: while decoding JSON: json: unknown field \"unknown\"",
+			warning: "configuration in the \"openshift-monitoring/cluster-monitoring-config\" ConfigMap is invalid and should be fixed: error unmarshaling: unknown field \"metricsServer.unknown\"",
 		},
 		{
 			name: "yaml string with duplicated field",
@@ -122,7 +129,8 @@ metricsServer:
 metricsServer:
   bar:`
 			},
-			err: "yaml: unmarshal errors:\n  line 5: key \"metricsServer\" already set in map",
+			err:     "yaml: unmarshal errors:\n  line 5: key \"metricsServer\" already set in map",
+			warning: "configuration in the \"openshift-monitoring/cluster-monitoring-config\" ConfigMap is invalid and should be fixed: yaml: unmarshal errors:\n  line 5: key \"metricsServer\" already set in map",
 		},
 		{
 			name: "empty yaml string",
@@ -140,7 +148,12 @@ metricsServer:
 
 	for _, tc := range tcs {
 		t.Run(tc.name, func(t *testing.T) {
-			c, err := NewConfigFromString(tc.configString(), false)
+			c, warning, err := NewConfigFromString(tc.configString(), false)
+			if tc.warning != "" {
+				require.Equal(t, tc.warning, warning.Warning())
+			} else {
+				require.Empty(t, warning)
+			}
 			if tc.err != "" {
 				require.ErrorContains(t, err, tc.err)
 				return
@@ -158,6 +171,7 @@ func TestNewUserConfigFromString(t *testing.T) {
 		name         string
 		configString func() string
 		err          string
+		warning      string
 		configCheck  func(*UserWorkloadConfiguration)
 	}{
 		{
@@ -183,21 +197,23 @@ func TestNewUserConfigFromString(t *testing.T) {
 			configString: func() string {
 				return `{"unknown": {}}`
 			},
-			err: "error unmarshaling: unknown field \"unknown\"",
+			err:     "error unmarshaling JSON: while decoding JSON: json: unknown field \"unknown\"",
+			warning: "configuration in the \"openshift-user-workload-monitoring/user-workload-monitoring-config\" ConfigMap is invalid and should be fixed: error unmarshaling: unknown field \"unknown\"",
 		},
 		{
 			name: "json string with unknown field",
 			configString: func() string {
 				return `{"prometheusOperator": {"unknown": "bar"}}`
 			},
-			err: "error unmarshaling: unknown field \"prometheusOperator.unknown\"",
+			err:     "error unmarshaling JSON: while decoding JSON: json: unknown field \"unknown\"",
+			warning: "configuration in the \"openshift-user-workload-monitoring/user-workload-monitoring-config\" ConfigMap is invalid and should be fixed: error unmarshaling: unknown field \"prometheusOperator.unknown\"",
 		},
 		{
 			name: "json string with field of wrong case",
 			configString: func() string {
-				return `{"prometheusOperator": {"nodeselector": ""}}`
+				return `{"prometheusoperator": {}}`
 			},
-			err: "error unmarshaling: unknown field \"prometheusOperator.nodeselector\"",
+			warning: "configuration in the \"openshift-user-workload-monitoring/user-workload-monitoring-config\" ConfigMap is invalid and should be fixed: error unmarshaling: unknown field \"prometheusoperator\"",
 		},
 		{
 			name: "json string with duplicated field",
@@ -205,7 +221,8 @@ func TestNewUserConfigFromString(t *testing.T) {
 			configString: func() string {
 				return `{"prometheus": {"foo": {}}, "prometheus": {"bar": {}}}`
 			},
-			err: "yaml: unmarshal errors:\n  line 1: key \"prometheus\"",
+			err:     "yaml: unmarshal errors:\n  line 1: key \"prometheus\"",
+			warning: "configuration in the \"openshift-user-workload-monitoring/user-workload-monitoring-config\" ConfigMap is invalid and should be fixed: yaml: unmarshal errors:\n  line 1: key \"prometheus\" already set in map",
 		},
 		{
 			name: "empty json string",
@@ -224,7 +241,8 @@ func TestNewUserConfigFromString(t *testing.T) {
 			configString: func() string {
 				return `unknown:`
 			},
-			err: "error unmarshaling: unknown field \"unknown\"",
+			err:     "error unmarshaling JSON: while decoding JSON: json: unknown field \"unknown\"",
+			warning: "configuration in the \"openshift-user-workload-monitoring/user-workload-monitoring-config\" ConfigMap is invalid and should be fixed: error unmarshaling: unknown field \"unknown\"",
 		},
 		{
 			name: "yaml string with unknown field",
@@ -233,7 +251,8 @@ func TestNewUserConfigFromString(t *testing.T) {
 prometheusOperator:
   unknown:`
 			},
-			err: "error unmarshaling: unknown field \"prometheusOperator.unknown\"",
+			err:     "error unmarshaling JSON: while decoding JSON: json: unknown field \"unknown\"",
+			warning: "configuration in the \"openshift-user-workload-monitoring/user-workload-monitoring-config\" ConfigMap is invalid and should be fixed: error unmarshaling: unknown field \"prometheusOperator.unknown\"",
 		},
 		{
 			name: "yaml string with field of wrong case",
@@ -242,7 +261,7 @@ prometheusOperator:
 prometheusOperator:
   nodeselector:`
 			},
-			err: "error unmarshaling: unknown field \"prometheusOperator.nodeselector\"",
+			warning: "configuration in the \"openshift-user-workload-monitoring/user-workload-monitoring-config\" ConfigMap is invalid and should be fixed: error unmarshaling: unknown field \"prometheusOperator.nodeselector\"",
 		},
 		{
 			name: "yaml string with duplicated field",
@@ -253,7 +272,8 @@ thanosRuler:
 thanosRuler:
   bar:`
 			},
-			err: "yaml: unmarshal errors:\n  line 5: key \"thanosRuler\"",
+			err:     "yaml: unmarshal errors:\n  line 5: key \"thanosRuler\"",
+			warning: "configuration in the \"openshift-user-workload-monitoring/user-workload-monitoring-config\" ConfigMap is invalid and should be fixed: yaml: unmarshal errors:\n  line 5: key \"thanosRuler\" already set in map",
 		},
 		{
 			name: "empty yaml string",
@@ -265,7 +285,12 @@ thanosRuler:
 
 	for _, tc := range tcs {
 		t.Run(tc.name, func(t *testing.T) {
-			c, err := NewUserConfigFromString(tc.configString())
+			c, warning, err := NewUserConfigFromString(tc.configString())
+			if tc.warning != "" {
+				require.Equal(t, tc.warning, warning.Warning())
+			} else {
+				require.Empty(t, warning)
+			}
 			if tc.err != "" {
 				require.ErrorContains(t, err, tc.err)
 				return
@@ -274,85 +299,6 @@ thanosRuler:
 			if tc.configCheck != nil {
 				tc.configCheck(c)
 			}
-		})
-	}
-}
-
-// TestNewUserConfigFromStringUnsupportedAlertmanagerVersion is a temp test
-// TODO: remove after 4.19
-// Only to assist with the migration to Prometheus 3; fail early if Alertmanager v1 is still in use.
-func TestNewUserConfigFromStringUnsupportedAlertmanagerVersion(t *testing.T) {
-	tcs := []struct {
-		name         string
-		configString func() string
-		shouldFail   bool
-	}{
-		{
-			name: "unsupported alertmanager version in thanosRuler.additionalAlertmanagerConfigs",
-			configString: func() string {
-				return `
-thanosRuler:
-  additionalAlertmanagerConfigs:
-    - apiVersion: v1`
-			},
-			shouldFail: true,
-		},
-		{
-			name: "unsupported alertmanager version in prometheus.additionalAlertmanagerConfigs",
-			configString: func() string {
-				return `
-prometheus:
-  additionalAlertmanagerConfigs:
-    - apiVersion: v1`
-			},
-			shouldFail: true,
-		},
-		{
-			name: "supported alertmanager version in thanosRuler.additionalAlertmanagerConfigs",
-			configString: func() string {
-				return `
-thanosRuler:
-  additionalAlertmanagerConfigs:
-    - apiVersion: v2`
-			},
-		},
-		{
-			name: "supported alertmanager version in prometheus.additionalAlertmanagerConfigs",
-			configString: func() string {
-				return `
-prometheus:
-  additionalAlertmanagerConfigs:
-    - apiVersion: v2`
-			},
-		},
-		{
-			name: "default alertmanager version in thanosRuler.additionalAlertmanagerConfigs",
-			configString: func() string {
-				return `
-thanosRuler:
-  additionalAlertmanagerConfigs:
-    - scheme: foo`
-			},
-		},
-		{
-			name: "default alertmanager version in prometheus.additionalAlertmanagerConfigs",
-			configString: func() string {
-				return `
-prometheus:
-  additionalAlertmanagerConfigs:
-    - scheme: foo`
-			},
-		},
-	}
-
-	for _, tc := range tcs {
-		t.Run(tc.name, func(t *testing.T) {
-			_, err := NewUserConfigFromString(tc.configString())
-			if tc.shouldFail {
-				require.ErrorIs(t, err, errAlertmanagerV1NotSupported)
-				return
-			}
-			require.NoError(t, err)
 		})
 	}
 }
@@ -463,7 +409,7 @@ func TestHttpProxyConfig(t *testing.T) {
   noProxy: https://example.com
 `
 
-	c, err := NewConfigFromString(conf, false)
+	c, _, err := NewConfigFromString(conf, false)
 	if err != nil {
 		t.Errorf("expected no error parsing config - %v", err)
 	}
@@ -574,7 +520,7 @@ func TestLoadEnforcedBodySizeLimit(t *testing.T) {
 		},
 	} {
 		t.Run(tt.name, func(t *testing.T) {
-			c, err := NewConfigFromString(tt.config, false)
+			c, _, err := NewConfigFromString(tt.config, false)
 			if err != nil {
 				t.Fatalf("config parsing error")
 			}
@@ -647,7 +593,7 @@ func TestScrapeIntervalUWM(t *testing.T) {
 		},
 	} {
 		t.Run(tc.name, func(t *testing.T) {
-			_, err := NewUserConfigFromString(tc.uwmconfig)
+			_, _, err := NewUserConfigFromString(tc.uwmconfig)
 			if tc.expectedError {
 				require.Error(t, err)
 				return
@@ -740,7 +686,7 @@ func TestEvaluationIntervalUWM(t *testing.T) {
 		},
 	} {
 		t.Run(tc.name, func(t *testing.T) {
-			_, err := NewUserConfigFromString(tc.uwmconfig)
+			_, _, err := NewUserConfigFromString(tc.uwmconfig)
 			if tc.expectedError {
 				require.Error(t, err)
 				return
@@ -789,9 +735,9 @@ func TestCollectionProfilePreCheck(t *testing.T) {
 		},
 	} {
 		t.Run(tc.name, func(t *testing.T) {
-			c, err := NewConfigFromString(tc.config, true)
+			c, _, err := NewConfigFromString(tc.config, true)
 			require.NoError(t, err)
-			err = c.Precheck()
+			_, err = c.Precheck()
 			if err != nil && tc.expectedError {
 				return
 			}
@@ -806,6 +752,7 @@ func TestDeprecatedConfig(t *testing.T) {
 		name                string
 		config              string
 		expectedMetricValue float64
+		warning             string
 	}{
 		{
 			name: "setting a field in k8sPrometheusAdapter",
@@ -816,6 +763,7 @@ func TestDeprecatedConfig(t *testing.T) {
       memory: 20Mi
   `,
 			expectedMetricValue: 1,
+			warning:             "configuration in the \"openshift-monitoring/cluster-monitoring-config\" ConfigMap is invalid and should be fixed: k8sPrometheusAdapter is deprecated and usage should be removed, use metricsServer instead",
 		},
 		{
 			name: "k8sPrometheusAdapter nil",
@@ -830,56 +778,14 @@ func TestDeprecatedConfig(t *testing.T) {
 		},
 	} {
 		t.Run(tc.name, func(t *testing.T) {
-			c, err := NewConfigFromString(tc.config, true)
+			c, _, err := NewConfigFromString(tc.config, true)
 			require.NoError(t, err)
-			err = c.Precheck()
+			warning, err := c.Precheck()
+			if tc.warning != "" {
+				require.Equal(t, tc.warning, warning.Warning())
+			}
 			require.NoError(t, err)
 			require.Equal(t, tc.expectedMetricValue, prom_testutil.ToFloat64(metrics.DeprecatedConfig))
-		})
-	}
-}
-
-// TestUnsupportedAlertmanagerVersion is a temp test
-// TODO: remove after 4.19
-// Only to assist with the migration to Prometheus 3; fail early if Alertmanager v1 is still in use.
-func TestUnsupportedAlertmanagerVersion(t *testing.T) {
-	for _, tc := range []struct {
-		name       string
-		config     string
-		shouldFail bool
-	}{
-		{
-			name: "using unsupported Alertmanager v1 API",
-			config: `prometheusK8s:
-  additionalAlertmanagerConfigs:
-    - apiVersion: v1
-  `,
-			shouldFail: true,
-		},
-		{
-			name: "using supported Alertmanager v2 API",
-			config: `prometheusK8s:
-  additionalAlertmanagerConfigs:
-    - apiVersion: v2
-  `,
-		},
-		{
-			name: "using default value",
-			config: `prometheusK8s:
-  additionalAlertmanagerConfigs:
-    - scheme: foo
-  `,
-		},
-	} {
-		t.Run(tc.name, func(t *testing.T) {
-			c, err := NewConfigFromString(tc.config, true)
-			require.NoError(t, err)
-			err = c.Precheck()
-			if tc.shouldFail {
-				require.ErrorIs(t, err, errAlertmanagerV1NotSupported)
-			} else {
-				require.NoError(t, err)
-			}
 		})
 	}
 }

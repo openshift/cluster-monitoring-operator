@@ -28,6 +28,7 @@ import (
 	"github.com/prometheus/common/model"
 	v1 "k8s.io/api/core/v1"
 	jsonutil "k8s.io/apimachinery/pkg/util/json"
+	k8syaml "k8s.io/apimachinery/pkg/util/yaml"
 	auditv1 "k8s.io/apiserver/pkg/apis/audit/v1"
 	"k8s.io/klog/v2"
 	"k8s.io/utils/ptr"
@@ -53,8 +54,18 @@ const (
 	configKey = "config.yaml"
 )
 
-var errAlertmanagerV1NotSupported = errors.New("alertmanager's apiVersion=v1 is no longer supported, v2 has been available since Alertmanager 0.16.0")
 var reservedPrometheusExternalLabels = []string{"prometheus", "prometheus_replica", "cluster"}
+
+type InvalidConfigWarning struct {
+	ConfigMap string
+	Err       error
+}
+
+func (e *InvalidConfigWarning) Warning() string {
+	return fmt.Sprintf("configuration in the %q ConfigMap is invalid and should be fixed: %s", e.ConfigMap, e.Err)
+}
+
+var errPrometheusAdapterDeprecated = errors.New("k8sPrometheusAdapter is deprecated and usage should be removed, use metricsServer instead")
 
 type Config struct {
 	Images                               *Images `json:"-"`
@@ -202,31 +213,6 @@ func (u *UserWorkloadConfiguration) checkThanosRulerEvaluationInterval() error {
 	return nil
 }
 
-func (u *UserWorkloadConfiguration) checkAlertmanagerVersion() error {
-	if u.Prometheus != nil {
-		for _, amConfig := range u.Prometheus.AlertmanagerConfigs {
-			if alertmanagerV1(amConfig.APIVersion) {
-				return fmt.Errorf("%w: found in prometheus.additionalAlertmanagerConfigs", errAlertmanagerV1NotSupported)
-			}
-		}
-	}
-	if u.ThanosRuler != nil {
-		for _, amConfig := range u.ThanosRuler.AlertmanagersConfigs {
-			if alertmanagerV1(amConfig.APIVersion) {
-				return fmt.Errorf("%w: found in thanosRuler.additionalAlertmanagerConfigs", errAlertmanagerV1NotSupported)
-			}
-		}
-	}
-
-	return nil
-}
-
-func alertmanagerV1(version string) bool {
-	// Only meant to guide users by failing early in case v1 Alertmanager is still referenced,
-	// this is not meant to validate the apiVersion field.
-	return version == "v1"
-}
-
 func (u *UserWorkloadConfiguration) check() error {
 	if u == nil {
 		return nil
@@ -241,12 +227,6 @@ func (u *UserWorkloadConfiguration) check() error {
 	}
 
 	if err := u.checkThanosRulerEvaluationInterval(); err != nil {
-		return err
-	}
-
-	// TODO: remove after 4.19
-	// Only to assist with the migration to Prometheus 3; fail early if Alertmanager v1 is still in use.
-	if err := u.checkAlertmanagerVersion(); err != nil {
 		return err
 	}
 
@@ -358,19 +338,27 @@ func UnmarshalStrict(data []byte, v interface{}) error {
 	}
 }
 
-func newConfig(content []byte, collectionProfilesFeatureGateEnabled bool) (*Config, error) {
+func newConfig(content []byte, collectionProfilesFeatureGateEnabled bool) (*Config, *InvalidConfigWarning, error) {
 	c := Config{CollectionProfilesFeatureGateEnabled: collectionProfilesFeatureGateEnabled}
+
+	var warning *InvalidConfigWarning
+	wCmc := defaultClusterMonitoringConfiguration()
+	wErr := UnmarshalStrict(content, &wCmc)
+	if wErr != nil {
+		warning = &InvalidConfigWarning{ConfigMap: "openshift-monitoring/cluster-monitoring-config", Err: wErr}
+	}
+
 	cmc := defaultClusterMonitoringConfiguration()
-	err := UnmarshalStrict(content, &cmc)
+	err := k8syaml.UnmarshalStrict(content, &cmc)
 	if err != nil {
-		return nil, err
+		return nil, warning, err
 	}
 
 	c.ClusterMonitoringConfiguration = &cmc
 	c.applyDefaults()
 	c.UserWorkloadConfiguration = NewDefaultUserWorkloadMonitoringConfig()
 
-	return &c, nil
+	return &c, warning, nil
 }
 
 func defaultClusterMonitoringConfiguration() ClusterMonitoringConfiguration {
@@ -606,22 +594,9 @@ func (c *Config) LoadEnforcedBodySizeLimit(pcr PodCapacityReader, ctx context.Co
 	return nil
 }
 
-func (c *Config) checkAlertmanagerVersion() error {
-	if c.ClusterMonitoringConfiguration == nil || c.ClusterMonitoringConfiguration.PrometheusK8sConfig == nil {
-		return nil
-	}
-
-	for _, amConfig := range c.ClusterMonitoringConfiguration.PrometheusK8sConfig.AlertmanagerConfigs {
-		if alertmanagerV1(amConfig.APIVersion) {
-			return fmt.Errorf("%w: found in prometheusK8s.additionalAlertmanagerConfigs", errAlertmanagerV1NotSupported)
-		}
-	}
-	return nil
-}
-
-func (c *Config) Precheck() error {
+func (c *Config) Precheck() (*InvalidConfigWarning, error) {
 	if c.ClusterMonitoringConfiguration.PrometheusK8sConfig.CollectionProfile != FullCollectionProfile && !c.CollectionProfilesFeatureGateEnabled {
-		return fmt.Errorf("%w: collectionProfiles is currently a TechPreview feature behind the \"MetricsCollectionProfiles\" feature-gate, to be able to use a profile different from the default (\"full\") please enable it first", ErrConfigValidation)
+		return nil, fmt.Errorf("%w: collectionProfiles is currently a TechPreview feature behind the \"MetricsCollectionProfiles\" feature-gate, to be able to use a profile different from the default (\"full\") please enable it first", ErrConfigValidation)
 	}
 
 	// Validate the configured collection profile iff tech preview is enabled, even if the default profile is set.
@@ -634,26 +609,22 @@ func (c *Config) Precheck() error {
 			metrics.CollectionProfile.WithLabelValues(string(profile)).Set(v)
 		}
 		if !slices.Contains(SupportedCollectionProfiles, c.ClusterMonitoringConfiguration.PrometheusK8sConfig.CollectionProfile) {
-			return fmt.Errorf(`%q is not supported, supported collection profiles are: %q: %w`, c.ClusterMonitoringConfiguration.PrometheusK8sConfig.CollectionProfile, SupportedCollectionProfiles.String(), ErrConfigValidation)
+			return nil, fmt.Errorf(`%q is not supported, supported collection profiles are: %q: %w`, c.ClusterMonitoringConfiguration.PrometheusK8sConfig.CollectionProfile, SupportedCollectionProfiles.String(), ErrConfigValidation)
 		}
 	}
 
 	// Highlight deprecated config fields.
 	var d float64
+	var warn *InvalidConfigWarning
 	if c.ClusterMonitoringConfiguration.K8sPrometheusAdapter != nil {
 		klog.Infof("k8sPrometheusAdapter is a deprecated config use metricsServer instead")
 		d = 1
+		warn = &InvalidConfigWarning{ConfigMap: "openshift-monitoring/cluster-monitoring-config", Err: errPrometheusAdapterDeprecated}
 	}
 	// Prometheus-Adapter is replaced with Metrics Server by default from 4.16
 	metrics.DeprecatedConfig.WithLabelValues("openshift-monitoring/cluster-monitoring-config", "k8sPrometheusAdapter", "4.16").Set(d)
 
-	// TODO: remove after 4.19
-	// Only to assist with the migration to Prometheus 3; fail early if Alertmanager v1 is still in use.
-	if err := c.checkAlertmanagerVersion(); err != nil {
-		return err
-	}
-
-	return nil
+	return warn, nil
 }
 
 func calculateBodySizeLimit(podCapacity int) string {
@@ -674,26 +645,26 @@ func calculateBodySizeLimit(podCapacity int) string {
 // structure that facilitates programmatical checks of that configuration. The
 // content of the data structure might change if TechPreview is enabled (tp), as
 // some features are only meant for TechPreview.
-func NewConfigFromString(content string, collectionProfilesFeatureGateEnabled bool) (*Config, error) {
+func NewConfigFromString(content string, collectionProfilesFeatureGateEnabled bool) (*Config, *InvalidConfigWarning, error) {
 	if content == "" {
-		return NewDefaultConfig(), nil
+		return NewDefaultConfig(), nil, nil
 	}
 
 	return newConfig([]byte(content), collectionProfilesFeatureGateEnabled)
 }
 
-func NewConfigFromConfigMap(c *v1.ConfigMap, collectionProfilesFeatureGateEnabled bool) (*Config, error) {
+func NewConfigFromConfigMap(c *v1.ConfigMap, collectionProfilesFeatureGateEnabled bool) (*Config, *InvalidConfigWarning, error) {
 	configContent, found := c.Data[configKey]
 
 	if !found {
-		return nil, fmt.Errorf("%q key not found in the configmap", configKey)
+		return nil, nil, fmt.Errorf("%q key not found in the configmap", configKey)
 	}
 
-	cParsed, err := NewConfigFromString(configContent, collectionProfilesFeatureGateEnabled)
+	cParsed, warning, err := NewConfigFromString(configContent, collectionProfilesFeatureGateEnabled)
 	if err != nil {
-		return nil, fmt.Errorf("failed to parse data at key %q: %w", configKey, err)
+		return nil, warning, fmt.Errorf("failed to parse data at key %q: %w", configKey, err)
 	}
-	return cParsed, nil
+	return cParsed, warning, nil
 }
 
 func NewDefaultConfig() *Config {
@@ -720,38 +691,49 @@ func (u *UserWorkloadConfiguration) applyDefaults() {
 	}
 }
 
-func NewUserConfigFromString(content string) (*UserWorkloadConfiguration, error) {
+func NewUserConfigFromString(content string) (*UserWorkloadConfiguration, *InvalidConfigWarning, error) {
 	if content == "" {
-		return NewDefaultUserWorkloadMonitoringConfig(), nil
+		return NewDefaultUserWorkloadMonitoringConfig(), nil, nil
 	}
+
+	var warning *InvalidConfigWarning
+	wU := &UserWorkloadConfiguration{}
+	wErr := UnmarshalStrict([]byte(content), &wU)
+	if wErr != nil {
+		warning = &InvalidConfigWarning{
+			ConfigMap: "openshift-user-workload-monitoring/user-workload-monitoring-config",
+			Err:       wErr,
+		}
+	}
+
 	u := &UserWorkloadConfiguration{}
-	err := UnmarshalStrict([]byte(content), &u)
+	err := k8syaml.UnmarshalStrict([]byte(content), &u)
 	if err != nil {
-		return nil, err
+		return nil, warning, err
 	}
 
 	u.applyDefaults()
 
 	if err := u.check(); err != nil {
-		return nil, err
+		return nil, warning, err
 	}
 
-	return u, nil
+	return u, warning, nil
 }
 
-func NewUserWorkloadConfigFromConfigMap(c *v1.ConfigMap) (*UserWorkloadConfiguration, error) {
+func NewUserWorkloadConfigFromConfigMap(c *v1.ConfigMap) (*UserWorkloadConfiguration, *InvalidConfigWarning, error) {
 	configContent, found := c.Data[configKey]
 
 	if !found {
 		klog.Warningf("the user workload monitoring configmap does not contain the %q key", configKey)
-		return NewDefaultUserWorkloadMonitoringConfig(), nil
+		return NewDefaultUserWorkloadMonitoringConfig(), nil, nil
 	}
 
-	uwc, err := NewUserConfigFromString(configContent)
+	uwc, warning, err := NewUserConfigFromString(configContent)
 	if err != nil {
-		return nil, fmt.Errorf("the user workload monitoring configuration in %q could not be parsed: %w", configKey, err)
+		return nil, warning, fmt.Errorf("the user workload monitoring configuration in %q could not be parsed: %w", configKey, err)
 	}
-	return uwc, nil
+	return uwc, warning, nil
 }
 
 func NewDefaultUserWorkloadMonitoringConfig() *UserWorkloadConfiguration {
