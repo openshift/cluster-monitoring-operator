@@ -8,7 +8,6 @@ local setTerminationMessagePolicy = (import './utils/set-terminationMessagePolic
 
 local alertmanager = import './components/alertmanager.libsonnet';
 local alertmanagerUserWorkload = import './components/alertmanager-user-workload.libsonnet';
-local dashboards = import './components/dashboards.libsonnet';
 local kubeStateMetrics = import './components/kube-state-metrics.libsonnet';
 local controlPlane = import './components/control-plane.libsonnet';
 local nodeExporter = import './components/node-exporter.libsonnet';
@@ -89,10 +88,6 @@ local commonConfig = {
   },
   // TLS Cipher suite applied to every component serving HTTPS traffic
   tlsCipherSuites: 'TLS_ECDHE_RSA_WITH_AES_128_GCM_SHA256,TLS_ECDHE_ECDSA_WITH_AES_128_GCM_SHA256,TLS_ECDHE_RSA_WITH_AES_256_GCM_SHA384,TLS_ECDHE_ECDSA_WITH_AES_256_GCM_SHA384,TLS_ECDHE_RSA_WITH_CHACHA20_POLY1305,TLS_ECDHE_ECDSA_WITH_CHACHA20_POLY1305',
-  // Set label used in dashboards to identify the cluster explicitly so we can
-  // use that value in jsonnet/components/dashboard.libsonnet for our role
-  // template instead of relying on the upstream default never changing.
-  dashboardClusterLabel: 'cluster',
 };
 
 // objects deployed in openshift-monitoring namespace
@@ -165,42 +160,6 @@ local inCluster =
           ],
         },
       },
-      dashboards: {
-        namespace: $.values.common.namespace,
-        commonLabels: {
-          [k]: $.values.common.commonLabels[k]
-          for k in std.objectFields($.values.common.commonLabels)
-          // CMO doesn't deploy grafana these labels not needed anymore
-          if k != 'app.kubernetes.io/version' && k != 'app.kubernetes.io/name' && k != 'app.kubernetes.io/component'
-        },
-        prometheusName: $.values.common.prometheusName,
-        local allDashboards =
-          $.nodeExporter.mixin.grafanaDashboards +
-          $.prometheus.mixin.grafanaDashboards,
-
-        // Allow-listing dashboards that are going into the product. The list
-        // needs to be sorted for std.setMember to work.
-        local includeDashboards = std.set([
-          // node-exporter dashboards.
-          'node-cluster-rsrc-use.json',
-          'node-rsrc-use.json',
-          // Prometheus dashboard.
-          'prometheus.json',
-        ]),
-        local filteredDashboards = {
-          // This map specifies the rows to exclude from upstream dashboards.
-          // The format is:
-          //
-          // 'dashboard-name.json': ['Excluded Row 1', 'Excluded Row 2', ...],
-        },
-        local filterDashboard(dashboard, excludedRowTitles) = dashboard { rows: std.filter(function(row) !std.member(excludedRowTitles, row.title), dashboard.rows) },
-        dashboards: {
-          [k]: filterDashboard(allDashboards[k], if std.setMember(k, std.set(std.objectFields(filteredDashboards))) then filteredDashboards[k] else [])
-          for k in std.objectFields(allDashboards)
-          if std.setMember(k, includeDashboards)
-        },
-        clusterLabel: $.values.common.dashboardClusterLabel,
-      },
       kubeStateMetrics: {
         namespace: $.values.common.namespace,
         version: $.values.common.versions.kubeStateMetrics,
@@ -221,7 +180,6 @@ local inCluster =
             diskDeviceSelector: 'device=~"mmcblk.p.+|nvme.+|sd.+|vd.+|xvd.+|dm-.+|dasd.+"',
             rateInterval: '1m',  // adjust the rate interval value to be 4 x the node_exporter's scrape interval (15s).
             fsMountpointSelector: 'mountpoint!~"/var/lib/ibmc-s3fs.*"',
-            clusterLabel: $.values.common.dashboardClusterLabel,
           },
         },
         // The list of ignored devices is replaced by the Cluster Monitoring Operator (CMO) at runtime depending on the configuration of the CMO.
@@ -382,8 +340,7 @@ local inCluster =
             kubeletPodLimit: 250,
             pvExcludedSelector: 'label_alerts_k8s_io_kube_persistent_volume_filling_up="disabled"',
             containerfsSelector: 'id!=""',
-            clusterLabel: $.values.common.dashboardClusterLabel,
-            showMultiCluster: false,  // Opt-out of multi-cluster dashboards (opted-in by midstream kube-prometheus)
+            showMultiCluster: false,  // Opt-out of multi-cluster rules (opted-in by midstream kube-prometheus)
           },
         },
       },
@@ -416,7 +373,6 @@ local inCluster =
       },
     },
     alertmanager: alertmanager($.values.alertmanager),
-    dashboards: dashboards($.values.dashboards),
     kubeStateMetrics: kubeStateMetrics($.values.kubeStateMetrics),
     nodeExporter: nodeExporter($.values.nodeExporter),
     prometheus: prometheus($.values.prometheus),
@@ -520,7 +476,6 @@ setTerminationMessagePolicy(
               { ['alertmanager/' + name]: inCluster.alertmanager[name] for name in std.objectFields(inCluster.alertmanager) } +
               { ['alertmanager-user-workload/' + name]: userWorkload.alertmanager[name] for name in std.objectFields(userWorkload.alertmanager) } +
               { ['cluster-monitoring-operator/' + name]: inCluster.clusterMonitoringOperator[name] for name in std.objectFields(inCluster.clusterMonitoringOperator) } +
-              { ['dashboards/' + name]: inCluster.dashboards[name] for name in std.objectFields(inCluster.dashboards) } +
               { ['kube-state-metrics/' + name]: inCluster.kubeStateMetrics[name] for name in std.objectFields(inCluster.kubeStateMetrics) } +
               { ['node-exporter/' + name]: inCluster.nodeExporter[name] for name in std.objectFields(inCluster.nodeExporter) } +
               { ['openshift-state-metrics/' + name]: inCluster.openshiftStateMetrics[name] for name in std.objectFields(inCluster.openshiftStateMetrics) } +

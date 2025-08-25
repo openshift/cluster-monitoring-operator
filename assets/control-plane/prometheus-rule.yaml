@@ -2,6 +2,7 @@ apiVersion: monitoring.coreos.com/v1
 kind: PrometheusRule
 metadata:
   labels:
+    app.kubernetes.io/component: kubernetes
     app.kubernetes.io/managed-by: cluster-monitoring-operator
     app.kubernetes.io/name: kube-prometheus
     app.kubernetes.io/part-of: openshift-monitoring
@@ -243,20 +244,33 @@ spec:
     rules:
     - alert: KubeCPUOvercommit
       annotations:
-        description: Cluster has overcommitted CPU resource requests for Pods by {{ $value }} CPU shares and cannot tolerate node failure.
+        description: Cluster has overcommitted CPU resource requests for Pods by {{ printf "%.2f" $value }} CPU shares and cannot tolerate node failure.
         summary: Cluster has overcommitted CPU resource requests.
       expr: |
-        (sum(namespace_cpu:kube_pod_container_resource_requests:sum{}) -
-        sum(kube_node_status_allocatable{resource="cpu", job="kube-state-metrics"}) > 0
-        and
-        count(max by (node) (kube_node_role{job="kube-state-metrics", role="control-plane"})) < 3)
+        # Non-HA clusters.
+        (
+          (
+            sum(namespace_cpu:kube_pod_container_resource_requests:sum{})
+            -
+            sum(kube_node_status_allocatable{resource="cpu", job="kube-state-metrics"}) > 0
+          )
+          and
+          count(max by (node) (kube_node_role{job="kube-state-metrics", role="control-plane"})) < 3
+        )
         or
-        (sum(namespace_cpu:kube_pod_container_resource_requests:sum{}) -
-        (sum(kube_node_status_allocatable{resource="cpu", job="kube-state-metrics"}) -
-        max(kube_node_status_allocatable{resource="cpu", job="kube-state-metrics"})) > 0
-        and
-        (sum(kube_node_status_allocatable{resource="cpu", job="kube-state-metrics"}) -
-        max(kube_node_status_allocatable{resource="cpu", job="kube-state-metrics"})) > 0)
+        # HA clusters.
+        (
+          sum(namespace_cpu:kube_pod_container_resource_requests:sum{})
+          -
+          (
+            # Skip clusters with only one allocatable node.
+            (
+              sum(kube_node_status_allocatable{resource="cpu", job="kube-state-metrics"})
+              -
+              max(kube_node_status_allocatable{resource="cpu", job="kube-state-metrics"})
+            ) > 0
+          ) > 0
+        )
       for: 10m
       labels:
         namespace: kube-system
@@ -266,17 +280,30 @@ spec:
         description: Cluster has overcommitted memory resource requests for Pods by {{ $value | humanize }} bytes and cannot tolerate node failure.
         summary: Cluster has overcommitted memory resource requests.
       expr: |
-        (sum(namespace_memory:kube_pod_container_resource_requests:sum{}) -
-        sum(kube_node_status_allocatable{resource="memory", job="kube-state-metrics"}) > 0
-        and
-        count(max by (node) (kube_node_role{job="kube-state-metrics", role="control-plane"})) < 3)
+        # Non-HA clusters.
+        (
+          (
+            sum(namespace_memory:kube_pod_container_resource_requests:sum{})
+            -
+            sum(kube_node_status_allocatable{resource="memory", job="kube-state-metrics"}) > 0
+          )
+          and
+          count(max by (node) (kube_node_role{job="kube-state-metrics", role="control-plane"})) < 3
+        )
         or
-        (sum(namespace_memory:kube_pod_container_resource_requests:sum{}) -
-        (sum(kube_node_status_allocatable{resource="memory", job="kube-state-metrics"}) -
-        max(kube_node_status_allocatable{resource="memory", job="kube-state-metrics"})) > 0
-        and
-        (sum(kube_node_status_allocatable{resource="memory", job="kube-state-metrics"}) -
-        max(kube_node_status_allocatable{resource="memory", job="kube-state-metrics"})) > 0)
+        # HA clusters.
+        (
+          sum(namespace_memory:kube_pod_container_resource_requests:sum{})
+          -
+          (
+            # Skip clusters with only one allocatable node.
+            (
+              sum(kube_node_status_allocatable{resource="memory", job="kube-state-metrics"})
+              -
+              max(kube_node_status_allocatable{resource="memory", job="kube-state-metrics"})
+            ) > 0
+          ) > 0
+        )
       for: 10m
       labels:
         namespace: kube-system
@@ -468,7 +495,18 @@ spec:
         description: Kubelet Pod startup 99th percentile latency is {{ $value }} seconds on node {{ $labels.node }}.
         summary: Kubelet Pod startup latency is too high.
       expr: |
-        histogram_quantile(0.99, sum(rate(kubelet_pod_worker_duration_seconds_bucket{job="kubelet", metrics_path="/metrics"}[5m])) by (cluster, instance, le)) * on(cluster, instance) group_left(node) kubelet_node_name{job="kubelet", metrics_path="/metrics"} > 60
+        histogram_quantile(0.99,
+          sum by (cluster, instance, le) (
+            topk by (cluster, instance, le, operation_type) (1,
+              rate(kubelet_pod_worker_duration_seconds_bucket{job="kubelet", metrics_path="/metrics"}[5m])
+            )
+          )
+        )
+        * on(cluster, instance) group_left(node)
+        topk by (cluster, instance, node) (1,
+          kubelet_node_name{job="kubelet", metrics_path="/metrics"}
+        )
+        > 60
       for: 15m
       labels:
         namespace: kube-system
