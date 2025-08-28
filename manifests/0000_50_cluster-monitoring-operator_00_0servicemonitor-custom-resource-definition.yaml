@@ -7,7 +7,7 @@ metadata:
     include.release.openshift.io/ibm-cloud-managed: "true"
     include.release.openshift.io/self-managed-high-availability: "true"
     include.release.openshift.io/single-node-developer: "true"
-    operator.prometheus.io/version: 0.84.0
+    operator.prometheus.io/version: 0.85.0
   labels:
     app.kubernetes.io/managed-by: cluster-version-operator
     app.kubernetes.io/part-of: openshift-monitoring
@@ -1120,6 +1120,8 @@ spec:
                 description: |-
                   Whether to scrape a classic histogram that is also exposed as a native histogram.
                   It requires Prometheus >= v2.45.0.
+
+                  Notice: `scrapeClassicHistograms` corresponds to the `always_scrape_classic_histograms` field in the Prometheus configuration.
                 type: boolean
               scrapeProtocols:
                 description: |-
