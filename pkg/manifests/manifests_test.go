@@ -4251,6 +4251,7 @@ func TestTelemeterClientSecret(t *testing.T) {
 
 func TestThanosRulerConfiguration(t *testing.T) {
 	c, err := NewConfigFromString(``, false)
+	require.NoError(t, err)
 	uwc, err := NewUserConfigFromString(`thanosRuler:
   evaluationInterval: 20s
   resources:
