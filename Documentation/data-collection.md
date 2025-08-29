@@ -1250,6 +1250,11 @@ data:
     # cluster:infrastructure_topology:info shows the clusters infrastructure
     # topology
     - '{__name__="cluster:infrastructure_topology:info", mode=~"HighlyAvailable|SingleReplica"}'
+    #
+    # owners: (https://github.com/openshift/cluster-storage-operator, @openshift/storage)
+    #
+    # cluster:selinux_warning_controller_selinux_volume_conflict:count represents number of pods that may fail to start when SELinuxMount feature gate is enabled and Pods caught by this metric land on the same node.
+    - '{__name__="cluster:selinux_warning_controller_selinux_volume_conflict:count"}'
 kind: ConfigMap
 metadata:
   name: telemetry-config
