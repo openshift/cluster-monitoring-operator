@@ -1,3 +1,8 @@
+# The dashboards defined in this manifest are the latest versions generated
+# from prometheus/prometheus and prometheus/node_exporter before they switched
+# to the Grafana 11 format which unfortunately is not supported by the OCP
+# console.
+# Any future change to these dashboards should be made here directly.
 ---
 apiVersion: v1
 data:
