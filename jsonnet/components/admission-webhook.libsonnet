@@ -179,7 +179,7 @@ function(params)
           'include.release.openshift.io/single-node-developer': 'true',
         },
         name: 'prometheus-operator-access',
-        namespace: cfg.namespace,
+        namespace: 'openshift-monitoring',
       },
       spec: {
         podSelector: {
