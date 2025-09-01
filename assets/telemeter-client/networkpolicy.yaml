@@ -1,0 +1,24 @@
+apiVersion: networking.k8s.io/v1
+kind: NetworkPolicy
+metadata:
+  annotations:
+    include.release.openshift.io/hypershift: "true"
+    include.release.openshift.io/ibm-cloud-managed: "true"
+    include.release.openshift.io/self-managed-high-availability: "true"
+    include.release.openshift.io/single-node-developer: "true"
+  name: telemeter-client-access
+  namespace: openshift-monitoring
+spec:
+  podSelector:
+    matchLabels:
+      app.kubernetes.io/name: telemeter-client  # Label must match your telemeter-client pod
+  policyTypes:
+  - Ingress
+  - Egress
+  ingress:
+  # Allow access to port 8443
+  - ports:
+    - port: 8443
+      protocol: TCP
+  egress:
+  - {}

@@ -1,0 +1,24 @@
+apiVersion: networking.k8s.io/v1
+kind: NetworkPolicy
+metadata:
+  annotations:
+    include.release.openshift.io/hypershift: "true"
+    include.release.openshift.io/ibm-cloud-managed: "true"
+    include.release.openshift.io/self-managed-high-availability: "true"
+    include.release.openshift.io/single-node-developer: "true"
+  name: metrics-server-access
+  namespace: openshift-monitoring
+spec:
+  podSelector:
+    matchLabels:
+      app.kubernetes.io/name: metrics-server  # Label must match your metrics-server pod
+  policyTypes:
+  - Ingress
+  - Egress
+  # Allow access to ports 10250
+  ingress:
+  - ports:
+    - port: 10250
+      protocol: TCP
+  egress:
+  - {}

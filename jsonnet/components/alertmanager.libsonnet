@@ -440,4 +440,59 @@ function(params)
         ],
       },
     },
+    
+    networkPolicy: {
+      apiVersion: 'networking.k8s.io/v1',
+      kind: 'NetworkPolicy',
+      metadata: {
+        annotations: {
+          'include.release.openshift.io/hypershift': 'true',
+          'include.release.openshift.io/ibm-cloud-managed': 'true',
+          'include.release.openshift.io/self-managed-high-availability': 'true',
+          'include.release.openshift.io/single-node-developer': 'true',
+        },
+        name: 'alertmanager-access',
+        namespace: cfg.namespace,
+      },
+      spec: {
+        podSelector: {
+          matchLabels: {
+            'app.kubernetes.io/name': 'alertmanager',
+          },
+        },
+        policyTypes: [
+          'Ingress',
+          'Egress',
+        ],
+        ingress: [
+          {
+            ports: [
+              {
+                port: '9092',
+                protocol: 'TCP',
+              },
+              {
+                port: '9094',
+                protocol: 'TCP',
+              },
+              {
+                port: '9094',
+                protocol: 'UDP',
+              },
+              {
+                port: '9095',
+                protocol: 'TCP',
+              },
+              {
+                port: '9097',
+                protocol: 'TCP',
+              },
+            ],
+          },
+        ],
+        egress: [
+          {},
+        ],
+      },
+    },
   }

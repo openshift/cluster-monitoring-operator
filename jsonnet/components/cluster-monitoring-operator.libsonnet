@@ -566,4 +566,46 @@ function(params) {
       verbs: ['*'],
     }],
   },
+
+  // This networkpolicy allow access to CMO port 8443
+  networkPolicy: {
+    apiVersion: 'networking.k8s.io/v1',
+    kind: 'NetworkPolicy',
+    metadata: {
+      annotations: {
+        'include.release.openshift.io/hypershift': 'true',
+        'include.release.openshift.io/ibm-cloud-managed': 'true',
+        'include.release.openshift.io/self-managed-high-availability': 'true',
+        'include.release.openshift.io/single-node-developer': 'true',
+      },
+      name: 'cluster-monitoring-operator-access',
+      namespace: cfg.namespace,
+    },
+    spec: {
+      podSelector: {
+        matchLabels: {
+          'app.kubernetes.io/name': 'cluster-monitoring-operator',
+        },
+      },
+      policyTypes: [
+        'Ingress',
+        'Egress',
+      ],
+      ingress: [
+      // Allow access to port 8443
+        {
+          ports: [
+            {
+              port: '8443',
+              protocol: 'TCP',
+            },
+          ],
+        },
+      ],
+      egress: [
+      // Allow curl 8443 and return result from any pod under any namespace
+        {},
+      ],
+    },
+  },
 }

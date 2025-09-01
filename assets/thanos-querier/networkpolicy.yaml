@@ -1,0 +1,25 @@
+apiVersion: networking.k8s.io/v1
+kind: NetworkPolicy
+metadata:
+  annotations:
+    include.release.openshift.io/hypershift: "true"
+    include.release.openshift.io/ibm-cloud-managed: "true"
+    include.release.openshift.io/self-managed-high-availability: "true"
+    include.release.openshift.io/single-node-developer: "true"
+  name: thanos-querier-access
+  namespace: openshift-monitoring
+spec:
+  podSelector:
+    matchLabels:
+      app.kubernetes.io/name: thanos-query  # Label must match your thanos-query pod
+  policyTypes:
+  - Ingress
+  - Egress
+  # Allow access to ports 9091(svc)/9092(tenancy)/9093(tenancy-rules)/9094(metrics) from all pods in all namespaces  for ingress and egress
+  ingress:
+  - ports:
+    - port: 9091
+      endPort: 9094
+      protocol: TCP
+  egress:
+  - {}

@@ -605,4 +605,54 @@ function(params)
         ],
       },
     },
+    networkPolicy: {
+      apiVersion: 'networking.k8s.io/v1',
+      kind: 'NetworkPolicy',
+      metadata: {
+        annotations: {
+          'include.release.openshift.io/hypershift': 'true',
+          'include.release.openshift.io/ibm-cloud-managed': 'true',
+          'include.release.openshift.io/self-managed-high-availability': 'true',
+          'include.release.openshift.io/single-node-developer': 'true',
+        },
+        name: 'prometheus-access',
+        namespace: cfg.namespace,
+      },
+      spec: {
+        podSelector: {
+          matchLabels: {
+            'app.kubernetes.io/name': 'prometheus',
+          },
+        },
+        policyTypes: [
+          'Ingress',
+          'Egress',
+        ],
+        ingress: [
+          {
+            ports: [
+              {
+                port: '9091',
+                protocol: 'TCP',
+              },
+              {
+                port: '9092',
+                protocol: 'TCP',
+              },
+              {
+                port: '10901',
+                protocol: 'UDP',
+              },
+              {
+                port: '10903',
+                protocol: 'TCP',
+              },
+            ],
+          },
+        ],
+        egress: [
+          {},
+        ],
+      },
+    },
   }

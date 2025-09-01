@@ -1,0 +1,32 @@
+apiVersion: networking.k8s.io/v1
+kind: NetworkPolicy
+metadata:
+  annotations:
+    include.release.openshift.io/hypershift: "true"
+    include.release.openshift.io/ibm-cloud-managed: "true"
+    include.release.openshift.io/self-managed-high-availability: "true"
+    include.release.openshift.io/single-node-developer: "true"
+  name: alertmanager-access
+  namespace: openshift-monitoring
+spec:
+  podSelector:
+    matchLabels:
+      app.kubernetes.io/name: alertmanager  # Label must match your alertmanager pod
+  policyTypes:
+  - Ingress
+  - Egress
+  # Allow access to ports 9092(tenancy)/9094(service)/9095(web)/9097(metrics) from all pods in all namespaces for ingress and egress
+  ingress:
+  - ports:
+    - port: 9092
+      protocol: TCP
+    - port: 9094
+      protocol: TCP
+    - port: 9094
+      protocol: UDP
+    - port: 9095
+      protocol: TCP
+    - port: 9097
+      protocol: TCP
+  egress:
+  - {}
