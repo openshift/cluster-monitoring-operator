@@ -307,7 +307,6 @@ function(params)
     },
 
     customResourceStateConfigmap: crsConfig,
-    
     // This networkpolicy allow access to kube-state-metrics port 8443
     networkPolicy: {
       apiVersion: 'networking.k8s.io/v1',
