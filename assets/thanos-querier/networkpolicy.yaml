@@ -15,7 +15,7 @@ spec:
   policyTypes:
   - Ingress
   - Egress
-  # Allow access to ports 9091(svc)/9092(tenancy)/9093(tenancy-rules)/9094(metrics) from all pods in all namespaces  for ingress and egress
+  # Allow access to ports 9091(svc)/9092(tenancy)/9093(tenancy-rules)/9094(metrics) from all pods in all namespaces for ingress and egress
   ingress:
   - ports:
     - port: 9091
