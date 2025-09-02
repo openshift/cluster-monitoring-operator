@@ -178,13 +178,13 @@ function(params)
           'include.release.openshift.io/self-managed-high-availability': 'true',
           'include.release.openshift.io/single-node-developer': 'true',
         },
-        name: 'prometheus-operator-access',
+        name: 'prometheus-operator-admission-webhook-access',
         namespace: 'openshift-monitoring',
       },
       spec: {
         podSelector: {
           matchLabels: {
-            'app.kubernetes.io/name': 'prometheus-operator',
+            'app.kubernetes.io/name': 'prometheus-operator-admission-webhook',
           },
         },
         policyTypes: [
