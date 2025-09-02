@@ -1069,6 +1069,10 @@ func (f *Factory) ThanosQuerierClusterRoleBinding() (*rbacv1.ClusterRoleBinding,
 	return f.NewClusterRoleBinding(f.assets.MustNewAssetSlice(ThanosQuerierClusterRoleBinding))
 }
 
+func (f *Factory) ThanosQuerierNetworkPolicy() (*networkpolicyv1.NetworkPolicy, error) {
+	return f.NewNetworkPolicy(f.assets.MustNewAssetSlice(ThanosQuerierNetworkPolicy))
+}
+
 func (f *Factory) PrometheusUserWorkloadClusterRoleBinding() (*rbacv1.ClusterRoleBinding, error) {
 	return f.NewClusterRoleBinding(f.assets.MustNewAssetSlice(PrometheusUserWorkloadClusterRoleBinding))
 }
