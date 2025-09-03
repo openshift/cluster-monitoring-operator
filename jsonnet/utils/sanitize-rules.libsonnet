@@ -148,6 +148,10 @@ local excludedRules = [
       { alert: 'NodeCPUHighUsage' },
       { alert: 'NodeMemoryHighUtilization' },
       { alert: 'NodeDiskIOSaturation' },
+      // NodeSystemdServiceCrashlooping is removed because the systemd
+      // collector is not enabled by default. Users enabling it can define
+      // their own alerting rules with the AlertingRule CRD.
+      { alert: 'NodeSystemdServiceCrashlooping' },
     ],
   },
 ];
