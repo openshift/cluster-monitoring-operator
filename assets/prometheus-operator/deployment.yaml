@@ -36,6 +36,7 @@ spec:
         - --prometheus-config-reloader=quay.io/prometheus-operator/prometheus-config-reloader:v0.85.0
         - --kubelet-endpoints=true
         - --kubelet-endpointslice=false
+        - --watch-referenced-objects-in-all-namespaces=true
         - --prometheus-instance-namespaces=openshift-monitoring
         - --thanos-ruler-instance-namespaces=openshift-monitoring
         - --alertmanager-instance-namespaces=openshift-monitoring
