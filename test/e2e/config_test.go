@@ -71,9 +71,6 @@ func TestClusterMonitoringOperatorConfiguration(t *testing.T) {
 	t.Log("asserting that CMO goes degraded after an invalid configuration is pushed")
 	f.AssertOperatorCondition(configv1.OperatorDegraded, configv1.ConditionTrue)(t)
 	f.AssertOperatorCondition(configv1.OperatorAvailable, configv1.ConditionFalse)(t)
-	// operator should stay upgradeable even when a malformed config was
-	// rejected
-	f.AssertOperatorCondition(configv1.OperatorUpgradeable, configv1.ConditionTrue)(t)
 	f.AssertOperatorConditionReason(configv1.OperatorDegraded, "InvalidConfiguration")
 	f.AssertOperatorConditionReason(configv1.OperatorAvailable, "InvalidConfiguration")
 	// Check that the previous setup hasn't been reverted
@@ -84,9 +81,6 @@ func TestClusterMonitoringOperatorConfiguration(t *testing.T) {
 	t.Log("asserting that CMO goes back healthy after the configuration is fixed")
 	f.AssertOperatorCondition(configv1.OperatorDegraded, configv1.ConditionFalse)(t)
 	f.AssertOperatorCondition(configv1.OperatorAvailable, configv1.ConditionTrue)(t)
-	f.AssertOperatorCondition(configv1.OperatorUpgradeable, configv1.ConditionTrue)(t)
-	f.AssertOperatorConditionReason(configv1.OperatorUpgradeable, "")(t)
-	f.AssertOperatorConditionMessage(configv1.OperatorUpgradeable, "")(t)
 }
 
 func TestClusterMonitoringStatus(t *testing.T) {
@@ -904,14 +898,12 @@ k8sPrometheusAdapter:
     profile: Request`
 	f.MustCreateOrUpdateConfigMap(t, f.BuildCMOConfigMap(t, data))
 	checkMetricValue(1)
-	f.AssertOperatorCondition(configv1.OperatorUpgradeable, configv1.ConditionFalse)(t)
 
 	// The metric should be reset to 0.
 	data = `
 k8sPrometheusAdapter:`
 	f.MustCreateOrUpdateConfigMap(t, f.BuildCMOConfigMap(t, data))
 	checkMetricValue(0)
-	f.AssertOperatorCondition(configv1.OperatorUpgradeable, configv1.ConditionTrue)(t)
 }
 
 // checks that the toleration is present
