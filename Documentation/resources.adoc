@@ -23,6 +23,34 @@ To avoid these issues, follow these recommendations:
 * Avoid querying endpoints frequently. Limit queries to a maximum of one every 30 seconds.
 * Do not try to retrieve all metrics data via the /federate endpoint. Query it only when you want to retrieve a limited, aggregated data set. For example, retrieving fewer than 1,000 samples for each request helps minimize the risk of performance degradation.
 ====
+[id="cmo-networkpolicys-resources"]
+== CMO networkpolicys resources
+
+=== openshift-user-workload-monitoring/alertmanager-user-workload
+
+Expose the user-defined Alertmanager web server within the cluster on the following ports:
+
+* Port 9095 provides access to the Alertmanager endpoints. Granting access requires binding a user to the `monitoring-alertmanager-api-reader` role (for read-only operations) or `monitoring-alertmanager-api-writer` role in the `openshift-user-workload-monitoring` project.
+* Port 9092 provides access to the Alertmanager endpoints restricted to a given project. Granting access requires binding a user to the `monitoring-rules-edit` cluster role or `monitoring-edit` cluster role in the project.
+* Port 9097 provides access to the `/metrics` endpoint only. This port is for internal use, and no other usage is guaranteed.
+
+=== openshift-monitoring/node-exporter
+
+Expose the `/metrics` endpoint on port 9100. This port is for internal use, and no other usage is guaranteed.
+
+=== openshift-user-workload-monitoring/prometheus-operator
+
+Expose the `/metrics` endpoint on port 8443. This port is for internal use, and no other usage is guaranteed.
+
+=== openshift-user-workload-monitoring/prometheus-user-workload
+
+Expose the Prometheus web server within the cluster on the following ports:
+
+* Port 9091 provides access to the `/metrics` endpoint only. This port is for internal use, and no other usage is guaranteed.
+* Port 9092 provides access to the `/federate` endpoint only. Granting access requires binding a user to the `cluster-monitoring-view` cluster role.
+
+This also exposes the `/metrics` endpoint of the Thanos sidecar web server on port 10902. This port is for internal use, and no other usage is guaranteed.
+
 [id="cmo-routes-resources"]
 == CMO routes resources
 

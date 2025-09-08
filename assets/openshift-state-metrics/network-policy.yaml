@@ -6,10 +6,23 @@ metadata:
     include.release.openshift.io/ibm-cloud-managed: "true"
     include.release.openshift.io/self-managed-high-availability: "true"
     include.release.openshift.io/single-node-developer: "true"
-  name: default-deny
+  labels:
+    app.kubernetes.io/managed-by: cluster-monitoring-operator
+    app.kubernetes.io/part-of: openshift-monitoring
+  name: openshift-state-metrics-access
   namespace: openshift-monitoring
 spec:
-  podSelector: {}
+  egress:
+  - {}
+  ingress:
+  - ports:
+    - port: "8443"
+      protocol: TCP
+    - port: "9443"
+      protocol: TCP
+  podSelector:
+    matchLabels:
+      app.kubernetes.io/name: openshift-state-metrics
   policyTypes:
   - Ingress
   - Egress
