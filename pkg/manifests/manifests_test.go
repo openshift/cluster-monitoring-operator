@@ -1640,7 +1640,7 @@ func TestPrometheusK8sConfiguration(t *testing.T) {
 		t.Fatal("Prometheus query log is not configured correctly")
 	}
 
-	expectedExternalURL := "https://console-openshift-console.apps.foo.devcluster.openshift.com/monitoring"
+	expectedExternalURL := "https://console-openshift-console.apps.foo.devcluster.openshift.com"
 	if p.Spec.ExternalURL != expectedExternalURL {
 		t.Fatalf("Prometheus external URL is not configured correctly, expected %s, but got %s", expectedExternalURL, p.Spec.ExternalURL)
 	}

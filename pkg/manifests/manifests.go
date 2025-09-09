@@ -1337,7 +1337,10 @@ func (f *Factory) PrometheusK8s(grpcTLS *v1.Secret, telemetrySecret *v1.Secret) 
 
 	p.Spec.Image = &f.config.Images.Prometheus
 
-	alertGeneratorURL, err := makeConsoleURL(f.consoleConfig, "monitoring")
+	// Set external URL without the /monitoring path to fix redirect behavior.
+	// This ensures that when accessing via port-forward, redirects go to /query instead of /monitoring/query.
+	// See: https://issues.redhat.com/browse/OCPBUGS-60751
+	alertGeneratorURL, err := makeConsoleURL(f.consoleConfig, "")
 	if err != nil {
 		return nil, err
 	}
@@ -1484,6 +1487,10 @@ func (f *Factory) PrometheusK8s(grpcTLS *v1.Secret, telemetrySecret *v1.Secret) 
 	if f.config.ClusterMonitoringConfiguration.PrometheusK8sConfig.EnforcedBodySizeLimit != "" {
 		p.Spec.EnforcedBodySizeLimit = monv1.ByteSize(f.config.ClusterMonitoringConfiguration.PrometheusK8sConfig.EnforcedBodySizeLimit)
 	}
+
+	// Always set routePrefix to "/" to ensure correct redirect behavior.
+	// See: https://issues.redhat.com/browse/OCPBUGS-60751
+	p.Spec.RoutePrefix = "/"
 
 	return p, nil
 }
@@ -1690,7 +1697,10 @@ func (f *Factory) PrometheusUserWorkload(grpcTLS *v1.Secret) (*monv1.Prometheus,
 
 	p.Spec.Image = &f.config.Images.Prometheus
 
-	alertGeneratorURL, err := makeConsoleURL(f.consoleConfig, "monitoring")
+	// Set external URL without the /monitoring path to fix redirect behavior.
+	// This ensures that when accessing via port-forward, redirects go to /query instead of /monitoring/query.
+	// See: https://issues.redhat.com/browse/OCPBUGS-60751
+	alertGeneratorURL, err := makeConsoleURL(f.consoleConfig, "")
 	if err != nil {
 		return nil, err
 	}
@@ -1822,6 +1832,10 @@ func (f *Factory) PrometheusUserWorkload(grpcTLS *v1.Secret) (*monv1.Prometheus,
 	}
 
 	p.Spec.ExcludedFromEnforcement = f.excludedFromEnforcement()
+
+	// Always set routePrefix to "/" to ensure correct redirect behavior.
+	// See: https://issues.redhat.com/browse/OCPBUGS-60751
+	p.Spec.RoutePrefix = "/"
 
 	return p, nil
 }
