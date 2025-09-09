@@ -5,6 +5,7 @@ local generateSecret = import '../utils/generate-secret.libsonnet';
 local prometheus = import 'github.com/prometheus-operator/kube-prometheus/jsonnet/kube-prometheus/components/prometheus.libsonnet';
 local withDescription = (import '../utils/add-annotations.libsonnet').withDescription;
 local requiredClusterRoles = (import '../utils/add-annotations.libsonnet').requiredClusterRoles;
+local renameNetworkPolicy = import '../utils/remame-network-policy.libsonnet';
 
 function(params)
   local cfg = params;
@@ -605,54 +606,57 @@ function(params)
         ],
       },
     },
-    networkPolicy: {
-      apiVersion: 'networking.k8s.io/v1',
-      kind: 'NetworkPolicy',
-      metadata: {
-        annotations: {
-          'include.release.openshift.io/hypershift': 'true',
-          'include.release.openshift.io/ibm-cloud-managed': 'true',
-          'include.release.openshift.io/self-managed-high-availability': 'true',
-          'include.release.openshift.io/single-node-developer': 'true',
-        },
-        name: 'prometheus-access',
-        namespace: cfg.namespace,
-      },
-      spec: {
-        podSelector: {
-          matchLabels: {
-            'app.kubernetes.io/name': 'prometheus',
+    local netpol = {
+      networkPolicy: {
+        apiVersion: 'networking.k8s.io/v1',
+        kind: 'NetworkPolicy',
+        metadata: {
+          annotations: {
+            'include.release.openshift.io/hypershift': 'true',
+            'include.release.openshift.io/ibm-cloud-managed': 'true',
+            'include.release.openshift.io/self-managed-high-availability': 'true',
+            'include.release.openshift.io/single-node-developer': 'true',
           },
+          name: 'prometheus-access',
+          namespace: cfg.namespace,
         },
-        policyTypes: [
-          'Ingress',
-          'Egress',
-        ],
-        ingress: [
-          {
-            ports: [
-              {
-                port: '9091',
-                protocol: 'TCP',
-              },
-              {
-                port: '9092',
-                protocol: 'TCP',
-              },
-              {
-                port: '10901',
-                protocol: 'UDP',
-              },
-              {
-                port: '10903',
-                protocol: 'TCP',
-              },
-            ],
+        spec: {
+          podSelector: {
+            matchLabels: {
+              'app.kubernetes.io/name': 'prometheus',
+            },
           },
-        ],
-        egress: [
-          {},
-        ],
+          policyTypes: [
+            'Ingress',
+            'Egress',
+          ],
+          ingress: [
+            {
+              ports: [
+                {
+                  port: '9091',
+                  protocol: 'TCP',
+                },
+                {
+                  port: '9092',
+                  protocol: 'TCP',
+                },
+                {
+                  port: '10901',
+                  protocol: 'UDP',
+                },
+                {
+                  port: '10903',
+                  protocol: 'TCP',
+                },
+              ],
+            },
+          ],
+          egress: [
+            {},
+          ],
+        },
       },
     },
+    networkPolicyDownstream: renameNetworkPolicy.renameKey(netpol, 'networkPolicy', 'networkPolicyDownstream'),
   }
