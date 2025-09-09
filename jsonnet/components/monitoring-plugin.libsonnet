@@ -1,4 +1,5 @@
 local withDescription = (import '../utils/add-annotations.libsonnet').withDescription;
+local renameNetworkPolicy = import '../utils/remame-network-policy.libsonnet';
 
 function(params)
   local cfg = params;
@@ -223,42 +224,45 @@ function(params)
         },  // template
       },  // spec
     },  // deployment
-    networkPolicy: {
-      apiVersion: 'networking.k8s.io/v1',
-      kind: 'NetworkPolicy',
-      metadata: {
-        annotations: {
-          'include.release.openshift.io/hypershift': 'true',
-          'include.release.openshift.io/ibm-cloud-managed': 'true',
-          'include.release.openshift.io/self-managed-high-availability': 'true',
-          'include.release.openshift.io/single-node-developer': 'true',
-        },
-        name: 'monitoring-plugin-access',
-        namespace: cfg.namespace,
-      },
-      spec: {
-        podSelector: {
-          matchLabels: {
-            'app.kubernetes.io/name': 'monitoring-plugin',
+    local netpol = {
+      networkPolicy: {
+        apiVersion: 'networking.k8s.io/v1',
+        kind: 'NetworkPolicy',
+        metadata: {
+          annotations: {
+            'include.release.openshift.io/hypershift': 'true',
+            'include.release.openshift.io/ibm-cloud-managed': 'true',
+            'include.release.openshift.io/self-managed-high-availability': 'true',
+            'include.release.openshift.io/single-node-developer': 'true',
           },
+          name: 'monitoring-plugin-access',
+          namespace: cfg.namespace,
         },
-        policyTypes: [
-          'Ingress',
-          'Egress',
-        ],
-        ingress: [
-          {
-            ports: [
-              {
-                port: '9443',
-                protocol: 'TCP',
-              },
-            ],
+        spec: {
+          podSelector: {
+            matchLabels: {
+              'app.kubernetes.io/name': 'monitoring-plugin',
+            },
           },
-        ],
-        egress: [
-          {},
-        ],
+          policyTypes: [
+            'Ingress',
+            'Egress',
+          ],
+          ingress: [
+            {
+              ports: [
+                {
+                  port: '9443',
+                  protocol: 'TCP',
+                },
+              ],
+            },
+          ],
+          egress: [
+            {},
+          ],
+        },
       },
     },
+    networkPolicyDownstream: renameNetworkPolicy.renameKey(netpol, 'networkPolicy', 'networkPolicyDownstream'),
   }
