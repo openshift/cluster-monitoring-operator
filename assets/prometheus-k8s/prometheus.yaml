@@ -199,6 +199,7 @@ spec:
     requests:
       cpu: 70m
       memory: 1Gi
+  routePrefix: /
   ruleNamespaceSelector:
     matchLabels:
       openshift.io/cluster-monitoring: "true"
