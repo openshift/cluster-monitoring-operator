@@ -685,5 +685,5 @@ function(params)
         },
       },
     },
-    networkPolicyDownstream: renameNetworkPolicy.renameKey(netpol, 'networkPolicy', 'networkPolicyDownstream'),
+    networkPolicy: renameNetworkPolicy.renameKey(netpol, 'networkPolicy', 'networkPolicyDownstream'),
   }

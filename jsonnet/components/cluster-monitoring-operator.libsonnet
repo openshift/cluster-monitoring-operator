@@ -594,7 +594,6 @@ function(params) {
           'Egress',
         ],
         ingress: [
-          // Allow access to port 8443
           {
             ports: [
               {
@@ -605,11 +604,10 @@ function(params) {
           },
         ],
         egress: [
-          // Allow curl 8443 and return result from any pod under any namespace
           {},
         ],
       },
     },
   },
-  networkPolicyDownstream: renameNetworkPolicy.renameKey(netpol, 'networkPolicy', 'networkPolicyDownstream'),
+  networkPolicy: renameNetworkPolicy.renameKey(netpol, 'networkPolicy', 'networkPolicyDownstream'),
 }
