@@ -71,6 +71,14 @@ local excludedRules = [
       // actionable because the cluster admin has no way to
       // prevent a client from using an expird certificate.
       { alert: 'KubeClientCertificateExpiration' },
+      // KubeAPIDown alert fires only when either all kube-apiserver instances
+      // are down or connection to Prometheus is down. From the use perspective
+      // accessing the Console is a common scenario. Thus, when API is down
+      // the console/Prometheus can not be accessed. Thus, this alert is not
+      // observed unless an external observer is installed. There are also
+      // other alerts like KubeAPIErrorBudgetBurn that are expected to trigger
+      // before the API is down.
+      { alert: 'KubeAPIDown' },
     ],
   },
   {
