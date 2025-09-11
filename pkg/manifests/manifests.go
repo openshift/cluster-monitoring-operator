@@ -96,7 +96,7 @@ var (
 	AlertmanagerTrustedCABundle       = "alertmanager/trusted-ca-bundle.yaml"
 	AlertmanagerPrometheusRule        = "alertmanager/prometheus-rule.yaml"
 	AlertmanagerPodDisruptionBudget   = "alertmanager/pod-disruption-budget.yaml"
-	AlertmanagerNetworkPolicy         = "alertmanager/network-policy.yaml"
+	AlertmanagerNetworkPolicy         = "alertmanager/network-policy-downstream.yaml"
 
 	AlertmanagerUserWorkloadSecret                 = "alertmanager-user-workload/secret.yaml"
 	AlertmanagerUserWorkloadService                = "alertmanager-user-workload/service.yaml"
@@ -121,7 +121,7 @@ var (
 	KubeStateMetricsPrometheusRule        = "kube-state-metrics/prometheus-rule.yaml"
 	KubeStateMetricsKubeRbacProxySecret   = "kube-state-metrics/kube-rbac-proxy-secret.yaml"
 	KubeStateMetricsCRSConfig             = "kube-state-metrics/custom-resource-state-configmap.yaml"
-	KubeStateMetricsNetworkPolicy         = "kube-state-metrics/network-policy.yaml"
+	KubeStateMetricsNetworkPolicy         = "kube-state-metrics/network-policy-downstream.yaml"
 
 	OpenShiftStateMetricsClusterRoleBinding  = "openshift-state-metrics/cluster-role-binding.yaml"
 	OpenShiftStateMetricsClusterRole         = "openshift-state-metrics/cluster-role.yaml"
@@ -130,7 +130,7 @@ var (
 	OpenShiftStateMetricsService             = "openshift-state-metrics/service.yaml"
 	OpenShiftStateMetricsServiceMonitor      = "openshift-state-metrics/service-monitor.yaml"
 	OpenShiftStateMetricsKubeRbacProxySecret = "openshift-state-metrics/kube-rbac-proxy-secret.yaml"
-	OpenShiftStateMetricsNetworkPolicy       = "openshift-state-metrics/network-policy.yaml"
+	OpenShiftStateMetricsNetworkPolicy       = "openshift-state-metrics/network-policy-downstream.yaml"
 
 	NodeExporterDaemonSet                  = "node-exporter/daemonset.yaml"
 	NodeExporterService                    = "node-exporter/service.yaml"
@@ -143,7 +143,7 @@ var (
 	NodeExporterPrometheusRule             = "node-exporter/prometheus-rule.yaml"
 	NodeExporterKubeRbacProxySecret        = "node-exporter/kube-rbac-proxy-secret.yaml"
 	NodeExporterAcceleratorsConfigMap      = "node-exporter/accelerators-collector-configmap.yaml"
-	NodeExporterNetworkPolicy              = "node-exporter/network-policy.yaml"
+	NodeExporterNetworkPolicy              = "node-exporter/network-policy-downstream.yaml"
 
 	PrometheusK8sClusterRoleBinding               = "prometheus-k8s/cluster-role-binding.yaml"
 	PrometheusK8sRoleBindingConfig                = "prometheus-k8s/role-binding-config.yaml"
@@ -172,7 +172,7 @@ var (
 	PrometheusK8sTAlertmanagerRoleBinding         = "prometheus-k8s/alertmanager-role-binding.yaml"
 	PrometheusK8sPodDisruptionBudget              = "prometheus-k8s/pod-disruption-budget.yaml"
 	PrometheusK8sTelemetry                        = "prometheus-k8s/telemetry-secret.yaml"
-	PrometheusK8sNetworkPolicy                    = "prometheus-k8s/network-policy.yaml"
+	PrometheusK8sNetworkPolicy                    = "prometheus-k8s/network-policy-downstream.yaml"
 
 	PrometheusUserWorkloadServingCertsCABundle                = "prometheus-user-workload/serving-certs-ca-bundle.yaml"
 	PrometheusUserWorkloadTrustedCABundle                     = "prometheus-user-workload/trusted-ca-bundle.yaml"
@@ -206,7 +206,7 @@ var (
 	MetricsServerService                         = "metrics-server/service.yaml"
 	MetricsServerServiceMonitor                  = "metrics-server/service-monitor.yaml"
 	MetricsServerPodDisruptionBudget             = "metrics-server/pod-disruption-budget.yaml"
-	MetricsServerNetworkPolicy                   = "metrics-server/network-policy.yaml"
+	MetricsServerNetworkPolicy                   = "metrics-server/network-policy-downstream.yaml"
 
 	AdmissionWebhookRuleValidatingWebhook               = "admission-webhook/prometheus-rule-validating-webhook.yaml"
 	AdmissionWebhookAlertmanagerConfigValidatingWebhook = "admission-webhook/alertmanager-config-validating-webhook.yaml"
@@ -214,7 +214,7 @@ var (
 	AdmissionWebhookPodDisruptionBudget                 = "admission-webhook/pod-disruption-budget.yaml"
 	AdmissionWebhookService                             = "admission-webhook/service.yaml"
 	AdmissionWebhookServiceAccount                      = "admission-webhook/service-account.yaml"
-	AdmissionWebhookNetworkPolicy                       = "admission-webhook/network-policy.yaml"
+	AdmissionWebhookNetworkPolicy                       = "admission-webhook/network-policy-downstream.yaml"
 
 	PrometheusOperatorClusterRoleBinding  = "prometheus-operator/cluster-role-binding.yaml"
 	PrometheusOperatorClusterRole         = "prometheus-operator/cluster-role.yaml"
@@ -224,7 +224,7 @@ var (
 	PrometheusOperatorServiceMonitor      = "prometheus-operator/service-monitor.yaml"
 	PrometheusOperatorPrometheusRule      = "prometheus-operator/prometheus-rule.yaml"
 	PrometheusOperatorKubeRbacProxySecret = "prometheus-operator/kube-rbac-proxy-secret.yaml"
-	PrometheusOperatorNetworkPolicy       = "prometheus-operator/network-policy.yaml"
+	PrometheusOperatorNetworkPolicy       = "prometheus-operator/network-policy-downstream.yaml"
 
 	PrometheusOperatorUserWorkloadServiceAccount      = "prometheus-operator-user-workload/service-account.yaml"
 	PrometheusOperatorUserWorkloadClusterRole         = "prometheus-operator-user-workload/cluster-role.yaml"
@@ -254,8 +254,8 @@ var (
 	ClusterMonitoringMetricsServerClientCertsSecret        = "cluster-monitoring-operator/metrics-server-client-certs.yaml"
 	ClusterMonitoringFederateClientCertsSecret             = "cluster-monitoring-operator/federate-client-certs.yaml"
 	ClusterMonitoringMetricsClientCACM                     = "cluster-monitoring-operator/metrics-client-ca.yaml"
-	ClusterMonitoringDenyAllTraffic                        = "cluster-monitoring-operator/default-deny-network-policy.yaml"
-	ClusterMonitoringNetworkPolicy                         = "cluster-monitoring-operator/network-policy.yaml"
+	ClusterMonitoringDenyAllTraffic                        = "cluster-monitoring-operator/default-deny-network-policy-downstream.yaml"
+	ClusterMonitoringNetworkPolicy                         = "cluster-monitoring-operator/network-policy-downstream.yaml"
 
 	TelemeterClientClusterRole            = "telemeter-client/cluster-role.yaml"
 	TelemeterClientClusterRoleBinding     = "telemeter-client/cluster-role-binding.yaml"
@@ -268,7 +268,7 @@ var (
 	TelemeterClientServingCertsCABundle   = "telemeter-client/serving-certs-ca-bundle.yaml"
 	TelemeterClientKubeRbacProxySecret    = "telemeter-client/kube-rbac-proxy-secret.yaml"
 	TelemeterClientPrometheusRule         = "telemeter-client/prometheus-rule.yaml"
-	TelemeterClientNetworkPolicy          = "telemeter-client/network-policy.yaml"
+	TelemeterClientNetworkPolicy          = "telemeter-client/network-policy-downstream.yaml"
 
 	ThanosQuerierDeployment             = "thanos-querier/deployment.yaml"
 	ThanosQuerierPodDisruptionBudget    = "thanos-querier/pod-disruption-budget.yaml"
@@ -284,7 +284,7 @@ var (
 	ThanosQuerierClusterRole            = "thanos-querier/cluster-role.yaml"
 	ThanosQuerierClusterRoleBinding     = "thanos-querier/cluster-role-binding.yaml"
 	ThanosQuerierGrpcTLSSecret          = "thanos-querier/grpc-tls-secret.yaml"
-	ThanosQuerierNetworkPolicy          = "thanos-querier/network-policy.yaml"
+	ThanosQuerierNetworkPolicy          = "thanos-querier/network-policy-downstream.yaml"
 
 	ThanosRulerCustomResource                                = "thanos-ruler/thanos-ruler.yaml"
 	ThanosRulerService                                       = "thanos-ruler/service.yaml"
@@ -316,7 +316,7 @@ var (
 	MonitoringPluginServiceAccount      = "monitoring-plugin/service-account.yaml"
 	MonitoringPluginService             = "monitoring-plugin/service.yaml"
 	MonitoringPluginPodDisruptionBudget = "monitoring-plugin/pod-disruption-budget.yaml"
-	MonitoringPluginNetworkPolicy       = "monitoring-plugin/network-policy.yaml"
+	MonitoringPluginNetworkPolicy       = "monitoring-plugin/network-policy-downstream.yaml"
 )
 
 var (
