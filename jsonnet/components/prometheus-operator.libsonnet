@@ -6,6 +6,7 @@ local conversionWebhook = import 'github.com/prometheus-operator/prometheus-oper
 local generateSecret = import '../utils/generate-secret.libsonnet';
 local rbac = import '../utils/rbac.libsonnet';
 local withDescription = (import '../utils/add-annotations.libsonnet').withDescription;
+local renameNetworkPolicy = import '../utils/remame-network-policy.libsonnet';
 
 function(params)
   local po = operator(params);
@@ -177,42 +178,45 @@ function(params)
         ],
       },
     },
-    networkPolicy: {
-      apiVersion: 'networking.k8s.io/v1',
-      kind: 'NetworkPolicy',
-      metadata: {
-        annotations: {
-          'include.release.openshift.io/hypershift': 'true',
-          'include.release.openshift.io/ibm-cloud-managed': 'true',
-          'include.release.openshift.io/self-managed-high-availability': 'true',
-          'include.release.openshift.io/single-node-developer': 'true',
-        },
-        name: 'prometheus-operator-access',
-        namespace: 'openshift-monitoring',
-      },
-      spec: {
-        podSelector: {
-          matchLabels: {
-            'app.kubernetes.io/name': 'prometheus-operator',
+    local netpol = {
+      networkPolicy: {
+        apiVersion: 'networking.k8s.io/v1',
+        kind: 'NetworkPolicy',
+        metadata: {
+          annotations: {
+            'include.release.openshift.io/hypershift': 'true',
+            'include.release.openshift.io/ibm-cloud-managed': 'true',
+            'include.release.openshift.io/self-managed-high-availability': 'true',
+            'include.release.openshift.io/single-node-developer': 'true',
           },
+          name: 'prometheus-operator-access',
+          namespace: 'openshift-monitoring',
         },
-        policyTypes: [
-          'Ingress',
-          'Egress',
-        ],
-        ingress: [
-          {
-            ports: [
-              {
-                port: '8443',
-                protocol: 'TCP',
-              },
-            ],
+        spec: {
+          podSelector: {
+            matchLabels: {
+              'app.kubernetes.io/name': 'prometheus-operator',
+            },
           },
-        ],
-        egress: [
-          {},
-        ],
+          policyTypes: [
+            'Ingress',
+            'Egress',
+          ],
+          ingress: [
+            {
+              ports: [
+                {
+                  port: '8443',
+                  protocol: 'TCP',
+                },
+              ],
+            },
+          ],
+          egress: [
+            {},
+          ],
+        },
       },
     },
+    networkPolicyDownstream: renameNetworkPolicy.renameKey(netpol, 'networkPolicy', 'networkPolicyDownstream'),
   }
