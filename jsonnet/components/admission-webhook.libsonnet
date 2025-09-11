@@ -2,7 +2,7 @@ local tlsVolumeName = 'prometheus-operator-admission-webhook-tls';
 local admissionWebhook = import 'github.com/prometheus-operator/prometheus-operator/jsonnet/prometheus-operator/admission-webhook.libsonnet';
 local antiAffinity = import 'github.com/prometheus-operator/kube-prometheus/jsonnet/kube-prometheus/addons/anti-affinity.libsonnet';
 local withDescription = (import '../utils/add-annotations.libsonnet').withDescription;
-local renameNetworkPolicy = import '../utils/remame-network-policy.libsonnet';
+local renameNetworkPolicy = import '../utils/rename-network-policy.libsonnet';
 
 function(params)
   local aw = admissionWebhook(params);

@@ -5,7 +5,7 @@ local generateSecret = import '../utils/generate-secret.libsonnet';
 local prometheus = import 'github.com/prometheus-operator/kube-prometheus/jsonnet/kube-prometheus/components/prometheus.libsonnet';
 local withDescription = (import '../utils/add-annotations.libsonnet').withDescription;
 local requiredClusterRoles = (import '../utils/add-annotations.libsonnet').requiredClusterRoles;
-local renameNetworkPolicy = import '../utils/remame-network-policy.libsonnet';
+local renameNetworkPolicy = import '../utils/rename-network-policy.libsonnet';
 
 function(params)
   local cfg = params;

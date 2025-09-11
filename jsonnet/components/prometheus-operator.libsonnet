@@ -6,7 +6,7 @@ local conversionWebhook = import 'github.com/prometheus-operator/prometheus-oper
 local generateSecret = import '../utils/generate-secret.libsonnet';
 local rbac = import '../utils/rbac.libsonnet';
 local withDescription = (import '../utils/add-annotations.libsonnet').withDescription;
-local renameNetworkPolicy = import '../utils/remame-network-policy.libsonnet';
+local renameNetworkPolicy = import '../utils/rename-network-policy.libsonnet';
 
 function(params)
   local po = operator(params);

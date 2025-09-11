@@ -7,7 +7,7 @@ local withDescription = (import '../utils/add-annotations.libsonnet').withDescri
 local testFilePlaceholder = (import '../utils/add-annotations.libsonnet').testFilePlaceholder;
 local requiredRoles = (import '../utils/add-annotations.libsonnet').requiredRoles;
 local requiredClusterRoles = (import '../utils/add-annotations.libsonnet').requiredClusterRoles;
-local renameNetworkPolicy = import '../utils/remame-network-policy.libsonnet';
+local renameNetworkPolicy = import '../utils/rename-network-policy.libsonnet';
 
 function(params)
   local cfg = params {

@@ -109,7 +109,7 @@ local nodeExporter = import 'github.com/prometheus-operator/kube-prometheus/json
 local generateSecret = import '../utils/generate-secret.libsonnet';
 local generateServiceMonitor = import '../utils/generate-service-monitors.libsonnet';
 local withDescription = (import '../utils/add-annotations.libsonnet').withDescription;
-local renameNetworkPolicy = import '../utils/remame-network-policy.libsonnet';
+local renameNetworkPolicy = import '../utils/rename-network-policy.libsonnet';
 
 function(params)
   local cfg = params;
