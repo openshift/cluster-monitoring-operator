@@ -5,7 +5,6 @@ local generateSecret = import '../utils/generate-secret.libsonnet';
 local prometheus = import 'github.com/prometheus-operator/kube-prometheus/jsonnet/kube-prometheus/components/prometheus.libsonnet';
 local withDescription = (import '../utils/add-annotations.libsonnet').withDescription;
 local requiredClusterRoles = (import '../utils/add-annotations.libsonnet').requiredClusterRoles;
-local renameNetworkPolicy = import '../utils/rename-network-policy.libsonnet';
 
 function(params)
   local cfg = params;
@@ -606,57 +605,54 @@ function(params)
         ],
       },
     },
-    local netpol = {
-      networkPolicy: {
-        apiVersion: 'networking.k8s.io/v1',
-        kind: 'NetworkPolicy',
-        metadata: {
-          annotations: {
-            'include.release.openshift.io/hypershift': 'true',
-            'include.release.openshift.io/ibm-cloud-managed': 'true',
-            'include.release.openshift.io/self-managed-high-availability': 'true',
-            'include.release.openshift.io/single-node-developer': 'true',
-          },
-          name: 'prometheus-access',
-          namespace: cfg.namespace,
+    networkPolicyDownstream: {
+      apiVersion: 'networking.k8s.io/v1',
+      kind: 'NetworkPolicy',
+      metadata: {
+        annotations: {
+          'include.release.openshift.io/hypershift': 'true',
+          'include.release.openshift.io/ibm-cloud-managed': 'true',
+          'include.release.openshift.io/self-managed-high-availability': 'true',
+          'include.release.openshift.io/single-node-developer': 'true',
         },
-        spec: {
-          podSelector: {
-            matchLabels: {
-              'app.kubernetes.io/name': 'prometheus',
-            },
+        name: 'prometheus-access',
+        namespace: cfg.namespace,
+      },
+      spec: {
+        podSelector: {
+          matchLabels: {
+            'app.kubernetes.io/name': 'prometheus',
           },
-          policyTypes: [
-            'Ingress',
-            'Egress',
-          ],
-          ingress: [
-            {
-              ports: [
-                {
-                  port: '9091',
-                  protocol: 'TCP',
-                },
-                {
-                  port: '9092',
-                  protocol: 'TCP',
-                },
-                {
-                  port: '10901',
-                  protocol: 'UDP',
-                },
-                {
-                  port: '10903',
-                  protocol: 'TCP',
-                },
-              ],
-            },
-          ],
-          egress: [
-            {},
-          ],
         },
+        policyTypes: [
+          'Ingress',
+          'Egress',
+        ],
+        ingress: [
+          {
+            ports: [
+              {
+                port: '9091',
+                protocol: 'TCP',
+              },
+              {
+                port: '9092',
+                protocol: 'TCP',
+              },
+              {
+                port: '10901',
+                protocol: 'UDP',
+              },
+              {
+                port: '10903',
+                protocol: 'TCP',
+              },
+            ],
+          },
+        ],
+        egress: [
+          {},
+        ],
       },
     },
-    networkPolicyDownstream: renameNetworkPolicy.renameKey(netpol, 'networkPolicy', 'networkPolicyDownstream'),
   }

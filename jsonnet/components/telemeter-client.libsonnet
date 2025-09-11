@@ -1,7 +1,6 @@
 local generateCertInjection = import '../utils/generate-certificate-injection.libsonnet';
 local generateSecret = import '../utils/generate-secret.libsonnet';
 local withDescription = (import '../utils/add-annotations.libsonnet').withDescription;
-local renameNetworkPolicy = import '../utils/rename-network-policy.libsonnet';
 
 function(params) {
   local cfg = params,
@@ -120,45 +119,42 @@ function(params) {
   },
 
   trustedCaBundle: generateCertInjection.trustedCNOCaBundleCM(cfg.namespace, 'telemeter-trusted-ca-bundle'),
-  local netpol = {
-    networkPolicy: {
-      apiVersion: 'networking.k8s.io/v1',
-      kind: 'NetworkPolicy',
-      metadata: {
-        annotations: {
-          'include.release.openshift.io/hypershift': 'true',
-          'include.release.openshift.io/ibm-cloud-managed': 'true',
-          'include.release.openshift.io/self-managed-high-availability': 'true',
-          'include.release.openshift.io/single-node-developer': 'true',
-        },
-        name: 'telemeter-client-access',
-        namespace: cfg.namespace,
+  networkPolicyDownstream: {
+    apiVersion: 'networking.k8s.io/v1',
+    kind: 'NetworkPolicy',
+    metadata: {
+      annotations: {
+        'include.release.openshift.io/hypershift': 'true',
+        'include.release.openshift.io/ibm-cloud-managed': 'true',
+        'include.release.openshift.io/self-managed-high-availability': 'true',
+        'include.release.openshift.io/single-node-developer': 'true',
       },
-      spec: {
-        podSelector: {
-          matchLabels: {
-            'app.kubernetes.io/name': 'telemeter-client',
-          },
+      name: 'telemeter-client-access',
+      namespace: cfg.namespace,
+    },
+    spec: {
+      podSelector: {
+        matchLabels: {
+          'app.kubernetes.io/name': 'telemeter-client',
         },
-        policyTypes: [
-          'Ingress',
-          'Egress',
-        ],
-        ingress: [
-          {
-            ports: [
-              {
-                port: '8443',
-                protocol: 'TCP',
-              },
-            ],
-          },
-        ],
-        egress: [
-          {},
-        ],
       },
+      policyTypes: [
+        'Ingress',
+        'Egress',
+      ],
+      ingress: [
+        {
+          ports: [
+            {
+              port: '8443',
+              protocol: 'TCP',
+            },
+          ],
+        },
+      ],
+      egress: [
+        {},
+      ],
     },
   },
-  networkPolicyDownstream: renameNetworkPolicy.renameKey(netpol, 'networkPolicy', 'networkPolicyDownstream'),
 }

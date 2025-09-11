@@ -7,7 +7,6 @@ local kubeStateMetricsCRS = import '../utils/kube-state-metrics-custom-resource-
 local generateSecret = import '../utils/generate-secret.libsonnet';
 local generateServiceMonitor = import '../utils/generate-service-monitors.libsonnet';
 local withDescription = (import '../utils/add-annotations.libsonnet').withDescription;
-local renameNetworkPolicy = import '../utils/rename-network-policy.libsonnet';
 
 function(params)
   local cfg = params;
@@ -309,49 +308,46 @@ function(params)
 
     customResourceStateConfigmap: crsConfig,
     // This networkpolicy allow access to kube-state-metrics port 8443
-    local netpol = {
-      networkPolicy: {
-        apiVersion: 'networking.k8s.io/v1',
-        kind: 'NetworkPolicy',
-        metadata: {
-          annotations: {
-            'include.release.openshift.io/hypershift': 'true',
-            'include.release.openshift.io/ibm-cloud-managed': 'true',
-            'include.release.openshift.io/self-managed-high-availability': 'true',
-            'include.release.openshift.io/single-node-developer': 'true',
-          },
-          name: 'kube-state-metrics-access',
-          namespace: cfg.namespace,
+    networkPolicyDownstream: {
+      apiVersion: 'networking.k8s.io/v1',
+      kind: 'NetworkPolicy',
+      metadata: {
+        annotations: {
+          'include.release.openshift.io/hypershift': 'true',
+          'include.release.openshift.io/ibm-cloud-managed': 'true',
+          'include.release.openshift.io/self-managed-high-availability': 'true',
+          'include.release.openshift.io/single-node-developer': 'true',
         },
-        spec: {
-          podSelector: {
-            matchLabels: {
-              'app.kubernetes.io/name': 'kube-state-metrics',
-            },
+        name: 'kube-state-metrics-access',
+        namespace: cfg.namespace,
+      },
+      spec: {
+        podSelector: {
+          matchLabels: {
+            'app.kubernetes.io/name': 'kube-state-metrics',
           },
-          policyTypes: [
-            'Ingress',
-            'Egress',
-          ],
-          ingress: [
-            {
-              ports: [
-                {
-                  port: '8443',
-                  protocol: 'TCP',
-                },
-                {
-                  port: '9443',
-                  protocol: 'TCP',
-                },
-              ],
-            },
-          ],
-          egress: [
-            {},
-          ],
         },
+        policyTypes: [
+          'Ingress',
+          'Egress',
+        ],
+        ingress: [
+          {
+            ports: [
+              {
+                port: '8443',
+                protocol: 'TCP',
+              },
+              {
+                port: '9443',
+                protocol: 'TCP',
+              },
+            ],
+          },
+        ],
+        egress: [
+          {},
+        ],
       },
     },
-    networkPolicyDownstream: renameNetworkPolicy.renameKey(netpol, 'networkPolicy', 'networkPolicyDownstream'),
   }
