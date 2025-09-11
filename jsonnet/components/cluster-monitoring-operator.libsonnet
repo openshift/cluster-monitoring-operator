@@ -1,6 +1,5 @@
 local metrics = import 'github.com/openshift/telemeter/jsonnet/telemeter/metrics.jsonnet';
 
-local renameNetworkPolicy = import '../utils/remame-network-policy.libsonnet';
 local cmoRules = import './../rules.libsonnet';
 local kubePrometheus = import 'github.com/prometheus-operator/kube-prometheus/jsonnet/kube-prometheus/components/mixin/custom.libsonnet';
 
@@ -569,47 +568,44 @@ function(params) {
   },
 
   // This networkpolicy allow access to CMO port 8443
-  local netpol = {
-    networkPolicy: {
-      apiVersion: 'networking.k8s.io/v1',
-      kind: 'NetworkPolicy',
-      metadata: {
-        annotations: {
-          'include.release.openshift.io/hypershift': 'true',
-          'include.release.openshift.io/ibm-cloud-managed': 'true',
-          'include.release.openshift.io/self-managed-high-availability': 'true',
-          'include.release.openshift.io/single-node-developer': 'true',
-        },
-        name: 'cluster-monitoring-operator-access',
-        namespace: cfg.namespace,
+  networkPolicy: {
+    apiVersion: 'networking.k8s.io/v1',
+    kind: 'NetworkPolicy',
+    metadata: {
+      annotations: {
+        'include.release.openshift.io/hypershift': 'true',
+        'include.release.openshift.io/ibm-cloud-managed': 'true',
+        'include.release.openshift.io/self-managed-high-availability': 'true',
+        'include.release.openshift.io/single-node-developer': 'true',
       },
-      spec: {
-        podSelector: {
-          matchLabels: {
-            'app.kubernetes.io/name': 'cluster-monitoring-operator',
-          },
+      name: 'cluster-monitoring-operator-access',
+      namespace: cfg.namespace,
+    },
+    spec: {
+      podSelector: {
+        matchLabels: {
+          'app.kubernetes.io/name': 'cluster-monitoring-operator',
         },
-        policyTypes: [
-          'Ingress',
-          'Egress',
-        ],
-        ingress: [
-          // Allow access to port 8443
-          {
-            ports: [
-              {
-                port: '8443',
-                protocol: 'TCP',
-              },
-            ],
-          },
-        ],
-        egress: [
-          // Allow curl 8443 and return result from any pod under any namespace
-          {},
-        ],
       },
+      policyTypes: [
+        'Ingress',
+        'Egress',
+      ],
+      ingress: [
+        // Allow access to port 8443
+        {
+          ports: [
+            {
+              port: '8443',
+              protocol: 'TCP',
+            },
+          ],
+        },
+      ],
+      egress: [
+        // Allow curl 8443 and return result from any pod under any namespace
+        {},
+      ],
     },
   },
-  networkPolicyDownstream: renameNetworkPolicy.renameKey(netpol, 'networkPolicy', 'networkPolicyDownstream'),
 }

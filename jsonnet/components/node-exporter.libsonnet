@@ -109,7 +109,6 @@ local nodeExporter = import 'github.com/prometheus-operator/kube-prometheus/json
 local generateSecret = import '../utils/generate-secret.libsonnet';
 local generateServiceMonitor = import '../utils/generate-service-monitors.libsonnet';
 local withDescription = (import '../utils/add-annotations.libsonnet').withDescription;
-local renameNetworkPolicy = import '../utils/remame-network-policy.libsonnet';
 
 function(params)
   local cfg = params;
@@ -483,45 +482,4 @@ function(params)
         [acceleratorsConfigFileName]: std.manifestYamlDoc(acceleratorsConfigData),
       },
     },
-    local netpol = {
-      networkPolicy: {
-        apiVersion: 'networking.k8s.io/v1',
-        kind: 'NetworkPolicy',
-        metadata: {
-          annotations: {
-            'include.release.openshift.io/hypershift': 'true',
-            'include.release.openshift.io/ibm-cloud-managed': 'true',
-            'include.release.openshift.io/self-managed-high-availability': 'true',
-            'include.release.openshift.io/single-node-developer': 'true',
-          },
-          name: 'node-exporter-access',
-          namespace: cfg.namespace,
-        },
-        spec: {
-          podSelector: {
-            matchLabels: {
-              'app.kubernetes.io/name': 'node-exporter',
-            },
-          },
-          policyTypes: [
-            'Ingress',
-            'Egress',
-          ],
-          ingress: [
-            {
-              ports: [
-                {
-                  port: '9100',
-                  protocol: 'TCP',
-                },
-              ],
-            },
-          ],
-          egress: [
-            {},
-          ],
-        },
-      },
-    },
-    networkPolicyDownstream: renameNetworkPolicy.renameKey(netpol, 'networkPolicy', 'networkPolicyDownstream'),
   }

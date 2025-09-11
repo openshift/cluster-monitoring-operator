@@ -2,7 +2,6 @@ local tlsVolumeName = 'prometheus-operator-admission-webhook-tls';
 local admissionWebhook = import 'github.com/prometheus-operator/prometheus-operator/jsonnet/prometheus-operator/admission-webhook.libsonnet';
 local antiAffinity = import 'github.com/prometheus-operator/kube-prometheus/jsonnet/kube-prometheus/addons/anti-affinity.libsonnet';
 local withDescription = (import '../utils/add-annotations.libsonnet').withDescription;
-local renameNetworkPolicy = import '../utils/remame-network-policy.libsonnet';
 
 function(params)
   local aw = admissionWebhook(params);
@@ -169,45 +168,42 @@ function(params)
         },
       ],
     },
-    local netpol = {
-      networkPolicy: {
-        apiVersion: 'networking.k8s.io/v1',
-        kind: 'NetworkPolicy',
-        metadata: {
-          annotations: {
-            'include.release.openshift.io/hypershift': 'true',
-            'include.release.openshift.io/ibm-cloud-managed': 'true',
-            'include.release.openshift.io/self-managed-high-availability': 'true',
-            'include.release.openshift.io/single-node-developer': 'true',
-          },
-          name: 'prometheus-operator-admission-webhook-access',
-          namespace: 'openshift-monitoring',
+    networkPolicy: {
+      apiVersion: 'networking.k8s.io/v1',
+      kind: 'NetworkPolicy',
+      metadata: {
+        annotations: {
+          'include.release.openshift.io/hypershift': 'true',
+          'include.release.openshift.io/ibm-cloud-managed': 'true',
+          'include.release.openshift.io/self-managed-high-availability': 'true',
+          'include.release.openshift.io/single-node-developer': 'true',
         },
-        spec: {
-          podSelector: {
-            matchLabels: {
-              'app.kubernetes.io/name': 'prometheus-operator-admission-webhook',
-            },
+        name: 'prometheus-operator-admission-webhook-access',
+        namespace: 'openshift-monitoring',
+      },
+      spec: {
+        podSelector: {
+          matchLabels: {
+            'app.kubernetes.io/name': 'prometheus-operator-admission-webhook',
           },
-          policyTypes: [
-            'Ingress',
-            'Egress',
-          ],
-          ingress: [
-            {
-              ports: [
-                {
-                  port: '8443',
-                  protocol: 'TCP',
-                },
-              ],
-            },
-          ],
-          egress: [
-            {},
-          ],
         },
+        policyTypes: [
+          'Ingress',
+          'Egress',
+        ],
+        ingress: [
+          {
+            ports: [
+              {
+                port: '8443',
+                protocol: 'TCP',
+              },
+            ],
+          },
+        ],
+        egress: [
+          {},
+        ],
       },
     },
-    networkPolicyDownstream: renameNetworkPolicy.renameKey(netpol, 'networkPolicy', 'networkPolicyDownstream'),
   }
