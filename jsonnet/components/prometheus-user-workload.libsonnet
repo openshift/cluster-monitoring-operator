@@ -376,6 +376,11 @@ function(params)
             name: 'scrape.timestamp-tolerance',
             value: '15ms',
           },
+          // Speed up compaction for test purposes
+          {
+            name: 'storage.tsdb.min-block-duration',
+            value: '5m',
+          },
         ],
         containers: [
           {

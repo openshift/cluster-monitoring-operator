@@ -16,6 +16,8 @@ spec:
   additionalArgs:
   - name: scrape.timestamp-tolerance
     value: 15ms
+  - name: storage.tsdb.min-block-duration
+    value: 5m
   affinity:
     podAntiAffinity:
       requiredDuringSchedulingIgnoredDuringExecution:
