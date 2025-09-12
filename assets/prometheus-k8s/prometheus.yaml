@@ -20,6 +20,8 @@ spec:
   additionalArgs:
   - name: scrape.timestamp-tolerance
     value: 15ms
+  - name: storage.tsdb.min-block-duration
+    value: 5m
   affinity:
     podAntiAffinity:
       requiredDuringSchedulingIgnoredDuringExecution:
@@ -168,6 +170,7 @@ spec:
       name: prometheus-trusted-ca-bundle
   enableFeatures:
   - delayed-compaction
+  - use-uncached-io
   externalLabels: {}
   externalURL: https://prometheus-k8s.openshift-monitoring.svc:9091
   image: quay.io/prometheus/prometheus:v3.5.0

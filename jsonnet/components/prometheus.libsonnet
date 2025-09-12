@@ -326,7 +326,7 @@ function(params)
       },
       spec+: {
         // Enable experimental delayed compaction feature.
-        enableFeatures+: ['delayed-compaction'],
+        enableFeatures+: ['delayed-compaction', 'use-uncached-io'],
         alerting+: {
           alertmanagers:
             std.map(
@@ -395,6 +395,11 @@ function(params)
           {
             name: 'scrape.timestamp-tolerance',
             value: '15ms',
+          },
+          // Speed up compaction for test purposes
+          {
+            name: 'storage.tsdb.min-block-duration',
+            value: '5m',
           },
         ],
         // Increase the startup probe timeout to 1h from 15m to avoid restart

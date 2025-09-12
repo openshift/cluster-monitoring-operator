@@ -291,7 +291,7 @@ function(params)
       },
       spec+: {
         // Enable experimental additional scrape metrics and delayed compaction features.
-        enableFeatures+: ['extra-scrape-metrics', 'delayed-compaction'],
+        enableFeatures+: ['extra-scrape-metrics', 'delayed-compaction', 'use-uncached-io'],
         overrideHonorTimestamps: true,
         overrideHonorLabels: true,
         ignoreNamespaceSelectors: true,
@@ -375,6 +375,11 @@ function(params)
           {
             name: 'scrape.timestamp-tolerance',
             value: '15ms',
+          },
+          // Speed up compaction for test purposes
+          {
+            name: 'storage.tsdb.min-block-duration',
+            value: '5m',
           },
         ],
         containers: [
