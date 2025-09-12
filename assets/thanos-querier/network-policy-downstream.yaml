@@ -16,8 +16,8 @@ spec:
   - {}
   ingress:
   - ports:
-    - endPort: "9094"
-      port: "9091"
+    - endPort: 9094
+      port: 9091
       protocol: TCP
   podSelector:
     matchLabels:
