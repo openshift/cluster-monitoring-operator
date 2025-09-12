@@ -123,11 +123,11 @@ function(params) {
         {
           ports: [
             {
-              port: '8443',
+              port: 8443,
               protocol: 'TCP',
             },
             {
-              port: '9443',
+              port: 9443,
               protocol: 'TCP',
             },
           ],

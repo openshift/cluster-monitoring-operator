@@ -632,19 +632,19 @@ function(params)
           {
             ports: [
               {
-                port: '9091',
+                port: 9091,
                 protocol: 'TCP',
               },
               {
-                port: '9092',
+                port: 9092,
                 protocol: 'TCP',
               },
               {
-                port: '10901',
+                port: 10901,
                 protocol: 'UDP',
               },
               {
-                port: '10903',
+                port: 10903,
                 protocol: 'TCP',
               },
             ],

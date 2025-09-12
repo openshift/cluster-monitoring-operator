@@ -670,8 +670,8 @@ function(params)
           {
             ports: [
               {
-                port: '9091',
-                endPort: '9094',
+                port: 9091,
+                endPort: 9094,
                 protocol: 'TCP',
               },
             ],

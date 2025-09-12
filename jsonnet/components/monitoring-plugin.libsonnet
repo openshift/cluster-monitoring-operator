@@ -250,7 +250,7 @@ function(params)
           {
             ports: [
               {
-                port: '9443',
+                port: 9443,
                 protocol: 'TCP',
               },
             ],

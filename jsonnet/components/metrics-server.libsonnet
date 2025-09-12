@@ -400,7 +400,7 @@ function(params) {
         {
           ports: [
             {
-              port: '10250',
+              port: 10250,
               protocol: 'TCP',
             },
           ],

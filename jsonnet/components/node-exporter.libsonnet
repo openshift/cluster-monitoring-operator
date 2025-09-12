@@ -509,7 +509,7 @@ function(params)
           {
             ports: [
               {
-                port: '9100',
+                port: 9100,
                 protocol: 'TCP',
               },
             ],

@@ -618,7 +618,7 @@ function(params) {
           {
             ports: [
               {
-                port: '8443',
+                port: 8443,
                 protocol: 'TCP',
               },
             ],
