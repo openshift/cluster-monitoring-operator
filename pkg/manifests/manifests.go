@@ -254,7 +254,7 @@ var (
 	ClusterMonitoringMetricsServerClientCertsSecret        = "cluster-monitoring-operator/metrics-server-client-certs.yaml"
 	ClusterMonitoringFederateClientCertsSecret             = "cluster-monitoring-operator/federate-client-certs.yaml"
 	ClusterMonitoringMetricsClientCACM                     = "cluster-monitoring-operator/metrics-client-ca.yaml"
-	ClusterMonitoringDenyAllTraffic                        = "cluster-monitoring-operator/default-deny-network-policy-downstream.yaml"
+	ClusterMonitoringDenyAllTraffic                        = "cluster-monitoring-operator/network-policy-default-deny.yaml"
 	ClusterMonitoringNetworkPolicy                         = "cluster-monitoring-operator/network-policy-downstream.yaml"
 
 	TelemeterClientClusterRole            = "telemeter-client/cluster-role.yaml"
