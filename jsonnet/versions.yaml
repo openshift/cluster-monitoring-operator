@@ -20,7 +20,7 @@ versions:
     kubernetesMetricsServer: 0.8.0
     monitoringPlugin: 1.0.0
     nodeExporter: 1.9.1
-    promLabelProxy: 0.12.0
+    promLabelProxy: 0.12.1
     prometheus: 3.5.0
     prometheusAdapter: 0.12.0
     prometheusOperator: 0.85.0
