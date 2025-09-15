@@ -1117,10 +1117,10 @@ data:
     #
     # owners: (https://github.com/openshift/machine-config-operator/)
     #
-    # node:mcd_local_unsupported_packages:count tracks the number of unsupported,
-    # locally layered RPM packages on a given node.
-    - '{__name__="node:mcd_local_unsupported_packages:count"}'
-    #
+    # cluster:mcd_nodes_with_unsupported_packages:count is the total number of nodes with unsupported packages.
+    - '{__name__="cluster:mcd_nodes_with_unsupported_packages:count"}'
+    # cluster:mcd_total_unsupported_packages:sum is the sum of all unsupported packages across all nodes.
+    - '{__name__="cluster:mcd_total_unsupported_packages:sum"}'
     # owners: (https://github.com/openshift/vmware-vsphere-csi-driver-operator, @openshift/storage)
     #
     # cluster:vsphere_topology_tags:max shows how many vSphere topology tag categories are configured.
