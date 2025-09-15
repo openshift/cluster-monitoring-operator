@@ -318,7 +318,7 @@ function(params)
           'include.release.openshift.io/self-managed-high-availability': 'true',
           'include.release.openshift.io/single-node-developer': 'true',
         },
-        name: 'kube-state-metrics-access',
+        name: 'kube-state-metrics',
         namespace: cfg.namespace,
       },
       spec: {

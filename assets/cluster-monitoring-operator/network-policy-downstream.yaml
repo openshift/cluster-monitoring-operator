@@ -9,7 +9,7 @@ metadata:
   labels:
     app.kubernetes.io/managed-by: cluster-monitoring-operator
     app.kubernetes.io/part-of: openshift-monitoring
-  name: cluster-monitoring-operator-access
+  name: cluster-monitoring-operator
   namespace: openshift-monitoring
 spec:
   egress:

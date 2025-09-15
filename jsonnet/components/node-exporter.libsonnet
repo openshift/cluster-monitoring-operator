@@ -492,7 +492,7 @@ function(params)
           'include.release.openshift.io/self-managed-high-availability': 'true',
           'include.release.openshift.io/single-node-developer': 'true',
         },
-        name: 'node-exporter-access',
+        name: 'node-exporter',
         namespace: cfg.namespace,
       },
       spec: {

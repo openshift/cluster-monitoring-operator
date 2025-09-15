@@ -187,7 +187,7 @@ function(params)
           'include.release.openshift.io/self-managed-high-availability': 'true',
           'include.release.openshift.io/single-node-developer': 'true',
         },
-        name: 'prometheus-operator-access',
+        name: 'prometheus-operator',
         namespace: 'openshift-monitoring',
       },
       spec: {

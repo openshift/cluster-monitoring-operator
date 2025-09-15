@@ -9,7 +9,7 @@ metadata:
   labels:
     app.kubernetes.io/managed-by: cluster-monitoring-operator
     app.kubernetes.io/part-of: openshift-monitoring
-  name: kube-state-metrics-access
+  name: kube-state-metrics
   namespace: openshift-monitoring
 spec:
   egress:

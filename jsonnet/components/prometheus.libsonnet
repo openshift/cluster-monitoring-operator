@@ -615,7 +615,7 @@ function(params)
           'include.release.openshift.io/self-managed-high-availability': 'true',
           'include.release.openshift.io/single-node-developer': 'true',
         },
-        name: 'prometheus-access',
+        name: 'prometheus',
         namespace: cfg.namespace,
       },
       spec: {

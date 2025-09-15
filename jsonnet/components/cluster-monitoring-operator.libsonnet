@@ -600,7 +600,7 @@ function(params) {
         'include.release.openshift.io/self-managed-high-availability': 'true',
         'include.release.openshift.io/single-node-developer': 'true',
       },
-      name: 'cluster-monitoring-operator-access',
+      name: 'cluster-monitoring-operator',
       namespace: cfg.namespace,
     },
     spec: {
