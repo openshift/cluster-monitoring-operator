@@ -183,6 +183,7 @@ spec:
   enableFeatures:
   - extra-scrape-metrics
   - delayed-compaction
+  - use-uncached-io
   enforcedNamespaceLabel: namespace
   externalLabels: {}
   ignoreNamespaceSelectors: true

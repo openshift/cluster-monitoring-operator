@@ -325,8 +325,9 @@ function(params)
         },
       },
       spec+: {
-        // Enable experimental delayed compaction feature.
-        enableFeatures+: ['delayed-compaction'],
+        // Enable some experimental features.
+        // More at https://prometheus.io/docs/prometheus/latest/feature_flags/
+        enableFeatures+: ['delayed-compaction', 'use-uncached-io'],
         alerting+: {
           alertmanagers:
             std.map(

@@ -290,8 +290,9 @@ function(params)
         },
       },
       spec+: {
-        // Enable experimental additional scrape metrics and delayed compaction features.
-        enableFeatures+: ['extra-scrape-metrics', 'delayed-compaction'],
+        // Enable some experimental features.
+        // More at https://prometheus.io/docs/prometheus/latest/feature_flags/
+        enableFeatures+: ['extra-scrape-metrics', 'delayed-compaction', 'use-uncached-io'],
         overrideHonorTimestamps: true,
         overrideHonorLabels: true,
         ignoreNamespaceSelectors: true,
