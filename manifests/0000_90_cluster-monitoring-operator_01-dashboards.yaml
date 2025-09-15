@@ -1046,7 +1046,7 @@ data:
 kind: ConfigMap
 metadata:
   annotations:
-    capability.openshift.io/name: Console
+    capability.openshift.io/name: Console+OptionalMonitoring
     include.release.openshift.io/hypershift: "true"
     include.release.openshift.io/ibm-cloud-managed: "true"
     include.release.openshift.io/self-managed-high-availability: "true"
@@ -2158,7 +2158,7 @@ data:
 kind: ConfigMap
 metadata:
   annotations:
-    capability.openshift.io/name: Console
+    capability.openshift.io/name: Console+OptionalMonitoring
     include.release.openshift.io/hypershift: "true"
     include.release.openshift.io/ibm-cloud-managed: "true"
     include.release.openshift.io/self-managed-high-availability: "true"
@@ -3376,7 +3376,7 @@ data:
 kind: ConfigMap
 metadata:
   annotations:
-    capability.openshift.io/name: Console
+    capability.openshift.io/name: Console+OptionalMonitoring
     include.release.openshift.io/hypershift: "true"
     include.release.openshift.io/ibm-cloud-managed: "true"
     include.release.openshift.io/self-managed-high-availability: "true"
