@@ -114,10 +114,11 @@ This targets needs `docker` to be installed on host and was not tested with othe
 
 Assuming that the `KUBECONFIG` environment variable is set to the config file of an OpenShift cluster against which the tests will run, you can execute all the tests running `make test`.
 
-Testing entails 3 types of tests:
+Testing entails 4 types of tests:
 - Unit tests which can be run separately with `make test-unit`.
 - Prometheus rule tests which can be run separately with `make test-rules`.
 - End-to-end tests which can be run separately with `make test-e2e`.
+- Ginkgo tests that were ported from openshift-tests-private, which can be run separately with `make test-ginkgo`. **Please do not add new tests here. The goal is to merge Ginkgo tests into the E2E suite to get a single, unified testing framework.**
 
 If you need to run a specific unit test (for example `TestHashSecret`), you can use the following command:
 
