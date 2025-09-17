@@ -196,6 +196,19 @@ func (t *TelemeterClientTask) create(ctx context.Context) error {
 	if err != nil {
 		return fmt.Errorf("reconciling Telemeter client ServiceMonitor failed: %w", err)
 	}
+
+	netpol, err := t.factory.TelemeterClientNetworkPolicy()
+	if err != nil {
+		return fmt.Errorf("initializing Telemeter Client NetworkPolicy failed: %w", err)
+	}
+
+	if netpol != nil {
+		err = t.client.CreateOrUpdateNetworkPolicy(ctx, netpol)
+		if err != nil {
+			return fmt.Errorf("reconciling Telemeter Client NetworkPolicy failed: %w", err)
+		}
+	}
+
 	return nil
 }
 
@@ -289,5 +302,18 @@ func (t *TelemeterClientTask) destroy(ctx context.Context) error {
 	if err != nil {
 		return fmt.Errorf("deleting Telemeter Client serving certs CA Bundle ConfigMap failed: %w", err)
 	}
+
+	netpol, err := t.factory.TelemeterClientNetworkPolicy()
+	if err != nil {
+		return fmt.Errorf("initializing Telemeter Client NetworkPolicy object failed: %w", err)
+	}
+
+	if netpol != nil {
+		err = t.client.DeleteNetworkPolicy(ctx, netpol)
+		if err != nil {
+			return fmt.Errorf("deleting Telemeter Client NetworkPolicy object failed: %w", err)
+		}
+	}
+
 	return nil
 }

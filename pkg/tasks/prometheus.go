@@ -413,5 +413,17 @@ func (t *PrometheusTask) create(ctx context.Context) error {
 		return fmt.Errorf("reconciling Prometheus Thanos sidecar ServiceMonitor failed: %w", err)
 	}
 
+	netpol, err := t.factory.PrometheusK8sNetworkPolicy()
+	if err != nil {
+		return fmt.Errorf("initializing Prometheus NetworkPolicy failed: %w", err)
+	}
+
+	if netpol != nil {
+		err = t.client.CreateOrUpdateNetworkPolicy(ctx, netpol)
+		if err != nil {
+			return fmt.Errorf("reconciling Prometheus NetworkPolicy failed: %w", err)
+		}
+	}
+
 	return nil
 }

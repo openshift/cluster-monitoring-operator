@@ -123,6 +123,19 @@ func (t *PrometheusOperatorTask) Run(ctx context.Context) error {
 	if err != nil {
 		return fmt.Errorf("reconciling Prometheus Operator ServiceMonitor failed: %w", err)
 	}
+
+	netpol, err := t.factory.PrometheusOperatorNetworkPolicy()
+	if err != nil {
+		return fmt.Errorf("initializing Prometheus Operator NetworkPolicy failed: %w", err)
+	}
+
+	if netpol != nil {
+		err = t.client.CreateOrUpdateNetworkPolicy(ctx, netpol)
+		if err != nil {
+			return fmt.Errorf("reconciling Prometheus Operator NetworkPolicy failed: %w", err)
+		}
+	}
+
 	return nil
 }
 
@@ -188,6 +201,18 @@ func (t *PrometheusOperatorTask) runAdmissionWebhook(ctx context.Context) error 
 	err = t.client.CreateOrUpdateValidatingWebhookConfiguration(ctx, aw)
 	if err != nil {
 		return fmt.Errorf("reconciling AlertManagerConfig Validating Webhook failed: %w", err)
+	}
+
+	netpol, err := t.factory.AdmissionWebhookNetworkPolicy()
+	if err != nil {
+		return fmt.Errorf("initializing Prometheus Operator Admission Webhook NetworkPolicy failed: %w", err)
+	}
+
+	if netpol != nil {
+		err = t.client.CreateOrUpdateNetworkPolicy(ctx, netpol)
+		if err != nil {
+			return fmt.Errorf("reconciling Prometheus Operator Admission Webhook NetworkPolicy failed: %w", err)
+		}
 	}
 
 	return nil

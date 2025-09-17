@@ -226,6 +226,19 @@ func (t *MetricsServerTask) Run(ctx context.Context) error {
 		}
 	}
 	{
+		netpol, err := t.factory.MetricsServerNetworkPolicy()
+		if err != nil {
+			return fmt.Errorf("initializing MetricsServer NetworkPolicy failed: %w", err)
+		}
+
+		if netpol != nil {
+			err = t.client.CreateOrUpdateNetworkPolicy(ctx, netpol)
+			if err != nil {
+				return fmt.Errorf("reconciling MetricsServer NetworkPolicy failed: %w", err)
+			}
+		}
+	}
+	{
 		api, err := t.factory.MetricsServerAPIService()
 		if err != nil {
 			return fmt.Errorf("initializing MetricsServer APIService failed: %w", err)

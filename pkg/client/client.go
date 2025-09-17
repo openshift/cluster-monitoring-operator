@@ -44,6 +44,7 @@ import (
 	admissionv1 "k8s.io/api/admissionregistration/v1"
 	appsv1 "k8s.io/api/apps/v1"
 	v1 "k8s.io/api/core/v1"
+	networkpolicyv1 "k8s.io/api/networking/v1"
 	policyv1 "k8s.io/api/policy/v1"
 	rbacv1 "k8s.io/api/rbac/v1"
 	extensionsobj "k8s.io/apiextensions-apiserver/pkg/apis/apiextensions/v1"
@@ -801,6 +802,20 @@ func (c *Client) DeletePodDisruptionBudget(ctx context.Context, pdb *policyv1.Po
 	}
 
 	err = c.kclient.PolicyV1().PodDisruptionBudgets(pdb.GetNamespace()).Delete(ctx, pdb.GetName(), deleteOptions(metav1.DeletePropagationForeground))
+	if apierrors.IsNotFound(err) {
+		return nil
+	}
+
+	return err
+}
+
+func (c *Client) DeleteNetworkPolicy(ctx context.Context, netpol *networkpolicyv1.NetworkPolicy) error {
+	_, err := c.kclient.NetworkpolicyV1().NetworkPolicy(netpol.GetNamespace()).Get(ctx, netpol.GetName(), metav1.GetOptions{})
+	if apierrors.IsNotFound(err) {
+		return nil
+	}
+
+	err = c.kclient.NetworkpolicyV1().NetworkPolicy(netpol.GetNamespace()).Delete(ctx, netpol.GetName(), metav1.DeleteOptions{})
 	if apierrors.IsNotFound(err) {
 		return nil
 	}
@@ -1582,6 +1597,11 @@ func (c *Client) CreateIfNotExistConfigMap(ctx context.Context, cm *v1.ConfigMap
 
 func (c *Client) CreateOrUpdatePodDisruptionBudget(ctx context.Context, pdb *policyv1.PodDisruptionBudget) error {
 	_, _, err := resourceapply.ApplyPodDisruptionBudget(ctx, c.kclient.PolicyV1(), c.eventRecorder, pdb)
+	return err
+}
+
+func (c *Client) CreateOrUpdateNetworkPolicy(ctx context.Context, netpol *networkpolicyv1.NetworkPolicy) error {
+	_, _, err := resourceapply.ApplyNetworkPolicy(ctx, c.kclient.NetworkpolicyV1(), c.eventRecorder, netpol)
 	return err
 }
 
