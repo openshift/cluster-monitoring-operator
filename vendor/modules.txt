@@ -61,9 +61,6 @@ github.com/AzureAD/microsoft-authentication-library-for-go/apps/public
 # github.com/JeffAshton/win_pdh v0.0.0-20161109143554-76bb4ee9f0ab
 ## explicit
 github.com/JeffAshton/win_pdh
-# github.com/Jeffail/gabs v1.4.0
-## explicit
-github.com/Jeffail/gabs
 # github.com/Jeffail/gabs/v2 v2.6.1
 ## explicit
 github.com/Jeffail/gabs/v2

@@ -3,7 +3,6 @@ module github.com/openshift/cluster-monitoring-operator
 go 1.24.0
 
 require (
-	github.com/Jeffail/gabs v1.4.0
 	github.com/Jeffail/gabs/v2 v2.6.1
 	github.com/alecthomas/units v0.0.0-20240626203959-61d1e3462e30
 	github.com/blang/semver/v4 v4.0.0

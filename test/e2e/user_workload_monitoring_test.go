@@ -26,7 +26,7 @@ import (
 	"testing"
 	"time"
 
-	"github.com/Jeffail/gabs"
+	"github.com/Jeffail/gabs/v2"
 	"github.com/stretchr/testify/require"
 
 	configv1 "github.com/openshift/api/config/v1"
@@ -667,9 +667,9 @@ func assertTenancyForMetrics(t *testing.T) {
 					return err
 				}
 
-				labels, err := timeseries.Path("metric").ChildrenMap()
-				if err != nil {
-					return err
+				labels := timeseries.Path("metric").ChildrenMap()
+				if len(labels) == 0 {
+					return errors.New("empty metric")
 				}
 
 				ns := labels["namespace"].Data().(string)
@@ -926,9 +926,9 @@ func assertTenancyForRulesAndAlerts(t *testing.T) {
 			return err
 		}
 
-		groups, err := res.Path("data.groups").Children()
-		if err != nil {
-			return err
+		groups := res.Path("data.groups").Children()
+		if groups == nil {
+			return errors.New("data.groups not found")
 		}
 
 		if len(groups) != 2 {
@@ -962,15 +962,15 @@ func assertTenancyForRulesAndAlerts(t *testing.T) {
 		var got []testData
 
 		for _, group := range groups {
-			rules, err := group.Path("rules").Children()
-			if err != nil {
-				return err
+			rules := group.Path("rules").Children()
+			if rules == nil {
+				return errors.New("rules not found")
 			}
 
 			for _, rule := range rules {
-				labels, err := rule.Path("labels").ChildrenMap()
-				if err != nil {
-					return err
+				labels := rule.Path("labels").ChildrenMap()
+				if labels == nil {
+					return errors.New("labels not found")
 				}
 
 				got = append(got, testData{
@@ -1252,9 +1252,9 @@ func assertTenancyForSeriesMetadata(t *testing.T) {
 			return err
 		}
 
-		labels, err := res.Path("data").Children()
-		if err != nil {
-			return err
+		labels := res.Path("data").Children()
+		if labels == nil {
+			return errors.New("data not found")
 		}
 
 		if len(labels) == 0 {
@@ -1306,9 +1306,9 @@ func assertTenancyForSeriesMetadata(t *testing.T) {
 			return err
 		}
 
-		series, err := res.Path("data").Children()
-		if err != nil {
-			return err
+		series := res.Path("data").Children()
+		if series == nil {
+			return errors.New("data not found")
 		}
 
 		if len(series) != 1 {
@@ -1350,9 +1350,9 @@ func assertTenancyForSeriesMetadata(t *testing.T) {
 			return err
 		}
 
-		values, err := res.Path("data").Children()
-		if err != nil {
-			return err
+		values := res.Path("data").Children()
+		if values == nil {
+			return errors.New("data not found")
 		}
 
 		if len(values) != 1 {
