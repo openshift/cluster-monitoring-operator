@@ -15,7 +15,7 @@ require (
 	github.com/onsi/ginkgo/v2 v2.22.0
 	github.com/onsi/gomega v1.36.1
 	github.com/openshift-eng/openshift-tests-extension v0.0.0-20250702172817-97309544869d
-	github.com/openshift/api v0.0.0-20250320170726-75d64d71980b
+	github.com/openshift/api v0.0.0-20250916150132-83b017b06367
 	github.com/openshift/client-go v0.0.0-20250125113824-8e1f0b8fa9a7
 	github.com/openshift/library-go v0.0.0-20250402180609-ce2ba53fb2a4
 	github.com/pborman/uuid v1.2.1
@@ -26,16 +26,16 @@ require (
 	github.com/prometheus/common v0.60.0
 	github.com/prometheus/prometheus v0.54.1
 	github.com/spf13/cobra v1.8.1
-	github.com/stretchr/testify v1.9.0
+	github.com/stretchr/testify v1.10.0
 	github.com/tidwall/gjson v1.18.0
-	golang.org/x/net v0.34.0
-	golang.org/x/sync v0.10.0
-	golang.org/x/text v0.21.0
+	golang.org/x/net v0.38.0
+	golang.org/x/sync v0.12.0
+	golang.org/x/text v0.23.0
 	gopkg.in/yaml.v2 v2.4.0
 	gopkg.in/yaml.v3 v3.0.1
-	k8s.io/api v0.32.2
+	k8s.io/api v0.33.2
 	k8s.io/apiextensions-apiserver v0.32.2
-	k8s.io/apimachinery v0.32.2
+	k8s.io/apimachinery v0.33.2
 	k8s.io/apiserver v0.32.2
 	k8s.io/autoscaler/vertical-pod-autoscaler v1.0.0
 	k8s.io/client-go v0.32.2
@@ -101,8 +101,7 @@ require (
 	github.com/google/cadvisor v0.51.0 // indirect
 	github.com/google/cel-go v0.22.0 // indirect
 	github.com/google/gnostic-models v0.6.9 // indirect
-	github.com/google/go-cmp v0.6.0 // indirect
-	github.com/google/gofuzz v1.2.0 // indirect
+	github.com/google/go-cmp v0.7.0 // indirect
 	github.com/google/pprof v0.0.0-20241029153458-d1b30febd7db // indirect
 	github.com/gorilla/websocket v1.5.0 // indirect
 	github.com/grafana/regexp v0.0.0-20240518133315-a468a5bfb3bc // indirect
@@ -161,11 +160,11 @@ require (
 	go.uber.org/atomic v1.11.0 // indirect
 	go.uber.org/multierr v1.11.0 // indirect
 	go.uber.org/zap v1.27.0 // indirect
-	golang.org/x/crypto v0.32.0 // indirect
+	golang.org/x/crypto v0.36.0 // indirect
 	golang.org/x/exp v0.0.0-20241004190924-225e2abe05e6 // indirect
 	golang.org/x/oauth2 v0.25.0 // indirect
-	golang.org/x/sys v0.29.0 // indirect
-	golang.org/x/term v0.28.0 // indirect
+	golang.org/x/sys v0.31.0 // indirect
+	golang.org/x/term v0.30.0 // indirect
 	golang.org/x/time v0.9.0 // indirect
 	golang.org/x/tools v0.26.0 // indirect
 	gomodules.xyz/jsonpatch/v2 v2.4.0 // indirect
@@ -173,7 +172,7 @@ require (
 	google.golang.org/genproto/googleapis/api v0.0.0-20240826202546-f6391c0de4c7 // indirect
 	google.golang.org/genproto/googleapis/rpc v0.0.0-20240924160255-9d4c2d233b61 // indirect
 	google.golang.org/grpc v1.65.0 // indirect
-	google.golang.org/protobuf v1.36.3 // indirect
+	google.golang.org/protobuf v1.36.5 // indirect
 	gopkg.in/evanphx/json-patch.v4 v4.12.0 // indirect
 	gopkg.in/inf.v0 v0.9.1 // indirect
 	gopkg.in/natefinch/lumberjack.v2 v2.2.1 // indirect
@@ -185,7 +184,7 @@ require (
 	k8s.io/csi-translation-lib v0.0.0 // indirect
 	k8s.io/dynamic-resource-allocation v0.0.0 // indirect
 	k8s.io/kms v0.32.2 // indirect
-	k8s.io/kube-openapi v0.0.0-20241212222426-2c72e554b1e7 // indirect
+	k8s.io/kube-openapi v0.0.0-20250318190949-c8a335a9a2ff // indirect
 	k8s.io/kube-scheduler v0.0.0 // indirect
 	k8s.io/kubectl v0.0.0 // indirect
 	k8s.io/kubelet v0.0.0 // indirect
@@ -193,6 +192,7 @@ require (
 	k8s.io/pod-security-admission v0.0.0 // indirect
 	sigs.k8s.io/apiserver-network-proxy/konnectivity-client v0.31.0 // indirect
 	sigs.k8s.io/kube-storage-version-migrator v0.0.6-0.20230721195810-5c8923c5ff96 // indirect
+	sigs.k8s.io/randfill v1.0.0 // indirect
 	sigs.k8s.io/structured-merge-diff/v4 v4.6.0 // indirect
 )
 
