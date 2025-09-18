@@ -16,7 +16,7 @@ require (
 	github.com/openshift-eng/openshift-tests-extension v0.0.0-20250702172817-97309544869d
 	github.com/openshift/api v0.0.0-20250916150132-83b017b06367
 	github.com/openshift/client-go v0.0.0-20250125113824-8e1f0b8fa9a7
-	github.com/openshift/library-go v0.0.0-20250402180609-ce2ba53fb2a4
+	github.com/openshift/library-go v0.0.0-20250506195648-3c53c5492e7b
 	github.com/pborman/uuid v1.2.1
 	github.com/prometheus-operator/prometheus-operator/pkg/apis/monitoring v0.82.0
 	github.com/prometheus-operator/prometheus-operator/pkg/client v0.82.0
