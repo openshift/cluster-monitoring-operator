@@ -19,10 +19,10 @@ import (
 	"compress/gzip"
 	"fmt"
 	"io"
+	"log/slog"
 	"os"
 	"testing"
 
-	"github.com/go-kit/log"
 	routev1 "github.com/openshift/api/route/v1"
 	monitoringv1 "github.com/prometheus-operator/prometheus-operator/pkg/apis/monitoring/v1"
 	promConfig "github.com/prometheus/prometheus/config"
@@ -149,7 +149,7 @@ func (f Framework) PrometheusConfigFromSecret(t *testing.T, namespace, secretNam
 	require.NoError(t, err)
 	unzippedData, err := io.ReadAll(reader)
 	require.NoError(t, err)
-	prometheusConfig, err := promConfig.Load(string(unzippedData), false, log.NewLogfmtLogger(log.NewSyncWriter(os.Stderr)))
+	prometheusConfig, err := promConfig.Load(string(unzippedData), slog.New(slog.NewTextHandler(os.Stderr, nil)))
 	require.NoError(t, err, "failed to load the config.")
 	return prometheusConfig
 }

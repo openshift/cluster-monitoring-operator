@@ -26,7 +26,7 @@ import (
 	"testing"
 	"time"
 
-	"github.com/Jeffail/gabs"
+	"github.com/Jeffail/gabs/v2"
 	routev1 "github.com/openshift/client-go/route/clientset/versioned/typed/route/v1"
 
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"

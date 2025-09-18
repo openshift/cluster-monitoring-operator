@@ -15,10 +15,11 @@
 package e2e
 
 import (
+	"errors"
 	"fmt"
 	"time"
 
-	"github.com/Jeffail/gabs"
+	"github.com/Jeffail/gabs/v2"
 	"github.com/openshift/library-go/pkg/crypto"
 
 	v1 "k8s.io/api/core/v1"
@@ -32,9 +33,9 @@ func getActiveTarget(body []byte, jobName string) error {
 		return err
 	}
 
-	activeJobs, err := j.Path("data.activeTargets").Children()
-	if err != nil {
-		return err
+	activeJobs := j.Path("data.activeTargets").Children()
+	if activeJobs == nil {
+		return errors.New("data.activeTargets not found")
 	}
 
 	for _, job := range activeJobs {
@@ -54,9 +55,9 @@ func getThanosRules(body []byte, expGroupName, expRuleName string) error {
 		return err
 	}
 
-	groups, err := j.Path("data.groups").Children()
-	if err != nil {
-		return err
+	groups := j.Path("data.groups").Children()
+	if groups == nil {
+		return errors.New("data.groups not found")
 	}
 
 	for i := 0; i < len(groups); i++ {
@@ -65,11 +66,7 @@ func getThanosRules(body []byte, expGroupName, expRuleName string) error {
 			continue
 		}
 
-		rules, err := groups[i].Path("rules").Children()
-		if err != nil {
-			return err
-		}
-
+		rules := groups[i].Path("rules").Children()
 		for j := 0; j < len(rules); j++ {
 			ruleName := rules[j].S("name").Data().(string)
 			if ruleName == expRuleName {
@@ -77,6 +74,7 @@ func getThanosRules(body []byte, expGroupName, expRuleName string) error {
 			}
 		}
 	}
+
 	return fmt.Errorf("'%s' alert not found in '%s' group", expRuleName, expGroupName)
 }
 
