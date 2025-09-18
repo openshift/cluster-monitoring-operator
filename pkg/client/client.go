@@ -810,12 +810,12 @@ func (c *Client) DeletePodDisruptionBudget(ctx context.Context, pdb *policyv1.Po
 }
 
 func (c *Client) DeleteNetworkPolicy(ctx context.Context, netpol *networkpolicyv1.NetworkPolicy) error {
-	_, err := c.kclient.NetworkpolicyV1().NetworkPolicy(netpol.GetNamespace()).Get(ctx, netpol.GetName(), metav1.GetOptions{})
+	_, err := c.kclient.NetworkingV1().NetworkPolicy(netpol.GetNamespace()).Get(ctx, netpol.GetName(), metav1.GetOptions{})
 	if apierrors.IsNotFound(err) {
 		return nil
 	}
 
-	err = c.kclient.NetworkpolicyV1().NetworkPolicy(netpol.GetNamespace()).Delete(ctx, netpol.GetName(), metav1.DeleteOptions{})
+	err = c.kclient.NetworkingV1().NetworkPolicy(netpol.GetNamespace()).Delete(ctx, netpol.GetName(), metav1.DeleteOptions{})
 	if apierrors.IsNotFound(err) {
 		return nil
 	}
@@ -1601,7 +1601,7 @@ func (c *Client) CreateOrUpdatePodDisruptionBudget(ctx context.Context, pdb *pol
 }
 
 func (c *Client) CreateOrUpdateNetworkPolicy(ctx context.Context, netpol *networkpolicyv1.NetworkPolicy) error {
-	_, _, err := resourceapply.ApplyNetworkPolicy(ctx, c.kclient.NetworkpolicyV1(), c.eventRecorder, netpol)
+	_, _, err := resourceapply.ApplyNetworkPolicy(ctx, c.kclient.NetworkingV1(), c.eventRecorder, netpol)
 	return err
 }
 
