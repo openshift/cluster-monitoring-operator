@@ -1601,7 +1601,7 @@ func (c *Client) CreateOrUpdatePodDisruptionBudget(ctx context.Context, pdb *pol
 }
 
 func (c *Client) CreateOrUpdateNetworkPolicy(ctx context.Context, netpol *networkingv1.NetworkPolicy) error {
-	_, _, err := resourceapply.ApplyNetworkPolicy(ctx, c.kclient.NetworkingV1().NetworkPolicies(), c.eventRecorder, netpol)
+	_, _, err := resourceapply.ApplyNetworkPolicy(ctx, c.kclient.NetworkingV1().NetworkPolicies(netpol.Namespace), c.eventRecorder, netpol)
 	return err
 }
 
