@@ -44,7 +44,7 @@ import (
 	admissionv1 "k8s.io/api/admissionregistration/v1"
 	appsv1 "k8s.io/api/apps/v1"
 	v1 "k8s.io/api/core/v1"
-	networkpolicyv1 "k8s.io/api/networking/v1"
+	networkingv1 "k8s.io/api/networking/v1"
 	policyv1 "k8s.io/api/policy/v1"
 	rbacv1 "k8s.io/api/rbac/v1"
 	extensionsobj "k8s.io/apiextensions-apiserver/pkg/apis/apiextensions/v1"
@@ -809,13 +809,13 @@ func (c *Client) DeletePodDisruptionBudget(ctx context.Context, pdb *policyv1.Po
 	return err
 }
 
-func (c *Client) DeleteNetworkPolicy(ctx context.Context, netpol *networkpolicyv1.NetworkPolicy) error {
-	_, err := c.kclient.NetworkingV1().NetworkPolicy(netpol.GetNamespace()).Get(ctx, netpol.GetName(), metav1.GetOptions{})
+func (c *Client) DeleteNetworkPolicy(ctx context.Context, netpol *networkingv1.NetworkPolicy) error {
+	_, err := c.kclient.NetworkingV1().NetworkPolicies(netpol.GetNamespace()).Get(ctx, netpol.GetName(), metav1.GetOptions{})
 	if apierrors.IsNotFound(err) {
 		return nil
 	}
 
-	err = c.kclient.NetworkingV1().NetworkPolicy(netpol.GetNamespace()).Delete(ctx, netpol.GetName(), metav1.DeleteOptions{})
+	err = c.kclient.NetworkingV1().NetworkPolicies(netpol.GetNamespace()).Delete(ctx, netpol.GetName(), metav1.DeleteOptions{})
 	if apierrors.IsNotFound(err) {
 		return nil
 	}
@@ -1600,8 +1600,8 @@ func (c *Client) CreateOrUpdatePodDisruptionBudget(ctx context.Context, pdb *pol
 	return err
 }
 
-func (c *Client) CreateOrUpdateNetworkPolicy(ctx context.Context, netpol *networkpolicyv1.NetworkPolicy) error {
-	_, _, err := resourceapply.ApplyNetworkPolicy(ctx, c.kclient.NetworkingV1(), c.eventRecorder, netpol)
+func (c *Client) CreateOrUpdateNetworkPolicy(ctx context.Context, netpol *networkingv1.NetworkPolicy) error {
+	_, _, err := resourceapply.ApplyNetworkPolicy(ctx, c.kclient.NetworkingV1().NetworkPolicies(), c.eventRecorder, netpol)
 	return err
 }
 

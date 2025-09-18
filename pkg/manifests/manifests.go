@@ -43,7 +43,7 @@ import (
 	appsv1 "k8s.io/api/apps/v1"
 	corev1 "k8s.io/api/core/v1"
 	v1 "k8s.io/api/core/v1"
-	networkpolicyv1 "k8s.io/api/networking/v1"
+	networkingv1 "k8s.io/api/networking/v1"
 	policyv1 "k8s.io/api/policy/v1"
 	rbacv1 "k8s.io/api/rbac/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
@@ -739,7 +739,7 @@ func (f *Factory) AlertmanagerPodDisruptionBudget() (*policyv1.PodDisruptionBudg
 	return f.NewPodDisruptionBudget(f.assets.MustNewAssetSlice(AlertmanagerPodDisruptionBudget))
 }
 
-func (f *Factory) AlertmanagerNetworkPolicy() (*networkpolicyv1.NetworkPolicy, error) {
+func (f *Factory) AlertmanagerNetworkPolicy() (*networkingv1.NetworkPolicy, error) {
 	return f.NewNetworkPolicy(f.assets.MustNewAssetSlice(AlertmanagerNetworkPolicy))
 }
 
@@ -816,7 +816,7 @@ func (f *Factory) KubeStateMetricsCRSConfigMap() (*v1.ConfigMap, error) {
 	return f.NewConfigMap(f.assets.MustNewAssetSlice(KubeStateMetricsCRSConfig))
 }
 
-func (f *Factory) KubeStateMetricsNetworkPolicy() (*networkpolicyv1.NetworkPolicy, error) {
+func (f *Factory) KubeStateMetricsNetworkPolicy() (*networkingv1.NetworkPolicy, error) {
 	return f.NewNetworkPolicy(f.assets.MustNewAssetSlice(KubeStateMetricsNetworkPolicy))
 }
 
@@ -879,7 +879,7 @@ func (f *Factory) OpenShiftStateMetricsRBACProxySecret() (*v1.Secret, error) {
 	return f.NewSecret(f.assets.MustNewAssetSlice(OpenShiftStateMetricsKubeRbacProxySecret))
 }
 
-func (f *Factory) OpenShiftStateMetricsNetworkPolicy() (*networkpolicyv1.NetworkPolicy, error) {
+func (f *Factory) OpenShiftStateMetricsNetworkPolicy() (*networkingv1.NetworkPolicy, error) {
 	return f.NewNetworkPolicy(f.assets.MustNewAssetSlice(OpenShiftStateMetricsNetworkPolicy))
 }
 
@@ -1058,7 +1058,7 @@ func (f *Factory) NodeExporterAcceleratorsCollectorConfigMap() (*v1.ConfigMap, e
 	return f.NewConfigMap(f.assets.MustNewAssetSlice(NodeExporterAcceleratorsConfigMap))
 }
 
-func (f *Factory) NodeExporterNetworkPolicy() (*networkpolicyv1.NetworkPolicy, error) {
+func (f *Factory) NodeExporterNetworkPolicy() (*networkingv1.NetworkPolicy, error) {
 	return f.NewNetworkPolicy(f.assets.MustNewAssetSlice(NodeExporterNetworkPolicy))
 }
 
@@ -1074,7 +1074,7 @@ func (f *Factory) ThanosQuerierClusterRoleBinding() (*rbacv1.ClusterRoleBinding,
 	return f.NewClusterRoleBinding(f.assets.MustNewAssetSlice(ThanosQuerierClusterRoleBinding))
 }
 
-func (f *Factory) ThanosQuerierNetworkPolicy() (*networkpolicyv1.NetworkPolicy, error) {
+func (f *Factory) ThanosQuerierNetworkPolicy() (*networkingv1.NetworkPolicy, error) {
 	return f.NewNetworkPolicy(f.assets.MustNewAssetSlice(ThanosQuerierNetworkPolicy))
 }
 
@@ -2113,7 +2113,7 @@ func (f *Factory) MetricsServerAPIService() (*apiregistrationv1.APIService, erro
 	return f.NewAPIService(f.assets.MustNewAssetSlice(MetricsServerAPIService))
 }
 
-func (f *Factory) MetricsServerNetworkPolicy() (*networkpolicyv1.NetworkPolicy, error) {
+func (f *Factory) MetricsServerNetworkPolicy() (*networkingv1.NetworkPolicy, error) {
 	return f.NewNetworkPolicy(f.assets.MustNewAssetSlice(MetricsServerNetworkPolicy))
 }
 
@@ -2169,7 +2169,7 @@ func (f *Factory) PrometheusOperatorRBACProxySecret() (*v1.Secret, error) {
 	return f.NewSecret(f.assets.MustNewAssetSlice(PrometheusOperatorKubeRbacProxySecret))
 }
 
-func (f *Factory) PrometheusOperatorNetworkPolicy() (*networkpolicyv1.NetworkPolicy, error) {
+func (f *Factory) PrometheusOperatorNetworkPolicy() (*networkingv1.NetworkPolicy, error) {
 	return f.NewNetworkPolicy(f.assets.MustNewAssetSlice(PrometheusOperatorNetworkPolicy))
 }
 
@@ -2177,7 +2177,7 @@ func (f *Factory) PrometheusOperatorAdmissionWebhookServiceAccount() (*v1.Servic
 	return f.NewServiceAccount(f.assets.MustNewAssetSlice(AdmissionWebhookServiceAccount))
 }
 
-func (f *Factory) AdmissionWebhookNetworkPolicy() (*networkpolicyv1.NetworkPolicy, error) {
+func (f *Factory) AdmissionWebhookNetworkPolicy() (*networkingv1.NetworkPolicy, error) {
 	return f.NewNetworkPolicy(f.assets.MustNewAssetSlice(AdmissionWebhookNetworkPolicy))
 }
 
@@ -2436,7 +2436,7 @@ func (f *Factory) PrometheusK8sPodDisruptionBudget() (*policyv1.PodDisruptionBud
 	return f.NewPodDisruptionBudget(f.assets.MustNewAssetSlice(PrometheusK8sPodDisruptionBudget))
 }
 
-func (f *Factory) PrometheusK8sNetworkPolicy() (*networkpolicyv1.NetworkPolicy, error) {
+func (f *Factory) PrometheusK8sNetworkPolicy() (*networkingv1.NetworkPolicy, error) {
 	return f.NewNetworkPolicy(f.assets.MustNewAssetSlice(PrometheusK8sNetworkPolicy))
 }
 
@@ -2516,11 +2516,11 @@ func (f *Factory) ClusterMonitoringOperatorPrometheusRule() (*monv1.PrometheusRu
 	return f.NewPrometheusRule(f.assets.MustNewAssetSlice(ClusterMonitoringOperatorPrometheusRule))
 }
 
-func (f *Factory) ClusterMonitoringDenyAllTraffic() (*networkpolicyv1.NetworkPolicy, error) {
+func (f *Factory) ClusterMonitoringDenyAllTraffic() (*networkingv1.NetworkPolicy, error) {
 	return f.NewNetworkPolicy(f.assets.MustNewAssetSlice(ClusterMonitoringDenyAllTraffic))
 }
 
-func (f *Factory) ClusterMonitoringNetworkPolicy() (*networkpolicyv1.NetworkPolicy, error) {
+func (f *Factory) ClusterMonitoringNetworkPolicy() (*networkingv1.NetworkPolicy, error) {
 	return f.NewNetworkPolicy(f.assets.MustNewAssetSlice(ClusterMonitoringNetworkPolicy))
 }
 
@@ -2813,8 +2813,8 @@ func (f *Factory) NewAPIService(manifest []byte) (*apiregistrationv1.APIService,
 	return &s, nil
 }
 
-func (f *Factory) NewNetworkPolicy(manifest []byte) (*networkpolicyv1.NetworkPolicy, error) {
-	np := networkpolicyv1.NetworkPolicy{}
+func (f *Factory) NewNetworkPolicy(manifest []byte) (*networkingv1.NetworkPolicy, error) {
+	np := networkingv1.NetworkPolicy{}
 	err := decodeYAML(manifest, &np)
 	if err != nil {
 		return nil, err
@@ -2923,7 +2923,7 @@ func (f *Factory) MonitoringPluginPodDisruptionBudget() (*policyv1.PodDisruption
 	return f.NewPodDisruptionBudget(f.assets.MustNewAssetSlice(MonitoringPluginPodDisruptionBudget))
 }
 
-func (f *Factory) MonitoringPluginNetworkPolicy() (*networkpolicyv1.NetworkPolicy, error) {
+func (f *Factory) MonitoringPluginNetworkPolicy() (*networkingv1.NetworkPolicy, error) {
 	return f.NewNetworkPolicy(f.assets.MustNewAssetSlice(MonitoringPluginNetworkPolicy))
 }
 
@@ -3080,7 +3080,7 @@ func (f *Factory) TelemeterClientPrometheusRule() (*monv1.PrometheusRule, error)
 	return f.NewPrometheusRule(f.assets.MustNewAssetSlice(TelemeterClientPrometheusRule))
 }
 
-func (f *Factory) TelemeterClientNetworkPolicy() (*networkpolicyv1.NetworkPolicy, error) {
+func (f *Factory) TelemeterClientNetworkPolicy() (*networkingv1.NetworkPolicy, error) {
 	return f.NewNetworkPolicy(f.assets.MustNewAssetSlice(TelemeterClientNetworkPolicy))
 }
 
