@@ -374,6 +374,7 @@ function(params)
           'metrics-client-certs',
         ],
         externalURL: 'https://prometheus-k8s.openshift-monitoring.svc:9091',
+        routePrefix: '/',
         configMaps: ['serving-certs-ca-bundle', 'kubelet-serving-ca-bundle', 'metrics-client-ca'],
         probeNamespaceSelector: cfg.namespaceSelector,
         podMonitorNamespaceSelector: cfg.namespaceSelector,
