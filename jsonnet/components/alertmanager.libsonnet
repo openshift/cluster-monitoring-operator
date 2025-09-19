@@ -135,6 +135,11 @@ function(params)
           resourceNames: ['nonroot'],
           verbs: ['use'],
         },
+        {
+          apiGroups: ['networking.k8s.io'],
+          resources: ['networkpolicies'],
+          verbs: ['get', 'list', 'watch'],
+        },
       ],
     },
 

@@ -198,6 +198,11 @@ function(params)
           resourceNames: ['k8s'],
           verbs: ['get', 'create', 'update'],
         },
+        {
+          apiGroups: ['networking.k8s.io'],
+          resources: ['networkpolicies'],
+          verbs: ['get', 'list', 'watch'],
+        },
       ],
     },
 

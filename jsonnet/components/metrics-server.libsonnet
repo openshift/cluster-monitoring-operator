@@ -36,6 +36,11 @@ function(params) {
         resources: ['pods', 'nodes'],
         verbs: ['get', 'list', 'watch'],
       },
+      {
+        apiGroups: ['networking.k8s.io'],
+        resources: ['networkpolicies'],
+        verbs: ['get', 'list', 'watch'],
+      },
     ],
   },
   roleBindingAuthReader: {

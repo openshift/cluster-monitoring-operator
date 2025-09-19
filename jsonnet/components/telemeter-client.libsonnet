@@ -25,7 +25,15 @@ function(params) {
   prometheusRule: tc.telemeterClient.prometheusRule,
   clusterRoleBindingView: tc.telemeterClient.clusterRoleBindingView,
   clusterRoleBinding: tc.telemeterClient.clusterRoleBinding,
-  clusterRole: tc.telemeterClient.clusterRole,
+  clusterRole: tc.telemeterClient.clusterRole {
+    rules+: [
+      {
+        apiGroups: ['networking.k8s.io'],
+        resources: ['networkpolicies'],
+        verbs: ['get', 'list', 'watch'],
+      },
+    ],
+  },
   serviceAccount: tc.telemeterClient.serviceAccount,
   service: tc.telemeterClient.service {
     metadata+: {

@@ -31,7 +31,15 @@ function(params)
       ),
       'monitoring.coreos.com',
       'scrapeconfigs',
-    ),
+    ) + {
+      rules+: [
+        {
+          apiGroups: ['networking.k8s.io'],
+          resources: ['networkpolicies'],
+          verbs: ['get', 'list', 'watch'],
+        },
+      ],
+    },
 
     kubeRbacProxySecret: generateSecret.staticAuthSecret(params.namespace, params.commonLabels, 'prometheus-operator-kube-rbac-proxy-config'),
     deployment+: {

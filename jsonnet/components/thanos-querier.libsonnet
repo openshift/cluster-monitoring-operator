@@ -73,6 +73,11 @@ function(params)
           resources: ['subjectaccessreviews'],
           verbs: ['create'],
         },
+        {
+          apiGroups: ['networking.k8s.io'],
+          resources: ['networkpolicies'],
+          verbs: ['get', 'list', 'watch'],
+        },
       ],
     },
 
