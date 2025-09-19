@@ -24,7 +24,7 @@ import (
 	"testing"
 	"time"
 
-	"github.com/Jeffail/gabs"
+	"github.com/Jeffail/gabs/v2"
 	configv1 "github.com/openshift/api/config/v1"
 	"github.com/openshift/cluster-monitoring-operator/pkg/client"
 	"github.com/openshift/cluster-monitoring-operator/test/e2e/framework"
@@ -284,7 +284,7 @@ func TestClusterMonitorPrometheusK8Config(t *testing.T) {
 					expectMatchingRequests(podName, containerName, mem, cpu),
 					// Set by default.
 					expectContainerArg("--scrape.timestamp-tolerance=15ms", containerName),
-					expectContainerArg("--enable-feature=delayed-compaction", containerName),
+					expectContainerArg("--enable-feature=delayed-compaction,use-uncached-io", containerName),
 					// Set via the config above.
 					expectContainerArg("--log.level=debug", containerName),
 					expectContainerArg("--storage.tsdb.retention.time=10h", containerName),
@@ -641,8 +641,8 @@ func TestUserWorkloadMonitorPrometheusK8Config(t *testing.T) {
 				[]framework.PodAssertion{
 					expectCatchAllToleration(),
 					expectMatchingRequests(podName, containerName, mem, cpu),
-					// Set by default.
-					expectContainerArg("--enable-feature=extra-scrape-metrics,delayed-compaction,exemplar-storage", containerName),
+					// exemplar-storage is set dynamically, so it will likely appear at the end.
+					expectContainerArg("--enable-feature=extra-scrape-metrics,delayed-compaction,use-uncached-io,exemplar-storage", containerName),
 					// Set via the config above.
 					expectContainerArg("--log.level=debug", containerName),
 					expectContainerArg("--storage.tsdb.retention.time=10h", containerName),

@@ -431,6 +431,17 @@ local patchedRules = [
         labels: {
           severity: 'info',
         },
+        expr: |||
+          # Use the metric added in https://github.com/openshift/prometheus/pull/262 and related PRs.
+          # Without max_over_time, failed scrapes could create false negatives, see
+          # https://www.robustperception.io/alerting-on-gauges-in-prometheus-2-0 for details.
+          (
+            max_over_time(prometheus_remote_storage_queue_highest_timestamp_seconds{job=~"prometheus-k8s|prometheus-user-workload"}[5m])
+          -
+            max_over_time(prometheus_remote_storage_queue_highest_sent_timestamp_seconds{job=~"prometheus-k8s|prometheus-user-workload"}[5m])
+          )
+          > 120
+        |||,
       },
     ],
   },
