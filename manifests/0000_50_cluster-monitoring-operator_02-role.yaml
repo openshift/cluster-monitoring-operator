@@ -197,6 +197,14 @@ rules:
   verbs:
   - use
 - apiGroups:
+  - networking.k8s.io
+  resources:
+  - networkpolicies
+  verbs:
+  - get
+  - list
+  - watch
+- apiGroups:
   - ""
   resources:
   - namespaces
@@ -375,6 +383,14 @@ rules:
   - list
   - watch
 - apiGroups:
+  - networking.k8s.io
+  resources:
+  - networkpolicies
+  verbs:
+  - get
+  - list
+  - watch
+- apiGroups:
   - authentication.k8s.io
   resources:
   - tokenreviews
@@ -394,6 +410,14 @@ rules:
   - securitycontextconstraints
   verbs:
   - use
+- apiGroups:
+  - networking.k8s.io
+  resources:
+  - networkpolicies
+  verbs:
+  - get
+  - list
+  - watch
 - apiGroups:
   - apps.openshift.io
   resources:
@@ -443,6 +467,14 @@ rules:
   verbs:
   - create
 - apiGroups:
+  - networking.k8s.io
+  resources:
+  - networkpolicies
+  verbs:
+  - get
+  - list
+  - watch
+- apiGroups:
   - ""
   resources:
   - nodes/metrics
@@ -453,6 +485,14 @@ rules:
   resources:
   - pods
   - nodes
+  verbs:
+  - get
+  - list
+  - watch
+- apiGroups:
+  - networking.k8s.io
+  resources:
+  - networkpolicies
   verbs:
   - get
   - list
@@ -513,6 +553,14 @@ rules:
   - create
   - update
 - apiGroups:
+  - networking.k8s.io
+  resources:
+  - networkpolicies
+  verbs:
+  - get
+  - list
+  - watch
+- apiGroups:
   - ""
   resources:
   - services
@@ -534,14 +582,6 @@ rules:
   - networking.k8s.io
   resources:
   - ingresses
-  verbs:
-  - get
-  - list
-  - watch
-- apiGroups:
-  - networking.k8s.io
-  resources:
-  - networkpolicies
   verbs:
   - get
   - list
@@ -738,17 +778,13 @@ rules:
   verbs:
   - create
 - apiGroups:
-  - authentication.k8s.io
+  - networking.k8s.io
   resources:
-  - tokenreviews
+  - networkpolicies
   verbs:
-  - create
-- apiGroups:
-  - authorization.k8s.io
-  resources:
-  - subjectaccessreviews
-  verbs:
-  - create
+  - get
+  - list
+  - watch
 - apiGroups:
   - authentication.k8s.io
   resources:
@@ -761,6 +797,34 @@ rules:
   - subjectaccessreviews
   verbs:
   - create
+- apiGroups:
+  - networking.k8s.io
+  resources:
+  - networkpolicies
+  verbs:
+  - get
+  - list
+  - watch
+- apiGroups:
+  - authentication.k8s.io
+  resources:
+  - tokenreviews
+  verbs:
+  - create
+- apiGroups:
+  - authorization.k8s.io
+  resources:
+  - subjectaccessreviews
+  verbs:
+  - create
+- apiGroups:
+  - networking.k8s.io
+  resources:
+  - networkpolicies
+  verbs:
+  - get
+  - list
+  - watch
 - apiGroups:
   - authentication.k8s.io
   resources:
