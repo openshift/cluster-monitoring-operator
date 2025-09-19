@@ -29,3 +29,11 @@ rules:
   - securitycontextconstraints
   verbs:
   - use
+- apiGroups:
+  - networking.k8s.io
+  resources:
+  - networkpolicies
+  verbs:
+  - get
+  - list
+  - watch
