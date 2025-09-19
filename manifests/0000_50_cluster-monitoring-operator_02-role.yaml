@@ -463,14 +463,6 @@ rules:
   - nodes/metrics
   verbs:
   - get
-- apiGroups:
-  - networking.k8s.io
-  resources:
-  - networkpolicies
-  verbs:
-  - get
-  - list
-  - watch
 - nonResourceURLs:
   - /metrics
   - /metrics/slis
