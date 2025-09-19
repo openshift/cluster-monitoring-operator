@@ -3873,25 +3873,14 @@ func TestPrometheusK8sControlPlaneRulesFiltered(t *testing.T) {
 	tests := []struct {
 		name           string
 		infrastructure InfrastructureReader
-		verify         func(bool)
 	}{
 		{
 			name:           "default config",
 			infrastructure: defaultInfrastructureReader(),
-			verify: func(api bool) {
-				if !api {
-					t.Fatal("did not get all expected kubernetes control plane rules")
-				}
-			},
 		},
 		{
 			name:           "hosted control plane",
 			infrastructure: &fakeInfrastructureReader{highlyAvailableInfrastructure: true, hostedControlPlane: true},
-			verify: func(api bool) {
-				if api {
-					t.Fatalf("kubernetes control plane rules found, none expected")
-				}
-			},
 		},
 	}
 
@@ -3901,14 +3890,13 @@ func TestPrometheusK8sControlPlaneRulesFiltered(t *testing.T) {
 		if err != nil {
 			t.Fatal(err)
 		}
-		apiServerRulesFound := false
+
 		for _, g := range r.Spec.Groups {
 			switch g.Name {
-			case "kubernetes-system-apiserver":
-				apiServerRulesFound = true
+			case "kubernetes-system-apiserver", "kubernetes-system-controller-manager", "kubernetes-system-scheduler":
+				t.Fatalf("Kubernetes control plane rule group %s found, none expected", g.Name)
 			}
 		}
-		tc.verify(apiServerRulesFound)
 	}
 }
 
