@@ -325,7 +325,7 @@ function(params) {
       {
         apiGroups: ['networking.k8s.io'],
         resources: ['networkpolicies'],
-        verbs: ['get', 'list', 'watch', 'create'],
+        verbs: ['create', 'get', 'list', 'watch', 'update', 'delete'],
       },
     ],
   },

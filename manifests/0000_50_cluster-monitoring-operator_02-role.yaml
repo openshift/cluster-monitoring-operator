@@ -197,15 +197,6 @@ rules:
   verbs:
   - use
 - apiGroups:
-  - networking.k8s.io
-  resources:
-  - networkpolicies
-  verbs:
-  - get
-  - list
-  - watch
-  - create
-- apiGroups:
   - ""
   resources:
   - namespaces
@@ -384,15 +375,6 @@ rules:
   - list
   - watch
 - apiGroups:
-  - networking.k8s.io
-  resources:
-  - networkpolicies
-  verbs:
-  - get
-  - list
-  - watch
-  - create
-- apiGroups:
   - authentication.k8s.io
   resources:
   - tokenreviews
@@ -412,15 +394,6 @@ rules:
   - securitycontextconstraints
   verbs:
   - use
-- apiGroups:
-  - networking.k8s.io
-  resources:
-  - networkpolicies
-  verbs:
-  - get
-  - list
-  - watch
-  - create
 - apiGroups:
   - apps.openshift.io
   resources:
@@ -470,15 +443,6 @@ rules:
   verbs:
   - create
 - apiGroups:
-  - networking.k8s.io
-  resources:
-  - networkpolicies
-  verbs:
-  - get
-  - list
-  - watch
-  - create
-- apiGroups:
   - ""
   resources:
   - nodes/metrics
@@ -493,15 +457,6 @@ rules:
   - get
   - list
   - watch
-- apiGroups:
-  - networking.k8s.io
-  resources:
-  - networkpolicies
-  verbs:
-  - get
-  - list
-  - watch
-  - create
 - apiGroups:
   - ""
   resources:
@@ -557,15 +512,6 @@ rules:
   - get
   - create
   - update
-- apiGroups:
-  - networking.k8s.io
-  resources:
-  - networkpolicies
-  verbs:
-  - get
-  - list
-  - watch
-  - create
 - apiGroups:
   - ""
   resources:
@@ -784,15 +730,6 @@ rules:
   verbs:
   - create
 - apiGroups:
-  - networking.k8s.io
-  resources:
-  - networkpolicies
-  verbs:
-  - get
-  - list
-  - watch
-  - create
-- apiGroups:
   - authentication.k8s.io
   resources:
   - tokenreviews
@@ -805,15 +742,6 @@ rules:
   verbs:
   - create
 - apiGroups:
-  - networking.k8s.io
-  resources:
-  - networkpolicies
-  verbs:
-  - get
-  - list
-  - watch
-  - create
-- apiGroups:
   - authentication.k8s.io
   resources:
   - tokenreviews
@@ -824,15 +752,6 @@ rules:
   resources:
   - subjectaccessreviews
   verbs:
-  - create
-- apiGroups:
-  - networking.k8s.io
-  resources:
-  - networkpolicies
-  verbs:
-  - get
-  - list
-  - watch
   - create
 - apiGroups:
   - authentication.k8s.io

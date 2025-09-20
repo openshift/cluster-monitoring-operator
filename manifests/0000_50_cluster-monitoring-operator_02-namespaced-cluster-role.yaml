@@ -78,7 +78,9 @@ rules:
   resources:
   - networkpolicies
   verbs:
+  - create
   - get
   - list
   - watch
-  - create
+  - update
+  - delete

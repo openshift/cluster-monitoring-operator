@@ -254,11 +254,6 @@ function(params)
           resourceNames: ['node-exporter'],
           verbs: ['use'],
         },
-        {
-          apiGroups: ['networking.k8s.io'],
-          resources: ['networkpolicies'],
-          verbs: ['get', 'list', 'watch', 'create'],
-        },
       ],
     },
 

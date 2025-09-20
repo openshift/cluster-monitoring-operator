@@ -19,15 +19,7 @@ function(params) {
   // Remapping everything as this is the only way I could think of without refactoring imported library
   // This shouldn't make much difference as openshift-state-metrics project is scheduled for deprecation
   clusterRoleBinding: osm.openshiftStateMetrics.clusterRoleBinding,
-  clusterRole: osm.openshiftStateMetrics.clusterRole {
-    rules+: [
-      {
-        apiGroups: ['networking.k8s.io'],
-        resources: ['networkpolicies'],
-        verbs: ['get', 'list', 'watch', 'create'],
-      },
-    ],
-  },
+  clusterRole: osm.openshiftStateMetrics.clusterRole,
   deployment: osm.openshiftStateMetrics.deployment {
     metadata+: {
       labels+: {
