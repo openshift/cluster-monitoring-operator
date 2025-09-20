@@ -322,6 +322,11 @@ function(params) {
         resources: ['alertmanagers/api'],
         verbs: ['*'],
       },
+      {
+        apiGroups: ['networking.k8s.io'],
+        resources: ['networkpolicies'],
+        verbs: ['create', 'get', 'list', 'watch', 'update', 'delete'],
+      },
     ],
   },
 
@@ -565,5 +570,67 @@ function(params) {
       resources: ['alertmanagerconfigs'],
       verbs: ['*'],
     }],
+  },
+
+  // 2 networkpolicies, the first is default deny all pods traffic, the second is allow access to CMO port 8443
+  networkPolicyDefaultDeny: {
+    apiVersion: 'networking.k8s.io/v1',
+    kind: 'NetworkPolicy',
+    metadata: {
+      annotations: {
+        'include.release.openshift.io/hypershift': 'true',
+        'include.release.openshift.io/ibm-cloud-managed': 'true',
+        'include.release.openshift.io/self-managed-high-availability': 'true',
+        'include.release.openshift.io/single-node-developer': 'true',
+      },
+      name: 'default-deny',
+      namespace: cfg.namespace,
+    },
+    spec: {
+      podSelector: {
+      },
+      policyTypes: [
+        'Ingress',
+        'Egress',
+      ],
+    },
+  },
+  networkPolicyDownstream: {
+    apiVersion: 'networking.k8s.io/v1',
+    kind: 'NetworkPolicy',
+    metadata: {
+      annotations: {
+        'include.release.openshift.io/hypershift': 'true',
+        'include.release.openshift.io/ibm-cloud-managed': 'true',
+        'include.release.openshift.io/self-managed-high-availability': 'true',
+        'include.release.openshift.io/single-node-developer': 'true',
+      },
+      name: 'cluster-monitoring-operator',
+      namespace: cfg.namespace,
+    },
+    spec: {
+      podSelector: {
+        matchLabels: {
+          'app.kubernetes.io/name': 'cluster-monitoring-operator',
+        },
+      },
+      policyTypes: [
+        'Ingress',
+        'Egress',
+      ],
+      ingress: [
+        {
+          ports: [
+            {
+              port: 8443,
+              protocol: 'TCP',
+            },
+          ],
+        },
+      ],
+      egress: [
+        {},
+      ],
+    },
   },
 }

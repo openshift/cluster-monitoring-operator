@@ -116,6 +116,18 @@ func (t *AlertmanagerTask) create(ctx context.Context) error {
 		return fmt.Errorf("creating Alertmanager RBAC proxy metric Secret failed: %w", err)
 	}
 
+	netpol, err := t.factory.AlertmanagerNetworkPolicy()
+	if err != nil {
+		return fmt.Errorf("initializing Alertmanager NetworkPolicy failed: %w", err)
+	}
+
+	if netpol != nil {
+		err = t.client.CreateOrUpdateNetworkPolicy(ctx, netpol)
+		if err != nil {
+			return fmt.Errorf("reconciling Alertmanager NetworkPolicy failed: %w", err)
+		}
+	}
+
 	if t.config.ClusterMonitoringConfiguration.AlertmanagerMainConfig.Secrets != nil {
 		for _, secret := range t.config.ClusterMonitoringConfiguration.AlertmanagerMainConfig.Secrets {
 			obj := types.NamespacedName{
@@ -326,6 +338,18 @@ func (t *AlertmanagerTask) destroy(ctx context.Context) error {
 		err = t.client.DeletePodDisruptionBudget(ctx, pdb)
 		if err != nil {
 			return fmt.Errorf("deleting Alertmanager PodDisruptionBudget object failed: %w", err)
+		}
+	}
+
+	netpol, err := t.factory.AlertmanagerNetworkPolicy()
+	if err != nil {
+		return fmt.Errorf("initializing Alertmanager NetworkPolicy object failed: %w", err)
+	}
+
+	if netpol != nil {
+		err = t.client.DeleteNetworkPolicy(ctx, netpol)
+		if err != nil {
+			return fmt.Errorf("deleting Alertmanager NetworkPolicy object failed: %w", err)
 		}
 	}
 

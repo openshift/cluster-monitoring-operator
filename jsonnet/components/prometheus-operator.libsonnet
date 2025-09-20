@@ -178,4 +178,42 @@ function(params)
         ],
       },
     },
+    networkPolicyDownstream: {
+      apiVersion: 'networking.k8s.io/v1',
+      kind: 'NetworkPolicy',
+      metadata: {
+        annotations: {
+          'include.release.openshift.io/hypershift': 'true',
+          'include.release.openshift.io/ibm-cloud-managed': 'true',
+          'include.release.openshift.io/self-managed-high-availability': 'true',
+          'include.release.openshift.io/single-node-developer': 'true',
+        },
+        name: 'prometheus-operator',
+        namespace: 'openshift-monitoring',
+      },
+      spec: {
+        podSelector: {
+          matchLabels: {
+            'app.kubernetes.io/name': 'prometheus-operator',
+          },
+        },
+        policyTypes: [
+          'Ingress',
+          'Egress',
+        ],
+        ingress: [
+          {
+            ports: [
+              {
+                port: 8443,
+                protocol: 'TCP',
+              },
+            ],
+          },
+        ],
+        egress: [
+          {},
+        ],
+      },
+    },
   }

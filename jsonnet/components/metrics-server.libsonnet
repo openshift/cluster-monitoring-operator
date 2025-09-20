@@ -373,4 +373,42 @@ function(params) {
       },
     },
   },
+  networkPolicyDownstream: {
+    apiVersion: 'networking.k8s.io/v1',
+    kind: 'NetworkPolicy',
+    metadata: {
+      annotations: {
+        'include.release.openshift.io/hypershift': 'true',
+        'include.release.openshift.io/ibm-cloud-managed': 'true',
+        'include.release.openshift.io/self-managed-high-availability': 'true',
+        'include.release.openshift.io/single-node-developer': 'true',
+      },
+      name: 'metrics-server',
+      namespace: cfg.namespace,
+    },
+    spec: {
+      podSelector: {
+        matchLabels: {
+          'app.kubernetes.io/name': 'metrics-server',
+        },
+      },
+      policyTypes: [
+        'Ingress',
+        'Egress',
+      ],
+      ingress: [
+        {
+          ports: [
+            {
+              port: 10250,
+              protocol: 'TCP',
+            },
+          ],
+        },
+      ],
+      egress: [
+        {},
+      ],
+    },
+  },
 }

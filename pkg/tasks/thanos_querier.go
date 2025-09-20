@@ -226,5 +226,17 @@ func (t *ThanosQuerierTask) Run(ctx context.Context) error {
 		return fmt.Errorf("reconciling Thanos Querier PrometheusRule failed: %w", err)
 	}
 
+	netpol, err := t.factory.ThanosQuerierNetworkPolicy()
+	if err != nil {
+		return fmt.Errorf("initializing Thanos Querier NetworkPolicy failed: %w", err)
+	}
+
+	if netpol != nil {
+		err = t.client.CreateOrUpdateNetworkPolicy(ctx, netpol)
+		if err != nil {
+			return fmt.Errorf("reconciling Thanos Querier NetworkPolicy failed: %w", err)
+		}
+	}
+
 	return nil
 }
