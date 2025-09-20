@@ -204,6 +204,7 @@ rules:
   - get
   - list
   - watch
+  - create
 - apiGroups:
   - ""
   resources:
@@ -390,6 +391,7 @@ rules:
   - get
   - list
   - watch
+  - create
 - apiGroups:
   - authentication.k8s.io
   resources:
@@ -418,6 +420,7 @@ rules:
   - get
   - list
   - watch
+  - create
 - apiGroups:
   - apps.openshift.io
   resources:
@@ -474,6 +477,7 @@ rules:
   - get
   - list
   - watch
+  - create
 - apiGroups:
   - ""
   resources:
@@ -497,6 +501,7 @@ rules:
   - get
   - list
   - watch
+  - create
 - apiGroups:
   - ""
   resources:
@@ -560,6 +565,7 @@ rules:
   - get
   - list
   - watch
+  - create
 - apiGroups:
   - ""
   resources:
@@ -785,6 +791,7 @@ rules:
   - get
   - list
   - watch
+  - create
 - apiGroups:
   - authentication.k8s.io
   resources:
@@ -805,6 +812,7 @@ rules:
   - get
   - list
   - watch
+  - create
 - apiGroups:
   - authentication.k8s.io
   resources:
@@ -825,6 +833,7 @@ rules:
   - get
   - list
   - watch
+  - create
 - apiGroups:
   - authentication.k8s.io
   resources:

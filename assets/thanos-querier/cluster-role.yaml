@@ -30,3 +30,4 @@ rules:
   - get
   - list
   - watch
+  - create
