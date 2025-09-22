@@ -53,6 +53,18 @@ func (t *AlertmanagerTask) Run(ctx context.Context) error {
 }
 
 func (t *AlertmanagerTask) create(ctx context.Context) error {
+	netpol, err := t.factory.AlertmanagerNetworkPolicy()
+	if err != nil {
+		return fmt.Errorf("initializing Alertmanager NetworkPolicy failed: %w", err)
+	}
+
+	if netpol != nil {
+		err = t.client.CreateOrUpdateNetworkPolicy(ctx, netpol)
+		if err != nil {
+			return fmt.Errorf("reconciling Alertmanager NetworkPolicy failed: %w", err)
+		}
+	}
+
 	hasRoutes, err := t.client.HasRouteCapability(ctx)
 	if err != nil {
 		return fmt.Errorf("checking for Route capability failed: %w", err)
@@ -114,18 +126,6 @@ func (t *AlertmanagerTask) create(ctx context.Context) error {
 	err = t.client.CreateIfNotExistSecret(ctx, rsm)
 	if err != nil {
 		return fmt.Errorf("creating Alertmanager RBAC proxy metric Secret failed: %w", err)
-	}
-
-	netpol, err := t.factory.AlertmanagerNetworkPolicy()
-	if err != nil {
-		return fmt.Errorf("initializing Alertmanager NetworkPolicy failed: %w", err)
-	}
-
-	if netpol != nil {
-		err = t.client.CreateOrUpdateNetworkPolicy(ctx, netpol)
-		if err != nil {
-			return fmt.Errorf("reconciling Alertmanager NetworkPolicy failed: %w", err)
-		}
 	}
 
 	if t.config.ClusterMonitoringConfiguration.AlertmanagerMainConfig.Secrets != nil {

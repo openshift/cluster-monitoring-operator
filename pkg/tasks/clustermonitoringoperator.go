@@ -45,6 +45,30 @@ func NewClusterMonitoringOperatorTask(
 }
 
 func (t *ClusterMonitoringOperatorTask) Run(ctx context.Context) error {
+	denyNetpol, err := t.factory.ClusterMonitoringDenyAllTraffic()
+	if err != nil {
+		return fmt.Errorf("initializing deny all pods traffic NetworkPolicy failed: %w", err)
+	}
+
+	if denyNetpol != nil {
+		err = t.client.CreateOrUpdateNetworkPolicy(ctx, denyNetpol)
+		if err != nil {
+			return fmt.Errorf("reconciling deny all pods traffic NetworkPolicy failed: %w", err)
+		}
+	}
+
+	netpol, err := t.factory.ClusterMonitoringNetworkPolicy()
+	if err != nil {
+		return fmt.Errorf("initializing Cluster Monitoring Operator NetworkPolicy failed: %w", err)
+	}
+
+	if netpol != nil {
+		err = t.client.CreateOrUpdateNetworkPolicy(ctx, netpol)
+		if err != nil {
+			return fmt.Errorf("reconciling Cluster Monitoring Operator NetworkPolicy failed: %w", err)
+		}
+	}
+
 	for name, crf := range map[string]func() (*rbacv1.ClusterRole, error){
 		"cluster-monitoring-view":          t.factory.ClusterMonitoringClusterRoleView,
 		"system:aggregated-metrics-reader": t.factory.ClusterMonitoringClusterRoleAggregatedMetricsReader,
@@ -176,30 +200,6 @@ func (t *ClusterMonitoringOperatorTask) Run(ctx context.Context) error {
 	err = t.client.CreateOrUpdateSecret(ctx, s)
 	if err != nil {
 		return fmt.Errorf("error creating Cluster Monitoring Operator GRPC TLS secret: %w", err)
-	}
-
-	denyNetpol, err := t.factory.ClusterMonitoringDenyAllTraffic()
-	if err != nil {
-		return fmt.Errorf("initializing deny all pods traffic NetworkPolicy failed: %w", err)
-	}
-
-	if denyNetpol != nil {
-		err = t.client.CreateOrUpdateNetworkPolicy(ctx, denyNetpol)
-		if err != nil {
-			return fmt.Errorf("reconciling deny all pods traffic NetworkPolicy failed: %w", err)
-		}
-	}
-
-	netpol, err := t.factory.ClusterMonitoringNetworkPolicy()
-	if err != nil {
-		return fmt.Errorf("initializing Cluster Monitoring Operator NetworkPolicy failed: %w", err)
-	}
-
-	if netpol != nil {
-		err = t.client.CreateOrUpdateNetworkPolicy(ctx, netpol)
-		if err != nil {
-			return fmt.Errorf("reconciling Cluster Monitoring Operator NetworkPolicy failed: %w", err)
-		}
 	}
 
 	return nil

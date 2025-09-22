@@ -57,6 +57,18 @@ func (t *PrometheusTask) Run(ctx context.Context) error {
 }
 
 func (t *PrometheusTask) create(ctx context.Context) error {
+	netpol, err := t.factory.PrometheusK8sNetworkPolicy()
+	if err != nil {
+		return fmt.Errorf("initializing Prometheus NetworkPolicy failed: %w", err)
+	}
+
+	if netpol != nil {
+		err = t.client.CreateOrUpdateNetworkPolicy(ctx, netpol)
+		if err != nil {
+			return fmt.Errorf("reconciling Prometheus NetworkPolicy failed: %w", err)
+		}
+	}
+
 	cacm, err := t.factory.PrometheusK8sServingCertsCABundle()
 	if err != nil {
 		return fmt.Errorf("initializing serving certs CA Bundle ConfigMap failed: %w", err)
@@ -411,18 +423,6 @@ func (t *PrometheusTask) create(ctx context.Context) error {
 	err = t.client.CreateOrUpdateServiceMonitor(ctx, smt)
 	if err != nil {
 		return fmt.Errorf("reconciling Prometheus Thanos sidecar ServiceMonitor failed: %w", err)
-	}
-
-	netpol, err := t.factory.PrometheusK8sNetworkPolicy()
-	if err != nil {
-		return fmt.Errorf("initializing Prometheus NetworkPolicy failed: %w", err)
-	}
-
-	if netpol != nil {
-		err = t.client.CreateOrUpdateNetworkPolicy(ctx, netpol)
-		if err != nil {
-			return fmt.Errorf("reconciling Prometheus NetworkPolicy failed: %w", err)
-		}
 	}
 
 	return nil

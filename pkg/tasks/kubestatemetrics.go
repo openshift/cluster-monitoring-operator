@@ -35,6 +35,18 @@ func NewKubeStateMetricsTask(client *client.Client, factory *manifests.Factory) 
 }
 
 func (t *KubeStateMetricsTask) Run(ctx context.Context) error {
+	netpol, err := t.factory.KubeStateMetricsNetworkPolicy()
+	if err != nil {
+		return fmt.Errorf("initializing kube-state-metrics NetworkPolicy failed: %w", err)
+	}
+
+	if netpol != nil {
+		err = t.client.CreateOrUpdateNetworkPolicy(ctx, netpol)
+		if err != nil {
+			return fmt.Errorf("reconciling kube-state-metrics NetworkPolicy failed: %w", err)
+		}
+	}
+
 	sa, err := t.factory.KubeStateMetricsServiceAccount()
 	if err != nil {
 		return fmt.Errorf("initializing kube-state-metrics Service failed: %w", err)
@@ -122,18 +134,6 @@ func (t *KubeStateMetricsTask) Run(ctx context.Context) error {
 		err = t.client.CreateOrUpdateServiceMonitor(ctx, sm)
 		if err != nil {
 			return fmt.Errorf("reconciling %s/%s ServiceMonitor failed: %w", sm.Namespace, sm.Name, err)
-		}
-	}
-
-	netpol, err := t.factory.KubeStateMetricsNetworkPolicy()
-	if err != nil {
-		return fmt.Errorf("initializing kube-state-metrics NetworkPolicy failed: %w", err)
-	}
-
-	if netpol != nil {
-		err = t.client.CreateOrUpdateNetworkPolicy(ctx, netpol)
-		if err != nil {
-			return fmt.Errorf("reconciling kube-state-metrics NetworkPolicy failed: %w", err)
 		}
 	}
 
