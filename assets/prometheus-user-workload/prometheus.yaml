@@ -189,6 +189,8 @@ spec:
   ignoreNamespaceSelectors: true
   image: quay.io/prometheus/prometheus:v3.5.0
   listenLocal: true
+  nameEscapingScheme: Underscores
+  nameValidationScheme: Legacy
   nodeSelector:
     kubernetes.io/os: linux
   overrideHonorLabels: true

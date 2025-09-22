@@ -25,8 +25,11 @@ import (
 
 	configv1 "github.com/openshift/api/config/v1"
 	"github.com/openshift/cluster-monitoring-operator/test/e2e/framework"
+	monitoringv1 "github.com/prometheus-operator/prometheus-operator/pkg/apis/monitoring/v1"
+	"github.com/stretchr/testify/require"
 
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	"k8s.io/apimachinery/pkg/util/intstr"
 	"k8s.io/apimachinery/pkg/util/wait"
 	"k8s.io/client-go/tools/clientcmd"
 )
@@ -187,4 +190,71 @@ func TestMemoryUsageRecordingRule(t *testing.T) {
 		time.Minute,
 		"count(namespace:container_memory_usage_bytes:sum)",
 	)
+}
+
+func TestPrometheusUTF8Support(t *testing.T) {
+	resourceName := "utf8-test"
+
+	// Enable UWM
+	cm := getUserWorkloadEnabledConfigMap(t, f)
+	f.MustCreateOrUpdateConfigMap(t, cm)
+	defer f.MustDeleteConfigMap(t, cm)
+
+	// Prometheus should use legacy validation and escaping schemes until fully utf8 support.
+	// See other checks below.
+	for _, configSecret := range []struct {
+		namespace string
+		name      string
+	}{
+		{f.Ns, prometheusConfigSecretName},
+		{f.UserWorkloadMonitoringNs, "prometheus-user-workload"},
+	} {
+
+		t.Run(configSecret.namespace+"/"+configSecret.name, func(t *testing.T) {
+			err := framework.Poll(5*time.Second, 5*time.Minute, func() error {
+				prometheusConfig := f.PrometheusConfigFromSecret(t, configSecret.namespace, configSecret.name)
+				scheme := prometheusConfig.GlobalConfig.MetricNameEscapingScheme
+				if scheme != "underscores" {
+					return fmt.Errorf("metric_name_escaping_scheme is not set to underscores, but to %s", scheme)
+				}
+				scheme = prometheusConfig.GlobalConfig.MetricNameValidationScheme
+				if scheme != "legacy" {
+					return fmt.Errorf("metric_name_validation_scheme is not set to legacy, but to %s", scheme)
+				}
+				return nil
+			})
+
+			require.NoError(t, err)
+		})
+	}
+
+	// Sanity check: prometheus-operator validating webhook should block utf8 rules as not supported yet.
+	// You may want to enable utf8 on prometheus once utf8s is fully supported, or at least allow enabling it.
+	_, err := f.MonitoringClient.PrometheusRules(f.UserWorkloadMonitoringNs).Create(ctx, &monitoringv1.PrometheusRule{
+		ObjectMeta: metav1.ObjectMeta{
+			Name: resourceName,
+			Labels: map[string]string{
+				framework.E2eTestLabelName: framework.E2eTestLabelValue,
+			},
+		},
+		Spec: monitoringv1.PrometheusRuleSpec{
+			Groups: []monitoringv1.RuleGroup{
+				{
+					Name: "example",
+					Rules: []monitoringv1.Rule{
+						{
+							Record: "foo.bar:count",
+							Expr:   intstr.FromString(`count(foo.bar)`),
+						},
+						{
+							Alert: "Alert",
+							Expr:  intstr.FromString("foo.bar == 1"),
+							For:   func(d monitoringv1.Duration) *monitoringv1.Duration { return &d }("1s"),
+						},
+					},
+				},
+			},
+		},
+	}, metav1.CreateOptions{})
+	require.ErrorContains(t, err, "denied the request: Rules are not valid")
 }

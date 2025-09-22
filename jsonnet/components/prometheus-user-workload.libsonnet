@@ -378,6 +378,9 @@ function(params)
             value: '15ms',
           },
         ],
+        // Prometheus should use legacy validation and escaping schemes until fully utf8 support.
+        nameEscapingScheme: 'Underscores',
+        nameValidationScheme: 'Legacy',
         containers: [
           {
             name: 'kube-rbac-proxy-federate',

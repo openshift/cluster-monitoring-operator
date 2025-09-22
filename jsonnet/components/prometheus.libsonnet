@@ -402,6 +402,9 @@ function(params)
         // failures when the WAL replay takes a long time.
         // See https://issues.redhat.com/browse/OCPBUGS-4168 for details.
         maximumStartupDurationSeconds: 3600,
+        // Prometheus should use legacy validation and escaping schemes until fully utf8 support.
+        nameEscapingScheme: 'Underscores',
+        nameValidationScheme: 'Legacy',
         containers: [
           {
             name: 'kube-rbac-proxy-web',
