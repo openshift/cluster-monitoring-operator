@@ -248,11 +248,6 @@ namespacesWithoutLabelEnforcement:
 			name: "assert alertmanager is not deployed in user namespace",
 			f:    f.AssertStatefulsetDoesNotExist("alertmanager-not-to-be-reconciled", userWorkloadTestNs),
 		},
-		// TODO: the test will be renamed and merged with others in a follow-up PR.
-		{
-			name: "assert containers images registry is the same than CMO",
-			f:    cmoImageRegistryIsUsedInNsAssert(t, f.UserWorkloadMonitoringNs),
-		},
 	} {
 		t.Run(scenario.name, scenario.f)
 	}
