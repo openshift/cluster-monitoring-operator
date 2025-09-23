@@ -642,7 +642,7 @@ function(params)
               },
               {
                 port: 10901,
-                protocol: 'UDP',
+                protocol: 'TCP',
               },
               {
                 port: 10903,

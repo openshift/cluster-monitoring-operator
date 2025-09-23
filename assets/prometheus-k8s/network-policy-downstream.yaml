@@ -21,7 +21,7 @@ spec:
     - port: 9092
       protocol: TCP
     - port: 10901
-      protocol: UDP
+      protocol: TCP
     - port: 10903
       protocol: TCP
   podSelector:
