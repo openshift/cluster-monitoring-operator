@@ -8,8 +8,5 @@ addon {
     prometheus+: {
       podAntiAffinity: 'hard',
     },
-    prometheusAdapter+: {
-      podAntiAffinity: 'hard',
-    },
   },
 }
