@@ -54,7 +54,7 @@ spec:
         - --shutdown-send-retry-after=true
         - --shutdown-delay-duration=150s
         - --disable-http2-serving=true
-        image: registry.k8s.io/metrics-server/metrics-server:v0.8.0
+        image: ""
         imagePullPolicy: IfNotPresent
         livenessProbe:
           failureThreshold: 3
