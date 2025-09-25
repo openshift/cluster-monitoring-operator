@@ -57,7 +57,7 @@ spec:
           ^kube_pod_container_status_running$,
           ^kube_pod_completion_time$,
           ^kube_pod_status_scheduled$
-        image: registry.k8s.io/kube-state-metrics/kube-state-metrics:v2.17.0
+        image: ""
         name: kube-state-metrics
         resources:
           requests:
@@ -80,7 +80,7 @@ spec:
         - --tls-private-key-file=/etc/tls/private/tls.key
         - --client-ca-file=/etc/tls/client/client-ca.crt
         - --config-file=/etc/kube-rbac-policy/config.yaml
-        image: quay.io/brancz/kube-rbac-proxy:v0.19.1
+        image: ""
         name: kube-rbac-proxy-main
         ports:
         - containerPort: 8443
@@ -109,7 +109,7 @@ spec:
         - --tls-private-key-file=/etc/tls/private/tls.key
         - --client-ca-file=/etc/tls/client/client-ca.crt
         - --config-file=/etc/kube-rbac-policy/config.yaml
-        image: quay.io/brancz/kube-rbac-proxy:v0.19.1
+        image: ""
         name: kube-rbac-proxy-self
         ports:
         - containerPort: 9443

@@ -52,7 +52,7 @@ spec:
         - -key=/var/cert/tls.key
         command:
         - /opt/app-root/plugin-backend
-        image: quay.io/openshift/origin-monitoring-plugin:1.0.0
+        image: ""
         imagePullPolicy: IfNotPresent
         name: monitoring-plugin
         ports:

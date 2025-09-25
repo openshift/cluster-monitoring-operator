@@ -49,7 +49,7 @@ spec:
         env:
         - name: GOGC
           value: "30"
-        image: quay.io/prometheus-operator/prometheus-operator:v0.85.0
+        image: ""
         name: prometheus-operator
         ports: []
         resources:
@@ -71,7 +71,7 @@ spec:
         - --tls-private-key-file=/etc/tls/private/tls.key
         - --client-ca-file=/etc/tls/client/client-ca.crt
         - --config-file=/etc/kube-rbac-policy/config.yaml
-        image: quay.io/brancz/kube-rbac-proxy:v0.19.1
+        image: ""
         name: kube-rbac-proxy
         ports:
         - containerPort: 8443

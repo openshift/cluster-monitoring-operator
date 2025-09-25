@@ -60,7 +60,7 @@ spec:
         env:
         - name: DBUS_SYSTEM_BUS_ADDRESS
           value: unix:path=/host/root/var/run/dbus/system_bus_socket
-        image: quay.io/prometheus/node-exporter:v1.9.1
+        image: ""
         name: node-exporter
         resources:
           requests:
@@ -97,7 +97,7 @@ spec:
           valueFrom:
             fieldRef:
               fieldPath: status.podIP
-        image: quay.io/brancz/kube-rbac-proxy:v0.19.1
+        image: ""
         name: kube-rbac-proxy
         ports:
         - containerPort: 9100
@@ -139,7 +139,7 @@ spec:
         env:
         - name: TMPDIR
           value: /tmp
-        image: quay.io/prometheus/node-exporter:v1.9.1
+        image: ""
         name: init-textfile
         resources:
           requests:

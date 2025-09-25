@@ -47,7 +47,7 @@ spec:
         - --web.key-file=/etc/tls/private/tls.key
         - --web.tls-cipher-suites=TLS_ECDHE_RSA_WITH_AES_128_GCM_SHA256,TLS_ECDHE_ECDSA_WITH_AES_128_GCM_SHA256,TLS_ECDHE_RSA_WITH_AES_256_GCM_SHA384,TLS_ECDHE_ECDSA_WITH_AES_256_GCM_SHA384,TLS_ECDHE_RSA_WITH_CHACHA20_POLY1305,TLS_ECDHE_ECDSA_WITH_CHACHA20_POLY1305
         - --web.tls-min-version=VersionTLS12
-        image: quay.io/prometheus-operator/admission-webhook:v0.85.0
+        image: ""
         livenessProbe:
           httpGet:
             path: /healthz
