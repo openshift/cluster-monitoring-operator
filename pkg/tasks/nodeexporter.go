@@ -35,6 +35,18 @@ func NewNodeExporterTask(client *client.Client, factory *manifests.Factory) *Nod
 }
 
 func (t *NodeExporterTask) Run(ctx context.Context) error {
+	netpol, err := t.factory.NodeExporterNetworkPolicy()
+	if err != nil {
+		return fmt.Errorf("initializing node-exporter NetworkPolicy failed: %w", err)
+	}
+
+	if netpol != nil {
+		err = t.client.CreateOrUpdateNetworkPolicy(ctx, netpol)
+		if err != nil {
+			return fmt.Errorf("reconciling node-exporter NetworkPolicy failed: %w", err)
+		}
+	}
+
 	scc, err := t.factory.NodeExporterSecurityContextConstraints()
 	if err != nil {
 		return fmt.Errorf("initializing node-exporter SecurityContextConstraints failed: %w", err)

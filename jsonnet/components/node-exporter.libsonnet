@@ -247,12 +247,14 @@ function(params)
     },
 
     clusterRole+: {
-      rules+: [{
-        apiGroups: ['security.openshift.io'],
-        resources: ['securitycontextconstraints'],
-        resourceNames: ['node-exporter'],
-        verbs: ['use'],
-      }],
+      rules+: [
+        {
+          apiGroups: ['security.openshift.io'],
+          resources: ['securitycontextconstraints'],
+          resourceNames: ['node-exporter'],
+          verbs: ['use'],
+        },
+      ],
     },
 
     // This configures the kube-rbac-proxies to use the serving cert
@@ -480,6 +482,44 @@ function(params)
       },
       data: {
         [acceleratorsConfigFileName]: std.manifestYamlDoc(acceleratorsConfigData),
+      },
+    },
+    networkPolicyDownstream: {
+      apiVersion: 'networking.k8s.io/v1',
+      kind: 'NetworkPolicy',
+      metadata: {
+        annotations: {
+          'include.release.openshift.io/hypershift': 'true',
+          'include.release.openshift.io/ibm-cloud-managed': 'true',
+          'include.release.openshift.io/self-managed-high-availability': 'true',
+          'include.release.openshift.io/single-node-developer': 'true',
+        },
+        name: 'node-exporter',
+        namespace: cfg.namespace,
+      },
+      spec: {
+        podSelector: {
+          matchLabels: {
+            'app.kubernetes.io/name': 'node-exporter',
+          },
+        },
+        policyTypes: [
+          'Ingress',
+          'Egress',
+        ],
+        ingress: [
+          {
+            ports: [
+              {
+                port: 9100,
+                protocol: 'TCP',
+              },
+            ],
+          },
+        ],
+        egress: [
+          {},
+        ],
       },
     },
   }
