@@ -54,7 +54,7 @@ spec:
     - --tls-private-key-file=/etc/tls/private/tls.key
     - --client-ca-file=/etc/tls/client/client-ca.crt
     - --tls-cipher-suites=TLS_ECDHE_RSA_WITH_AES_128_GCM_SHA256,TLS_ECDHE_ECDSA_WITH_AES_128_GCM_SHA256,TLS_ECDHE_RSA_WITH_AES_256_GCM_SHA384,TLS_ECDHE_ECDSA_WITH_AES_256_GCM_SHA384,TLS_ECDHE_RSA_WITH_CHACHA20_POLY1305,TLS_ECDHE_ECDSA_WITH_CHACHA20_POLY1305
-    image: quay.io/brancz/kube-rbac-proxy:v0.19.1
+    image: ""
     name: kube-rbac-proxy-federate
     ports:
     - containerPort: 9092
@@ -86,7 +86,7 @@ spec:
     - --tls-private-key-file=/etc/tls/private/tls.key
     - --client-ca-file=/etc/tls/client/client-ca.crt
     - --tls-cipher-suites=TLS_ECDHE_RSA_WITH_AES_128_GCM_SHA256,TLS_ECDHE_ECDSA_WITH_AES_128_GCM_SHA256,TLS_ECDHE_RSA_WITH_AES_256_GCM_SHA384,TLS_ECDHE_ECDSA_WITH_AES_256_GCM_SHA384,TLS_ECDHE_RSA_WITH_CHACHA20_POLY1305,TLS_ECDHE_ECDSA_WITH_CHACHA20_POLY1305
-    image: quay.io/brancz/kube-rbac-proxy:v0.19.1
+    image: ""
     name: kube-rbac-proxy-metrics
     ports:
     - containerPort: 9091
@@ -123,7 +123,7 @@ spec:
       valueFrom:
         fieldRef:
           fieldPath: status.podIP
-    image: quay.io/brancz/kube-rbac-proxy:v0.19.1
+    image: ""
     name: kube-rbac-proxy-thanos
     ports:
     - containerPort: 10903
@@ -154,6 +154,7 @@ spec:
     - --grpc-server-tls-cert=/etc/tls/grpc/server.crt
     - --grpc-server-tls-key=/etc/tls/grpc/server.key
     - --grpc-server-tls-client-ca=/etc/tls/grpc/ca.crt
+    image: ""
     name: thanos-sidecar
     resources:
       requests:
@@ -175,6 +176,7 @@ spec:
       value: ""
     - name: NO_PROXY
       value: ""
+    image: ""
     name: prometheus
     terminationMessagePolicy: FallbackToLogsOnError
     volumeMounts:
@@ -187,7 +189,7 @@ spec:
   enforcedNamespaceLabel: namespace
   externalLabels: {}
   ignoreNamespaceSelectors: true
-  image: quay.io/prometheus/prometheus:v3.5.0
+  image: ""
   listenLocal: true
   nodeSelector:
     kubernetes.io/os: linux
@@ -296,7 +298,7 @@ spec:
       values:
       - "false"
   thanos:
-    image: quay.io/thanos/thanos:v0.39.2
+    image: ""
     resources:
       requests:
         cpu: 1m
