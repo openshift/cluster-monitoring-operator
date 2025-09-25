@@ -1,0 +1,59 @@
+tests:
+  - inCluster: true
+    script: |
+      # monitoring-rules-edit grants edit permissions.
+      oc create namespace test-alertmanager-tenancy-monitoring-rules-edit
+      oc create serviceaccount am-client --namespace=test-alertmanager-tenancy-monitoring-rules-edit
+      oc create rolebinding test-alertmanager-tenancy-monitoring-rules-edit \
+        --namespace=test-alertmanager-tenancy-monitoring-rules-edit \
+        --clusterrole=monitoring-rules-edit \
+        --serviceaccount=test-alertmanager-tenancy-monitoring-rules-edit:am-client
+      TOKEN=$(oc create token am-client --namespace=test-alertmanager-tenancy-monitoring-rules-edit)
+      CA_CERT=$(oc get secret router-certs-default -n openshift-ingress -o jsonpath='{.data.tls\.crt}' | base64 --decode)
+      curl --cacert <(printf "%s" "$CA_CERT") --fail -H "Authorization: Bearer $TOKEN" "https://alertmanager-main.openshift-monitoring:9092/api/v2/alerts?namespace=test-alertmanager-tenancy-monitoring-rules-edit"
+      curl --cacert <(printf "%s" "$CA_CERT") -X POST --fail "https://alertmanager-main.openshift-monitoring:9092/api/v2/silences?namespace=test-alertmanager-tenancy-monitoring-rules-edit" \
+        -H "Authorization: Bearer $TOKEN" -H "Content-Type: application/json" \
+        -d '{
+          "matchers": [
+            {
+              "name": "alertname",
+              "value": "MyTestAlert",
+              "isRegex": false
+            }
+          ],
+          "startsAt": "2044-01-01T00:00:00Z",
+          "endsAt": "2044-01-01T00:00:01Z",
+          "createdBy": "test-alertmanager-tenancy-monitoring-edit/am-client",
+          "comment": "Silence test"
+        }'
+    tearDown: |
+      oc delete namespace test-alertmanager-tenancy-monitoring-rules-edit --wait=false
+  - inCluster: true
+    script: |
+      # monitoring-edit grants edit permissions.
+      oc create namespace test-alertmanager-tenancy-monitoring-edit
+      oc create serviceaccount am-client --namespace=test-alertmanager-tenancy-monitoring-edit
+      oc create rolebinding test-alertmanager-tenancy-monitoring-edit \
+        --namespace=test-alertmanager-tenancy-monitoring-edit \
+        --clusterrole=monitoring-edit \
+        --serviceaccount=test-alertmanager-tenancy-monitoring-edit:am-client
+      TOKEN=$(oc create token am-client --namespace=test-alertmanager-tenancy-monitoring-edit)
+      CA_CERT=$(oc get secret router-certs-default -n openshift-ingress -o jsonpath='{.data.tls\.crt}' | base64 --decode)
+      curl --cacert <(printf "%s" "$CA_CERT") --fail -H "Authorization: Bearer $TOKEN" "https://alertmanager-main.openshift-monitoring:9092/api/v2/alerts?namespace=test-alertmanager-tenancy-monitoring-edit"
+      curl --cacert <(printf "%s" "$CA_CERT") -X POST --fail "https://alertmanager-main.openshift-monitoring:9092/api/v2/silences?namespace=test-alertmanager-tenancy-monitoring-edit" \
+        -H "Authorization: Bearer $TOKEN" -H "Content-Type: application/json" \
+        -d '{
+          "matchers": [
+            {
+              "name": "alertname",
+              "value": "MyTestAlert",
+              "isRegex": false
+            }
+          ],
+          "startsAt": "2044-01-01T00:00:00Z",
+          "endsAt": "2044-01-01T00:00:01Z",
+          "createdBy": "test-alertmanager-tenancy-monitoring-edit/am-client",
+          "comment": "Silence test"
+        }'
+    tearDown: |
+      oc delete namespace test-alertmanager-tenancy-monitoring-edit --wait=false

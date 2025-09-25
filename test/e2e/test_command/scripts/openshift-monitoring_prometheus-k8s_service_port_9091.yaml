@@ -1,0 +1,33 @@
+# TODO: fix doc cluster-monitoring-view should be bound in openshift-monitoring
+# TODO: add that cluster-monitoring-metrics-api gives access as well.
+tests:
+  - script: |
+      # cluster-monitoring-view grants permissions.
+      oc create namespace test-prometheus-web-cluster-monitoring-view
+      oc create serviceaccount prom-client --namespace=test-prometheus-web-cluster-monitoring-view
+      oc create rolebinding test-prometheus-web-cluster-monitoring-view \
+        --namespace=openshift-monitoring \
+        --clusterrole=cluster-monitoring-view \
+        --serviceaccount=test-prometheus-web-cluster-monitoring-view:prom-client
+      TOKEN=$(oc create token prom-client --namespace=test-prometheus-web-cluster-monitoring-view)
+      ROUTE=$(oc get route prometheus-k8s --namespace=openshift-monitoring -ojsonpath={.spec.host})
+      CA_CERT=$(oc get secret router-certs-default -n openshift-ingress -o jsonpath='{.data.tls\.crt}' | base64 --decode)
+      curl --cacert <(printf "%s" "$CA_CERT") --fail-with-body -H "Authorization: Bearer $TOKEN" "https://$ROUTE/api/v1/query?query=up"
+    tearDown: |
+      oc delete rolebinding test-prometheus-web-cluster-monitoring-view --namespace=openshift-monitoring
+      oc delete namespace test-prometheus-web-cluster-monitoring-view --wait=false
+  - script: |
+      # cluster-monitoring-metrics-api grants permissions.
+      oc create namespace test-prometheus-web-cluster-monitoring-metrics-api
+      oc create serviceaccount prom-client --namespace=test-prometheus-web-cluster-monitoring-metrics-api
+      oc create rolebinding test-prometheus-web-cluster-monitoring-metrics-api \
+        --namespace=openshift-monitoring \
+        --role=cluster-monitoring-metrics-api  \
+        --serviceaccount=test-prometheus-web-cluster-monitoring-metrics-api:prom-client
+      TOKEN=$(oc create token prom-client --namespace=test-prometheus-web-cluster-monitoring-metrics-api)
+      ROUTE=$(oc get route prometheus-k8s --namespace=openshift-monitoring -ojsonpath={.spec.host})
+      CA_CERT=$(oc get secret router-certs-default -n openshift-ingress -o jsonpath='{.data.tls\.crt}' | base64 --decode)
+      curl --cacert <(printf "%s" "$CA_CERT") --fail-with-body -H "Authorization: Bearer $TOKEN" "https://$ROUTE/api/v1/query?query=up"
+    tearDown: |
+      oc delete rolebinding test-prometheus-web-cluster-monitoring-metrics-api --namespace=openshift-monitoring
+      oc delete namespace test-prometheus-web-cluster-monitoring-metrics-api --wait=false
