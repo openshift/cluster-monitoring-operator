@@ -174,6 +174,7 @@ The `KubeStateMetricsConfig` resource defines settings for the `kube-state-metri
 | resources | *[v1.ResourceRequirements](https://kubernetes.io/docs/reference/generated/kubernetes-api/v1.33/#resourcerequirements-v1-core) | Defines resource requests and limits for the KubeStateMetrics container. |
 | tolerations | [][v1.Toleration](https://kubernetes.io/docs/reference/generated/kubernetes-api/v1.33/#toleration-v1-core) | Defines tolerations for the pods. |
 | topologySpreadConstraints | []v1.TopologySpreadConstraint | Defines a pod's topology spread constraints. |
+| additionalLabelsAllowList | *string | Defines label-metrics' allow list for resources in addition to the default one. Currently, this is only supported for `jobs` and `cronjobs`, due to cardinality concerns. This follows the format: resource1=[label1,label2,labelN...],...,resourceN=[...], which is then validated and appended to the default labels' allow list. |
 
 [Back to TOC](#table-of-contents)
 
