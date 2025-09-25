@@ -7,6 +7,7 @@
   - `KubePdbNotEnoughHealthyPods`
   - `KubeNodePressure`
   - `KubeNodeEviction`
+- []() Allow cluster-admins to opt-into optional monitoring using the `OptionalMonitoring` capability.
 
 ## 4.18
 
