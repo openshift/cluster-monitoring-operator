@@ -2474,21 +2474,6 @@ func (f *Factory) ControlPlanePrometheusRule() (*monv1.PrometheusRule, error) {
 
 	r.Namespace = f.namespace
 
-	if f.infrastructure.HostedControlPlane() {
-		groups := []monv1.RuleGroup{}
-		for _, g := range r.Spec.Groups {
-			switch g.Name {
-			case "kubernetes-system-apiserver",
-				"kubernetes-system-controller-manager",
-				"kubernetes-system-scheduler":
-				// skip
-			default:
-				groups = append(groups, g)
-			}
-		}
-		r.Spec.Groups = groups
-	}
-
 	return r, nil
 }
 
