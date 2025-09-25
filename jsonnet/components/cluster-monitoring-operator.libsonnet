@@ -36,7 +36,7 @@ function(params) {
         'rbac.authorization.k8s.io/aggregate-to-view': 'true',
         'rbac.authorization.k8s.io/aggregate-to-cluster-reader': 'true',
         'app.kubernetes.io/name': cfg.name,
-        'app.kubernetes.io/component': 'metrics-adapter',
+        'app.kubernetes.io/component': 'metrics-server',
       },
     },
     rules: [{
@@ -410,7 +410,7 @@ function(params) {
       name: 'pod-metrics-reader',
       labels: cfg.commonLabels {
         'app.kubernetes.io/name': cfg.name,
-        'app.kubernetes.io/component': 'metrics-adapter',
+        'app.kubernetes.io/component': 'metrics-server',
       },
     },
     rules: [{
