@@ -788,6 +788,18 @@ func (f *Factory) KubeStateMetricsDeployment() (*appsv1.Deployment, error) {
 			if f.config.ClusterMonitoringConfiguration.KubeStateMetricsConfig.Resources != nil {
 				d.Spec.Template.Spec.Containers[i].Resources = *f.config.ClusterMonitoringConfiguration.KubeStateMetricsConfig.Resources
 			}
+			additionalResourceLabels := f.config.ClusterMonitoringConfiguration.KubeStateMetricsConfig.AdditionalResourceLabels
+			if len(additionalResourceLabels) > 0 {
+				for j := range container.Args {
+					if strings.HasPrefix(container.Args[j], "--metric-labels-allowlist=") {
+						var parts []string
+						for _, rl := range additionalResourceLabels {
+							parts = append(parts, fmt.Sprintf("%s=[%s]", rl.Resource, strings.Join(rl.Labels, ",")))
+						}
+						container.Args[j] += "," + strings.Join(parts, ",")
+					}
+				}
+			}
 		}
 	}
 

@@ -363,7 +363,38 @@ func NewConfigFromString(content string) (*Config, error) {
 		)
 	}
 
+	// Validate additional resource labels for KSM.
+	if err := validateAdditionalResourceLabels(c.ClusterMonitoringConfiguration.KubeStateMetricsConfig); err != nil {
+		return nil, err
+	}
+
 	return &c, nil
+}
+
+var supportedResourceLabelsResources = []string{"jobs", "cronjobs"}
+
+func validateAdditionalResourceLabels(ksm *KubeStateMetricsConfig) error {
+	if ksm == nil {
+		return nil
+	}
+
+	seen := map[string]bool{}
+	for _, rl := range ksm.AdditionalResourceLabels {
+		if rl.Resource == "" {
+			return fmt.Errorf("%w: additionalResourceLabels: resource name must not be empty", ErrConfigValidation)
+		}
+		if !slices.Contains(supportedResourceLabelsResources, rl.Resource) {
+			return fmt.Errorf("%w: additionalResourceLabels: unsupported resource %q, supported resources are: %v", ErrConfigValidation, rl.Resource, supportedResourceLabelsResources)
+		}
+		if seen[rl.Resource] {
+			return fmt.Errorf("%w: additionalResourceLabels: duplicate resource %q", ErrConfigValidation, rl.Resource)
+		}
+		seen[rl.Resource] = true
+		if len(rl.Labels) == 0 {
+			return fmt.Errorf("%w: additionalResourceLabels: resource %q must have at least one label", ErrConfigValidation, rl.Resource)
+		}
+	}
+	return nil
 }
 
 func (c *Config) applyDefaults() {
