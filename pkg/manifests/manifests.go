@@ -760,6 +760,18 @@ func (f *Factory) KubeStateMetricsDeployment() (*appsv1.Deployment, error) {
 			if f.config.ClusterMonitoringConfiguration.KubeStateMetricsConfig.Resources != nil {
 				d.Spec.Template.Spec.Containers[i].Resources = *f.config.ClusterMonitoringConfiguration.KubeStateMetricsConfig.Resources
 			}
+			additionalAllowList := f.config.ClusterMonitoringConfiguration.KubeStateMetricsConfig.AdditionalLabelsAllowList
+			if additionalAllowList != nil && *additionalAllowList != "" {
+				err = setLabelsAllowList(*additionalAllowList)
+				if err != nil {
+					return nil, fmt.Errorf("error parsing allowlist: %w", err)
+				}
+				for i = range container.Args {
+					if strings.HasPrefix(container.Args[i], "--metric-labels-allowlist=") {
+						container.Args[i] += "," + *additionalAllowList
+					}
+				}
+			}
 		}
 	}
 
@@ -3613,4 +3625,66 @@ func hashStringMap(m map[string]string) string {
 		byteMap[k] = []byte(v)
 	}
 	return hashByteMap(byteMap)
+}
+
+func setLabelsAllowList(value string) error {
+	var errLabelsAllowListFormat = errors.New("invalid format, should be: metric1=[label1,label2,labeln...],...,metricN=[...]")
+
+	// Taken from text/scanner EOF constant.
+	const EOF = -1
+	var (
+		m            = map[string][]string{}
+		previous     rune
+		next         rune
+		firstWordPos int
+		name         string
+	)
+	firstWordPos = 0
+
+	for i, v := range value {
+		if i+1 == len(value) {
+			next = EOF
+		} else {
+			next = []rune(value)[i+1]
+		}
+		if i-1 >= 0 {
+			previous = []rune(value)[i-1]
+		} else {
+			previous = v
+		}
+
+		switch v {
+		case '=':
+			if previous == ',' || next != '[' {
+				return errLabelsAllowListFormat
+			}
+			name = strings.TrimSpace(string([]rune(value)[firstWordPos:i]))
+			m[name] = []string{}
+			firstWordPos = i + 1
+		case '[':
+			if previous != '=' {
+				return errLabelsAllowListFormat
+			}
+			firstWordPos = i + 1
+		case ']':
+			// if after metric group, has char not comma or end.
+			if next != EOF && next != ',' {
+				return errLabelsAllowListFormat
+			}
+			if previous != '[' {
+				m[name] = append(m[name], strings.TrimSpace(string(([]rune(value)[firstWordPos:i]))))
+			}
+			firstWordPos = i + 1
+		case ',':
+			// if starts or ends with comma
+			if previous == v || next == EOF || next == ']' {
+				return errLabelsAllowListFormat
+			}
+			if previous != ']' {
+				m[name] = append(m[name], strings.TrimSpace(string(([]rune(value)[firstWordPos:i]))))
+			}
+			firstWordPos = i + 1
+		}
+	}
+	return nil
 }
