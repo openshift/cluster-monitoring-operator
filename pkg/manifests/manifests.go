@@ -1448,7 +1448,7 @@ func (f *Factory) PrometheusK8s(grpcTLS *v1.Secret, telemetrySecret *v1.Secret) 
 		p.Spec.Thanos.Image = &f.config.Images.Thanos
 	}
 
-	setupAlerting(p, platformAlertmanagerService, f.namespace)
+	setupAlerting(p, platformAlertmanagerService, f.namespace, f.config.ClusterMonitoringConfiguration.AlertmanagerMainConfig.IsEnabled())
 	f.adjustGoGCRelatedConfig(p)
 
 	for i, container := range p.Spec.Containers {
@@ -1514,7 +1514,12 @@ func (f *Factory) adjustGoGCRelatedConfig(p *monv1.Prometheus) {
 	}
 }
 
-func setupAlerting(p *monv1.Prometheus, svcName, svcNamespace string) {
+func setupAlerting(p *monv1.Prometheus, svcName, svcNamespace string, enabled bool) {
+	if !enabled {
+		p.Spec.Alerting.Alertmanagers = []monv1.AlertmanagerEndpoints{}
+		return
+	}
+
 	eps := p.Spec.Alerting.Alertmanagers[0]
 
 	eps.Name = svcName
@@ -1805,9 +1810,9 @@ func (f *Factory) PrometheusUserWorkload(grpcTLS *v1.Secret) (*monv1.Prometheus,
 	f.adjustGoGCRelatedConfig(p)
 
 	if f.config.UserWorkloadConfiguration.Alertmanager.Enabled {
-		setupAlerting(p, userWorkloadAlertmanagerService, f.namespaceUserWorkload)
+		setupAlerting(p, userWorkloadAlertmanagerService, f.namespaceUserWorkload, true)
 	} else {
-		setupAlerting(p, platformAlertmanagerService, f.namespace)
+		setupAlerting(p, platformAlertmanagerService, f.namespace, f.config.ClusterMonitoringConfiguration.AlertmanagerMainConfig.IsEnabled())
 	}
 
 	alertManagerConfigs := f.config.AdditionalAlertmanagerConfigsForPrometheusUserWorkload()
