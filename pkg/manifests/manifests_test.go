@@ -1954,6 +1954,71 @@ func TestPrometheusRetentionConfigs(t *testing.T) {
 	}
 }
 
+func TestPrometheusK8sAlertmanagerDisabled(t *testing.T) {
+	c, err := NewConfigFromString(`alertmanagerMain:
+  enabled: false`, false)
+
+	if err != nil {
+		t.Fatal(err)
+	}
+	c.SetImages(map[string]string{
+		"prometheus":       "docker.io/openshift/origin-prometheus:latest",
+		"kube-rbac-proxy":  "docker.io/openshift/origin-kube-rbac-proxy:latest",
+		"prom-label-proxy": "docker.io/openshift/origin-prom-label-proxy:latest",
+	})
+
+	f := NewFactory("openshift-monitoring", "openshift-user-workload-monitoring", c, defaultInfrastructureReader(), &fakeProxyReader{}, NewAssets(assetsPath), &APIServerConfig{}, &configv1.Console{Status: configv1.ConsoleStatus{ConsoleURL: "https://console-openshift-console.apps.foo.devcluster.openshift.com"}})
+
+	p, err := f.PrometheusK8s(
+		&v1.Secret{ObjectMeta: metav1.ObjectMeta{Name: "foo"}},
+		nil,
+	)
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	if len(p.Spec.Alerting.Alertmanagers) != 0 {
+		t.Fatalf("Expected empty alertmanagers array when AlertManager is disabled, got %d alertmanagers", len(p.Spec.Alerting.Alertmanagers))
+	}
+}
+
+func TestPrometheusK8sAlertmanagerEnabled(t *testing.T) {
+	c, err := NewConfigFromString(`alertmanagerMain:
+  enabled: true`, false)
+
+	if err != nil {
+		t.Fatal(err)
+	}
+	c.SetImages(map[string]string{
+		"prometheus":       "docker.io/openshift/origin-prometheus:latest",
+		"kube-rbac-proxy":  "docker.io/openshift/origin-kube-rbac-proxy:latest",
+		"prom-label-proxy": "docker.io/openshift/origin-prom-label-proxy:latest",
+	})
+
+	f := NewFactory("openshift-monitoring", "openshift-user-workload-monitoring", c, defaultInfrastructureReader(), &fakeProxyReader{}, NewAssets(assetsPath), &APIServerConfig{}, &configv1.Console{Status: configv1.ConsoleStatus{ConsoleURL: "https://console-openshift-console.apps.foo.devcluster.openshift.com"}})
+
+	p, err := f.PrometheusK8s(
+		&v1.Secret{ObjectMeta: metav1.ObjectMeta{Name: "foo"}},
+		nil,
+	)
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	if len(p.Spec.Alerting.Alertmanagers) != 1 {
+		t.Fatalf("Expected 1 alertmanager when AlertManager is enabled, got %d alertmanagers", len(p.Spec.Alerting.Alertmanagers))
+	}
+
+	am := p.Spec.Alerting.Alertmanagers[0]
+	if am.Name != "alertmanager-main" {
+		t.Fatalf("Expected alertmanager name to be 'alertmanager-main', got '%s'", am.Name)
+	}
+
+	if am.Namespace == nil || *am.Namespace != "openshift-monitoring" {
+		t.Fatalf("Expected alertmanager namespace to be 'openshift-monitoring', got '%v'", am.Namespace)
+	}
+}
+
 func TestPrometheusK8sConfigurationBodySizeLimit(t *testing.T) {
 	pcr := &fakePodCapacity{
 		capacity: 1000,
