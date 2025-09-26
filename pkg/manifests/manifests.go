@@ -1448,7 +1448,11 @@ func (f *Factory) PrometheusK8s(grpcTLS *v1.Secret, telemetrySecret *v1.Secret) 
 		p.Spec.Thanos.Image = &f.config.Images.Thanos
 	}
 
-	setupAlerting(p, platformAlertmanagerService, f.namespace)
+	if f.config.ClusterMonitoringConfiguration.AlertmanagerMainConfig.IsEnabled() {
+		setupAlerting(p, platformAlertmanagerService, f.namespace)
+	} else {
+		p.Spec.Alerting.Alertmanagers = []monv1.AlertmanagerEndpoints{}
+	}
 	f.adjustGoGCRelatedConfig(p)
 
 	for i, container := range p.Spec.Containers {
