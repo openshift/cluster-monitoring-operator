@@ -62,11 +62,9 @@ func (t *PrometheusTask) create(ctx context.Context) error {
 		return fmt.Errorf("initializing Prometheus NetworkPolicy failed: %w", err)
 	}
 
-	if netpol != nil {
-		err = t.client.CreateOrUpdateNetworkPolicy(ctx, netpol)
-		if err != nil {
-			return fmt.Errorf("reconciling Prometheus NetworkPolicy failed: %w", err)
-		}
+	err = t.client.CreateOrUpdateNetworkPolicy(ctx, netpol)
+	if err != nil {
+		return fmt.Errorf("reconciling Prometheus NetworkPolicy failed: %w", err)
 	}
 
 	cacm, err := t.factory.PrometheusK8sServingCertsCABundle()

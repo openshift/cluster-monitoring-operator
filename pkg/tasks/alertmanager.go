@@ -58,11 +58,9 @@ func (t *AlertmanagerTask) create(ctx context.Context) error {
 		return fmt.Errorf("initializing Alertmanager NetworkPolicy failed: %w", err)
 	}
 
-	if netpol != nil {
-		err = t.client.CreateOrUpdateNetworkPolicy(ctx, netpol)
-		if err != nil {
-			return fmt.Errorf("reconciling Alertmanager NetworkPolicy failed: %w", err)
-		}
+	err = t.client.CreateOrUpdateNetworkPolicy(ctx, netpol)
+	if err != nil {
+		return fmt.Errorf("reconciling Alertmanager NetworkPolicy failed: %w", err)
 	}
 
 	hasRoutes, err := t.client.HasRouteCapability(ctx)
@@ -346,11 +344,9 @@ func (t *AlertmanagerTask) destroy(ctx context.Context) error {
 		return fmt.Errorf("initializing Alertmanager NetworkPolicy object failed: %w", err)
 	}
 
-	if netpol != nil {
-		err = t.client.DeleteNetworkPolicy(ctx, netpol)
-		if err != nil {
-			return fmt.Errorf("deleting Alertmanager NetworkPolicy object failed: %w", err)
-		}
+	err = t.client.DeleteNetworkPolicy(ctx, netpol)
+	if err != nil {
+		return fmt.Errorf("deleting Alertmanager NetworkPolicy object failed: %w", err)
 	}
 
 	{

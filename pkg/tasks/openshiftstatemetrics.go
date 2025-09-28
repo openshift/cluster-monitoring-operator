@@ -40,11 +40,9 @@ func (t *OpenShiftStateMetricsTask) Run(ctx context.Context) error {
 		return fmt.Errorf("initializing openshift-state-metrics NetworkPolicy failed: %w", err)
 	}
 
-	if netpol != nil {
-		err = t.client.CreateOrUpdateNetworkPolicy(ctx, netpol)
-		if err != nil {
-			return fmt.Errorf("reconciling openshift-state-metrics NetworkPolicy failed: %w", err)
-		}
+	err = t.client.CreateOrUpdateNetworkPolicy(ctx, netpol)
+	if err != nil {
+		return fmt.Errorf("reconciling openshift-state-metrics NetworkPolicy failed: %w", err)
 	}
 
 	sa, err := t.factory.OpenShiftStateMetricsServiceAccount()

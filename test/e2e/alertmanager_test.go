@@ -699,7 +699,8 @@ func TestAlertmanagerDisabling(t *testing.T) {
 		{name: "assert trusted-ca-bundle does not exist", assertion: f.AssertConfigmapDoesNotExist("alertmanager-trusted-ca-bundle", f.Ns)},
 		{name: "assert prometheus rule does not exist", assertion: f.AssertPrometheusRuleDoesNotExist("alertmanager-main-rules", f.Ns)},
 		{name: "assert service monitor does not exist", assertion: f.AssertServiceMonitorDoesNotExist("alertmanager-main", f.Ns)},
-		{name: "assert old service monitor does not exists", assertion: f.AssertServiceMonitorDoesNotExist("alertmanager", f.Ns)},
+		{name: "assert old service monitor does not exist", assertion: f.AssertServiceMonitorDoesNotExist("alertmanager", f.Ns)},
+		{name: "assert alertmanager networkpolicy does not exist", assertion: f.AssertNetworkPolicyDoesNotExist("alertmanager", f.Ns)},
 		{name: "alertmanager public URL is unset", assertion: f.AssertValueInConfigMapEquals(
 			"monitoring-shared-config", "openshift-config-managed", "alertmanagerPublicURL", "")},
 		{name: "assert operator not degraded", assertion: f.AssertOperatorCondition(statusv1.OperatorDegraded, statusv1.ConditionFalse)},
@@ -717,6 +718,7 @@ func TestAlertmanagerDisabling(t *testing.T) {
 		name      string
 		assertion framework.AssertionFunc
 	}{
+		{name: "assert alertmanager networkpolicy exists", assertion: f.AssertNetworkPolicyExists("alertmanager", f.Ns)},
 		{name: "assert alertmanager exists", assertion: f.AssertStatefulsetExists("alertmanager-main", f.Ns)},
 		{name: "assert route exists", assertion: f.AssertRouteExists("alertmanager-main", f.Ns)},
 		{name: "assert alertmanager main config exists", assertion: f.AssertSecretExists("alertmanager-main", f.Ns)},
@@ -739,6 +741,23 @@ func TestAlertmanagerDisabling(t *testing.T) {
 		{name: "assert operator not degraded", assertion: f.AssertOperatorCondition(statusv1.OperatorDegraded, statusv1.ConditionFalse)},
 	}
 	t.Run("enable alertmanager", func(t *testing.T) {
+		for _, assertion := range assertions {
+			t.Run(assertion.name, assertion.assertion)
+		}
+	})
+}
+
+// TestAlertmanagerNetworkPolicy ensures that the AlertManager NetworkPolicy
+// is deployed under openshift-monitoring namespace
+func TestAlertmanagerNetworkPolicy(t *testing.T) {
+	assertions := []struct {
+		name      string
+		assertion framework.AssertionFunc
+	}{
+		{name: "assert alertmanager networkpolicy exists", assertion: f.AssertNetworkPolicyExists("alertmanager", f.Ns)},
+	}
+
+	t.Run("check alertmanager NetworkPolicy", func(t *testing.T) {
 		for _, assertion := range assertions {
 			t.Run(assertion.name, assertion.assertion)
 		}

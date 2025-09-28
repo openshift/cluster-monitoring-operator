@@ -36,11 +36,9 @@ func (t *MetricsServerTask) Run(ctx context.Context) error {
 			return fmt.Errorf("initializing MetricsServer NetworkPolicy failed: %w", err)
 		}
 
-		if netpol != nil {
-			err = t.client.CreateOrUpdateNetworkPolicy(ctx, netpol)
-			if err != nil {
-				return fmt.Errorf("reconciling MetricsServer NetworkPolicy failed: %w", err)
-			}
+		err = t.client.CreateOrUpdateNetworkPolicy(ctx, netpol)
+		if err != nil {
+			return fmt.Errorf("reconciling MetricsServer NetworkPolicy failed: %w", err)
 		}
 	}
 	{

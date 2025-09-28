@@ -11,6 +11,7 @@ import (
 	monitoringv1 "github.com/prometheus-operator/prometheus-operator/pkg/apis/monitoring/v1"
 	appsv1 "k8s.io/api/apps/v1"
 	v1 "k8s.io/api/core/v1"
+	networkingv1 "k8s.io/api/networking/v1"
 	apierrors "k8s.io/apimachinery/pkg/api/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/types"
@@ -194,6 +195,22 @@ func (f *Framework) AssertNamespaceDoesNotExist(name string) func(t *testing.T) 
 	return func(t *testing.T) {
 		assertResourceDoesNotExists(t, func() (metav1.Object, error) {
 			return f.KubeClient.CoreV1().Namespaces().Get(ctx, name, metav1.GetOptions{})
+		})
+	}
+}
+
+func (f *Framework) AssertNetworkPolicyExists(name string, namespace string) func(t *testing.T) {
+	return func(t *testing.T) {
+		assertResourceExists(t, func() (metav1.Object, error) {
+			return f.KubeClient.NetworkingV1().NetworkPolicies(namespace).Get(ctx, name, metav1.GetOptions{})
+		})
+	}
+}
+
+func (f *Framework) AssertNetworkPolicyDoesNotExist(name string, namespace string) func(t *testing.T) {
+	return func(t *testing.T) {
+		assertResourceDoesNotExists(t, func() (metav1.Object, error) {
+			return f.KubeClient.NetworkingV1().NetworkPolicies(namespace).Get(ctx, name, metav1.GetOptions{})
 		})
 	}
 }

@@ -45,11 +45,9 @@ func (t *MonitoringPluginTask) Run(ctx context.Context) error {
 			return fmt.Errorf("initializing Console Plugin NetworkPolicy failed: %w", err)
 		}
 
-		if netpol != nil {
-			err = t.client.CreateOrUpdateNetworkPolicy(ctx, netpol)
-			if err != nil {
-				return fmt.Errorf("reconciling Console Plugin NetworkPolicy failed: %w", err)
-			}
+		err = t.client.CreateOrUpdateNetworkPolicy(ctx, netpol)
+		if err != nil {
+			return fmt.Errorf("reconciling Console Plugin NetworkPolicy failed: %w", err)
 		}
 	}
 
