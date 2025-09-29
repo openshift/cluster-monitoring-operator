@@ -2,7 +2,6 @@ local k8sMixinUtils = import 'github.com/kubernetes-monitoring/kubernetes-mixin/
 
 // List of rule groups which are dropped from the final manifests.
 local excludedRuleGroups = [
-  'kube-apiserver-availability.rules',
   // rules managed by openshift/cluster-kube-controller-manager-operator.
   'kubernetes-system-controller-manager',
   // rules managed by openshift/cluster-kube-scheduler-operator.
@@ -12,6 +11,8 @@ local excludedRuleGroups = [
   'kube-apiserver.rules',
   'kube-apiserver-burnrate.rules',
   'kube-apiserver-histogram.rules',
+  'kube-apiserver-availability.rules',
+  'kubernetes-system-apiserver',
   // Availability of kube-proxy depends on the selected CNO plugin hence the
   // rules should be managed by CNO directly.
   'kubernetes-system-kube-proxy',
@@ -62,15 +63,6 @@ local excludedRules = [
       // for system namespaces. Refer OCPBUGS-10699 for more details.
       { alert: 'KubeCPUQuotaOvercommit' },
       { alert: 'KubeMemoryQuotaOvercommit' },
-    ],
-  },
-  {
-    name: 'kubernetes-system-apiserver',
-    rules: [
-      // KubeClientCertificateExpiration alert isn't
-      // actionable because the cluster admin has no way to
-      // prevent a client from using an expird certificate.
-      { alert: 'KubeClientCertificateExpiration' },
     ],
   },
   {
@@ -388,15 +380,6 @@ local patchedRules = [
     ],
   },
   {
-    name: 'kubernetes-system-apiserver',
-    rules: [
-      {
-        alert: 'KubeAggregatedAPIDown',
-        'for': '15m',
-      },
-    ],
-  },
-  {
     name: 'prometheus',
     rules: [
       {
@@ -514,8 +497,6 @@ local includeRunbooks = {
   ClusterMonitoringOperatorDeprecatedConfig: openShiftRunbookCMO('ClusterMonitoringOperatorDeprecatedConfig.md'),
   ClusterOperatorDegraded: openShiftRunbookCMO('ClusterOperatorDegraded.md'),
   ClusterOperatorDown: openShiftRunbookCMO('ClusterOperatorDown.md'),
-  KubeAggregatedAPIErrors: openShiftRunbookCMO('KubeAggregatedAPIErrors.md'),
-  KubeAPIDown: openShiftRunbookCMO('KubeAPIDown.md'),
   KubeDeploymentReplicasMismatch: openShiftRunbookCMO('KubeDeploymentReplicasMismatch.md'),
   KubeJobFailed: openShiftRunbookCMO('KubeJobFailed.md'),
   KubeNodeNotReady: openShiftRunbookCMO('KubeNodeNotReady.md'),

@@ -358,46 +358,6 @@ spec:
       for: 15m
       labels:
         severity: warning
-  - name: kubernetes-system-apiserver
-    rules:
-    - alert: KubeAggregatedAPIErrors
-      annotations:
-        description: Kubernetes aggregated API {{ $labels.instance }}/{{ $labels.name }} has reported {{ $labels.reason }} errors.
-        runbook_url: https://github.com/openshift/runbooks/blob/master/alerts/cluster-monitoring-operator/KubeAggregatedAPIErrors.md
-        summary: Kubernetes aggregated API has reported errors.
-      expr: |
-        sum by(cluster, instance, name, reason)(increase(aggregator_unavailable_apiservice_total{job="apiserver"}[1m])) > 0
-      for: 10m
-      labels:
-        severity: warning
-    - alert: KubeAggregatedAPIDown
-      annotations:
-        description: Kubernetes aggregated API {{ $labels.name }}/{{ $labels.namespace }} has been only {{ $value | humanize }}% available over the last 10m.
-        summary: Kubernetes aggregated API is down.
-      expr: |
-        (1 - max by(name, namespace, cluster)(avg_over_time(aggregator_unavailable_apiservice{job="apiserver"}[10m]))) * 100 < 85
-      for: 15m
-      labels:
-        severity: warning
-    - alert: KubeAPIDown
-      annotations:
-        description: KubeAPI has disappeared from Prometheus target discovery.
-        runbook_url: https://github.com/openshift/runbooks/blob/master/alerts/cluster-monitoring-operator/KubeAPIDown.md
-        summary: Target disappeared from Prometheus target discovery.
-      expr: |
-        absent(up{job="apiserver"} == 1)
-      for: 15m
-      labels:
-        severity: critical
-    - alert: KubeAPITerminatedRequests
-      annotations:
-        description: The kubernetes apiserver has terminated {{ $value | humanizePercentage }} of its incoming requests.
-        summary: The kubernetes apiserver has terminated {{ $value | humanizePercentage }} of its incoming requests.
-      expr: |
-        sum by(cluster) (rate(apiserver_request_terminations_total{job="apiserver"}[10m])) / ( sum by(cluster) (rate(apiserver_request_total{job="apiserver"}[10m])) + sum by(cluster) (rate(apiserver_request_terminations_total{job="apiserver"}[10m])) ) > 0.20
-      for: 5m
-      labels:
-        severity: warning
   - name: kubernetes-system-kubelet
     rules:
     - alert: KubeNodeNotReady
