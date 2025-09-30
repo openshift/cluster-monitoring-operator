@@ -7,6 +7,7 @@
   - `KubePdbNotEnoughHealthyPods`
   - `KubeNodePressure`
   - `KubeNodeEviction`
+- [#2339](https://github.com/openshift/cluster-monitoring-operator/pull/2339) Add support to sysctl node-exporter collector
 
 ## 4.18
 
