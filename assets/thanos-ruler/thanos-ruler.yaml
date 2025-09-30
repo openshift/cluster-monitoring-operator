@@ -2,6 +2,7 @@ apiVersion: monitoring.coreos.com/v1
 kind: ThanosRuler
 metadata:
   annotations:
+    capability.openshift.io/name: OptionalMonitoring
     operator.prometheus.io/controller-id: openshift-user-workload-monitoring/prometheus-operator
   labels:
     app.kubernetes.io/managed-by: cluster-monitoring-operator

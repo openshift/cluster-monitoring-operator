@@ -3,6 +3,7 @@ data: {}
 kind: ConfigMap
 metadata:
   annotations:
+    capability.openshift.io/name: OptionalMonitoring
     service.beta.openshift.io/inject-cabundle: "true"
   labels:
     app.kubernetes.io/managed-by: cluster-monitoring-operator
