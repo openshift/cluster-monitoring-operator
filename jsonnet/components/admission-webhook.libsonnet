@@ -2,6 +2,7 @@ local tlsVolumeName = 'prometheus-operator-admission-webhook-tls';
 local admissionWebhook = import 'github.com/prometheus-operator/prometheus-operator/jsonnet/prometheus-operator/admission-webhook.libsonnet';
 local antiAffinity = import 'github.com/prometheus-operator/kube-prometheus/jsonnet/kube-prometheus/addons/anti-affinity.libsonnet';
 local withDescription = (import '../utils/add-annotations.libsonnet').withDescription;
+local optIntoOptionalMonitoring = (import '../utils/opt-into-optional-monitoring.libsonnet');
 
 function(params)
   local aw = admissionWebhook(params);
@@ -128,7 +129,7 @@ function(params)
       ],
     },
 
-    alertmanagerConfigValidatingWebhook: {
+    alertmanagerConfigValidatingWebhook: optIntoOptionalMonitoring.forObject({
       apiVersion: 'admissionregistration.k8s.io/v1',
       kind: 'ValidatingWebhookConfiguration',
       metadata: {
@@ -167,5 +168,5 @@ function(params)
           failurePolicy: 'Ignore',
         },
       ],
-    },
+    }),
   }

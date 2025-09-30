@@ -2,12 +2,13 @@ local generateCertInjection = import '../utils/generate-certificate-injection.li
 local generateSecret = import '../utils/generate-secret.libsonnet';
 local withDescription = (import '../utils/add-annotations.libsonnet').withDescription;
 local requiredClusterRoles = (import '../utils/add-annotations.libsonnet').requiredClusterRoles;
+local optIntoOptionalMonitoring = (import '../utils/opt-into-optional-monitoring.libsonnet');
 
 local prometheus = import 'github.com/prometheus-operator/kube-prometheus/jsonnet/kube-prometheus/components/prometheus.libsonnet';
 
 function(params)
   local cfg = params;
-  prometheus(cfg) + {
+  local o = prometheus(cfg) + {
 
     // Hide not needed resources
     prometheusRule:: {},
@@ -611,4 +612,6 @@ function(params)
       automountServiceAccountToken: false,
     },
 
-  }
+  };
+
+  optIntoOptionalMonitoring.forObjectWithWalk(o)

@@ -4,6 +4,7 @@ metadata:
   annotations:
     api-approved.openshift.io: https://github.com/openshift/api/pull/1406
     api.openshift.io/merged-by-featuregates: "true"
+    capability.openshift.io/name: OptionalMonitoring
     description: OpenShift Monitoring alerting rules
     include.release.openshift.io/hypershift: "true"
     include.release.openshift.io/ibm-cloud-managed: "true"

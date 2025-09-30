@@ -2,6 +2,7 @@ apiVersion: v1
 kind: Service
 metadata:
   annotations:
+    capability.openshift.io/name: OptionalMonitoring
     openshift.io/description: |-
       Expose the Thanos Ruler web server within the cluster on the following ports:
       * Port 9091 provides access to all Thanos Ruler endpoints. Granting access requires binding a user to the `cluster-monitoring-view` cluster role.
