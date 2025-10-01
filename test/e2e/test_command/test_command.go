@@ -77,9 +77,7 @@ func (suite *Suite) StringMarkdown() string {
 }
 
 func (suite *Suite) StringAscii() string {
-	// Not ready to be part of the doc yet.
-	return ""
-	// return suite.intoCodeBlocks("----")
+	return suite.intoCodeBlocks("----")
 }
 
 func RunScript(t *testing.T, script, wDir, kubeConfigPath string) {

@@ -248,10 +248,7 @@ func substitutePlaceholdersInDescription(desc, format string) (string, error) {
 		} else {
 			content = suite.StringMarkdown()
 		}
-		// TODO: remove once unnecessary
-		if content != "" {
-			lines = append(lines, content)
-		}
+		lines = append(lines, content)
 	}
 	if err := scanner.Err(); err != nil {
 		return "", err
