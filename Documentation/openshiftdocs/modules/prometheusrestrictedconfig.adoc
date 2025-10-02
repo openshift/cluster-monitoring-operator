@@ -34,7 +34,7 @@ Appears in: link:userworkloadconfiguration.adoc[UserWorkloadConfiguration]
 
 |enforcedTargetLimit|*uint64|Specifies a global limit on the number of scraped targets. This setting overrides the `TargetLimit` value set in any user-defined `ServiceMonitor` or `PodMonitor` object if the value is greater than `enforcedSampleLimit`. Administrators can use this setting to keep the overall number of targets under control. The default value is `0`.
 
-|externalLabels|ExternalLabels|Defines labels to be added to any time series or alerts when communicating with external systems such as federation, remote storage, and Alertmanager. By default, no labels are added.
+|externalLabels|ExternalLabels|Defines labels to be added to any time series or alerts when communicating with external systems such as federation, remote storage, and Alertmanager. The type is map[string]string. By default, no labels are added.
 
 |logLevel|string|Defines the log level setting for Prometheus. The possible values are `error`, `warn`, `info`, and `debug`. The default setting is `info`.
 
