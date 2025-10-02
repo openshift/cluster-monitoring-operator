@@ -21,15 +21,14 @@ import (
 	"fmt"
 	"os"
 	"os/exec"
+	"strings"
 	"testing"
 	"time"
-
-	"strings"
 
 	"github.com/stretchr/testify/require"
 )
 
-var commandTimeout time.Duration = 5 * time.Second
+const commandTimeout time.Duration = 5 * time.Second
 
 type Test struct {
 	Script string `yaml:"script"`
