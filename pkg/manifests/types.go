@@ -193,7 +193,7 @@ type PrometheusK8sConfig struct {
 	// automatically calculated based on cluster capacity.
 	// The default value is empty, which indicates no limit.
 	EnforcedBodySizeLimit string `json:"enforcedBodySizeLimit,omitempty"`
-	// Defines labels to be added to any time series or alerts when
+	// A map[string]string that defines labels to be added to any time series or alerts when
 	// communicating with external systems such as federation, remote storage,
 	// and Alertmanager. By default, no labels are added.
 	ExternalLabels ExternalLabels `json:"externalLabels,omitempty"`
