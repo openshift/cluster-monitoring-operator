@@ -92,7 +92,7 @@ $ curl -k -H "Authorization: Bearer $TOKEN" "https://alertmanager-main.openshift
 # The binding commands are supposed to run by a user with the necessary privileges.
 $ oc create namespace test-alertmanager-web-monitoring-alertmanager-edit
 $ oc create serviceaccount am-client --namespace=test-alertmanager-web-monitoring-alertmanager-edit
-# The binding is done to a ServiceAccount, but it can also be applied to any other user.
+# The binding is done to a Service Account, but it can also be applied to any other user.
 $ oc create rolebinding test-alertmanager-web-monitoring-alertmanager-edit \
   --namespace=openshift-monitoring \
   --role=monitoring-alertmanager-edit \
@@ -160,7 +160,7 @@ $ curl -k -X POST -f "https://alertmanager-main.openshift-monitoring:9092/api/v2
     ],
     "startsAt": "2044-01-01T00:00:00Z",
     "endsAt": "2044-01-01T00:00:01Z",
-    "createdBy": "test-alertmanager-tenancy-monitoring-edit/am-client",
+    "createdBy": "test-alertmanager-tenancy-monitoring-rules-edit/am-client",
     "comment": "Silence test"
   }'
 ----

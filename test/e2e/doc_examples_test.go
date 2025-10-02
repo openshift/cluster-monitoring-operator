@@ -29,7 +29,6 @@ import (
 	"github.com/stretchr/testify/require"
 	"gopkg.in/yaml.v3"
 	corev1 "k8s.io/api/core/v1"
-	v1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
 
@@ -117,8 +116,8 @@ func TestDocExamples(t *testing.T) {
 										Capabilities: &corev1.Capabilities{
 											Drop: []corev1.Capability{"ALL"},
 										},
-										SeccompProfile: &v1.SeccompProfile{
-											Type: v1.SeccompProfileTypeRuntimeDefault,
+										SeccompProfile: &corev1.SeccompProfile{
+											Type: corev1.SeccompProfileTypeRuntimeDefault,
 										},
 									},
 								},
@@ -143,6 +142,7 @@ func TestDocExamples(t *testing.T) {
 						}
 						return nil
 					})
+					require.NoError(t, err)
 
 					if pod.Status.Phase != corev1.PodSucceeded {
 						l, err := f.GetLogs(testNamespace, podName, containerName)

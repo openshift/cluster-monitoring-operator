@@ -25,7 +25,7 @@ tests:
           ],
           "startsAt": "2044-01-01T00:00:00Z",
           "endsAt": "2044-01-01T00:00:01Z",
-          "createdBy": "test-alertmanager-tenancy-monitoring-edit/am-client",
+          "createdBy": "test-alertmanager-tenancy-monitoring-rules-edit/am-client",
           "comment": "Silence test"
         }'
     tearDown: |
