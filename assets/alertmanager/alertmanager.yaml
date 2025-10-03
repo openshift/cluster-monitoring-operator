@@ -34,6 +34,7 @@ spec:
       value: ""
     - name: NO_PROXY
       value: ""
+    image: ""
     name: alertmanager
     terminationMessagePolicy: FallbackToLogsOnError
   - args:
@@ -44,7 +45,7 @@ spec:
     - --tls-private-key-file=/etc/tls/private/tls.key
     - --tls-cipher-suites=TLS_ECDHE_RSA_WITH_AES_128_GCM_SHA256,TLS_ECDHE_ECDSA_WITH_AES_128_GCM_SHA256,TLS_ECDHE_RSA_WITH_AES_256_GCM_SHA384,TLS_ECDHE_ECDSA_WITH_AES_256_GCM_SHA384,TLS_ECDHE_RSA_WITH_CHACHA20_POLY1305,TLS_ECDHE_ECDSA_WITH_CHACHA20_POLY1305
     - --ignore-paths=/-/healthy,/-/ready
-    image: quay.io/brancz/kube-rbac-proxy:v0.19.1
+    image: ""
     name: kube-rbac-proxy-web
     ports:
     - containerPort: 9095
@@ -68,7 +69,7 @@ spec:
     - --tls-cert-file=/etc/tls/private/tls.crt
     - --tls-private-key-file=/etc/tls/private/tls.key
     - --tls-cipher-suites=TLS_ECDHE_RSA_WITH_AES_128_GCM_SHA256,TLS_ECDHE_ECDSA_WITH_AES_128_GCM_SHA256,TLS_ECDHE_RSA_WITH_AES_256_GCM_SHA384,TLS_ECDHE_ECDSA_WITH_AES_256_GCM_SHA384,TLS_ECDHE_RSA_WITH_CHACHA20_POLY1305,TLS_ECDHE_ECDSA_WITH_CHACHA20_POLY1305
-    image: quay.io/brancz/kube-rbac-proxy:v0.19.1
+    image: ""
     name: kube-rbac-proxy
     ports:
     - containerPort: 9092
@@ -92,7 +93,7 @@ spec:
     - --tls-cipher-suites=TLS_ECDHE_RSA_WITH_AES_128_GCM_SHA256,TLS_ECDHE_ECDSA_WITH_AES_128_GCM_SHA256,TLS_ECDHE_RSA_WITH_AES_256_GCM_SHA384,TLS_ECDHE_ECDSA_WITH_AES_256_GCM_SHA384,TLS_ECDHE_RSA_WITH_CHACHA20_POLY1305,TLS_ECDHE_ECDSA_WITH_CHACHA20_POLY1305
     - --client-ca-file=/etc/tls/client/client-ca.crt
     - --allow-paths=/metrics
-    image: quay.io/brancz/kube-rbac-proxy:v0.19.1
+    image: ""
     name: kube-rbac-proxy-metric
     ports:
     - containerPort: 9097
@@ -117,14 +118,14 @@ spec:
     - --upstream=http://127.0.0.1:9093
     - --label=namespace
     - --error-on-replace
-    image: quay.io/prometheuscommunity/prom-label-proxy:v0.12.1
+    image: ""
     name: prom-label-proxy
     resources:
       requests:
         cpu: 1m
         memory: 20Mi
     terminationMessagePolicy: FallbackToLogsOnError
-  image: quay.io/prometheus/alertmanager:v0.28.1
+  image: ""
   listenLocal: true
   nodeSelector:
     kubernetes.io/os: linux
