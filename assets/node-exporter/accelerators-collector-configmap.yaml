@@ -66,6 +66,10 @@ data:
         "pciID": "0x20f3"
       - "modelName": "NVIDIA RTX A1000"
         "pciID": "0x25b0"
+      - "modelName": "Blackwell RTX PRO 6000"
+        "pciID": "0x2bb5"
+      - "modelName": "Blackwell GB100"
+        "pciID": "0x2941"
       "vendorID": "0x10de"
       "vendorName": "NVIDIA"
     - "models":
