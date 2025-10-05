@@ -34,6 +34,7 @@ function(params) {
           } + cfg.commonLabels,
           annotations+: {
             'openshift.io/required-scc': 'restricted-v2',
+            'kubectl.kubernetes.io/default-container': 'openshift-state-metrics',
           },
         },
         spec+: {
