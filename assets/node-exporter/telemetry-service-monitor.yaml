@@ -6,7 +6,7 @@ metadata:
     app.kubernetes.io/managed-by: cluster-monitoring-operator
     app.kubernetes.io/name: node-exporter
     app.kubernetes.io/part-of: openshift-monitoring
-    app.kubernetes.io/version: 1.9.1
+    app.kubernetes.io/version: 1.10.2
     monitoring.openshift.io/collection-profile: telemetry
   name: node-exporter-telemetry
   namespace: openshift-monitoring
@@ -24,7 +24,7 @@ spec:
     - action: labeldrop
       regex: __tmp_keep
     - action: keep
-      regex: ()
+      regex: (node_accelerator_card_info|node_cpu_info|node_cpu_seconds_total|node_memory_MemAvailable_bytes|node_memory_MemTotal_bytes|virt_platform)
       sourceLabels:
       - __name__
     port: https
@@ -46,3 +46,4 @@ spec:
       app.kubernetes.io/component: exporter
       app.kubernetes.io/name: node-exporter
       app.kubernetes.io/part-of: openshift-monitoring
+  serviceDiscoveryRole: EndpointSlice

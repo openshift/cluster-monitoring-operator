@@ -169,7 +169,25 @@ function(params)
     ),
 
     telemetryServiceMonitorKubelet: generateServiceMonitor.telemetry(
-      self.serviceMonitorKubelet, std.join('|', [])
+      self.serviceMonitorKubelet, std.join('|', [
+        'apiserver_current_inflight_requests',
+        'apiserver_request_total',
+        'apiserver_storage_objects',
+        'container_cpu_usage_seconds_total',
+        'container_memory_working_set_bytes',
+        'kubelet_containers_per_pod_count_sum',
+        'kubelet_volume_stats_used_bytes',
+        'pv_collector_total_pv_count',
+        'selinux_warning_controller_selinux_volume_conflict',
+        'volume_manager_selinux_pod_context_mismatch_warnings_total',
+        'volume_manager_selinux_pod_context_mismatch_errors_total',
+        'cluster:volume_manager_selinux_volumes_admitted_total',
+        'etcd_mvcc_db_total_size_in_bytes',
+        'etcd_mvcc_db_total_size_in_use_in_bytes',
+        'etcd_network_peer_round_trip_time_seconds',
+        'etcd_disk_wal_fsync_duration_seconds',
+        'etcd_disk_backend_commit_duration_seconds',
+      ])
     ),
 
 
