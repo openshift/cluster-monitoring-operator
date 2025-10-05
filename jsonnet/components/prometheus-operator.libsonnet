@@ -6,6 +6,7 @@ local conversionWebhook = import 'github.com/prometheus-operator/prometheus-oper
 local generateSecret = import '../utils/generate-secret.libsonnet';
 local rbac = import '../utils/rbac.libsonnet';
 local withDescription = (import '../utils/add-annotations.libsonnet').withDescription;
+local generateServiceMonitor = import '../utils/generate-service-monitors.libsonnet';
 
 function(params)
   local po = operator(params);
@@ -178,4 +179,12 @@ function(params)
         ],
       },
     },
+
+    telemetryServiceMonitor: generateServiceMonitor.telemetry(
+      self.serviceMonitor, std.join('|', [
+        'scrape_samples_post_metric_relabeling',
+        'scrape_series_added',
+        'up',
+      ])
+    ),
   }

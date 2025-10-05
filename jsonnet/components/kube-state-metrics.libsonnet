@@ -171,7 +171,19 @@ function(params)
     ),
 
     telemetryServiceMonitor: generateServiceMonitor.telemetry(
-      self.serviceMonitor, std.join('|', [])
+      self.serviceMonitor, std.join('|', [
+        'kube_node_labels',
+        'kube_node_role',
+        'kube_node_spec_unschedulable',
+        'kube_node_status_capacity',
+        'kube_node_status_condition',
+        'kube_pod_info',
+        'kube_pod_restart_policy',
+        'kube_running_pod_ready',
+        'scrape_samples_post_metric_relabeling',
+        'scrape_series_added',
+        'up',
+      ])
     ),
 
     kubeRbacProxySecret: generateSecret.staticAuthSecret(cfg.namespace, cfg.commonLabels, 'kube-state-metrics-kube-rbac-proxy-config'),

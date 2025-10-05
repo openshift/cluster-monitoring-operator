@@ -24,7 +24,7 @@ spec:
     - action: labeldrop
       regex: __tmp_keep
     - action: keep
-      regex: ()
+      regex: (node_cpu_info|virt_platform|node_memory_MemTotal_bytes|node_memory_MemAvailable_bytes|node_cpu_seconds_total|up|scrape_series_added|scrape_samples_post_metric_relabeling|node_accelerator_card_info)
       sourceLabels:
       - __name__
     port: https

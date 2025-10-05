@@ -19,7 +19,7 @@ spec:
     interval: 30s
     metricRelabelings:
     - action: keep
-      regex: ()
+      regex: (apiserver_storage_objects|container_cpu_usage_seconds_total|container_memory_working_set_bytes|kubelet_containers_per_pod_count_sum|up)
       sourceLabels:
       - __name__
     port: https-metrics
@@ -41,7 +41,7 @@ spec:
     - action: labeldrop
       regex: __tmp_keep_metric
     - action: keep
-      regex: ()
+      regex: (apiserver_storage_objects|container_cpu_usage_seconds_total|container_memory_working_set_bytes|kubelet_containers_per_pod_count_sum|up)
       sourceLabels:
       - __name__
     path: /metrics/cadvisor
@@ -62,7 +62,7 @@ spec:
     interval: 30s
     metricRelabelings:
     - action: keep
-      regex: ()
+      regex: (apiserver_storage_objects|container_cpu_usage_seconds_total|container_memory_working_set_bytes|kubelet_containers_per_pod_count_sum|up)
       sourceLabels:
       - __name__
     path: /metrics/probes
@@ -81,7 +81,7 @@ spec:
     interval: 30s
     metricRelabelings:
     - action: keep
-      regex: ()
+      regex: (apiserver_storage_objects|container_cpu_usage_seconds_total|container_memory_working_set_bytes|kubelet_containers_per_pod_count_sum|up)
       sourceLabels:
       - __name__
     port: https-metrics

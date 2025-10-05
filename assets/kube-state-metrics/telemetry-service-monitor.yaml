@@ -19,7 +19,7 @@ spec:
     - action: labeldrop
       regex: instance
     - action: keep
-      regex: ()
+      regex: (kube_node_labels|kube_node_role|kube_node_spec_unschedulable|kube_node_status_capacity|kube_node_status_condition|kube_pod_info|kube_pod_restart_policy|kube_running_pod_ready|scrape_samples_post_metric_relabeling|scrape_series_added|up)
       sourceLabels:
       - __name__
     port: https-main
@@ -35,7 +35,7 @@ spec:
     interval: 1m
     metricRelabelings:
     - action: keep
-      regex: ()
+      regex: (kube_node_labels|kube_node_role|kube_node_spec_unschedulable|kube_node_status_capacity|kube_node_status_condition|kube_pod_info|kube_pod_restart_policy|kube_running_pod_ready|scrape_samples_post_metric_relabeling|scrape_series_added|up)
       sourceLabels:
       - __name__
     port: https-self

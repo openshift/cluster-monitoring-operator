@@ -168,7 +168,13 @@ function(params)
     ),
 
     telemetryServiceMonitorKubelet: generateServiceMonitor.telemetry(
-      self.serviceMonitorKubelet, std.join('|', [])
+      self.serviceMonitorKubelet, std.join('|', [
+        'apiserver_storage_objects',
+        'container_cpu_usage_seconds_total',
+        'container_memory_working_set_bytes',
+        'kubelet_containers_per_pod_count_sum',
+        'up',
+      ])
     ),
 
 
