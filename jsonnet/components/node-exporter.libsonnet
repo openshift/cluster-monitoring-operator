@@ -224,6 +224,10 @@ function(params)
                                      ])
     ),
 
+    telemetryServiceMonitor: generateServiceMonitor.telemetry(
+      self.serviceMonitor, std.join('|', [])
+    ),
+
     securityContextConstraints: {
       allowHostDirVolumePlugin: true,
       allowHostNetwork: true,

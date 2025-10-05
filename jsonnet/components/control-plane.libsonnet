@@ -168,6 +168,11 @@ function(params)
                                            ])
     ),
 
+    telemetryServiceMonitorKubelet: generateServiceMonitor.telemetry(
+      self.serviceMonitorKubelet, std.join('|', [])
+    ),
+
+
     // This avoids creating service monitors which are already managed by the respective operators.
     serviceMonitorApiserver:: {},
     serviceMonitorKubeScheduler:: {},
