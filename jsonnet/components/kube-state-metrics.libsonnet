@@ -170,6 +170,10 @@ function(params)
                                     ])
     ),
 
+    telemetryServiceMonitor: generateServiceMonitor.telemetry(
+      self.serviceMonitor, std.join('|', [])
+    ),
+
     kubeRbacProxySecret: generateSecret.staticAuthSecret(cfg.namespace, cfg.commonLabels, 'kube-state-metrics-kube-rbac-proxy-config'),
 
     // This removes the upstream addon-resizer and all resource requests and
