@@ -513,9 +513,9 @@ rules:
   - create
   - update
 - apiGroups:
-  - discovery.k8s.io
+  - ""
   resources:
-  - endpointslices
+  - endpoints
   verbs:
   - get
   - list
@@ -546,9 +546,9 @@ rules:
   - list
   - watch
 - apiGroups:
-  - discovery.k8s.io
+  - ""
   resources:
-  - endpointslices
+  - endpoints
   verbs:
   - get
   - list
@@ -579,9 +579,9 @@ rules:
   - list
   - watch
 - apiGroups:
-  - discovery.k8s.io
+  - ""
   resources:
-  - endpointslices
+  - endpoints
   verbs:
   - get
   - list
@@ -612,9 +612,9 @@ rules:
   - list
   - watch
 - apiGroups:
-  - discovery.k8s.io
+  - ""
   resources:
-  - endpointslices
+  - endpoints
   verbs:
   - get
   - list

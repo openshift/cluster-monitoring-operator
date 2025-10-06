@@ -13,9 +13,9 @@ items:
     namespace: openshift-user-workload-monitoring
   rules:
   - apiGroups:
-    - discovery.k8s.io
+    - ""
     resources:
-    - endpointslices
+    - endpoints
     verbs:
     - get
     - list
