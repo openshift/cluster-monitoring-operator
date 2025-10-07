@@ -6,14 +6,36 @@ local conversionWebhook = import 'github.com/prometheus-operator/prometheus-oper
 local generateSecret = import '../utils/generate-secret.libsonnet';
 local rbac = import '../utils/rbac.libsonnet';
 local withDescription = (import '../utils/add-annotations.libsonnet').withDescription;
+local optIntoOptionalMonitoring = import '../utils/opt-into-optional-monitoring.libsonnet';
 
 function(params)
   local po = operator(params);
 
   po {
+    '0thanosrulerCustomResourceDefinition'+: {
+      metadata+: {
+        annotations+: {
+          'capability.openshift.io/name': 'OptionalMonitoring',
+        },
+      },
+    },
+    '0probeCustomResourceDefinition'+: {
+      metadata+: {
+        annotations+: {
+          'capability.openshift.io/name': 'OptionalMonitoring',
+        },
+      },
+    },
+    '0alertmanagerCustomResourceDefinition'+: {
+      metadata+: {
+        annotations+: {
+          'capability.openshift.io/name': 'OptionalMonitoring',
+        },
+      },
+    },
     '0alertmanagerConfigCustomResourceDefinition'+:
       // Add v1beta1 AlertmanagerConfig version.
-      (import 'github.com/prometheus-operator/prometheus-operator/jsonnet/prometheus-operator/alertmanagerconfigs-v1beta1-crd.libsonnet') +
+      optIntoOptionalMonitoring.forObject(import 'github.com/prometheus-operator/prometheus-operator/jsonnet/prometheus-operator/alertmanagerconfigs-v1beta1-crd.libsonnet') +
       // Enable conversion webhook.
       conversionWebhook(params.conversionWebhook),
 

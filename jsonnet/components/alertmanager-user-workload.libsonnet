@@ -6,13 +6,14 @@ local generateSecret = import '../utils/generate-secret.libsonnet';
 local withDescription = (import '../utils/add-annotations.libsonnet').withDescription;
 local requiredRoles = (import '../utils/add-annotations.libsonnet').requiredRoles;
 local requiredClusterRoles = (import '../utils/add-annotations.libsonnet').requiredClusterRoles;
+local optIntoOptionalMonitoring = (import '../utils/opt-into-optional-monitoring.libsonnet');
 
 function(params)
   local cfg = params {
     replicas: 2,
   };
 
-  alertmanager(cfg) {
+  local o = alertmanager(cfg) {
     // Hide resources which are not needed because already deployed in the openshift-monitoring namespace.
     prometheusRule:: {},
 
@@ -414,4 +415,6 @@ function(params)
         ],
       },
     },
-  }
+  };
+
+  optIntoOptionalMonitoring.forObjectWithWalk(o)
