@@ -7,7 +7,7 @@ local withDescription = (import '../utils/add-annotations.libsonnet').withDescri
 local testFilePlaceholder = (import '../utils/add-annotations.libsonnet').testFilePlaceholder;
 local requiredRoles = (import '../utils/add-annotations.libsonnet').requiredRoles;
 local requiredClusterRoles = (import '../utils/add-annotations.libsonnet').requiredClusterRoles;
-local optIntoOptionalMonitoring = (import '../utils/opt-into-optional-monitoring.libsonnet');
+local optIntoCapability = (import '../utils/opt-into-capability.libsonnet');
 
 function(params)
   local cfg = params {
@@ -443,4 +443,4 @@ function(params)
     },
   };
 
-  optIntoOptionalMonitoring.forObjectWithWalk(o)
+  optIntoCapability.optionalMonitoringForObjectWithWalk(o)

@@ -1,7 +1,7 @@
 local metrics = import 'github.com/openshift/telemeter/jsonnet/telemeter/metrics.jsonnet';
 
 local cmoRules = import './../rules.libsonnet';
-local optIntoOptionalMonitoring = import './../utils/opt-into-optional-monitoring.libsonnet';
+local optIntoCapability = import './../utils/opt-into-capability.libsonnet';
 local kubePrometheus = import 'github.com/prometheus-operator/kube-prometheus/jsonnet/kube-prometheus/components/mixin/custom.libsonnet';
 
 local defaults = {
@@ -330,7 +330,7 @@ function(params) {
   // - get/list/watch permissions on alertingrules and alertrelabelconfigs to detect changes requiring reconciliation.
   // - all permissions on alertingrules/finalizers to set the `ownerReferences` field on generated prometheusrules.
   // - all permissions on alertingrules/status to set the status of alertingrules.
-  alertCustomizationRole: optIntoOptionalMonitoring.forObject({
+  alertCustomizationRole: optIntoCapability.optionalMonitoringForObject({
     apiVersion: 'rbac.authorization.k8s.io/v1',
     kind: 'Role',
     metadata: {
@@ -423,7 +423,7 @@ function(params) {
 
   // This role enables read/write access to the platform Alertmanager API
   // through kube-rbac-proxy.
-  monitoringAlertmanagerEditRole: optIntoOptionalMonitoring.forObject({
+  monitoringAlertmanagerEditRole: optIntoCapability.optionalMonitoringForObject({
     apiVersion: 'rbac.authorization.k8s.io/v1',
     kind: 'Role',
     metadata: {
@@ -442,7 +442,7 @@ function(params) {
 
   // This role enables read access to the platform Alertmanager API
   // through kube-rbac-proxy.
-  monitoringAlertmanagerViewRole: optIntoOptionalMonitoring.forObject({
+  monitoringAlertmanagerViewRole: optIntoCapability.optionalMonitoringForObject({
     apiVersion: 'rbac.authorization.k8s.io/v1',
     kind: 'Role',
     metadata: {
@@ -465,7 +465,7 @@ function(params) {
   // Using "nonResourceURLs" doesn't work because authenticated users and
   // service accounts are allowed to get /api/* by default.
   // See https://issues.redhat.com/browse/OCPBUGS-17850.
-  userWorkloadAlertmanagerApiReader: optIntoOptionalMonitoring.forObject({
+  userWorkloadAlertmanagerApiReader: optIntoCapability.optionalMonitoringForObject({
     apiVersion: 'rbac.authorization.k8s.io/v1',
     kind: 'Role',
     metadata: {
@@ -482,7 +482,7 @@ function(params) {
 
   // This role provides read/write access to the user-workload Alertmanager API.
   // See the 'monitoring-alertmanager-api-reader' role for details.
-  userWorkloadAlertmanagerApiWriter: optIntoOptionalMonitoring.forObject({
+  userWorkloadAlertmanagerApiWriter: optIntoCapability.optionalMonitoringForObject({
     apiVersion: 'rbac.authorization.k8s.io/v1',
     kind: 'Role',
     metadata: {
@@ -539,7 +539,7 @@ function(params) {
   },
 
   // This role provides read/write access to the user-workload monitoring configuration.
-  userWorkloadConfigEditRole: optIntoOptionalMonitoring.forObject({
+  userWorkloadConfigEditRole: optIntoCapability.optionalMonitoringForObject({
     apiVersion: 'rbac.authorization.k8s.io/v1',
     kind: 'Role',
     metadata: {
@@ -555,7 +555,7 @@ function(params) {
   }),
 
   // This cluster role can be referenced in a RoleBinding object to provide read/write access to AlertmanagerConfiguration objects for a project.
-  alertingEditClusterRole: optIntoOptionalMonitoring.forObject({
+  alertingEditClusterRole: optIntoCapability.optionalMonitoringForObject({
     apiVersion: 'rbac.authorization.k8s.io/v1',
     kind: 'ClusterRole',
     metadata: {

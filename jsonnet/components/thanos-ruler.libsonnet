@@ -3,7 +3,7 @@ local generateSecret = import '../utils/generate-secret.libsonnet';
 local ruler = import 'github.com/thanos-io/kube-thanos/jsonnet/kube-thanos/kube-thanos-rule.libsonnet';
 local withDescription = (import '../utils/add-annotations.libsonnet').withDescription;
 local requiredClusterRoles = (import '../utils/add-annotations.libsonnet').requiredClusterRoles;
-local optIntoOptionalMonitoring = (import '../utils/opt-into-optional-monitoring.libsonnet');
+local optIntoCapability = (import '../utils/opt-into-capability.libsonnet');
 
 local defaults = {
   volumeClaimTemplate: {},
@@ -572,4 +572,4 @@ function(params)
 
   };
 
-  optIntoOptionalMonitoring.forObjectWithWalk(o)
+  optIntoCapability.optionalMonitoringForObjectWithWalk(o)
