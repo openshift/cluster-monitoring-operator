@@ -175,6 +175,10 @@ type KubeStateMetricsConfig struct {
 	Tolerations []v1.Toleration `json:"tolerations,omitempty"`
 	// Defines a pod's topology spread constraints.
 	TopologySpreadConstraints []v1.TopologySpreadConstraint `json:"topologySpreadConstraints,omitempty"`
+	// Defines label-metrics' allow list for resources in addition to the default one.
+	// Currently, this is only supported for `jobs` and `cronjobs`, due to cardinality concerns.
+	// Refer: https://pkg.go.dev/k8s.io/kube-state-metrics/v2@v2.16.0/pkg/options#LabelsAllowList
+	AdditionalLabelsAllowList *string `json:"additionalLabelsAllowList,omitempty"`
 }
 
 // The `PrometheusK8sConfig` resource defines settings for the Prometheus
