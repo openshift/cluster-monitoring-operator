@@ -34,7 +34,7 @@ spec:
       - args:
         - --prometheus-config-reloader=quay.io/prometheus-operator/prometheus-config-reloader:v0.85.0
         - --kubelet-endpoints=true
-        - --kubelet-endpointslice=false
+        - --kubelet-endpointslice=true
         - --prometheus-instance-namespaces=openshift-user-workload-monitoring
         - --alertmanager-instance-namespaces=openshift-user-workload-monitoring
         - --thanos-ruler-instance-namespaces=openshift-user-workload-monitoring
