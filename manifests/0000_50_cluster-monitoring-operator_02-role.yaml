@@ -638,7 +638,9 @@ rules:
   - servicemonitors
   - servicemonitors/status
   - podmonitors
+  - podmonitors/status
   - probes
+  - probes/status
   - prometheusrules
   verbs:
   - '*'
