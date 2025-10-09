@@ -101,6 +101,30 @@ spec:
     webhookConfigs:
     - url: 'https://example.com'
 `, framework.E2eTestLabel)
+
+	utf8PromRuleYaml = fmt.Sprintf(`---
+apiVersion: monitoring.coreos.com/v1
+kind: PrometheusRule
+metadata:
+  name: cluster.monitoring-utf8
+  labels:
+    %s
+spec:
+  groups:
+  - name: cluster-nodes-äöü-ß
+    rules:
+    - record: cluster_node_cpu_usage_ñáéíóú
+      expr: 1
+    - alert: ClusterNodeDown_äöü_ß
+      expr: up == 0
+      labels:
+        severity: warning
+        cluster: "production-cluster-cé"
+        node: "worker-node-ñáéíóú"
+      annotations:
+        summary: "Cluster node down - UTF-8 characters"
+        description: "Node in cluster-cé is down with UTF-8 characters"
+`, framework.E2eTestLabel)
 )
 
 func TestPrometheusRuleValidatingWebhook(t *testing.T) {
@@ -131,6 +155,24 @@ func TestPrometheusRuleValidatingWebhook(t *testing.T) {
 		t.Fatal("invalid rule was accepted by validatingwebhook")
 	}
 
+}
+
+func TestPrometheusRuleValidatingWebhookUTF8Names(t *testing.T) {
+	ctx := context.Background()
+
+	// Test PrometheusRule with UTF-8 names.
+	utf8PromRule := monitoringv1.PrometheusRule{}
+	err := yaml.Unmarshal([]byte(utf8PromRuleYaml), &utf8PromRule)
+	if err != nil {
+		t.Fatal("unable to unmarshal UTF-8 prometheus rule", err)
+	}
+
+	_, err = f.MonitoringClient.PrometheusRules(f.Ns).Create(ctx, &utf8PromRule, metav1.CreateOptions{})
+	if err != nil {
+		t.Fatalf("UTF-8 prometheus rule was rejected by validating webhook: %v", err)
+	}
+
+	f.MonitoringClient.PrometheusRules(f.Ns).Delete(ctx, utf8PromRule.Name, metav1.DeleteOptions{})
 }
 
 func TestAlertManagerConfigValidatingWebhook(t *testing.T) {
