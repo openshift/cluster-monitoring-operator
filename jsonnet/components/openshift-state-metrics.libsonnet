@@ -1,5 +1,6 @@
 local generateSecret = import '../utils/generate-secret.libsonnet';
 local withDescription = (import '../utils/add-annotations.libsonnet').withDescription;
+local generateServiceMonitor = import '../utils/generate-service-monitors.libsonnet';
 
 function(params) {
   local cfg = params,
@@ -97,5 +98,11 @@ function(params) {
     },
   },
   serviceMonitor: osm.openshiftStateMetrics.serviceMonitor,
-
+  telemetryServiceMonitor: generateServiceMonitor.telemetry(
+    self.serviceMonitor, std.join('|', [
+      'scrape_samples_post_metric_relabeling',
+      'scrape_series_added',
+      'up',
+    ])
+  ),
 }

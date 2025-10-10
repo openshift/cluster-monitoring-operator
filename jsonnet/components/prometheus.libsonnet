@@ -5,6 +5,7 @@ local generateSecret = import '../utils/generate-secret.libsonnet';
 local prometheus = import 'github.com/prometheus-operator/kube-prometheus/jsonnet/kube-prometheus/components/prometheus.libsonnet';
 local withDescription = (import '../utils/add-annotations.libsonnet').withDescription;
 local requiredClusterRoles = (import '../utils/add-annotations.libsonnet').requiredClusterRoles;
+local generateServiceMonitor = import '../utils/generate-service-monitors.libsonnet';
 
 function(params)
   local cfg = params;
@@ -282,6 +283,15 @@ function(params)
       },
     },
 
+    telemetryServiceMonitor: generateServiceMonitor.telemetry(
+      self.serviceMonitor, std.join('|', [
+        'prometheus_tsdb_head_series',
+        'up',
+        'scrape_samples_post_metric_relabeling',
+        'scrape_series_added',
+      ])
+    ),
+
     serviceThanosSidecar+: {
       metadata+: {
         annotations+: {
@@ -314,6 +324,16 @@ function(params)
         ],
       },
     },
+
+    telemetryServiceMonitorThanosSidecar: generateServiceMonitor.telemetry(
+      self.serviceMonitorThanosSidecar, std.join('|', [
+        'ALERTS',
+        'prometheus_tsdb_head_series',
+        'up',
+        'scrape_samples_post_metric_relabeling',
+        'scrape_series_added',
+      ])
+    ),
 
     // These patches inject the kube-rbac-proxy as a sidecar and configures it with
     // TLS. Additionally as the Alertmanager is protected with TLS, authN and
