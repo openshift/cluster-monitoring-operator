@@ -10,7 +10,6 @@ spec:
   egress:
   - {}
   ingress:
-  # Allow access to prometheus-operator-admission-webhook 8443(port name is https) port
   - ports:
     - port: https
       protocol: TCP

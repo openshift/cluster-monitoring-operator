@@ -10,7 +10,6 @@ spec:
   egress:
   - {}
   ingress:
-  # Allow access to telemeter-client 8443(port name: https) port
   - ports:
     - port: https
       protocol: TCP

@@ -10,7 +10,6 @@ spec:
   egress:
   - {}
   ingress:
-  # Allow access to monitoring-plugin 9443(port name: https) port
   - ports:
     - port: https
       protocol: TCP

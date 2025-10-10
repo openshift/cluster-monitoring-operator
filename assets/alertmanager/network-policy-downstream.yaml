@@ -10,8 +10,6 @@ spec:
   egress:
   - {}
   ingress:
-  # Allow access to alertmanager 9092(port name: tenancy)/9095(port name: web)/9097(port name: metrics)
-  # and 9094(port name: udp-mesh for UDP, port name: tcp-mesh for TCP) ports
   - ports:
     - port: tenancy
       protocol: TCP

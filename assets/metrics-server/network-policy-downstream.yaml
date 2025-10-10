@@ -10,7 +10,6 @@ spec:
   egress:
   - {}
   ingress:
-  # Allow access to metrics-server 10250(port name: https) port
   - ports:
     - port: https
       protocol: TCP
