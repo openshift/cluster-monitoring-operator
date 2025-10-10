@@ -27,6 +27,7 @@ import (
 
 	"github.com/imdario/mergo"
 	configv1 "github.com/openshift/api/config/v1"
+	configv1alpha1 "github.com/openshift/api/config/v1alpha1"
 	consolev1 "github.com/openshift/api/console/v1"
 	osmv1 "github.com/openshift/api/monitoring/v1"
 	routev1 "github.com/openshift/api/route/v1"
@@ -417,6 +418,15 @@ func (c *Client) ClusterOperatorListWatch(ctx context.Context, name string) *cac
 	}
 }
 
+func (c *Client) ClusterMonitoringListWatch() *cache.ListWatch {
+	return cache.NewListWatchFromClient(
+		c.oscclient.ConfigV1alpha1().RESTClient(),
+		"clustermonitorings",
+		"",
+		fields.Everything(),
+	)
+}
+
 func (c *Client) HasRouteCapability(ctx context.Context) (bool, error) {
 	_, err := c.oscclient.ConfigV1().ClusterOperators().Get(ctx, "ingress", metav1.GetOptions{})
 	if apierrors.IsNotFound(err) {
@@ -593,6 +603,10 @@ func (c *Client) GetAPIServerConfig(ctx context.Context, name string) (*configv1
 
 func (c *Client) GetConsoleConfig(ctx context.Context, name string) (*configv1.Console, error) {
 	return c.oscclient.ConfigV1().Consoles().Get(ctx, name, metav1.GetOptions{})
+}
+
+func (c *Client) GetClusterMonitoring(ctx context.Context, name string) (*configv1alpha1.ClusterMonitoring, error) {
+	return c.oscclient.ConfigV1alpha1().ClusterMonitorings().Get(ctx, name, metav1.GetOptions{})
 }
 
 func (c *Client) GetConfigmap(ctx context.Context, namespace, name string) (*v1.ConfigMap, error) {
