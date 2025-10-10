@@ -96,6 +96,7 @@ function(params) {
     },
   },
   serviceMonitor: osm.openshiftStateMetrics.serviceMonitor,
+  // Allow access to openshift-state-metrics 8443(port name: https-main)/9443(port name: https-self) ports
   networkPolicyDownstream: {
     apiVersion: 'networking.k8s.io/v1',
     kind: 'NetworkPolicy',
@@ -123,11 +124,11 @@ function(params) {
         {
           ports: [
             {
-              port: 8443,
+              port: 'https-main',
               protocol: 'TCP',
             },
             {
-              port: 9443,
+              port: 'https-self',
               protocol: 'TCP',
             },
           ],

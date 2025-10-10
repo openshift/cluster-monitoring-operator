@@ -595,6 +595,7 @@ function(params) {
       ],
     },
   },
+  // Allow access to cluster-monitoring-operator 8443(port name: https) port
   networkPolicyDownstream: {
     apiVersion: 'networking.k8s.io/v1',
     kind: 'NetworkPolicy',
@@ -622,7 +623,7 @@ function(params) {
         {
           ports: [
             {
-              port: 8443,
+              port: 'https',
               protocol: 'TCP',
             },
           ],

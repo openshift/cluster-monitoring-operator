@@ -15,10 +15,11 @@ spec:
   egress:
   - {}
   ingress:
+  # Allow access to kube-state-metrics 8443(port name: https-main)/9443(port name: https-self) ports
   - ports:
-    - port: 8443
+    - port: https-main
       protocol: TCP
-    - port: 9443
+    - port: https-self
       protocol: TCP
   podSelector:
     matchLabels:

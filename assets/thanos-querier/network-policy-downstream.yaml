@@ -15,9 +15,16 @@ spec:
   egress:
   - {}
   ingress:
+  # Allow access to thanos-querier 9091(port name: web)/9092(port name: tenancy) ports
+  # and 9093(port name: tenancy-rules)/9094(port name: metrics) ports
   - ports:
-    - endPort: 9094
-      port: 9091
+    - port: web
+      protocol: TCP
+    - port: tenancy
+      protocol: TCP
+    - port: tenancy-rules
+      protocol: TCP
+    - port: metrics
       protocol: TCP
   podSelector:
     matchLabels:

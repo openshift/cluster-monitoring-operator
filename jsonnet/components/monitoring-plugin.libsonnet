@@ -223,6 +223,7 @@ function(params)
         },  // template
       },  // spec
     },  // deployment
+    // Allow access to monitoring-plugin 9443(port name: https) port
     networkPolicyDownstream: {
       apiVersion: 'networking.k8s.io/v1',
       kind: 'NetworkPolicy',
@@ -250,7 +251,7 @@ function(params)
           {
             ports: [
               {
-                port: 9443,
+                port: 'https',
                 protocol: 'TCP',
               },
             ],

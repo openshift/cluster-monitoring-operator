@@ -484,6 +484,7 @@ function(params)
         [acceleratorsConfigFileName]: std.manifestYamlDoc(acceleratorsConfigData),
       },
     },
+    // Allow access to node-exporter 9100(port name: https) port
     networkPolicyDownstream: {
       apiVersion: 'networking.k8s.io/v1',
       kind: 'NetworkPolicy',
@@ -511,7 +512,7 @@ function(params)
           {
             ports: [
               {
-                port: 9100,
+                port: 'https',
                 protocol: 'TCP',
               },
             ],

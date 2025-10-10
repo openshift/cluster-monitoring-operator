@@ -440,6 +440,8 @@ function(params)
         ],
       },
     },
+    // Allow access to alertmanager 9092(port name: tenancy)/9095(port name: web)/9097(port name: metrics)
+    // and 9094(port name: udp-mesh for UDP, port name: tcp-mesh for TCP) ports
     networkPolicyDownstream: {
       apiVersion: 'networking.k8s.io/v1',
       kind: 'NetworkPolicy',
@@ -467,23 +469,23 @@ function(params)
           {
             ports: [
               {
-                port: 9092,
+                port: 'tenancy',
                 protocol: 'TCP',
               },
               {
-                port: 9094,
+                port: 'tcp-mesh',
                 protocol: 'TCP',
               },
               {
-                port: 9094,
+                port: 'udp-mesh',
                 protocol: 'UDP',
               },
               {
-                port: 9095,
+                port: 'web',
                 protocol: 'TCP',
               },
               {
-                port: 9097,
+                port: 'metrics',
                 protocol: 'TCP',
               },
             ],

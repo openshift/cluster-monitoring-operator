@@ -15,8 +15,9 @@ spec:
   egress:
   - {}
   ingress:
+  # Allow access to node-exporter 9100(port name: https) port
   - ports:
-    - port: 9100
+    - port: https
       protocol: TCP
   podSelector:
     matchLabels:

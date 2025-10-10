@@ -373,6 +373,7 @@ function(params) {
       },
     },
   },
+  // Allow access to metrics-server 10250(port name: https) port
   networkPolicyDownstream: {
     apiVersion: 'networking.k8s.io/v1',
     kind: 'NetworkPolicy',
@@ -400,7 +401,7 @@ function(params) {
         {
           ports: [
             {
-              port: 10250,
+              port: 'https',
               protocol: 'TCP',
             },
           ],

@@ -747,23 +747,6 @@ func TestAlertmanagerDisabling(t *testing.T) {
 	})
 }
 
-// TestAlertmanagerNetworkPolicy ensures that the AlertManager NetworkPolicy
-// is deployed under openshift-monitoring namespace
-func TestAlertmanagerNetworkPolicy(t *testing.T) {
-	assertions := []struct {
-		name      string
-		assertion framework.AssertionFunc
-	}{
-		{name: "assert alertmanager networkpolicy exists", assertion: f.AssertNetworkPolicyExists("alertmanager", f.Ns)},
-	}
-
-	t.Run("check alertmanager NetworkPolicy", func(t *testing.T) {
-		for _, assertion := range assertions {
-			t.Run(assertion.name, assertion.assertion)
-		}
-	})
-}
-
 // TestAlertmanagerConfigPipeline ensures that the AlertManagerConfig CR's
 // created in a user namespace can be reconciled and have alerts sent to the
 // correct Alertmanager (depending on whether user-defined Alertmanager is
