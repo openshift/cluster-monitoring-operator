@@ -515,8 +515,15 @@ rules:
 - apiGroups:
   - ""
   resources:
-  - services
   - endpoints
+  verbs:
+  - get
+  - list
+  - watch
+- apiGroups:
+  - ""
+  resources:
+  - services
   - pods
   verbs:
   - get
@@ -541,8 +548,15 @@ rules:
 - apiGroups:
   - ""
   resources:
-  - services
   - endpoints
+  verbs:
+  - get
+  - list
+  - watch
+- apiGroups:
+  - ""
+  resources:
+  - services
   - pods
   verbs:
   - get
@@ -567,8 +581,15 @@ rules:
 - apiGroups:
   - ""
   resources:
-  - services
   - endpoints
+  verbs:
+  - get
+  - list
+  - watch
+- apiGroups:
+  - ""
+  resources:
+  - services
   - pods
   verbs:
   - get
@@ -593,8 +614,15 @@ rules:
 - apiGroups:
   - ""
   resources:
-  - services
   - endpoints
+  verbs:
+  - get
+  - list
+  - watch
+- apiGroups:
+  - ""
+  resources:
+  - services
   - pods
   verbs:
   - get
@@ -717,6 +745,16 @@ rules:
   verbs:
   - get
   - create
+  - update
+  - delete
+- apiGroups:
+  - discovery.k8s.io
+  resources:
+  - endpointslices
+  verbs:
+  - get
+  - create
+  - list
   - update
   - delete
 - apiGroups:

@@ -15,8 +15,15 @@ items:
   - apiGroups:
     - ""
     resources:
-    - services
     - endpoints
+    verbs:
+    - get
+    - list
+    - watch
+  - apiGroups:
+    - ""
+    resources:
+    - services
     - pods
     verbs:
     - get

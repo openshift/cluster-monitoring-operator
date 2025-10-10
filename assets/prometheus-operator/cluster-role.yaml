@@ -107,6 +107,16 @@ rules:
   - update
   - delete
 - apiGroups:
+  - discovery.k8s.io
+  resources:
+  - endpointslices
+  verbs:
+  - get
+  - create
+  - list
+  - update
+  - delete
+- apiGroups:
   - authentication.k8s.io
   resources:
   - tokenreviews
