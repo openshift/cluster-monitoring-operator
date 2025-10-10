@@ -4,9 +4,12 @@ metadata:
   annotations:
     openshift.io/description: |-
       Expose the Thanos Querier web server within the cluster on the following ports:
-      * Port 9091 provides access to all the Thanos Querier endpoints. Granting access requires binding a user to the `cluster-monitoring-view` cluster role.
+      * Port 9091 provides access to all the Thanos Querier endpoints. Granting access requires binding a user to the `cluster-monitoring-view` cluster role or `cluster-monitoring-metrics-api` cluster role in the `openshift-monitoring` project.
+      xx_omitted_before_deploy__test_file_name:openshift-monitoring_thanos-querier_service_port_9091.yaml
       * Port 9092 provides access to the `/api/v1/query`, `/api/v1/query_range/`, `/api/v1/labels`, `/api/v1/label/*/values`, and `/api/v1/series` endpoints restricted to a given project. Granting access requires binding a user to the `view` cluster role in the project.
+      xx_omitted_before_deploy__test_file_name:openshift-monitoring_thanos-querier_service_port_9092.yaml
       * Port 9093 provides access to the `/api/v1/alerts`, and `/api/v1/rules` endpoints restricted to a given project. Granting access requires binding a user to the `monitoring-rules-edit` cluster role or `monitoring-edit` cluster role or `monitoring-rules-view` cluster role in the project.
+      xx_omitted_before_deploy__test_file_name:openshift-monitoring_thanos-querier_service_port_9093.yaml
       * Port 9094 provides access to the `/metrics` endpoint only. This port is for internal use, and no other usage is guaranteed.
     service.beta.openshift.io/serving-cert-secret-name: thanos-querier-tls
   labels:
