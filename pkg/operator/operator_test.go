@@ -21,7 +21,9 @@ import (
 	"testing"
 
 	configv1 "github.com/openshift/api/config/v1"
+	configv1alpha1 "github.com/openshift/api/config/v1alpha1"
 	"github.com/stretchr/testify/require"
+	"k8s.io/apimachinery/pkg/api/resource"
 	apiutilerrors "k8s.io/apimachinery/pkg/util/errors"
 
 	"github.com/openshift/cluster-monitoring-operator/pkg/client"
@@ -555,6 +557,146 @@ func TestGenerateRunReportFromTaskErrors(t *testing.T) {
 	for _, tc := range tt {
 		t.Run(tc.name, func(t *testing.T) {
 			require.Equal(t, tc.expectedReport, generateRunReportFromTaskErrors(tc.taskGroupErrors))
+		})
+	}
+}
+
+func TestMergeAlertmanagerConfig(t *testing.T) {
+	for _, tc := range []struct {
+		name        string
+		baseConfig  *manifests.Config
+		crdConfig   *configv1alpha1.AlertmanagerConfig
+		expectError bool
+		validate    func(*testing.T, *manifests.Config)
+	}{
+		{
+			name: "disabled mode",
+			baseConfig: &manifests.Config{
+				ClusterMonitoringConfiguration: &manifests.ClusterMonitoringConfiguration{
+					AlertmanagerMainConfig: &manifests.AlertmanagerMainConfig{},
+				},
+			},
+			crdConfig: &configv1alpha1.AlertmanagerConfig{
+				DeploymentMode: configv1alpha1.AlertManagerDeployModeDisabled,
+			},
+			validate: func(t *testing.T, c *manifests.Config) {
+				if c.ClusterMonitoringConfiguration.AlertmanagerMainConfig.Enabled == nil {
+					t.Error("expected Enabled to be set")
+					return
+				}
+				if *c.ClusterMonitoringConfiguration.AlertmanagerMainConfig.Enabled {
+					t.Error("expected Enabled to be false")
+				}
+			},
+		},
+		{
+			name: "default config mode",
+			baseConfig: &manifests.Config{
+				ClusterMonitoringConfiguration: &manifests.ClusterMonitoringConfiguration{
+					AlertmanagerMainConfig: &manifests.AlertmanagerMainConfig{},
+				},
+			},
+			crdConfig: &configv1alpha1.AlertmanagerConfig{
+				DeploymentMode: configv1alpha1.AlertManagerDeployModeDefaultConfig,
+			},
+			validate: func(t *testing.T, c *manifests.Config) {
+				if c.ClusterMonitoringConfiguration.AlertmanagerMainConfig.Enabled == nil {
+					t.Error("expected Enabled to be set")
+					return
+				}
+				if !*c.ClusterMonitoringConfiguration.AlertmanagerMainConfig.Enabled {
+					t.Error("expected Enabled to be true")
+				}
+			},
+		},
+		{
+			name: "custom config with log level",
+			baseConfig: &manifests.Config{
+				ClusterMonitoringConfiguration: &manifests.ClusterMonitoringConfiguration{
+					AlertmanagerMainConfig: &manifests.AlertmanagerMainConfig{},
+				},
+			},
+			crdConfig: &configv1alpha1.AlertmanagerConfig{
+				DeploymentMode: configv1alpha1.AlertManagerDeployModeCustomConfig,
+				CustomConfig: configv1alpha1.AlertmanagerCustomConfig{
+					LogLevel: configv1alpha1.LogLevelDebug,
+				},
+			},
+			validate: func(t *testing.T, c *manifests.Config) {
+				if c.ClusterMonitoringConfiguration.AlertmanagerMainConfig.LogLevel != "debug" {
+					t.Errorf("expected LogLevel debug, got %s", c.ClusterMonitoringConfiguration.AlertmanagerMainConfig.LogLevel)
+				}
+			},
+		},
+		{
+			name: "custom config with resources",
+			baseConfig: &manifests.Config{
+				ClusterMonitoringConfiguration: &manifests.ClusterMonitoringConfiguration{
+					AlertmanagerMainConfig: &manifests.AlertmanagerMainConfig{},
+				},
+			},
+			crdConfig: &configv1alpha1.AlertmanagerConfig{
+				DeploymentMode: configv1alpha1.AlertManagerDeployModeCustomConfig,
+				CustomConfig: configv1alpha1.AlertmanagerCustomConfig{
+					Resources: []configv1alpha1.ContainerResource{
+						{
+							Name:    "cpu",
+							Request: resource.MustParse("100m"),
+						},
+					},
+				},
+			},
+			validate: func(t *testing.T, c *manifests.Config) {
+				if c.ClusterMonitoringConfiguration.AlertmanagerMainConfig.Resources == nil {
+					t.Error("expected Resources to be set")
+					return
+				}
+				if cpu := c.ClusterMonitoringConfiguration.AlertmanagerMainConfig.Resources.Requests.Cpu().String(); cpu != "100m" {
+					t.Errorf("expected CPU request 100m, got %s", cpu)
+				}
+			},
+		},
+		{
+			name: "custom config overrides configmap",
+			baseConfig: &manifests.Config{
+				ClusterMonitoringConfiguration: &manifests.ClusterMonitoringConfiguration{
+					AlertmanagerMainConfig: &manifests.AlertmanagerMainConfig{
+						LogLevel: "info",
+					},
+				},
+			},
+			crdConfig: &configv1alpha1.AlertmanagerConfig{
+				DeploymentMode: configv1alpha1.AlertManagerDeployModeCustomConfig,
+				CustomConfig: configv1alpha1.AlertmanagerCustomConfig{
+					LogLevel: configv1alpha1.LogLevelDebug,
+				},
+			},
+			validate: func(t *testing.T, c *manifests.Config) {
+				if c.ClusterMonitoringConfiguration.AlertmanagerMainConfig.LogLevel != "debug" {
+					t.Errorf("expected CRD to override ConfigMap, got %s", c.ClusterMonitoringConfiguration.AlertmanagerMainConfig.LogLevel)
+				}
+			},
+		},
+	} {
+		t.Run(tc.name, func(t *testing.T) {
+			o := &Operator{}
+			err := o.mergeAlertmanagerConfig(tc.baseConfig, tc.crdConfig)
+
+			if tc.expectError {
+				if err == nil {
+					t.Error("expected error, got nil")
+				}
+				return
+			}
+
+			if err != nil {
+				t.Errorf("unexpected error: %v", err)
+				return
+			}
+
+			if tc.validate != nil {
+				tc.validate(t, tc.baseConfig)
+			}
 		})
 	}
 }

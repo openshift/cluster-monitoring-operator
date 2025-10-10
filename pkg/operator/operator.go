@@ -24,6 +24,7 @@ import (
 
 	"github.com/blang/semver/v4"
 	configv1 "github.com/openshift/api/config/v1"
+	configv1alpha1 "github.com/openshift/api/config/v1alpha1"
 	"github.com/openshift/api/features"
 	configv1client "github.com/openshift/client-go/config/clientset/versioned"
 	configv1informers "github.com/openshift/client-go/config/informers/externalversions"
@@ -31,6 +32,7 @@ import (
 	"github.com/openshift/library-go/pkg/operator/configobserver/featuregates"
 	"github.com/openshift/library-go/pkg/operator/csr"
 	"github.com/openshift/library-go/pkg/operator/events"
+	monv1 "github.com/prometheus-operator/prometheus-operator/pkg/apis/monitoring/v1"
 	certapiv1 "k8s.io/api/certificates/v1"
 	v1 "k8s.io/api/core/v1"
 	apierrors "k8s.io/apimachinery/pkg/api/errors"
@@ -45,9 +47,11 @@ import (
 	"k8s.io/client-go/util/workqueue"
 	"k8s.io/klog/v2"
 	"k8s.io/utils/clock"
+	"k8s.io/utils/ptr"
 
 	"github.com/openshift/cluster-monitoring-operator/pkg/alert"
 	"github.com/openshift/cluster-monitoring-operator/pkg/client"
+	"github.com/openshift/cluster-monitoring-operator/pkg/clustermonitoring"
 	"github.com/openshift/cluster-monitoring-operator/pkg/manifests"
 	"github.com/openshift/cluster-monitoring-operator/pkg/metrics"
 	"github.com/openshift/cluster-monitoring-operator/pkg/tasks"
@@ -177,12 +181,13 @@ const (
 type Operator struct {
 	namespace, namespaceUserWorkload string
 
-	configMapName             string
-	userWorkloadConfigMapName string
-	images                    map[string]string
-	telemetryMatches          []string
-	remoteWrite               bool
-	CollectionProfilesEnabled bool
+	configMapName                  string
+	userWorkloadConfigMapName      string
+	images                         map[string]string
+	telemetryMatches               []string
+	remoteWrite                    bool
+	CollectionProfilesEnabled      bool
+	ClusterMonitoringConfigEnabled bool
 
 	lastKnowInfrastructureConfig *InfrastructureConfig
 	lastKnowProxyConfig          *ProxyConfig
@@ -202,8 +207,9 @@ type Operator struct {
 
 	assets *manifests.Assets
 
-	ruleController    *alert.RuleController
-	relabelController *alert.RelabelConfigController
+	ruleController              *alert.RuleController
+	relabelController           *alert.RelabelConfigController
+	clusterMonitoringController *clustermonitoring.Controller
 }
 
 func New(
@@ -452,8 +458,21 @@ func New(
 			return nil, err
 		}
 		o.CollectionProfilesEnabled = featureGates.Enabled(features.FeatureGateMetricsCollectionProfiles)
+		o.ClusterMonitoringConfigEnabled = featureGates.Enabled(features.FeatureGateClusterMonitoringConfig)
 	case <-time.After(1 * time.Minute):
 		return nil, fmt.Errorf("timed out waiting for FeatureGate detection")
+	}
+
+	// Only create the ClusterMonitoring controller if the feature gate is enabled
+	if o.ClusterMonitoringConfigEnabled {
+		clusterMonitoringController, err := clustermonitoring.NewController(ctx, c, version, func() {
+			key := o.namespace + "/" + o.configMapName
+			o.enqueue(key)
+		})
+		if err != nil {
+			return nil, fmt.Errorf("failed to create cluster monitoring controller: %w", err)
+		}
+		o.clusterMonitoringController = clusterMonitoringController
 	}
 
 	// csrController runs a controller that requests a client TLS certificate
@@ -533,6 +552,10 @@ func New(
 		o.ruleController.Run,
 		o.relabelController.Run,
 	)
+
+	if o.clusterMonitoringController != nil {
+		o.controllersToRunFunc = append(o.controllersToRunFunc, o.clusterMonitoringController.Run)
+	}
 
 	return o, nil
 }
@@ -964,6 +987,96 @@ func (o *Operator) loadUserWorkloadConfig(ctx context.Context) (*manifests.UserW
 	return manifests.NewUserWorkloadConfigFromConfigMap(userCM)
 }
 
+func (o *Operator) mergeClusterMonitoringCRD(ctx context.Context, c *manifests.Config) error {
+	if !o.ClusterMonitoringConfigEnabled {
+		return nil
+	}
+
+	crd, err := o.client.GetClusterMonitoring(ctx, clusterResourceName)
+	if err != nil {
+		if apierrors.IsNotFound(err) {
+			return nil
+		}
+		return fmt.Errorf("failed to get ClusterMonitoring CRD: %w", err)
+	}
+
+	if err := o.mergeAlertmanagerConfig(c, &crd.Spec.AlertmanagerConfig); err != nil {
+		return fmt.Errorf("failed to merge AlertmanagerConfig: %w", err)
+	}
+
+	return nil
+}
+
+func (o *Operator) mergeAlertmanagerConfig(c *manifests.Config, amConfig *configv1alpha1.AlertmanagerConfig) error {
+	if c.ClusterMonitoringConfiguration.AlertmanagerMainConfig == nil {
+		c.ClusterMonitoringConfiguration.AlertmanagerMainConfig = &manifests.AlertmanagerMainConfig{}
+	}
+
+	switch amConfig.DeploymentMode {
+	case configv1alpha1.AlertManagerDeployModeDisabled:
+		c.ClusterMonitoringConfiguration.AlertmanagerMainConfig.Enabled = ptr.To(false)
+
+	case configv1alpha1.AlertManagerDeployModeDefaultConfig:
+		c.ClusterMonitoringConfiguration.AlertmanagerMainConfig.Enabled = ptr.To(true)
+
+	case configv1alpha1.AlertManagerDeployModeCustomConfig:
+		c.ClusterMonitoringConfiguration.AlertmanagerMainConfig.Enabled = ptr.To(true)
+
+		cfg := &amConfig.CustomConfig
+
+		if cfg.LogLevel != "" {
+			c.ClusterMonitoringConfiguration.AlertmanagerMainConfig.LogLevel = strings.ToLower(string(cfg.LogLevel))
+		}
+
+		if len(cfg.NodeSelector) > 0 {
+			c.ClusterMonitoringConfiguration.AlertmanagerMainConfig.NodeSelector = cfg.NodeSelector
+		}
+
+		if len(cfg.Resources) > 0 {
+			resources := &v1.ResourceRequirements{
+				Requests: v1.ResourceList{},
+				Limits:   v1.ResourceList{},
+			}
+			for _, res := range cfg.Resources {
+				if !res.Request.IsZero() {
+					resources.Requests[v1.ResourceName(res.Name)] = res.Request
+				}
+				if !res.Limit.IsZero() {
+					resources.Limits[v1.ResourceName(res.Name)] = res.Limit
+				}
+			}
+			c.ClusterMonitoringConfiguration.AlertmanagerMainConfig.Resources = resources
+		}
+
+		if len(cfg.Secrets) > 0 {
+			secrets := make([]string, len(cfg.Secrets))
+			for i, s := range cfg.Secrets {
+				secrets[i] = string(s)
+			}
+			c.ClusterMonitoringConfiguration.AlertmanagerMainConfig.Secrets = secrets
+		}
+
+		if len(cfg.Tolerations) > 0 {
+			c.ClusterMonitoringConfiguration.AlertmanagerMainConfig.Tolerations = cfg.Tolerations
+		}
+
+		if len(cfg.TopologySpreadConstraints) > 0 {
+			c.ClusterMonitoringConfiguration.AlertmanagerMainConfig.TopologySpreadConstraints = cfg.TopologySpreadConstraints
+		}
+
+		if cfg.VolumeClaimTemplate != nil {
+			c.ClusterMonitoringConfiguration.AlertmanagerMainConfig.VolumeClaimTemplate = &monv1.EmbeddedPersistentVolumeClaim{
+				Spec: cfg.VolumeClaimTemplate.Spec,
+			}
+		}
+
+	default:
+		return fmt.Errorf("unknown DeploymentMode: %s", amConfig.DeploymentMode)
+	}
+
+	return nil
+}
+
 func (o *Operator) loadConfig(key string) (*manifests.Config, error) {
 	obj, found, err := o.cmapInf.GetStore().GetByKey(key)
 	if err != nil {
@@ -983,6 +1096,11 @@ func (o *Operator) Config(ctx context.Context, key string) (*manifests.Config, e
 	c, err := o.loadConfig(key)
 	if err != nil {
 		return nil, err
+	}
+
+	err = o.mergeClusterMonitoringCRD(ctx, c)
+	if err != nil {
+		klog.Warningf("failed to merge ClusterMonitoring CRD configuration: %v", err)
 	}
 
 	err = c.Precheck()
