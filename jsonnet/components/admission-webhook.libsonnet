@@ -42,6 +42,7 @@ function(params)
                       args+: [
                         '--web.tls-cipher-suites=' + params.tlsCipherSuites,
                         '--web.tls-min-version=VersionTLS12',
+                        '--name-validation-scheme=utf8',
                       ],
                       livenessProbe: {
                         httpGet: {
