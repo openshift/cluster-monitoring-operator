@@ -790,42 +790,64 @@ func (o *Operator) sync(ctx context.Context, key string) error {
 		consoleConfig,
 	)
 
+	optionalMonitoringEnabled, err := o.client.HasOptionalMonitoringCapability(ctx)
+	if err != nil {
+		o.reportFailed(ctx, newRunReportForError("OptionalMonitoringCheckError", err))
+		return err
+	}
+
+	// Update prometheus-operator before anything else because it is
+	// responsible for managing many other resources (e.g. Prometheus,
+	// Alertmanager, Thanos Ruler, ...). The metrics scraping client CA
+	// should also be created first because it is referenced by Prometheus.
+	prerequisiteTasks := []*tasks.TaskSpec{
+		newTaskSpec("MetricsScrapingClientCA", tasks.NewMetricsClientCATask(o.client, factory, config)),
+	}
+	if optionalMonitoringEnabled {
+		prerequisiteTasks = append(prerequisiteTasks,
+			newTaskSpec("PrometheusOperatorOptionalMonitoring", tasks.NewPrometheusOperatorOptionalMonitoringTask(o.client, factory)),
+		)
+	} else {
+		prerequisiteTasks = append(prerequisiteTasks,
+			newTaskSpec("PrometheusOperator", tasks.NewPrometheusOperatorTask(o.client, factory)),
+		)
+	}
+	followupTasks :=
+		[]*tasks.TaskSpec{
+			newTaskSpec("Prometheus", tasks.NewPrometheusTask(o.client, factory, config)),
+			newTaskSpec("NodeExporter", tasks.NewNodeExporterTask(o.client, factory)),
+			newTaskSpec("KubeStateMetrics", tasks.NewKubeStateMetricsTask(o.client, factory)),
+			newTaskSpec("OpenshiftStateMetrics", tasks.NewOpenShiftStateMetricsTask(o.client, factory)),
+			newTaskSpec("MetricsServer", tasks.NewMetricsServerTask(ctx, o.namespace, o.client, factory, config)),
+			newTaskSpec("TelemeterClient", tasks.NewTelemeterClientTask(o.client, factory, config)),
+			newTaskSpec("ThanosQuerier", tasks.NewThanosQuerierTask(o.client, factory, config)),
+			newTaskSpec("ControlPlaneComponents", tasks.NewControlPlaneTask(o.client, factory, config)),
+			// Tried to run the UWM prom-operator in the first group, but some e2e tests started failing.
+			newUWMTaskSpec("Prometheus", tasks.NewPrometheusUserWorkloadTask(o.client, factory, config)),
+		}
+	if optionalMonitoringEnabled {
+		followupTasks = append(followupTasks,
+			newTaskSpec("ClusterMonitoringOperatorOptionalMonitoringDeps", tasks.NewClusterMonitoringOperatorOptionalMonitoringTask(o.client, factory, config)),
+		)
+	} else {
+		followupTasks = append(followupTasks,
+			newTaskSpec("ClusterMonitoringOperatorDeps", tasks.NewClusterMonitoringOperatorTask(o.client, factory, config)),
+			newTaskSpec("Alertmanager", tasks.NewAlertmanagerTask(o.client, factory, config)),
+			newTaskSpec("ConsolePluginComponents", tasks.NewMonitoringPluginTask(o.client, factory, config)),
+			newUWMTaskSpec("PrometheusOperator", tasks.NewPrometheusOperatorUserWorkloadTask(o.client, factory, config)),
+			newUWMTaskSpec("Alertmanager", tasks.NewAlertmanagerUserWorkloadTask(o.client, factory, config)),
+			newUWMTaskSpec("ThanosRuler", tasks.NewThanosRulerUserWorkloadTask(o.client, factory, config)),
+		)
+	}
+	// The shared configmap depends on resources being created by the previous tasks hence run it last.
+	postRequisiteTasks := []*tasks.TaskSpec{
+		newTaskSpec("ConfigurationSharing", tasks.NewConfigSharingTask(o.client, factory, config)),
+	}
 	tl := tasks.NewTaskRunner(
 		o.client,
-		// Update prometheus-operator before anything else because it is
-		// responsible for managing many other resources (e.g. Prometheus,
-		// Alertmanager, Thanos Ruler, ...). The metrics scraping client CA
-		// should also be created first because it is referenced by Prometheus.
-		tasks.NewTaskGroup(
-			[]*tasks.TaskSpec{
-				newTaskSpec("MetricsScrapingClientCA", tasks.NewMetricsClientCATask(o.client, factory, config)),
-				newTaskSpec("PrometheusOperator", tasks.NewPrometheusOperatorTask(o.client, factory)),
-			}),
-		tasks.NewTaskGroup(
-			[]*tasks.TaskSpec{
-				newTaskSpec("ClusterMonitoringOperatorDeps", tasks.NewClusterMonitoringOperatorTask(o.client, factory, config)),
-				newTaskSpec("Prometheus", tasks.NewPrometheusTask(o.client, factory, config)),
-				newTaskSpec("Alertmanager", tasks.NewAlertmanagerTask(o.client, factory, config)),
-				newTaskSpec("NodeExporter", tasks.NewNodeExporterTask(o.client, factory)),
-				newTaskSpec("KubeStateMetrics", tasks.NewKubeStateMetricsTask(o.client, factory)),
-				newTaskSpec("OpenshiftStateMetrics", tasks.NewOpenShiftStateMetricsTask(o.client, factory)),
-				newTaskSpec("MetricsServer", tasks.NewMetricsServerTask(ctx, o.namespace, o.client, factory, config)),
-				newTaskSpec("TelemeterClient", tasks.NewTelemeterClientTask(o.client, factory, config)),
-				newTaskSpec("ThanosQuerier", tasks.NewThanosQuerierTask(o.client, factory, config)),
-				newTaskSpec("ControlPlaneComponents", tasks.NewControlPlaneTask(o.client, factory, config)),
-				newTaskSpec("ConsolePluginComponents", tasks.NewMonitoringPluginTask(o.client, factory, config)),
-				// Tried to run the UWM prom-operator in the first group, but some e2e tests started failing.
-				newUWMTaskSpec("PrometheusOperator", tasks.NewPrometheusOperatorUserWorkloadTask(o.client, factory, config)),
-				newUWMTaskSpec("Prometheus", tasks.NewPrometheusUserWorkloadTask(o.client, factory, config)),
-				newUWMTaskSpec("Alertmanager", tasks.NewAlertmanagerUserWorkloadTask(o.client, factory, config)),
-				newUWMTaskSpec("ThanosRuler", tasks.NewThanosRulerUserWorkloadTask(o.client, factory, config)),
-			}),
-		// The shared configmap depends on resources being created by the previous tasks hence run it last.
-		tasks.NewTaskGroup(
-			[]*tasks.TaskSpec{
-				newTaskSpec("ConfigurationSharing", tasks.NewConfigSharingTask(o.client, factory, config)),
-			},
-		),
+		tasks.NewTaskGroup(prerequisiteTasks),
+		tasks.NewTaskGroup(followupTasks),
+		tasks.NewTaskGroup(postRequisiteTasks),
 	)
 	klog.Info("Updating ClusterOperator status to InProgress.")
 	err = o.client.StatusReporter().SetRollOutInProgress(ctx)
