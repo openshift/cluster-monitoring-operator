@@ -7,8 +7,6 @@ metadata:
   name: prometheus-operator-admission-webhook
   namespace: openshift-monitoring
 spec:
-  egress:
-  - {}
   ingress:
   - ports:
     - port: https
@@ -18,4 +16,3 @@ spec:
       app.kubernetes.io/name: prometheus-operator-admission-webhook
   policyTypes:
   - Ingress
-  - Egress

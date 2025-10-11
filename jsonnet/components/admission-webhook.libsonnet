@@ -184,7 +184,6 @@ function(params)
         },
         policyTypes: [
           'Ingress',
-          'Egress',
         ],
         ingress: [
           {
@@ -195,9 +194,6 @@ function(params)
               },
             ],
           },
-        ],
-        egress: [
-          {},
         ],
       },
     },
