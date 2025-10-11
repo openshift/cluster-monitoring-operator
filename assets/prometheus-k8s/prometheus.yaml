@@ -9,7 +9,7 @@ metadata:
     app.kubernetes.io/managed-by: cluster-monitoring-operator
     app.kubernetes.io/name: prometheus
     app.kubernetes.io/part-of: openshift-monitoring
-    app.kubernetes.io/version: 3.5.0
+    app.kubernetes.io/version: 3.6.0
   name: k8s
   namespace: openshift-monitoring
 spec:
@@ -187,7 +187,7 @@ spec:
       app.kubernetes.io/instance: k8s
       app.kubernetes.io/name: prometheus
       app.kubernetes.io/part-of: openshift-monitoring
-      app.kubernetes.io/version: 3.5.0
+      app.kubernetes.io/version: 3.6.0
   podMonitorNamespaceSelector:
     matchLabels:
       openshift.io/cluster-monitoring: "true"
@@ -238,7 +238,7 @@ spec:
         cpu: 1m
         memory: 100Mi
     version: 0.39.2
-  version: 3.5.0
+  version: 3.6.0
   volumes:
   - configMap:
       items:
