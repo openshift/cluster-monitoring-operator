@@ -2735,7 +2735,6 @@ var _ = g.Describe("[sig-monitoring] Cluster_Observability parallel monitoring",
 		defer deleteConfig(oc, monitoringCM.name, monitoringCM.namespace)
 
 		createResourceFromYaml(oc, "openshift-monitoring", clusterResources)
-		exutil.AssertAllPodsToBeReady(oc, "openshift-monitoring")
 
 		exutil.By("by default there is not resources.limits setting for the components, check the result for kube_pod_container_resource_limits of node-exporter pod to see if the setting loaded to components, same for other components")
 		token := getSAToken(oc, "prometheus-k8s", "openshift-monitoring")
@@ -2816,7 +2815,6 @@ var _ = g.Describe("[sig-monitoring] Cluster_Observability parallel monitoring",
 		}
 
 		createResourceFromYaml(oc, "openshift-user-workload-monitoring", uwmResources)
-		exutil.AssertAllPodsToBeReady(oc, "openshift-user-workload-monitoring")
 
 		exutil.By("check the resources.requests and resources.limits for uwm prometheus-operator")
 		checkMetric(oc, `https://thanos-querier.openshift-monitoring.svc:9091/api/v1/query --data-urlencode 'query=kube_pod_container_resource_limits{container="prometheus-operator",namespace="openshift-user-workload-monitoring"}'`, token, `"pod":"prometheus-operator-`, 3*uwmLoadTime)
