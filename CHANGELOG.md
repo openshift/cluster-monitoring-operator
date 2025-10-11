@@ -4,6 +4,10 @@
 
 - [#2503](https://github.com/openshift/cluster-monitoring-operator/issues/2503) Expose `scrapeInterval` setting for UWM Prometheus.
 - [#2517](https://github.com/openshift/cluster-monitoring-operator/issues/2517) Expose `evaluationInterval` setting for UWM Prometheus and ThanosRuler.
+- [#2709](https://github.com/openshift/cluster-monitoring-operator/pull/2709) Make `KubeCPUOvercommit` and `KubeMemoryOvercommit` alerts accommodate for non-HA scenarios, in addition to HA ones. Also, the following alerts were added:
+    - `KubePdbNotEnoughHealthyPods`
+    - `KubeNodePressure`
+    - `KubeNodeEviction`
 
 ## 4.17
 
