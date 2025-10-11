@@ -44,7 +44,11 @@ func NewAlertmanagerUserWorkloadTask(
 }
 
 func (t *AlertmanagerUserWorkloadTask) Run(ctx context.Context) error {
-	if t.config.UserWorkloadConfiguration.Alertmanager.Enabled {
+	optionalMonitoringEnabled, err := t.client.HasOptionalMonitoringCapability(ctx)
+	if err != nil {
+		return fmt.Errorf("checking for optional monitoring capability failed: %w", err)
+	}
+	if t.config.UserWorkloadConfiguration.Alertmanager.Enabled && optionalMonitoringEnabled {
 		return t.create(ctx)
 	}
 

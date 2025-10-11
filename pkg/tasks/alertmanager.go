@@ -44,7 +44,11 @@ func NewAlertmanagerTask(
 }
 
 func (t *AlertmanagerTask) Run(ctx context.Context) error {
-	if t.config.ClusterMonitoringConfiguration.AlertmanagerMainConfig.IsEnabled() {
+	optionalMonitoringEnabled, err := t.client.HasOptionalMonitoringCapability(ctx)
+	if err != nil {
+		return fmt.Errorf("checking for optional monitoring capability failed: %w", err)
+	}
+	if t.config.ClusterMonitoringConfiguration.AlertmanagerMainConfig.IsEnabled() && optionalMonitoringEnabled {
 		return t.create(ctx)
 	}
 

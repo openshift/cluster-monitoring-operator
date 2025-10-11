@@ -40,7 +40,11 @@ func NewPrometheusUserWorkloadTask(client *client.Client, factory *manifests.Fac
 }
 
 func (t *PrometheusUserWorkloadTask) Run(ctx context.Context) error {
-	if *t.config.ClusterMonitoringConfiguration.UserWorkloadEnabled {
+	optionalMonitoringEnabled, err := t.client.HasOptionalMonitoringCapability(ctx)
+	if err != nil {
+		return fmt.Errorf("checking for optional monitoring capability failed: %w", err)
+	}
+	if *t.config.ClusterMonitoringConfiguration.UserWorkloadEnabled && optionalMonitoringEnabled {
 		return t.create(ctx)
 	}
 
