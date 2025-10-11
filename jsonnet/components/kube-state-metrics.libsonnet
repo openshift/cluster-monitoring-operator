@@ -240,8 +240,6 @@ function(params)
                         '--custom-resource-state-config-file=/etc/kube-state-metrics/custom-resource-state-configmap.yaml',
                         |||
                           --metric-denylist=
-                          ^kube_secret_labels$,
-                          ^kube_.+_annotations$
                           ^kube_customresource_.+_annotations_info$,
                           ^kube_customresource_.+_labels_info$,
                         |||,
