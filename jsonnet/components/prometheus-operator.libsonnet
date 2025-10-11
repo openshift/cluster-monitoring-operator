@@ -178,4 +178,37 @@ function(params)
         ],
       },
     },
+    // Allow access to prometheus-operator 8443(port name: https) port
+    networkPolicyDownstream: {
+      apiVersion: 'networking.k8s.io/v1',
+      kind: 'NetworkPolicy',
+      metadata: {
+        name: 'prometheus-operator',
+        namespace: 'openshift-monitoring',
+      },
+      spec: {
+        podSelector: {
+          matchLabels: {
+            'app.kubernetes.io/name': 'prometheus-operator',
+          },
+        },
+        policyTypes: [
+          'Ingress',
+          'Egress',
+        ],
+        ingress: [
+          {
+            ports: [
+              {
+                port: 'https',
+                protocol: 'TCP',
+              },
+            ],
+          },
+        ],
+        egress: [
+          {},
+        ],
+      },
+    },
   }

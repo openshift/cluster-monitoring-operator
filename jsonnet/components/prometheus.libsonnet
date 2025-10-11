@@ -606,4 +606,50 @@ function(params)
         ],
       },
     },
+    // Allow access to prometheus 9091(port name: web)/9092(port name: metrics) ports
+    // and 10901(port name: grpc)/10903(port name: thanos-proxy) ports
+    networkPolicyDownstream: {
+      apiVersion: 'networking.k8s.io/v1',
+      kind: 'NetworkPolicy',
+      metadata: {
+        name: 'prometheus',
+        namespace: cfg.namespace,
+      },
+      spec: {
+        podSelector: {
+          matchLabels: {
+            'app.kubernetes.io/name': 'prometheus',
+          },
+        },
+        policyTypes: [
+          'Ingress',
+          'Egress',
+        ],
+        ingress: [
+          {
+            ports: [
+              {
+                port: 'web',
+                protocol: 'TCP',
+              },
+              {
+                port: 'metrics',
+                protocol: 'TCP',
+              },
+              {
+                port: 'grpc',
+                protocol: 'TCP',
+              },
+              {
+                port: 'thanos-proxy',
+                protocol: 'TCP',
+              },
+            ],
+          },
+        ],
+        egress: [
+          {},
+        ],
+      },
+    },
   }

@@ -119,4 +119,37 @@ function(params) {
   },
 
   trustedCaBundle: generateCertInjection.trustedCNOCaBundleCM(cfg.namespace, 'telemeter-trusted-ca-bundle'),
+  // Allow access to telemeter-client 8443(port name: https) port
+  networkPolicyDownstream: {
+    apiVersion: 'networking.k8s.io/v1',
+    kind: 'NetworkPolicy',
+    metadata: {
+      name: 'telemeter-client',
+      namespace: cfg.namespace,
+    },
+    spec: {
+      podSelector: {
+        matchLabels: {
+          'app.kubernetes.io/name': 'telemeter-client',
+        },
+      },
+      policyTypes: [
+        'Ingress',
+        'Egress',
+      ],
+      ingress: [
+        {
+          ports: [
+            {
+              port: 'https',
+              protocol: 'TCP',
+            },
+          ],
+        },
+      ],
+      egress: [
+        {},
+      ],
+    },
+  },
 }

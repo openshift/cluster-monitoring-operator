@@ -995,6 +995,35 @@ func expectVolumeMountsInContainer(containerName, mountName string) framework.Po
 	}
 }
 
+// assertNetworkPolicyExists ensures that the NetworkPolicies
+// are deployed under openshift-monitoring namespace
+func assertNetworkPolicyExists(t *testing.T) {
+	assertions := []struct {
+		name      string
+		assertion framework.AssertionFunc
+	}{
+		{name: "assert default deny networkpolicy exists", assertion: f.AssertNetworkPolicyExists("default-deny", f.Ns)},
+		{name: "assert cluster-monitoring-operator networkpolicy exists", assertion: f.AssertNetworkPolicyExists("cluster-monitoring-operator", f.Ns)},
+		{name: "assert alertmanager networkpolicy exists", assertion: f.AssertNetworkPolicyExists("alertmanager", f.Ns)},
+		{name: "assert prometheus networkpolicy exists", assertion: f.AssertNetworkPolicyExists("prometheus", f.Ns)},
+		{name: "assert kube-state-metrics networkpolicy exists", assertion: f.AssertNetworkPolicyExists("kube-state-metrics", f.Ns)},
+		{name: "assert metrics-server networkpolicy exists", assertion: f.AssertNetworkPolicyExists("metrics-server", f.Ns)},
+		{name: "assert monitoring-plugin networkpolicy exists", assertion: f.AssertNetworkPolicyExists("monitoring-plugin", f.Ns)},
+		{name: "assert node-exporter networkpolicy exists", assertion: f.AssertNetworkPolicyExists("node-exporter", f.Ns)},
+		{name: "assert openshift-state-metrics networkpolicy exists", assertion: f.AssertNetworkPolicyExists("openshift-state-metrics", f.Ns)},
+		{name: "assert prometheus-operator networkpolicy exists", assertion: f.AssertNetworkPolicyExists("prometheus-operator", f.Ns)},
+		{name: "assert prometheus-operator-admission-webhook networkpolicy exists", assertion: f.AssertNetworkPolicyExists("prometheus-operator-admission-webhook", f.Ns)},
+		{name: "assert telemeter-client networkpolicy exists", assertion: f.AssertNetworkPolicyExists("telemeter-client", f.Ns)},
+		{name: "assert thanos-querier networkpolicy exists", assertion: f.AssertNetworkPolicyExists("thanos-querier", f.Ns)},
+	}
+
+	t.Run("check in-cluster monitoring NetworkPolicies", func(t *testing.T) {
+		for _, assertion := range assertions {
+			t.Run(assertion.name, assertion.assertion)
+		}
+	})
+}
+
 func assertExternalLabelExists(namespace, crName, expectKey, expectValue string) func(t *testing.T) {
 	return func(t *testing.T) {
 		err := framework.Poll(time.Second, time.Minute*5, func() error {

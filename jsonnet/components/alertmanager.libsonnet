@@ -440,4 +440,54 @@ function(params)
         ],
       },
     },
+    // Allow access to alertmanager 9092(port name: tenancy)/9095(port name: web)/9097(port name: metrics)
+    // and 9094(port name: udp-mesh for UDP, port name: tcp-mesh for TCP) ports
+    networkPolicyDownstream: {
+      apiVersion: 'networking.k8s.io/v1',
+      kind: 'NetworkPolicy',
+      metadata: {
+        name: 'alertmanager',
+        namespace: cfg.namespace,
+      },
+      spec: {
+        podSelector: {
+          matchLabels: {
+            'app.kubernetes.io/name': 'alertmanager',
+          },
+        },
+        policyTypes: [
+          'Ingress',
+          'Egress',
+        ],
+        ingress: [
+          {
+            ports: [
+              {
+                port: 'tenancy',
+                protocol: 'TCP',
+              },
+              {
+                port: 'tcp-mesh',
+                protocol: 'TCP',
+              },
+              {
+                port: 'udp-mesh',
+                protocol: 'UDP',
+              },
+              {
+                port: 'web',
+                protocol: 'TCP',
+              },
+              {
+                port: 'metrics',
+                protocol: 'TCP',
+              },
+            ],
+          },
+        ],
+        egress: [
+          {},
+        ],
+      },
+    },
   }

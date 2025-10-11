@@ -223,4 +223,37 @@ function(params)
         },  // template
       },  // spec
     },  // deployment
+    // Allow access to monitoring-plugin 9443(port name: https) port
+    networkPolicyDownstream: {
+      apiVersion: 'networking.k8s.io/v1',
+      kind: 'NetworkPolicy',
+      metadata: {
+        name: 'monitoring-plugin',
+        namespace: cfg.namespace,
+      },
+      spec: {
+        podSelector: {
+          matchLabels: {
+            'app.kubernetes.io/name': 'monitoring-plugin',
+          },
+        },
+        policyTypes: [
+          'Ingress',
+          'Egress',
+        ],
+        ingress: [
+          {
+            ports: [
+              {
+                port: 'https',
+                protocol: 'TCP',
+              },
+            ],
+          },
+        ],
+        egress: [
+          {},
+        ],
+      },
+    },
   }

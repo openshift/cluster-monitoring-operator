@@ -643,5 +643,50 @@ function(params)
 
       },
     },
-
+    // Allow access to thanos-querier 9091(port name: web)/9092(port name: tenancy) ports
+    // and 9093(port name: tenancy-rules)/9094(port name: metrics) ports
+    networkPolicyDownstream: {
+      apiVersion: 'networking.k8s.io/v1',
+      kind: 'NetworkPolicy',
+      metadata: {
+        name: 'thanos-querier',
+        namespace: cfg.namespace,
+      },
+      spec: {
+        podSelector: {
+          matchLabels: {
+            'app.kubernetes.io/name': 'thanos-query',
+          },
+        },
+        policyTypes: [
+          'Ingress',
+          'Egress',
+        ],
+        ingress: [
+          {
+            ports: [
+              {
+                port: 'web',
+                protocol: 'TCP',
+              },
+              {
+                port: 'tenancy',
+                protocol: 'TCP',
+              },
+              {
+                port: 'tenancy-rules',
+                protocol: 'TCP',
+              },
+              {
+                port: 'metrics',
+                protocol: 'TCP',
+              },
+            ],
+          },
+        ],
+        egress: [
+          {},
+        ],
+      },
+    },
   }

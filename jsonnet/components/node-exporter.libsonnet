@@ -249,12 +249,14 @@ function(params)
     },
 
     clusterRole+: {
-      rules+: [{
-        apiGroups: ['security.openshift.io'],
-        resources: ['securitycontextconstraints'],
-        resourceNames: ['node-exporter'],
-        verbs: ['use'],
-      }],
+      rules+: [
+        {
+          apiGroups: ['security.openshift.io'],
+          resources: ['securitycontextconstraints'],
+          resourceNames: ['node-exporter'],
+          verbs: ['use'],
+        },
+      ],
     },
 
     // This configures the kube-rbac-proxies to use the serving cert
@@ -482,6 +484,39 @@ function(params)
       },
       data: {
         [acceleratorsConfigFileName]: std.manifestYamlDoc(acceleratorsConfigData),
+      },
+    },
+    // Allow access to node-exporter 9100(port name: https) port
+    networkPolicyDownstream: {
+      apiVersion: 'networking.k8s.io/v1',
+      kind: 'NetworkPolicy',
+      metadata: {
+        name: 'node-exporter',
+        namespace: cfg.namespace,
+      },
+      spec: {
+        podSelector: {
+          matchLabels: {
+            'app.kubernetes.io/name': 'node-exporter',
+          },
+        },
+        policyTypes: [
+          'Ingress',
+          'Egress',
+        ],
+        ingress: [
+          {
+            ports: [
+              {
+                port: 'https',
+                protocol: 'TCP',
+              },
+            ],
+          },
+        ],
+        egress: [
+          {},
+        ],
       },
     },
   }
