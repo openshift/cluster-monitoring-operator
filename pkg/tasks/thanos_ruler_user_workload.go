@@ -39,11 +39,7 @@ func NewThanosRulerUserWorkloadTask(client *client.Client, factory *manifests.Fa
 }
 
 func (t *ThanosRulerUserWorkloadTask) Run(ctx context.Context) error {
-	optionalMonitoringEnabled, err := t.client.HasOptionalMonitoringCapability(ctx)
-	if err != nil {
-		return fmt.Errorf("checking for optional monitoring capability failed: %w", err)
-	}
-	if *t.config.ClusterMonitoringConfiguration.UserWorkloadEnabled && optionalMonitoringEnabled {
+	if *t.config.ClusterMonitoringConfiguration.UserWorkloadEnabled {
 		return t.create(ctx)
 	}
 

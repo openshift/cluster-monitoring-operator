@@ -1749,7 +1749,7 @@ func (c *Client) HasConsoleCapability(ctx context.Context) (bool, error) {
 }
 
 func (c *Client) HasOptionalMonitoringCapability(ctx context.Context) (bool, error) {
-	return c.HasClusterCapability(ctx, "")
+	return true, nil // TODO: implement when the capability is added in /api
 }
 
 // CreateOrUpdateConsolePlugin function uses retries because API requests related to the ConsolePlugin resource

@@ -798,35 +798,40 @@ func (o *Operator) sync(ctx context.Context, key string) error {
 		// should also be created first because it is referenced by Prometheus.
 		tasks.NewTaskGroup(
 			[]*tasks.TaskSpec{
-				newTaskSpec("MetricsScrapingClientCA", tasks.NewMetricsClientCATask(o.client, factory, config)),
-				newTaskSpec("PrometheusOperator", tasks.NewPrometheusOperatorTask(o.client, factory)),
+				newTaskSpec(tasks.MetricsClientCATaskName, tasks.NewMetricsClientCATask(o.client, factory, config)),
+				newTaskSpec(tasks.PrometheusOperatorTaskName, tasks.NewPrometheusOperatorTask(o.client, factory)),
 			}),
 		tasks.NewTaskGroup(
 			[]*tasks.TaskSpec{
-				newTaskSpec("ClusterMonitoringOperatorDeps", tasks.NewClusterMonitoringOperatorTask(o.client, factory, config)),
-				newTaskSpec("Prometheus", tasks.NewPrometheusTask(o.client, factory, config)),
-				newTaskSpec("Alertmanager", tasks.NewAlertmanagerTask(o.client, factory, config)),
-				newTaskSpec("NodeExporter", tasks.NewNodeExporterTask(o.client, factory)),
-				newTaskSpec("KubeStateMetrics", tasks.NewKubeStateMetricsTask(o.client, factory)),
-				newTaskSpec("OpenshiftStateMetrics", tasks.NewOpenShiftStateMetricsTask(o.client, factory)),
-				newTaskSpec("MetricsServer", tasks.NewMetricsServerTask(ctx, o.namespace, o.client, factory, config)),
-				newTaskSpec("TelemeterClient", tasks.NewTelemeterClientTask(o.client, factory, config)),
-				newTaskSpec("ThanosQuerier", tasks.NewThanosQuerierTask(o.client, factory, config)),
-				newTaskSpec("ControlPlaneComponents", tasks.NewControlPlaneTask(o.client, factory, config)),
-				newTaskSpec("ConsolePluginComponents", tasks.NewMonitoringPluginTask(o.client, factory, config)),
+				newTaskSpec(tasks.ClusterMonitoringOperatorTaskName, tasks.NewClusterMonitoringOperatorTask(o.client, factory, config)),
+				newTaskSpec(tasks.PrometheusTaskName, tasks.NewPrometheusTask(o.client, factory, config)),
+				newTaskSpec(tasks.AlertmanagerTaskName, tasks.NewAlertmanagerTask(o.client, factory, config)),
+				newTaskSpec(tasks.NodeExporterTaskName, tasks.NewNodeExporterTask(o.client, factory)),
+				newTaskSpec(tasks.KubeStateMetricsTaskName, tasks.NewKubeStateMetricsTask(o.client, factory)),
+				newTaskSpec(tasks.OpenshiftStateMetricsTaskName, tasks.NewOpenShiftStateMetricsTask(o.client, factory)),
+				newTaskSpec(tasks.MetricsServerTaskName, tasks.NewMetricsServerTask(ctx, o.namespace, o.client, factory, config)),
+				newTaskSpec(tasks.TelemeterClientTaskName, tasks.NewTelemeterClientTask(o.client, factory, config)),
+				newTaskSpec(tasks.ThanosQuerierTaskName, tasks.NewThanosQuerierTask(o.client, factory, config)),
+				newTaskSpec(tasks.ControlPlaneTaskName, tasks.NewControlPlaneTask(o.client, factory, config)),
+				newTaskSpec(tasks.MonitoringPluginTaskName, tasks.NewMonitoringPluginTask(o.client, factory, config)),
 				// Tried to run the UWM prom-operator in the first group, but some e2e tests started failing.
-				newUWMTaskSpec("PrometheusOperator", tasks.NewPrometheusOperatorUserWorkloadTask(o.client, factory, config)),
-				newUWMTaskSpec("Prometheus", tasks.NewPrometheusUserWorkloadTask(o.client, factory, config)),
-				newUWMTaskSpec("Alertmanager", tasks.NewAlertmanagerUserWorkloadTask(o.client, factory, config)),
-				newUWMTaskSpec("ThanosRuler", tasks.NewThanosRulerUserWorkloadTask(o.client, factory, config)),
+				newUWMTaskSpec(tasks.PrometheusOperatorUWMTaskName, tasks.NewPrometheusOperatorUserWorkloadTask(o.client, factory, config)),
+				newUWMTaskSpec(tasks.PrometheusUWMTaskName, tasks.NewPrometheusUserWorkloadTask(o.client, factory, config)),
+				newUWMTaskSpec(tasks.AlertmanagerUWMTaskName, tasks.NewAlertmanagerUserWorkloadTask(o.client, factory, config)),
+				newUWMTaskSpec(tasks.ThanosRulerUWMTaskName, tasks.NewThanosRulerUserWorkloadTask(o.client, factory, config)),
 			}),
 		// The shared configmap depends on resources being created by the previous tasks hence run it last.
 		tasks.NewTaskGroup(
 			[]*tasks.TaskSpec{
-				newTaskSpec("ConfigurationSharing", tasks.NewConfigSharingTask(o.client, factory, config)),
+				newTaskSpec(tasks.ConfigSharingTaskName, tasks.NewConfigSharingTask(o.client, factory, config)),
 			},
 		),
 	)
+	// Skip optional tasks if OptionalMonitoring capability is disabled.
+	err = tl.MaybeSkipOptionalTasks()
+	if err != nil {
+		return fmt.Errorf("failed to assess optional tasks: %w", err)
+	}
 	klog.Info("Updating ClusterOperator status to InProgress.")
 	err = o.client.StatusReporter().SetRollOutInProgress(ctx)
 	if err != nil {
