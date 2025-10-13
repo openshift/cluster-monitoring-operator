@@ -40,43 +40,84 @@ type Suite struct {
 	Tests []Test `yaml:"tests"`
 }
 
-func (test *Test) String() string {
-	var sb strings.Builder
+func (test *Test) parse() (description string, commands []string) {
+	var descLines []string
 	scanner := bufio.NewScanner(strings.NewReader(test.Script))
 	for scanner.Scan() {
-		sb.WriteString("\n")
 		line := scanner.Text()
-		// Preserve comments and indented multiline lines.
-		if strings.HasPrefix(line, "#") || strings.HasPrefix(line, " ") {
-			sb.WriteString(line)
-			continue
+		if after, ok := strings.CutPrefix(line, "## "); ok {
+			descLines = append(descLines, after)
+		} else if strings.TrimSpace(line) != "" {
+			commands = append(commands, line)
 		}
-		sb.WriteString(fmt.Sprintf("$ %s", line))
 	}
 	if err := scanner.Err(); err != nil {
 		panic(err)
 	}
+	description = strings.Join(descLines, " ")
+	return
+}
+
+func formatCommands(commands []string) string {
+	var sb strings.Builder
+	for _, line := range commands {
+		// Preserve comments and indented multiline lines.
+		if strings.HasPrefix(line, "#") || strings.HasPrefix(line, " ") {
+			sb.WriteString(line)
+		} else {
+			sb.WriteString("$ " + line)
+		}
+		sb.WriteString("\n")
+	}
+	return strings.TrimSuffix(sb.String(), "\n")
+}
+
+type formatter interface {
+	formatTest(description string, commands string) string
+}
+
+type markdownFormatter struct{}
+
+func (f markdownFormatter) formatTest(description, commands string) string {
+	var sb strings.Builder
+	sb.WriteString("```\n")
+	sb.WriteString("# ")
+	sb.WriteString(description)
+	sb.WriteString("\n\n")
+	sb.WriteString(commands)
 	sb.WriteString("\n")
+	sb.WriteString("```\n")
 	return sb.String()
 }
 
-func (suite *Suite) intoCodeBlocks(delimiter string) string {
+type asciidocFormatter struct{}
+
+func (f asciidocFormatter) formatTest(description, commands string) string {
 	var sb strings.Builder
-	for _, t := range suite.Tests {
-		sb.WriteString(delimiter)
-		sb.WriteString(t.String())
-		sb.WriteString(delimiter)
-		sb.WriteString("\n")
-	}
+	sb.WriteString("+\n")
+	sb.WriteString(description)
+	sb.WriteString("\n+\n")
+	sb.WriteString("[source,terminal]\n----\n")
+	sb.WriteString(commands)
+	sb.WriteString("\n----\n")
 	return sb.String()
+}
+
+func (suite *Suite) format(f formatter) string {
+	tests := make([]string, len(suite.Tests))
+	for i, t := range suite.Tests {
+		description, commands := t.parse()
+		tests[i] = f.formatTest(description, formatCommands(commands))
+	}
+	return strings.Join(tests, "\n")
 }
 
 func (suite *Suite) StringMarkdown() string {
-	return suite.intoCodeBlocks("```")
+	return suite.format(markdownFormatter{})
 }
 
 func (suite *Suite) StringAscii() string {
-	return suite.intoCodeBlocks("----")
+	return suite.format(asciidocFormatter{})
 }
 
 func RunScript(t *testing.T, script, wDir, kubeConfigPath string) {
