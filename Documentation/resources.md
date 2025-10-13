@@ -165,3 +165,13 @@ This also exposes the gRPC endpoints on port 10901. This port is for internal us
 
 Expose the `/metrics` and `/validate-webhook` endpoints on port 8443. This port is for internal use, and no other usage is guaranteed.
 
+## ValidatingWebhookConfigurations
+
+### /alertmanagerconfigs.openshift.io
+
+Validating webhook for `AlertmanagerConfig` custom resources. Note that this webhook is a part of optional monitoring, and will only be deployed if the `OptionalMonitoring` capability is enabled.
+
+### /prometheusrules.openshift.io
+
+Validating webhook for `PrometheusRule` custom resources.
+

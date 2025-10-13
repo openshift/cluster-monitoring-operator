@@ -2,6 +2,7 @@ apiVersion: admissionregistration.k8s.io/v1
 kind: ValidatingWebhookConfiguration
 metadata:
   annotations:
+    openshift.io/description: Validating webhook for `PrometheusRule` custom resources.
     service.beta.openshift.io/inject-cabundle: "true"
   labels:
     app.kubernetes.io/component: controller

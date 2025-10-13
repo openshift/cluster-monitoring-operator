@@ -99,7 +99,7 @@ function(params)
         },
         annotations: {
           'service.beta.openshift.io/inject-cabundle': 'true',
-        },
+        } + withDescription('Validating webhook for `PrometheusRule` custom resources.'),
       },
       webhooks: [
         {
@@ -140,7 +140,7 @@ function(params)
         },
         annotations: {
           'service.beta.openshift.io/inject-cabundle': 'true',
-        },
+        } + withDescription('Validating webhook for `AlertmanagerConfig` custom resources. Note that this webhook is a part of optional monitoring, and will only be deployed if the `OptionalMonitoring` capability is enabled.'),
       },
       webhooks: [
         {
