@@ -75,7 +75,6 @@ $ curl -k -H "Authorization: Bearer $TOKEN" "https://$ROUTE/api/v2/alerts?filter
 # Access Alertmanager endpoints from within the cluster.
 $ curl -k -H "Authorization: Bearer $TOKEN" "https://alertmanager-main.openshift-monitoring:9094/api/v2/alerts?filter=alertname=Watchdog"
 ```
-
 ```
 # The following example exercises permissions granted by the `monitoring-alertmanager-edit` role. The binding commands must be run by a user with the necessary privileges.
 
@@ -158,7 +157,6 @@ $ curl -k -X POST -f "https://alertmanager-main.openshift-monitoring:9092/api/v2
     "comment": "Silence test"
   }'
 ```
-
 ```
 # The following example exercises permissions granted by the `monitoring-edit` cluster role. The binding commands must be run by a user with the necessary privileges.
 
@@ -242,7 +240,6 @@ $ curl -k -H "Authorization: Bearer $TOKEN" "https://$ROUTE/api/v1/query?query=u
 # Access Prometheus endpoints from within the cluster.
 $ curl -k -H "Authorization: Bearer $TOKEN" "https://prometheus-k8s.openshift-monitoring:9091/api/v1/query?query=up"
 ```
-
 ```
 # The following example exercises permissions granted by the `cluster-monitoring-metrics-api` role. The binding commands must be run by a user with the necessary privileges.
 
@@ -310,7 +307,6 @@ $ curl -k -H "Authorization: Bearer $TOKEN" "https://$ROUTE/api/v1/query?query=u
 # Access Thanos Querier endpoints from within the cluster.
 $ curl -k -H "Authorization: Bearer $TOKEN" "https://thanos-querier.openshift-monitoring:9091/api/v1/query?query=up"
 ```
-
 ```
 # The following example exercises permissions granted by the `cluster-monitoring-metrics-api` role. The binding commands must be run by a user with the necessary privileges.
 
@@ -370,7 +366,6 @@ $ TOKEN=$(oc create token thanos-client --namespace=test-thanos-querier-tenancy-
 $ curl -k -f -H "Authorization: Bearer $TOKEN" "https://thanos-querier.openshift-monitoring:9093/api/v1/rules?namespace=test-thanos-querier-tenancy-rules-monitoring-rules-edit"
 $ curl -k -f -H "Authorization: Bearer $TOKEN" "https://thanos-querier.openshift-monitoring:9093/api/v1/alerts?namespace=test-thanos-querier-tenancy-rules-monitoring-rules-edit"
 ```
-
 ```
 # The following example exercises permissions granted by the `monitoring-edit` cluster role. The binding commands must be run by a user with the necessary privileges.
 
@@ -389,7 +384,6 @@ $ TOKEN=$(oc create token thanos-client --namespace=test-thanos-querier-tenancy-
 $ curl -k -f -H "Authorization: Bearer $TOKEN" "https://thanos-querier.openshift-monitoring:9093/api/v1/rules?namespace=test-thanos-querier-tenancy-rules-monitoring-edit"
 $ curl -k -f -H "Authorization: Bearer $TOKEN" "https://thanos-querier.openshift-monitoring:9093/api/v1/alerts?namespace=test-thanos-querier-tenancy-rules-monitoring-edit"
 ```
-
 ```
 # The following example exercises permissions granted by the `monitoring-rules-view` cluster role. The binding commands must be run by a user with the necessary privileges.
 

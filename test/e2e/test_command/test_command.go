@@ -86,7 +86,7 @@ func (f markdownFormatter) formatTest(description, commands string) string {
 	sb.WriteString("\n\n")
 	sb.WriteString(commands)
 	sb.WriteString("\n")
-	sb.WriteString("```\n")
+	sb.WriteString("```")
 	return sb.String()
 }
 
@@ -99,7 +99,7 @@ func (f asciidocFormatter) formatTest(description, commands string) string {
 	sb.WriteString("\n+\n")
 	sb.WriteString("[source,terminal]\n----\n")
 	sb.WriteString(commands)
-	sb.WriteString("\n----\n")
+	sb.WriteString("\n----")
 	return sb.String()
 }
 
@@ -109,7 +109,7 @@ func (suite *Suite) format(f formatter) string {
 		description, commands := t.parse()
 		tests[i] = f.formatTest(description, formatCommands(commands))
 	}
-	return strings.Join(tests, "\n")
+	return strings.Join(tests, "\n") + "\n"
 }
 
 func (suite *Suite) StringMarkdown() string {
