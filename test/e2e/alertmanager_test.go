@@ -702,6 +702,7 @@ func TestAlertmanagerDisabling(t *testing.T) {
 		{name: "assert old service monitor does not exists", assertion: f.AssertServiceMonitorDoesNotExist("alertmanager", f.Ns)},
 		{name: "alertmanager public URL is unset", assertion: f.AssertValueInConfigMapEquals(
 			"monitoring-shared-config", "openshift-config-managed", "alertmanagerPublicURL", "")},
+		{name: "assert prometheus alertmanager endpoints empty", assertion: f.AssertPrometheusAlertmanagerEndpointsEmpty("prometheus-k8s", f.Ns)},
 		{name: "assert operator not degraded", assertion: f.AssertOperatorCondition(statusv1.OperatorDegraded, statusv1.ConditionFalse)},
 	}
 	t.Run("disable alertmanager", func(t *testing.T) {
