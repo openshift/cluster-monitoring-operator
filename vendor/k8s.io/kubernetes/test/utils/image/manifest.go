@@ -223,8 +223,8 @@ func initImageConfigs(list RegistryList) (map[ImageID]Config, map[ImageID]Config
 	configs[APIServer] = Config{list.PromoterE2eRegistry, "sample-apiserver", "1.29.2"}
 	configs[AppArmorLoader] = Config{list.PromoterE2eRegistry, "apparmor-loader", "1.4"}
 	configs[BusyBox] = Config{list.PromoterE2eRegistry, "busybox", "1.36.1-1"}
-	configs[DistrolessIptables] = Config{list.BuildImageRegistry, "distroless-iptables", "v0.6.11"}
-	configs[Etcd] = Config{list.GcEtcdRegistry, "etcd", "3.5.16-0"}
+	configs[DistrolessIptables] = Config{list.BuildImageRegistry, "distroless-iptables", "v0.7.8"}
+	configs[Etcd] = Config{list.GcEtcdRegistry, "etcd", "3.5.21-0"}
 	configs[Httpd] = Config{list.PromoterE2eRegistry, "httpd", "2.4.38-4"}
 	configs[HttpdNew] = Config{list.PromoterE2eRegistry, "httpd", "2.4.39-4"}
 	configs[InvalidRegistryImage] = Config{list.InvalidRegistry, "alpine", "3.1"}
@@ -244,7 +244,7 @@ func initImageConfigs(list RegistryList) (map[ImageID]Config, map[ImageID]Config
 	configs[Pause] = Config{list.GcRegistry, "pause", "3.10"}
 	configs[Perl] = Config{list.PromoterE2eRegistry, "perl", "5.26"}
 	configs[Redis] = Config{list.PromoterE2eRegistry, "redis", "5.0.5-3"}
-	configs[RegressionIssue74839] = Config{list.PromoterE2eRegistry, "regression-issue-74839", "1.2"}
+	configs[RegressionIssue74839] = Config{list.PromoterE2eRegistry, "regression-issue-74839", "1.4"}
 	configs[ResourceConsumer] = Config{list.PromoterE2eRegistry, "resource-consumer", "1.13"}
 	configs[VolumeNFSServer] = Config{list.PromoterE2eRegistry, "volume/nfs", "1.4"}
 	configs[VolumeISCSIServer] = Config{list.PromoterE2eRegistry, "volume/iscsi", "2.6"}

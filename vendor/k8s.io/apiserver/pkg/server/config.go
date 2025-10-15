@@ -72,13 +72,15 @@ import (
 	utilflowcontrol "k8s.io/apiserver/pkg/util/flowcontrol"
 	flowcontrolrequest "k8s.io/apiserver/pkg/util/flowcontrol/request"
 	"k8s.io/client-go/informers"
+	"k8s.io/client-go/kubernetes"
+	v1 "k8s.io/client-go/kubernetes/typed/core/v1"
 	restclient "k8s.io/client-go/rest"
+	basecompatibility "k8s.io/component-base/compatibility"
 	"k8s.io/component-base/featuregate"
 	"k8s.io/component-base/logs"
 	"k8s.io/component-base/metrics/features"
 	"k8s.io/component-base/metrics/prometheus/slis"
 	"k8s.io/component-base/tracing"
-	utilversion "k8s.io/component-base/version"
 	"k8s.io/component-base/zpages/flagz"
 	"k8s.io/klog/v2"
 	openapicommon "k8s.io/kube-openapi/pkg/common"
@@ -153,7 +155,17 @@ type Config struct {
 
 	// EffectiveVersion determines which apis and features are available
 	// based on when the api/feature lifecyle.
-	EffectiveVersion utilversion.EffectiveVersion
+	EffectiveVersion basecompatibility.EffectiveVersion
+	// EmulationForwardCompatible is an option to implicitly enable all APIs which are introduced after the emulation version and
+	// have higher priority than APIs of the same group resource enabled at the emulation version.
+	// If true, all APIs that have higher priority than the APIs(beta+) of the same group resource enabled at the emulation version will be installed.
+	// This is needed when a controller implementation migrates to newer API versions, for the binary version, and also uses the newer API versions even when emulation version is set.
+	// Not applicable to alpha APIs.
+	EmulationForwardCompatible bool
+	// RuntimeConfigEmulationForwardCompatible is an option to explicitly enable specific APIs introduced after the emulation version through the runtime-config.
+	// If true, APIs identified by group/version that are enabled in the --runtime-config flag will be installed even if it is introduced after the emulation version. --runtime-config flag values that identify multiple APIs, such as api/all,api/ga,api/beta, are not influenced by this flag and will only enable APIs available at the current emulation version.
+	// If false, error would be thrown if any GroupVersion or GroupVersionResource explicitly enabled in the --runtime-config flag is introduced after the emulation version.
+	RuntimeConfigEmulationForwardCompatible bool
 	// FeatureGate is a way to plumb feature gate through if you have them.
 	FeatureGate featuregate.FeatureGate
 	// AuditBackend is where audit events are sent to.
@@ -278,6 +290,9 @@ type Config struct {
 	// rejected with a 429 status code and a 'Retry-After' response.
 	ShutdownSendRetryAfter bool
 
+	// EventSink receives events about the life cycle of the API server, e.g. readiness, serving, signals and termination.
+	EventSink EventSink
+
 	//===========================================================================
 	// values below here are targets for removal
 	//===========================================================================
@@ -316,6 +331,18 @@ type Config struct {
 	// This grace period is orthogonal to other grace periods, and
 	// it is not overridden by any other grace period.
 	ShutdownWatchTerminationGracePeriod time.Duration
+
+	// SendRetryAfterWhileNotReadyOnce, if enabled, the apiserver will
+	// reject all incoming requests with a 503 status code and a
+	// 'Retry-After' response header until the apiserver has fully
+	// initialized, except for requests from a designated debugger group.
+	// This option ensures that the system stays consistent even when
+	// requests are received before the server has been initialized.
+	// In particular, it prevents child deletion in case of GC or/and
+	// orphaned content in case of the namespaces controller.
+	// NOTE: this option is applicable to Microshift only,
+	//  this should never be enabled for OCP.
+	SendRetryAfterWhileNotReadyOnce bool
 }
 
 type RecommendedConfig struct {
@@ -559,13 +586,27 @@ type CompletedConfig struct {
 func (c *Config) AddHealthChecks(healthChecks ...healthz.HealthChecker) {
 	c.HealthzChecks = append(c.HealthzChecks, healthChecks...)
 	c.LivezChecks = append(c.LivezChecks, healthChecks...)
-	c.ReadyzChecks = append(c.ReadyzChecks, healthChecks...)
+	c.AddReadyzChecks(healthChecks...)
 }
 
 // AddReadyzChecks adds a health check to our config to be exposed by the readyz endpoint
 // of our configured apiserver.
 func (c *Config) AddReadyzChecks(healthChecks ...healthz.HealthChecker) {
-	c.ReadyzChecks = append(c.ReadyzChecks, healthChecks...)
+	// Info(ingvagabund): Explicitly exclude etcd and etcd-readiness checks (OCPBUGS-48177)
+	// and have etcd operator take responsibility for properly reporting etcd readiness.
+	// Justification: kube-apiserver instances get removed from a load balancer when etcd starts
+	// to report not ready (as will KA's /readyz). Client connections can withstand etcd unreadiness
+	// longer than the readiness timeout is. Thus, it is not necessary to drop connections
+	// in case etcd resumes its readiness before a client connection times out naturally.
+	// This is a downstream patch only as OpenShift's way of using etcd is unique.
+	readyzChecks := []healthz.HealthChecker{}
+	for _, check := range healthChecks {
+		if check.Name() == "etcd" || check.Name() == "etcd-readiness" {
+			continue
+		}
+		readyzChecks = append(readyzChecks, check)
+	}
+	c.ReadyzChecks = append(c.ReadyzChecks, readyzChecks...)
 }
 
 // AddPostStartHook allows you to add a PostStartHook that will later be added to the server itself in a New call.
@@ -686,6 +727,11 @@ func (c *Config) ShutdownInitiatedNotify() <-chan struct{} {
 	return c.lifecycleSignals.ShutdownInitiated.Signaled()
 }
 
+// HasBeenReadySignal exposes a server's lifecycle signal which is signaled when the readyz endpoint succeeds for the first time.
+func (c *Config) HasBeenReadySignal() <-chan struct{} {
+	return c.lifecycleSignals.HasBeenReady.Signaled()
+}
+
 // Complete fills in any fields not set that are required to have valid data and can be derived
 // from other fields. If you're going to `ApplyOptions`, do that first. It's mutating the receiver.
 func (c *Config) Complete(informers informers.SharedInformerFactory) CompletedConfig {
@@ -712,6 +758,10 @@ func (c *Config) Complete(informers informers.SharedInformerFactory) CompletedCo
 
 	if c.DiscoveryAddresses == nil {
 		c.DiscoveryAddresses = discovery.DefaultAddresses{DefaultAddress: c.ExternalAddress}
+	}
+
+	if c.EventSink == nil {
+		c.EventSink = nullEventSink{}
 	}
 
 	AuthorizeClientBearerToken(c.LoopbackClientConfig, &c.Authentication, &c.Authorization)
@@ -741,6 +791,22 @@ func (c *Config) Complete(informers informers.SharedInformerFactory) CompletedCo
 // Complete fills in any fields not set that are required to have valid data and can be derived
 // from other fields. If you're going to `ApplyOptions`, do that first. It's mutating the receiver.
 func (c *RecommendedConfig) Complete() CompletedConfig {
+	if c.ClientConfig != nil {
+		ref, err := eventReference()
+		if err != nil {
+			klog.Warningf("Failed to derive event reference, won't create events: %v", err)
+			c.EventSink = nullEventSink{}
+		} else {
+			ns := ref.Namespace
+			if len(ns) == 0 {
+				ns = "default"
+			}
+			c.EventSink = clientEventSink{
+				&v1.EventSinkImpl{Interface: kubernetes.NewForConfigOrDie(c.ClientConfig).CoreV1().Events(ns)},
+			}
+		}
+	}
+
 	return c.Config.Complete(c.SharedInformerFactory)
 }
 
@@ -839,20 +905,32 @@ func (c completedConfig) New(name string, delegationTarget DelegationTarget) (*G
 		StorageReadinessHook:  NewStorageReadinessHook(c.StorageInitializationTimeout),
 		StorageVersionManager: c.StorageVersionManager,
 
-		EffectiveVersion: c.EffectiveVersion,
-		FeatureGate:      c.FeatureGate,
+		EffectiveVersion:                        c.EffectiveVersion,
+		EmulationForwardCompatible:              c.EmulationForwardCompatible,
+		RuntimeConfigEmulationForwardCompatible: c.RuntimeConfigEmulationForwardCompatible,
+		FeatureGate:                             c.FeatureGate,
 
 		muxAndDiscoveryCompleteSignals: map[string]<-chan struct{}{},
+
+		OpenShiftGenericAPIServerPatch: OpenShiftGenericAPIServerPatch{
+			eventSink: c.EventSink,
+		},
 	}
 
-	if c.FeatureGate.Enabled(genericfeatures.AggregatedDiscoveryEndpoint) {
-		manager := c.AggregatedDiscoveryGroupManager
-		if manager == nil {
-			manager = discoveryendpoint.NewResourceManager("apis")
-		}
-		s.AggregatedDiscoveryGroupManager = manager
-		s.AggregatedLegacyDiscoveryGroupManager = discoveryendpoint.NewResourceManager("api")
+	ref, err := eventReference()
+	if err != nil {
+		klog.Warningf("Failed to derive event reference, won't create events: %v", err)
+		s.OpenShiftGenericAPIServerPatch.eventSink = nullEventSink{}
 	}
+	s.RegisterDestroyFunc(c.EventSink.Destroy)
+	s.eventRef = ref
+
+	manager := c.AggregatedDiscoveryGroupManager
+	if manager == nil {
+		manager = discoveryendpoint.NewResourceManager("apis")
+	}
+	s.AggregatedDiscoveryGroupManager = manager
+	s.AggregatedLegacyDiscoveryGroupManager = discoveryendpoint.NewResourceManager("api")
 	for {
 		if c.JSONPatchMaxCopyBytes <= 0 {
 			break
@@ -1019,6 +1097,10 @@ func DefaultBuildHandlerChain(apiHandler http.Handler, c *Config) http.Handler {
 		handler = genericfilters.WithMaxInFlightLimit(handler, c.MaxRequestsInFlight, c.MaxMutatingRequestsInFlight, c.LongRunningFunc)
 	}
 
+	if c.SendRetryAfterWhileNotReadyOnce {
+		handler = genericfilters.WithNotReady(handler, c.lifecycleSignals.HasBeenReady.Signaled())
+	}
+
 	handler = filterlatency.TrackCompleted(handler)
 	handler = genericapifilters.WithImpersonation(handler, c.Authorization.Authorizer, c.Serializer)
 	handler = filterlatency.TrackStarted(handler, c.TracerProvider, "impersonation")
@@ -1027,9 +1109,16 @@ func DefaultBuildHandlerChain(apiHandler http.Handler, c *Config) http.Handler {
 	handler = genericapifilters.WithAudit(handler, c.AuditBackend, c.AuditPolicyRuleEvaluator, c.LongRunningFunc)
 	handler = filterlatency.TrackStarted(handler, c.TracerProvider, "audit")
 
+	handler = genericfilters.WithStartupEarlyAnnotation(handler, c.lifecycleSignals.HasBeenReady)
+
 	failedHandler := genericapifilters.Unauthorized(c.Serializer)
 	failedHandler = genericapifilters.WithFailedAuthenticationAudit(failedHandler, c.AuditBackend, c.AuditPolicyRuleEvaluator)
 
+	// WithTracing comes after authentication so we can allow authenticated
+	// clients to influence sampling.
+	if c.FeatureGate.Enabled(genericfeatures.APIServerTracing) {
+		handler = genericapifilters.WithTracing(handler, c.TracerProvider)
+	}
 	failedHandler = filterlatency.TrackCompleted(failedHandler)
 	handler = filterlatency.TrackCompleted(handler)
 	handler = genericapifilters.WithAuthentication(handler, c.Authentication.Authenticator, failedHandler, c.Authentication.APIAudiences, c.Authentication.RequestHeaderConfig)
@@ -1048,6 +1137,8 @@ func DefaultBuildHandlerChain(apiHandler http.Handler, c *Config) http.Handler {
 	handler = genericapifilters.WithRequestDeadline(handler, c.AuditBackend, c.AuditPolicyRuleEvaluator,
 		c.LongRunningFunc, c.Serializer, c.RequestTimeout)
 	handler = genericfilters.WithWaitGroup(handler, c.LongRunningFunc, c.NonLongRunningRequestWaitGroup)
+	handler = WithNonReadyRequestLogging(handler, c.lifecycleSignals.HasBeenReady)
+	handler = WithLateConnectionFilter(handler)
 	if c.ShutdownWatchTerminationGracePeriod > 0 {
 		handler = genericfilters.WithWatchTerminationDuringShutdown(handler, c.lifecycleSignals, c.WatchRequestWaitGroup)
 	}
@@ -1059,10 +1150,9 @@ func DefaultBuildHandlerChain(apiHandler http.Handler, c *Config) http.Handler {
 	if c.ShutdownSendRetryAfter {
 		handler = genericfilters.WithRetryAfter(handler, c.lifecycleSignals.NotAcceptingNewRequest.Signaled())
 	}
+	handler = genericfilters.WithOptInRetryAfter(handler, c.newServerFullyInitializedFunc())
+	handler = genericfilters.WithShutdownResponseHeader(handler, c.lifecycleSignals.ShutdownInitiated, c.ShutdownDelayDuration, c.APIServerID)
 	handler = genericfilters.WithHTTPLogging(handler)
-	if c.FeatureGate.Enabled(genericfeatures.APIServerTracing) {
-		handler = genericapifilters.WithTracing(handler, c.TracerProvider)
-	}
 	handler = genericapifilters.WithLatencyTrackers(handler)
 	// WithRoutine will execute future handlers in a separate goroutine and serving
 	// handler in current goroutine to minimize the stack memory usage. It must be
@@ -1108,15 +1198,11 @@ func installAPI(name string, s *GenericAPIServer, c *Config) {
 		}
 	}
 
-	routes.Version{Version: c.EffectiveVersion.BinaryVersion().Info()}.Install(s.Handler.GoRestfulContainer)
+	routes.Version{Version: c.EffectiveVersion.Info()}.Install(s.Handler.GoRestfulContainer)
 
 	if c.EnableDiscovery {
-		if c.FeatureGate.Enabled(genericfeatures.AggregatedDiscoveryEndpoint) {
-			wrapped := discoveryendpoint.WrapAggregatedDiscoveryToHandler(s.DiscoveryGroupManager, s.AggregatedDiscoveryGroupManager)
-			s.Handler.GoRestfulContainer.Add(wrapped.GenerateWebService("/apis", metav1.APIGroupList{}))
-		} else {
-			s.Handler.GoRestfulContainer.Add(s.DiscoveryGroupManager.WebService())
-		}
+		wrapped := discoveryendpoint.WrapAggregatedDiscoveryToHandler(s.DiscoveryGroupManager, s.AggregatedDiscoveryGroupManager)
+		s.Handler.GoRestfulContainer.Add(wrapped.GenerateWebService("/apis", metav1.APIGroupList{}))
 	}
 	if c.FlowControl != nil {
 		c.FlowControl.Install(s.Handler.NonGoRestfulMux)
