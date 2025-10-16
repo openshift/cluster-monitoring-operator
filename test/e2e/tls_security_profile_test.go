@@ -70,6 +70,9 @@ func TestDefaultTLSSecurityProfileConfiguration(t *testing.T) {
 	assertCorrectTLSConfiguration(t, "metrics-server", "deployment",
 		manifests.MetricsServerTLSCipherSuitesFlag,
 		manifests.MetricsServerTLSMinTLSVersionFlag, configv1.TLSProfiles[configv1.TLSProfileIntermediateType].Ciphers, "VersionTLS12")
+	assertCorrectTLSConfiguration(t, "monitoring-plugin", "deployment",
+		manifests.MonitoringPluginTLSCipherSuitesFlag,
+		manifests.MonitoringPluginTLSMinTLSVersionFlag, configv1.TLSProfiles[configv1.TLSProfileIntermediateType].Ciphers, "VersionTLS12")
 }
 
 func assertCorrectTLSConfiguration(t *testing.T, componentName, objectType, tlsCipherSuiteFlag, tlsMinTLSVersionFlag string, expectedCipherSuite []string, expectedTLSVersion string) {

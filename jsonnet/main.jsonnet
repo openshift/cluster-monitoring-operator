@@ -325,6 +325,7 @@ local inCluster =
         namespace: $.values.common.namespace,
         commonLabels+: $.values.common.commonLabels,
         image: $.values.common.images.monitoringPlugin,
+        tlsCipherSuites: $.values.common.tlsCipherSuites,
       },
       controlPlane: {
         namespace: $.values.common.namespace,
