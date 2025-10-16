@@ -130,9 +130,8 @@ image: .hack-operator-image
 
 .PHONY: vendor
 vendor:
-	go mod tidy
-	go mod vendor
-	go mod verify
+	go mod tidy && go mod vendor && go mod verify
+	cd test/monitoring && go mod tidy && go mod vendor && go mod verify
 
 .PHONY: update-go-deps
 update-go-deps:
@@ -284,7 +283,7 @@ test-e2e:
 .PHONY: test-ginkgo
 test-ginkgo: KUBECONFIG?=$(HOME)/.kube/config
 test-ginkgo:
-	KUBECONFIG=$(KUBECONFIG) go test -v -timeout=150m ./test/monitoring/
+	KUBECONFIG=$(KUBECONFIG) go test -C test/monitoring -v -timeout=150m ./
 
 $(BIN_DIR):
 	mkdir -p $(BIN_DIR)
