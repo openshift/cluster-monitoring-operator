@@ -1,5 +1,9 @@
 # Note: This CHANGELOG is only for the monitoring team to track all monitoring related changes. Please see OpenShift release notes for official changes.
 
+## 4.XX
+
+- [#2694](https://github.com/openshift/cluster-monitoring-operator/pull/2694) Add "telemetry" profile to the set of supported collection profiles. Switching to this profile will disable collection of all metrics except those required for telemetry purposes.
+
 ## 4.20
 
 - [#2595](https://github.com/openshift/cluster-monitoring-operator/pull/2595) Multi-tenant support for KSM's CRS feature-set downstream.

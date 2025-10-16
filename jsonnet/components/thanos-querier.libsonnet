@@ -3,6 +3,7 @@ local querier = import 'github.com/thanos-io/kube-thanos/jsonnet/kube-thanos/kub
 local withDescription = (import '../utils/add-annotations.libsonnet').withDescription;
 local requiredRoles = (import '../utils/add-annotations.libsonnet').requiredRoles;
 local requiredClusterRoles = (import '../utils/add-annotations.libsonnet').requiredClusterRoles;
+local generateServiceMonitor = import '../utils/generate-service-monitors.libsonnet';
 
 function(params)
   local cfg = params;
@@ -253,6 +254,15 @@ function(params)
           ],
         },
       },
+
+
+    telemetryServiceMonitor: generateServiceMonitor.telemetry(
+      self.serviceMonitor, std.join('|', [
+        'scrape_samples_post_metric_relabeling',
+        'scrape_series_added',
+        'up',
+      ])
+    ),
 
     deployment+: {
       metadata+: {
