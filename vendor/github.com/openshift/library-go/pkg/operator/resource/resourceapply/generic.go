@@ -215,6 +215,18 @@ func ApplyDirectly(ctx context.Context, clients *ClientHolder, recorder events.R
 			} else {
 				result.Result, result.Changed, result.Error = ApplyValidatingAdmissionPolicyBindingV1beta1(ctx, clients.kubeClient.AdmissionregistrationV1beta1(), recorder, t, cache)
 			}
+		case *admissionregistrationv1.ValidatingAdmissionPolicy:
+			if clients.kubeClient == nil {
+				result.Error = fmt.Errorf("missing kubeClient")
+			} else {
+				result.Result, result.Changed, result.Error = ApplyValidatingAdmissionPolicyV1(ctx, clients.kubeClient.AdmissionregistrationV1(), recorder, t, cache)
+			}
+		case *admissionregistrationv1.ValidatingAdmissionPolicyBinding:
+			if clients.kubeClient == nil {
+				result.Error = fmt.Errorf("missing kubeClient")
+			} else {
+				result.Result, result.Changed, result.Error = ApplyValidatingAdmissionPolicyBindingV1(ctx, clients.kubeClient.AdmissionregistrationV1(), recorder, t, cache)
+			}
 		case *storagev1.CSIDriver:
 			if clients.kubeClient == nil {
 				result.Error = fmt.Errorf("missing kubeClient")

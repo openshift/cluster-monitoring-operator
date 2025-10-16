@@ -28,9 +28,9 @@ import (
 	"k8s.io/apiserver/pkg/authorization/authorizer"
 	"k8s.io/apiserver/pkg/authorization/union"
 	genericapiserver "k8s.io/apiserver/pkg/server"
+	"k8s.io/apiserver/pkg/util/compatibility"
 	"k8s.io/client-go/kubernetes"
 	"k8s.io/client-go/rest"
-	"k8s.io/component-base/version"
 	"k8s.io/klog/v2"
 
 	"github.com/openshift/cluster-monitoring-operator/pkg/configvalidate"
@@ -109,7 +109,7 @@ func (s *Server) Run(ctx context.Context, collectionProfilesEnabled bool) error 
 		serverConfig.Authorization.Authorizer,
 	)
 
-	serverConfig.EffectiveVersion = version.DefaultBuildEffectiveVersion()
+	serverConfig.EffectiveVersion = compatibility.DefaultBuildEffectiveVersion()
 
 	server, err = serverConfig.Complete(nil).New(s.name, genericapiserver.NewEmptyDelegate())
 	if err != nil {

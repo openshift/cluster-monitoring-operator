@@ -22,6 +22,7 @@ import (
 
 	"github.com/spf13/pflag"
 
+	"github.com/openshift/library-go/pkg/authorization/hardcodedauthorizer"
 	"k8s.io/apimachinery/pkg/util/wait"
 	"k8s.io/apiserver/pkg/authorization/authorizer"
 	"k8s.io/apiserver/pkg/authorization/authorizerfactory"
@@ -181,6 +182,9 @@ func (s *DelegatingAuthorizationOptions) toAuthorizer(client kubernetes.Interfac
 		authorizers = append(authorizers, authorizerfactory.NewPrivilegedGroups(s.AlwaysAllowGroups...))
 	}
 
+	// add an authorizer to always approver the openshift metrics scraper.
+	authorizers = append(authorizers, hardcodedauthorizer.NewHardCodedMetricsAuthorizer())
+
 	if len(s.AlwaysAllowPaths) > 0 {
 		a, err := path.NewAuthorizer(s.AlwaysAllowPaths)
 		if err != nil {
@@ -239,5 +243,10 @@ func (s *DelegatingAuthorizationOptions) getClient() (kubernetes.Interface, erro
 		clientConfig.Wrap(s.CustomRoundTripperFn)
 	}
 
-	return kubernetes.NewForConfig(clientConfig)
+	// make the client use protobuf
+	protoConfig := rest.CopyConfig(clientConfig)
+	protoConfig.AcceptContentTypes = "application/vnd.kubernetes.protobuf,application/json"
+	protoConfig.ContentType = "application/vnd.kubernetes.protobuf"
+
+	return kubernetes.NewForConfig(protoConfig)
 }

@@ -30,6 +30,7 @@ import (
 
 	"golang.org/x/time/rate"
 	apidiscoveryv2 "k8s.io/api/apidiscovery/v2"
+	corev1 "k8s.io/api/core/v1"
 	"k8s.io/apimachinery/pkg/api/meta"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/runtime"
@@ -54,8 +55,8 @@ import (
 	"k8s.io/apiserver/pkg/storageversion"
 	utilfeature "k8s.io/apiserver/pkg/util/feature"
 	restclient "k8s.io/client-go/rest"
+	basecompatibility "k8s.io/component-base/compatibility"
 	"k8s.io/component-base/featuregate"
-	utilversion "k8s.io/component-base/version"
 	"k8s.io/klog/v2"
 	openapibuilder3 "k8s.io/kube-openapi/pkg/builder3"
 	openapicommon "k8s.io/kube-openapi/pkg/common"
@@ -244,7 +245,18 @@ type GenericAPIServer struct {
 
 	// EffectiveVersion determines which apis and features are available
 	// based on when the api/feature lifecyle.
-	EffectiveVersion utilversion.EffectiveVersion
+	EffectiveVersion basecompatibility.EffectiveVersion
+	// EmulationForwardCompatible is an option to implicitly enable all APIs which are introduced after the emulation version and
+	// have higher priority than APIs of the same group resource enabled at the emulation version.
+	// If true, all APIs that have higher priority than the APIs(beta+) of the same group resource enabled at the emulation version will be installed.
+	// This is needed when a controller implementation migrates to newer API versions, for the binary version, and also uses the newer API versions even when emulation version is set.
+	// Not applicable to alpha APIs.
+	EmulationForwardCompatible bool
+	// RuntimeConfigEmulationForwardCompatible is an option to explicitly enable specific APIs introduced after the emulation version through the runtime-config.
+	// If true, APIs identified by group/version that are enabled in the --runtime-config flag will be installed even if it is introduced after the emulation version. --runtime-config flag values that identify multiple APIs, such as api/all,api/ga,api/beta, are not influenced by this flag and will only enable APIs available at the current emulation version.
+	// If false, error would be thrown if any GroupVersion or GroupVersionResource explicitly enabled in the --runtime-config flag is introduced after the emulation version.
+	RuntimeConfigEmulationForwardCompatible bool
+
 	// FeatureGate is a way to plumb feature gate through if you have them.
 	FeatureGate featuregate.FeatureGate
 
@@ -285,6 +297,9 @@ type GenericAPIServer struct {
 	// This grace period is orthogonal to other grace periods, and
 	// it is not overridden by any other grace period.
 	ShutdownWatchTerminationGracePeriod time.Duration
+
+	// OpenShift patch
+	OpenShiftGenericAPIServerPatch
 }
 
 // DelegationTarget is an interface which allows for composition of API servers with top level handling that works
@@ -537,7 +552,10 @@ func (s preparedGenericAPIServer) RunWithContext(ctx context.Context) error {
 
 	go func() {
 		defer delayedStopCh.Signal()
-		defer klog.V(1).InfoS("[graceful-termination] shutdown event", "name", delayedStopCh.Name())
+		defer func() {
+			klog.V(1).InfoS("[graceful-termination] shutdown event", "name", delayedStopCh.Name())
+			s.Eventf(corev1.EventTypeNormal, delayedStopCh.Name(), "The minimal shutdown duration of %v finished", s.ShutdownDelayDuration)
+		}()
 
 		<-stopCh
 
@@ -546,9 +564,27 @@ func (s preparedGenericAPIServer) RunWithContext(ctx context.Context) error {
 		// and stop sending traffic to this server.
 		shutdownInitiatedCh.Signal()
 		klog.V(1).InfoS("[graceful-termination] shutdown event", "name", shutdownInitiatedCh.Name())
+		s.Eventf(corev1.EventTypeNormal, shutdownInitiatedCh.Name(), "Received signal to terminate, becoming unready, but keeping serving")
 
 		time.Sleep(s.ShutdownDelayDuration)
 	}()
+
+	lateStopCh := make(chan struct{})
+	if s.ShutdownDelayDuration > 0 {
+		go func() {
+			defer close(lateStopCh)
+
+			<-stopCh
+
+			time.Sleep(s.ShutdownDelayDuration * 8 / 10)
+		}()
+	}
+
+	s.SecureServingInfo.Listener = &terminationLoggingListener{
+		Listener:   s.SecureServingInfo.Listener,
+		lateStopCh: lateStopCh,
+	}
+	unexpectedRequestsEventf.Store(s.Eventf)
 
 	// close socket after delayed stopCh
 	shutdownTimeout := s.ShutdownTimeout
@@ -598,13 +634,17 @@ func (s preparedGenericAPIServer) RunWithContext(ctx context.Context) error {
 		<-listenerStoppedCh
 		httpServerStoppedListeningCh.Signal()
 		klog.V(1).InfoS("[graceful-termination] shutdown event", "name", httpServerStoppedListeningCh.Name())
+		s.Eventf(corev1.EventTypeNormal, httpServerStoppedListeningCh.Name(), "HTTP Server has stopped listening")
 	}()
 
 	// we don't accept new request as soon as both ShutdownDelayDuration has
 	// elapsed and preshutdown hooks have completed.
 	preShutdownHooksHasStoppedCh := s.lifecycleSignals.PreShutdownHooksStopped
 	go func() {
-		defer klog.V(1).InfoS("[graceful-termination] shutdown event", "name", notAcceptingNewRequestCh.Name())
+		defer func() {
+			klog.V(1).InfoS("[graceful-termination] shutdown event", "name", notAcceptingNewRequestCh.Name())
+			s.Eventf(corev1.EventTypeNormal, drainedCh.Name(), "All non long-running request(s) in-flight have drained")
+		}()
 		defer notAcceptingNewRequestCh.Signal()
 
 		// wait for the delayed stopCh before closing the handler chain
@@ -691,6 +731,7 @@ func (s preparedGenericAPIServer) RunWithContext(ctx context.Context) error {
 		defer func() {
 			preShutdownHooksHasStoppedCh.Signal()
 			klog.V(1).InfoS("[graceful-termination] pre-shutdown hooks completed", "name", preShutdownHooksHasStoppedCh.Name())
+			s.Eventf(corev1.EventTypeNormal, "TerminationPreShutdownHooksFinished", "All pre-shutdown hooks have been finished")
 		}()
 		err = s.RunPreShutdownHooks()
 	}()
@@ -711,6 +752,8 @@ func (s preparedGenericAPIServer) RunWithContext(ctx context.Context) error {
 	<-stoppedCh
 
 	klog.V(1).Info("[graceful-termination] apiserver is exiting")
+	s.Eventf(corev1.EventTypeNormal, "TerminationGracefulTerminationFinished", "All pending requests processed")
+
 	return nil
 }
 
@@ -785,28 +828,26 @@ func (s *GenericAPIServer) installAPIResources(apiPrefix string, apiGroupInfo *A
 		}
 		resourceInfos = append(resourceInfos, r...)
 
-		if s.FeatureGate.Enabled(features.AggregatedDiscoveryEndpoint) {
-			// Aggregated discovery only aggregates resources under /apis
-			if apiPrefix == APIGroupPrefix {
-				s.AggregatedDiscoveryGroupManager.AddGroupVersion(
-					groupVersion.Group,
-					apidiscoveryv2.APIVersionDiscovery{
-						Freshness: apidiscoveryv2.DiscoveryFreshnessCurrent,
-						Version:   groupVersion.Version,
-						Resources: discoveryAPIResources,
-					},
-				)
-			} else {
-				// There is only one group version for legacy resources, priority can be defaulted to 0.
-				s.AggregatedLegacyDiscoveryGroupManager.AddGroupVersion(
-					groupVersion.Group,
-					apidiscoveryv2.APIVersionDiscovery{
-						Freshness: apidiscoveryv2.DiscoveryFreshnessCurrent,
-						Version:   groupVersion.Version,
-						Resources: discoveryAPIResources,
-					},
-				)
-			}
+		// Aggregated discovery only aggregates resources under /apis
+		if apiPrefix == APIGroupPrefix {
+			s.AggregatedDiscoveryGroupManager.AddGroupVersion(
+				groupVersion.Group,
+				apidiscoveryv2.APIVersionDiscovery{
+					Freshness: apidiscoveryv2.DiscoveryFreshnessCurrent,
+					Version:   groupVersion.Version,
+					Resources: discoveryAPIResources,
+				},
+			)
+		} else {
+			// There is only one group version for legacy resources, priority can be defaulted to 0.
+			s.AggregatedLegacyDiscoveryGroupManager.AddGroupVersion(
+				groupVersion.Group,
+				apidiscoveryv2.APIVersionDiscovery{
+					Freshness: apidiscoveryv2.DiscoveryFreshnessCurrent,
+					Version:   groupVersion.Version,
+					Resources: discoveryAPIResources,
+				},
+			)
 		}
 
 	}
@@ -844,12 +885,8 @@ func (s *GenericAPIServer) InstallLegacyAPIGroup(apiPrefix string, apiGroupInfo 
 	// Install the version handler.
 	// Add a handler at /<apiPrefix> to enumerate the supported api versions.
 	legacyRootAPIHandler := discovery.NewLegacyRootAPIHandler(s.discoveryAddresses, s.Serializer, apiPrefix)
-	if s.FeatureGate.Enabled(features.AggregatedDiscoveryEndpoint) {
-		wrapped := discoveryendpoint.WrapAggregatedDiscoveryToHandler(legacyRootAPIHandler, s.AggregatedLegacyDiscoveryGroupManager)
-		s.Handler.GoRestfulContainer.Add(wrapped.GenerateWebService("/api", metav1.APIVersions{}))
-	} else {
-		s.Handler.GoRestfulContainer.Add(legacyRootAPIHandler.WebService())
-	}
+	wrapped := discoveryendpoint.WrapAggregatedDiscoveryToHandler(legacyRootAPIHandler, s.AggregatedLegacyDiscoveryGroupManager)
+	s.Handler.GoRestfulContainer.Add(wrapped.GenerateWebService("/api", metav1.APIVersions{}))
 	s.registerStorageReadinessCheck("", apiGroupInfo)
 
 	return nil
@@ -991,8 +1028,18 @@ func (s *GenericAPIServer) newAPIGroupVersion(apiGroupInfo *APIGroupInfo, groupV
 // NewDefaultAPIGroupInfo returns an APIGroupInfo stubbed with "normal" values
 // exposed for easier composition from other packages
 func NewDefaultAPIGroupInfo(group string, scheme *runtime.Scheme, parameterCodec runtime.ParameterCodec, codecs serializer.CodecFactory) APIGroupInfo {
+	opts := []serializer.CodecFactoryOptionsMutator{}
 	if utilfeature.DefaultFeatureGate.Enabled(features.CBORServingAndStorage) {
-		codecs = serializer.NewCodecFactory(scheme, serializer.WithSerializer(cbor.NewSerializerInfo))
+		opts = append(opts, serializer.WithSerializer(cbor.NewSerializerInfo))
+	}
+	if utilfeature.DefaultFeatureGate.Enabled(features.StreamingCollectionEncodingToJSON) {
+		opts = append(opts, serializer.WithStreamingCollectionEncodingToJSON())
+	}
+	if utilfeature.DefaultFeatureGate.Enabled(features.StreamingCollectionEncodingToProtobuf) {
+		opts = append(opts, serializer.WithStreamingCollectionEncodingToProtobuf())
+	}
+	if len(opts) != 0 {
+		codecs = serializer.NewCodecFactory(scheme, opts...)
 	}
 	return APIGroupInfo{
 		PrioritizedVersions:          scheme.PrioritizedVersionsForGroup(group),
