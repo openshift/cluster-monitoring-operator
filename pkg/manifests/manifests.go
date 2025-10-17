@@ -1456,7 +1456,8 @@ func (f *Factory) PrometheusK8s(grpcTLS *v1.Secret, telemetrySecret *v1.Secret) 
 	for i, container := range p.Spec.Containers {
 		switch container.Name {
 		case "prometheus":
-			// Inject the proxy env vars into the Prometheus container for configuring external Alertmanagers
+			// Inject the proxy env vars into the Prometheus container
+			// Mainly intended for all configs that support proxyConfig.proxyFromEnvironment
 			f.injectProxyVariables(&p.Spec.Containers[i])
 		case "kube-rbac-proxy", "kube-rbac-proxy-web", "kube-rbac-proxy-thanos":
 			p.Spec.Containers[i].Image = f.config.Images.KubeRbacProxy
@@ -1801,7 +1802,8 @@ func (f *Factory) PrometheusUserWorkload(grpcTLS *v1.Secret) (*monv1.Prometheus,
 				PeriodSeconds:    15,
 				FailureThreshold: 240,
 			}
-			// Inject the proxy env vars into the Prometheus container for configuring external Alertmanagers
+			// Inject the proxy env vars into the Prometheus container
+			// Mainly intended for all configs that support proxyConfig.proxyFromEnvironment
 			f.injectProxyVariables(&p.Spec.Containers[i])
 		case "kube-rbac-proxy-metrics", "kube-rbac-proxy-federate", "kube-rbac-proxy-thanos":
 			p.Spec.Containers[i].Image = f.config.Images.KubeRbacProxy

@@ -1235,6 +1235,7 @@ func TestPrometheusK8sRemoteWriteOauth2(t *testing.T) {
 			"param2": "value2",
 		},
 	}
+	expectedOauth2Config.ProxyFromEnvironment = ptr.To(true)
 	c, err := NewConfigFromString(`prometheusK8s:
   remoteWrite:
     - url: https://test.remotewrite.com/api/write
@@ -1254,6 +1255,7 @@ func TestPrometheusK8sRemoteWriteOauth2(t *testing.T) {
         endpointParams:
           param1: value1
           param2: value2
+        proxyFromEnvironment: true
 `, false)
 	if err != nil {
 		t.Fatal(err)
@@ -1264,18 +1266,9 @@ func TestPrometheusK8sRemoteWriteOauth2(t *testing.T) {
 		&v1.Secret{ObjectMeta: metav1.ObjectMeta{Name: "foo"}},
 		nil,
 	)
-	if err != nil {
-		t.Fatal(err)
-	}
-
-	if p.Spec.RemoteWrite[0].URL != "https://test.remotewrite.com/api/write" {
-		t.Errorf("want remote write URL https://test.remotewrite.com/api/write, got %v", p.Spec.RemoteWrite[0].URL)
-	}
-
-	if !reflect.DeepEqual(p.Spec.RemoteWrite[0].OAuth2, &expectedOauth2Config) {
-		t.Errorf("want OAuth2 config %v, got %v", expectedOauth2Config, p.Spec.RemoteWrite[0].OAuth2)
-	}
-
+	require.NoError(t, err)
+	require.Equal(t, p.Spec.RemoteWrite[0].URL, "https://test.remotewrite.com/api/write")
+	require.Equal(t, p.Spec.RemoteWrite[0].OAuth2, &expectedOauth2Config)
 }
 func TestRemoteWriteAuthorizationConfig(t *testing.T) {
 	for _, tc := range []struct {
