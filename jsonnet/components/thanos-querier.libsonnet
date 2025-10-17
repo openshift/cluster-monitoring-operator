@@ -643,8 +643,6 @@ function(params)
 
       },
     },
-    // Allow access to thanos-querier 9091(port name: web)/9092(port name: tenancy) ports
-    // and 9093(port name: tenancy-rules)/9094(port name: metrics) ports
     networkPolicyDownstream: {
       apiVersion: 'networking.k8s.io/v1',
       kind: 'NetworkPolicy',
@@ -665,20 +663,11 @@ function(params)
         ingress: [
           {
             ports: [
-              {
-                port: 'web',
-                protocol: 'TCP',
-              },
+              // allow for thanos-querier tenancy endpoint, 9092 port(port name: tenancy),
+              // for example, expose tenancy-aware /api/v1/labels for thanos query,
+              // load metrics result on admin web UI
               {
                 port: 'tenancy',
-                protocol: 'TCP',
-              },
-              {
-                port: 'tenancy-rules',
-                protocol: 'TCP',
-              },
-              {
-                port: 'metrics',
                 protocol: 'TCP',
               },
             ],

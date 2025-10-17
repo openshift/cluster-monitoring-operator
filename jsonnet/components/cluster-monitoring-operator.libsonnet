@@ -589,7 +589,6 @@ function(params) {
       ],
     },
   },
-  // Allow access to cluster-monitoring-operator 8443(port name: https) port
   networkPolicyDownstream: {
     apiVersion: 'networking.k8s.io/v1',
     kind: 'NetworkPolicy',
@@ -611,6 +610,8 @@ function(params) {
         {
           ports: [
             {
+              // allow prometheus to scrape cluster-monitoring-operator endpoint,
+              // 8443(port name: https) port
               port: 'https',
               protocol: 'TCP',
             },

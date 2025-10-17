@@ -373,7 +373,6 @@ function(params) {
       },
     },
   },
-  // Allow access to metrics-server 10250(port name: https) port
   networkPolicyDownstream: {
     apiVersion: 'networking.k8s.io/v1',
     kind: 'NetworkPolicy',
@@ -394,6 +393,8 @@ function(params) {
       ingress: [
         {
           ports: [
+            // make Metrics API available and allow prometheus to scrape metrics-server endpoint,
+            // 10250(port name: https) port
             {
               port: 'https',
               protocol: 'TCP',

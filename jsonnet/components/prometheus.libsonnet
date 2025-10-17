@@ -629,19 +629,8 @@ function(params)
           {
             ports: [
               {
-                port: 'web',
-                protocol: 'TCP',
-              },
-              {
-                port: 'metrics',
-                protocol: 'TCP',
-              },
-              {
+                // allow prometheus to update endpoints(port number: 10901, port name: grpc)
                 port: 'grpc',
-                protocol: 'TCP',
-              },
-              {
-                port: 'thanos-proxy',
                 protocol: 'TCP',
               },
             ],

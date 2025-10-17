@@ -11,13 +11,7 @@ spec:
   - {}
   ingress:
   - ports:
-    - port: web
-      protocol: TCP
     - port: tenancy
-      protocol: TCP
-    - port: tenancy-rules
-      protocol: TCP
-    - port: metrics
       protocol: TCP
   podSelector:
     matchLabels:

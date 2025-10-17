@@ -484,37 +484,4 @@ function(params)
         [acceleratorsConfigFileName]: std.manifestYamlDoc(acceleratorsConfigData),
       },
     },
-    // Allow access to node-exporter 9100(port name: https) port
-    networkPolicyDownstream: {
-      apiVersion: 'networking.k8s.io/v1',
-      kind: 'NetworkPolicy',
-      metadata: {
-        name: 'node-exporter',
-        namespace: cfg.namespace,
-      },
-      spec: {
-        podSelector: {
-          matchLabels: {
-            'app.kubernetes.io/name': 'node-exporter',
-          },
-        },
-        policyTypes: [
-          'Ingress',
-          'Egress',
-        ],
-        ingress: [
-          {
-            ports: [
-              {
-                port: 'https',
-                protocol: 'TCP',
-              },
-            ],
-          },
-        ],
-        egress: [
-          {},
-        ],
-      },
-    },
   }

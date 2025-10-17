@@ -119,7 +119,6 @@ function(params) {
   },
 
   trustedCaBundle: generateCertInjection.trustedCNOCaBundleCM(cfg.namespace, 'telemeter-trusted-ca-bundle'),
-  // Allow access to telemeter-client 8443(port name: https) port
   networkPolicyDownstream: {
     apiVersion: 'networking.k8s.io/v1',
     kind: 'NetworkPolicy',
@@ -141,6 +140,8 @@ function(params) {
         {
           ports: [
             {
+              // allow prometheus to scrape telemeter-client endpoint,
+              // 8443(port name: https) port
               port: 'https',
               protocol: 'TCP',
             },

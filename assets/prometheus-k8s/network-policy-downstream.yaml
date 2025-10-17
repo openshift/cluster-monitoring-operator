@@ -11,13 +11,7 @@ spec:
   - {}
   ingress:
   - ports:
-    - port: web
-      protocol: TCP
-    - port: metrics
-      protocol: TCP
     - port: grpc
-      protocol: TCP
-    - port: thanos-proxy
       protocol: TCP
   podSelector:
     matchLabels:

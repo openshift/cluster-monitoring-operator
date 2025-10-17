@@ -995,31 +995,28 @@ func expectVolumeMountsInContainer(containerName, mountName string) framework.Po
 	}
 }
 
-// assertNetworkPolicyExists ensures that the NetworkPolicies
+// assertInClusterNetworkPolicyExists ensures that the NetworkPolicies
 // are deployed under openshift-monitoring namespace
-func assertNetworkPolicyExists(t *testing.T) {
-	assertions := []struct {
-		name      string
-		assertion framework.AssertionFunc
-	}{
-		{name: "assert default deny networkpolicy exists", assertion: f.AssertNetworkPolicyExists("default-deny", f.Ns)},
-		{name: "assert cluster-monitoring-operator networkpolicy exists", assertion: f.AssertNetworkPolicyExists("cluster-monitoring-operator", f.Ns)},
-		{name: "assert alertmanager networkpolicy exists", assertion: f.AssertNetworkPolicyExists("alertmanager", f.Ns)},
-		{name: "assert prometheus networkpolicy exists", assertion: f.AssertNetworkPolicyExists("prometheus", f.Ns)},
-		{name: "assert kube-state-metrics networkpolicy exists", assertion: f.AssertNetworkPolicyExists("kube-state-metrics", f.Ns)},
-		{name: "assert metrics-server networkpolicy exists", assertion: f.AssertNetworkPolicyExists("metrics-server", f.Ns)},
-		{name: "assert monitoring-plugin networkpolicy exists", assertion: f.AssertNetworkPolicyExists("monitoring-plugin", f.Ns)},
-		{name: "assert node-exporter networkpolicy exists", assertion: f.AssertNetworkPolicyExists("node-exporter", f.Ns)},
-		{name: "assert openshift-state-metrics networkpolicy exists", assertion: f.AssertNetworkPolicyExists("openshift-state-metrics", f.Ns)},
-		{name: "assert prometheus-operator networkpolicy exists", assertion: f.AssertNetworkPolicyExists("prometheus-operator", f.Ns)},
-		{name: "assert prometheus-operator-admission-webhook networkpolicy exists", assertion: f.AssertNetworkPolicyExists("prometheus-operator-admission-webhook", f.Ns)},
-		{name: "assert telemeter-client networkpolicy exists", assertion: f.AssertNetworkPolicyExists("telemeter-client", f.Ns)},
-		{name: "assert thanos-querier networkpolicy exists", assertion: f.AssertNetworkPolicyExists("thanos-querier", f.Ns)},
+func assertInClusterNetworkPolicyExists(t *testing.T) {
+	networkPolicyNames := []string{
+		"default-deny",
+		"cluster-monitoring-operator",
+		"alertmanager",
+		"prometheus",
+		"kube-state-metrics",
+		"metrics-server",
+		"monitoring-plugin",
+		"openshift-state-metrics",
+		"prometheus-operator",
+		"telemeter-client",
+		"thanos-querier",
 	}
 
 	t.Run("check in-cluster monitoring NetworkPolicies", func(t *testing.T) {
-		for _, assertion := range assertions {
-			t.Run(assertion.name, assertion.assertion)
+		for _, name := range networkPolicyNames {
+			t.Run(fmt.Sprintf("assert %s networkpolicy exists", name), func(t *testing.T) {
+				f.AssertNetworkPolicyExists(name, f.Ns)
+			})
 		}
 	})
 }

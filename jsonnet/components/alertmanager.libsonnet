@@ -463,22 +463,12 @@ function(params)
           {
             ports: [
               {
-                port: 'tenancy',
-                protocol: 'TCP',
-              },
-              {
-                port: 'tcp-mesh',
-                protocol: 'TCP',
-              },
-              {
-                port: 'udp-mesh',
-                protocol: 'UDP',
-              },
-              {
+                // allow prometheus to sent alerts to alertmanager, port number 9095(port name: web)
                 port: 'web',
                 protocol: 'TCP',
               },
               {
+                // allow prometheus to scrape alertmanager endpoint, port number 9097(port name: metrics)
                 port: 'metrics',
                 protocol: 'TCP',
               },

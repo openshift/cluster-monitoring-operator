@@ -168,33 +168,4 @@ function(params)
         },
       ],
     },
-    // Allow access to prometheus-operator-admission-webhook 8443(port name is https) port
-    networkPolicyDownstream: {
-      apiVersion: 'networking.k8s.io/v1',
-      kind: 'NetworkPolicy',
-      metadata: {
-        name: 'prometheus-operator-admission-webhook',
-        namespace: 'openshift-monitoring',
-      },
-      spec: {
-        podSelector: {
-          matchLabels: {
-            'app.kubernetes.io/name': 'prometheus-operator-admission-webhook',
-          },
-        },
-        policyTypes: [
-          'Ingress',
-        ],
-        ingress: [
-          {
-            ports: [
-              {
-                port: 'https',
-                protocol: 'TCP',
-              },
-            ],
-          },
-        ],
-      },
-    },
   }

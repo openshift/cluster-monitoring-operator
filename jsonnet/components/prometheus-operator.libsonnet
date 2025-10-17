@@ -178,7 +178,6 @@ function(params)
         ],
       },
     },
-    // Allow access to prometheus-operator 8443(port name: https) port
     networkPolicyDownstream: {
       apiVersion: 'networking.k8s.io/v1',
       kind: 'NetworkPolicy',
@@ -199,6 +198,8 @@ function(params)
         ingress: [
           {
             ports: [
+              // allow prometheus-operator to watch resources and allow prometheus
+              // to scrape prometheus-operator endpoint, 8443(port name: https) port
               {
                 port: 'https',
                 protocol: 'TCP',

@@ -143,7 +143,6 @@ var (
 	NodeExporterPrometheusRule             = "node-exporter/prometheus-rule.yaml"
 	NodeExporterKubeRbacProxySecret        = "node-exporter/kube-rbac-proxy-secret.yaml"
 	NodeExporterAcceleratorsConfigMap      = "node-exporter/accelerators-collector-configmap.yaml"
-	NodeExporterNetworkPolicy              = "node-exporter/network-policy-downstream.yaml"
 
 	PrometheusK8sClusterRoleBinding               = "prometheus-k8s/cluster-role-binding.yaml"
 	PrometheusK8sRoleBindingConfig                = "prometheus-k8s/role-binding-config.yaml"
@@ -214,7 +213,6 @@ var (
 	AdmissionWebhookPodDisruptionBudget                 = "admission-webhook/pod-disruption-budget.yaml"
 	AdmissionWebhookService                             = "admission-webhook/service.yaml"
 	AdmissionWebhookServiceAccount                      = "admission-webhook/service-account.yaml"
-	AdmissionWebhookNetworkPolicy                       = "admission-webhook/network-policy-downstream.yaml"
 
 	PrometheusOperatorClusterRoleBinding  = "prometheus-operator/cluster-role-binding.yaml"
 	PrometheusOperatorClusterRole         = "prometheus-operator/cluster-role.yaml"
@@ -1056,10 +1054,6 @@ func (f *Factory) NodeExporterRBACProxySecret() (*v1.Secret, error) {
 
 func (f *Factory) NodeExporterAcceleratorsCollectorConfigMap() (*v1.ConfigMap, error) {
 	return f.NewConfigMap(f.assets.MustNewAssetSlice(NodeExporterAcceleratorsConfigMap))
-}
-
-func (f *Factory) NodeExporterNetworkPolicy() (*networkingv1.NetworkPolicy, error) {
-	return f.NewNetworkPolicy(f.assets.MustNewAssetSlice(NodeExporterNetworkPolicy))
 }
 
 func (f *Factory) PrometheusK8sClusterRoleBinding() (*rbacv1.ClusterRoleBinding, error) {
@@ -2175,10 +2169,6 @@ func (f *Factory) PrometheusOperatorNetworkPolicy() (*networkingv1.NetworkPolicy
 
 func (f *Factory) PrometheusOperatorAdmissionWebhookServiceAccount() (*v1.ServiceAccount, error) {
 	return f.NewServiceAccount(f.assets.MustNewAssetSlice(AdmissionWebhookServiceAccount))
-}
-
-func (f *Factory) AdmissionWebhookNetworkPolicy() (*networkingv1.NetworkPolicy, error) {
-	return f.NewNetworkPolicy(f.assets.MustNewAssetSlice(AdmissionWebhookNetworkPolicy))
 }
 
 func (f *Factory) PrometheusOperatorAdmissionWebhookService() (*v1.Service, error) {

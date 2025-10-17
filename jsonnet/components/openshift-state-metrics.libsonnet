@@ -96,7 +96,6 @@ function(params) {
     },
   },
   serviceMonitor: osm.openshiftStateMetrics.serviceMonitor,
-  // Allow access to openshift-state-metrics 8443(port name: https-main)/9443(port name: https-self) ports
   networkPolicyDownstream: {
     apiVersion: 'networking.k8s.io/v1',
     kind: 'NetworkPolicy',
@@ -117,6 +116,8 @@ function(params) {
       ingress: [
         {
           ports: [
+            // allow prometheus to scrape openshift-state-metrics endpoints,
+            // 8443(port name: https-main)/9443(port name: https-self) ports
             {
               port: 'https-main',
               protocol: 'TCP',

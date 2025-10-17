@@ -307,7 +307,6 @@ function(params)
     },
 
     customResourceStateConfigmap: crsConfig,
-    // Allow access to kube-state-metrics 8443(port name: https-main)/9443(port name: https-self) ports
     networkPolicyDownstream: {
       apiVersion: 'networking.k8s.io/v1',
       kind: 'NetworkPolicy',
@@ -328,6 +327,8 @@ function(params)
         ingress: [
           {
             ports: [
+              // allow prometheus to scrape kube-state-metrics endpoints,
+              // 8443(port name: https-main)/9443(port name: https-self) ports
               {
                 port: 'https-main',
                 protocol: 'TCP',

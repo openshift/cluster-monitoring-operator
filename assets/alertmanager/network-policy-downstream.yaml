@@ -11,12 +11,6 @@ spec:
   - {}
   ingress:
   - ports:
-    - port: tenancy
-      protocol: TCP
-    - port: tcp-mesh
-      protocol: TCP
-    - port: udp-mesh
-      protocol: UDP
     - port: web
       protocol: TCP
     - port: metrics
