@@ -745,10 +745,15 @@ data:
     # and per volume type (filesystem/block)
     - '{__name__="cluster:kube_persistentvolume_plugin_type_counts:sum"}'
     #
-    # owners: (https://github.com/open-cluster-management, @open-cluster-management/cluster-lifecycle-admin)
+    # owners: (https://github.com/orgs/stolostron/teams/server-foundation, @acm-server-foundation)
     #
     # acm_managed_cluster_info provides Subscription watch and other information for the managed clusters for an ACM Hub cluster.
     - '{__name__="acm_managed_cluster_info"}'
+    #
+    # owners: (https://github.com/orgs/stolostron/teams/server-foundation, @acm-server-foundation)
+    #
+    # acm_managed_cluster_worker_cores:max tracks the number of CPU cores on the worker nodes of the ACM managed clusters.
+    - '{__name__="acm_managed_cluster_worker_cores:max"}'
     #
     # owners: (https://github.com/orgs/stolostron/teams/search-admin, @acm-observability-search)
     #
