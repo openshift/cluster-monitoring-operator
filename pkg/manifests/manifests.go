@@ -2549,16 +2549,6 @@ func (f *Factory) NewService(manifest []byte) (*v1.Service, error) {
 	return &s, nil
 }
 
-func (f *Factory) NewEndpoints(manifest []byte) (*v1.Endpoints, error) {
-	e := v1.Endpoints{}
-	err := decodeYAML(manifest, &e)
-	if err != nil {
-		return nil, err
-	}
-
-	return &e, nil
-}
-
 func (f *Factory) NewRoute(manifest []byte) (*routev1.Route, error) {
 	r := routev1.Route{}
 	err := decodeYAML(manifest, &r)

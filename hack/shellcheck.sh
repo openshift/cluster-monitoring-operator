@@ -30,4 +30,4 @@ if ! command -v shellcheck 2>/dev/null; then
 fi
 
 TOP_DIR="${1:-.}"
-find "${TOP_DIR}" -path "${TOP_DIR}/vendor" -prune -o -path "${TOP_DIR}/jsonnet/vendor" -prune -o -type f -name '*.sh' -exec shellcheck --format=gcc {} \+
+find "${TOP_DIR}" -path "${TOP_DIR}/vendor" -prune -o -path "${TOP_DIR}/jsonnet/vendor" -prune -o -path "${TOP_DIR}/test/monitoring/vendor" -prune -o -type f -name '*.sh' -exec shellcheck --format=gcc {} \+
