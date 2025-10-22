@@ -37,7 +37,7 @@ for file in "${files[@]}"; do
 	}&
 
 	# wait for at least one of the jobs to finish if there are more than maxProc jobs
-	while [[ $(jobs -r | wc -l ) -ge "$maxProc" ]]; do wait -n; done
+	while [[ $(jobs -r | wc -l ) -ge "$maxProc" ]]; do wait; done
 done
 # wait for all jobs to finish
 wait
