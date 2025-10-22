@@ -1241,6 +1241,7 @@ func TestPrometheusK8sRemoteWriteOauth2(t *testing.T) {
 			"param2": "value2",
 		},
 	}
+	expectedOauth2Config.ProxyFromEnvironment = ptr.To(true)
 	c, warning, err := NewConfigFromString(`prometheusK8s:
   remoteWrite:
     - url: https://test.remotewrite.com/api/write
@@ -1260,6 +1261,7 @@ func TestPrometheusK8sRemoteWriteOauth2(t *testing.T) {
         endpointParams:
           param1: value1
           param2: value2
+        proxyFromEnvironment: true
 `, false)
 	if err != nil {
 		t.Fatal(err)
@@ -1271,18 +1273,9 @@ func TestPrometheusK8sRemoteWriteOauth2(t *testing.T) {
 		&v1.Secret{ObjectMeta: metav1.ObjectMeta{Name: "foo"}},
 		nil,
 	)
-	if err != nil {
-		t.Fatal(err)
-	}
-
-	if p.Spec.RemoteWrite[0].URL != "https://test.remotewrite.com/api/write" {
-		t.Errorf("want remote write URL https://test.remotewrite.com/api/write, got %v", p.Spec.RemoteWrite[0].URL)
-	}
-
-	if !reflect.DeepEqual(p.Spec.RemoteWrite[0].OAuth2, &expectedOauth2Config) {
-		t.Errorf("want OAuth2 config %v, got %v", expectedOauth2Config, p.Spec.RemoteWrite[0].OAuth2)
-	}
-
+	require.NoError(t, err)
+	require.Equal(t, p.Spec.RemoteWrite[0].URL, "https://test.remotewrite.com/api/write")
+	require.Equal(t, p.Spec.RemoteWrite[0].OAuth2, &expectedOauth2Config)
 }
 func TestRemoteWriteAuthorizationConfig(t *testing.T) {
 	for _, tc := range []struct {
@@ -4965,6 +4958,80 @@ func TestAlertmanagerProxy(t *testing.T) {
 				amc := findContainer(am)
 				require.NotNil(t, amc)
 				tc.assertFn(t, amc)
+			})
+		})
+	}
+}
+
+func TestPrometheusProxy(t *testing.T) {
+	for _, tc := range []struct {
+		proxyReader ProxyReader
+		assertFn    func(*testing.T, *v1.Container)
+	}{
+		{
+			proxyReader: &fakeProxyReader{},
+			assertFn: func(t *testing.T, c *v1.Container) {
+				t.Helper()
+
+				require.Len(t, c.Env, 3)
+				require.Equal(t, c.Env[0].Value, "")
+				require.Equal(t, c.Env[1].Value, "")
+				require.Equal(t, c.Env[2].Value, "")
+			},
+		},
+		{
+			proxyReader: &fakeProxyReader{
+				httpProxy:  "http://example.com:8080/",
+				httpsProxy: "https://example.com:8080/",
+				noProxy:    "local.example.com",
+			},
+			assertFn: func(t *testing.T, c *v1.Container) {
+				t.Helper()
+
+				require.Len(t, c.Env, 3)
+				require.Equal(t, c.Env[0].Name, "HTTP_PROXY")
+				require.Equal(t, c.Env[0].Value, "http://example.com:8080/")
+				require.Equal(t, c.Env[1].Name, "HTTPS_PROXY")
+				require.Equal(t, c.Env[1].Value, "https://example.com:8080/")
+				require.Equal(t, c.Env[2].Name, "NO_PROXY")
+				require.Equal(t, c.Env[2].Value, "local.example.com")
+			},
+		},
+	} {
+		t.Run("", func(t *testing.T) {
+			findContainer := func(am *monv1.Prometheus) *v1.Container {
+				for _, c := range am.Spec.Containers {
+					if c.Name == "prometheus" {
+						return &c
+					}
+				}
+
+				return nil
+			}
+
+			f := NewFactory("openshift-monitoring", "openshift-user-workload-monitoring", NewDefaultConfig(), defaultInfrastructureReader(), tc.proxyReader, NewAssets(assetsPath), &APIServerConfig{}, &configv1.Console{})
+
+			t.Run("main", func(t *testing.T) {
+				p, err := f.PrometheusK8s(
+					&v1.Secret{ObjectMeta: metav1.ObjectMeta{Name: "foo"}},
+					nil,
+				)
+				require.NoError(t, err)
+
+				amc := findContainer(p)
+				require.NotNil(t, amc)
+				tc.assertFn(t, amc)
+			})
+
+			t.Run("user", func(t *testing.T) {
+				p, err := f.PrometheusUserWorkload(
+					&v1.Secret{ObjectMeta: metav1.ObjectMeta{Name: "foo"}},
+				)
+				require.NoError(t, err)
+
+				pc := findContainer(p)
+				require.NotNil(t, pc)
+				tc.assertFn(t, pc)
 			})
 		})
 	}
