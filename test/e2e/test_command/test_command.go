@@ -15,142 +15,119 @@
 package test_command
 
 import (
+	"bufio"
 	"bytes"
 	"context"
 	"fmt"
 	"os"
 	"os/exec"
+	"strings"
 	"testing"
 	"time"
 
-	"strings"
-
-	"github.com/mattn/go-shellwords"
 	"github.com/stretchr/testify/require"
 )
 
-var commandTimeout time.Duration = 5 * time.Second
-
-type SetUpTearDownCommand struct {
-	// This isn't run in a shell.
-	Command string `yaml:"run"`
-	EnvVar  string `yaml:"toEnvVar"`
-	// the Commands' stdout
-	envVarValue string
-}
-
-type CheckCommand struct {
-	// This isn't run in a shell.
-	Command string `yaml:"run"`
-}
+const commandTimeout time.Duration = 5 * time.Second
 
 type Test struct {
-	Header string `yaml:"header"`
-	// Run by a user having the needed permissions.
-	// Env vars defined in SetUp, can only be used in Checks
-	SetUp []SetUpTearDownCommand `yaml:"setUp"`
-	//
-	Checks []CheckCommand `yaml:"checks"`
-
-	TearDown []SetUpTearDownCommand `yaml:"tearDown"`
+	Script string `yaml:"script"`
+	// Only for the test
+	TearDown string `yaml:"tearDown"`
 }
 
 type Suite struct {
 	Tests []Test `yaml:"tests"`
 }
 
-func (stc *SetUpTearDownCommand) String() string {
-	if stc.EnvVar != "" {
-		return fmt.Sprintf("$ %s=$(%s)", stc.EnvVar, stc.Command)
+func (test *Test) parse() (description string, commands []string) {
+	var descLines []string
+	scanner := bufio.NewScanner(strings.NewReader(test.Script))
+	for scanner.Scan() {
+		line := scanner.Text()
+		if after, ok := strings.CutPrefix(line, "## "); ok {
+			descLines = append(descLines, after)
+		} else if strings.TrimSpace(line) != "" {
+			commands = append(commands, line)
+		}
 	}
-	return fmt.Sprintf("$ %s", stc.Command)
+	if err := scanner.Err(); err != nil {
+		panic(err)
+	}
+	description = strings.Join(descLines, " ")
+	return
 }
 
-func (stc *SetUpTearDownCommand) EnvVarValue() string {
-	return stc.envVarValue
-}
-
-func (cc *CheckCommand) String() string {
-	return fmt.Sprintf("$ %s", cc.Command)
-}
-
-func (test *Test) String() string {
+func formatCommands(commands []string) string {
 	var sb strings.Builder
+	for _, line := range commands {
+		// Preserve comments and indented multiline lines.
+		if strings.HasPrefix(line, "#") || strings.HasPrefix(line, " ") {
+			sb.WriteString(line)
+		} else {
+			sb.WriteString("$ " + line)
+		}
+		sb.WriteString("\n")
+	}
+	return strings.TrimSuffix(sb.String(), "\n")
+}
+
+type formatter interface {
+	formatTest(description string, commands string) string
+}
+
+type markdownFormatter struct{}
+
+func (f markdownFormatter) formatTest(description, commands string) string {
+	var sb strings.Builder
+	sb.WriteString("```\n")
+	sb.WriteString("# ")
+	sb.WriteString(description)
+	sb.WriteString("\n\n")
+	sb.WriteString(commands)
 	sb.WriteString("\n")
-	sb.WriteString(test.Header)
-	for _, s := range test.SetUp {
-		sb.WriteString("\n")
-		sb.WriteString(s.String())
-	}
-	for _, c := range test.Checks {
-		sb.WriteString("\n")
-		sb.WriteString(c.String())
-	}
+	sb.WriteString("```")
 	return sb.String()
 }
 
-func (suite *Suite) intoCodeBlocks(delimiter string) string {
+type asciidocFormatter struct{}
+
+func (f asciidocFormatter) formatTest(description, commands string) string {
 	var sb strings.Builder
-	for _, t := range suite.Tests {
-		sb.WriteString(delimiter)
-		sb.WriteString(t.String())
-		sb.WriteString(delimiter)
-		sb.WriteString("\n")
-	}
+	sb.WriteString("+\n")
+	sb.WriteString(description)
+	sb.WriteString("\n+\n")
+	sb.WriteString("[source,terminal]\n----\n")
+	sb.WriteString(commands)
+	sb.WriteString("\n----")
 	return sb.String()
+}
+
+func (suite *Suite) format(f formatter) string {
+	tests := make([]string, len(suite.Tests))
+	for i, t := range suite.Tests {
+		description, commands := t.parse()
+		tests[i] = f.formatTest(description, formatCommands(commands))
+	}
+	return strings.Join(tests, "\n") + "\n"
 }
 
 func (suite *Suite) StringMarkdown() string {
-	return suite.intoCodeBlocks("```")
+	return suite.format(markdownFormatter{})
 }
 
 func (suite *Suite) StringAscii() string {
-	// Not ready to be part of the doc yet.
-	return ""
-	// return suite.intoCodeBlocks("----")
+	return suite.format(asciidocFormatter{})
 }
 
-func (stc *SetUpTearDownCommand) Run(t *testing.T, wDir, kubeConfigPath string) error {
+func RunScript(t *testing.T, script, wDir, kubeConfigPath string) {
 	t.Helper()
 	ctx, cancel := context.WithTimeout(context.Background(), commandTimeout)
 	defer cancel()
 
-	args, err := shellwords.Parse(stc.Command)
-	require.NoError(t, err)
-
-	cmd := exec.CommandContext(ctx, args[0], args[1:]...)
+	cmd := exec.CommandContext(ctx, "bash", "-c", script)
 	cmd.Stderr = bytes.NewBuffer(nil)
 	cmd.Dir = wDir
 	cmd.Env = append(os.Environ(), fmt.Sprintf("KUBECONFIG=%s", kubeConfigPath))
-
-	if stc.EnvVar != "" {
-		out, err := cmd.Output()
-		require.NoError(t, err, "getting stdout failed: %v: command stderr %v", err, cmd.Stderr)
-		stc.envVarValue = string(out)
-		return nil
-	}
-
-	require.NoError(t, cmd.Run(), "running %s failed: command stderr: %v", stc.Command, cmd.Stderr)
-	return nil
-}
-
-func (cc *CheckCommand) Run(t *testing.T, wDir, kubeConfigPath string, envVars map[string]string) error {
-	t.Helper()
-	ctx, cancel := context.WithTimeout(context.Background(), commandTimeout)
-	defer cancel()
-
-	parser := shellwords.NewParser()
-	// To avoid running a shell.
-	parser.ParseEnv = true
-	envVars["KUBECONFIG"] = kubeConfigPath
-	parser.Getenv = func(s string) string { return envVars[s] }
-	args, err := parser.Parse(cc.Command)
-	require.NoError(t, err)
-
-	cmd := exec.CommandContext(ctx, args[0], args[1:]...)
-	cmd.Stderr = bytes.NewBuffer(nil)
-	cmd.Dir = wDir
-
-	require.NoError(t, cmd.Run(), "running %s failed: command stderr: %v", cc.Command, cmd.Stderr)
-	return nil
+	require.NoError(t, cmd.Run(), "running %s failed: command stderr: %v", script, cmd.Stderr)
 }

@@ -1,0 +1,45 @@
+tests:
+  - script: |
+      ## The following example exercises permissions granted by the `cluster-monitoring-view` cluster role.
+      ## The binding commands must be run by a user with the necessary privileges.
+      # Create a test namespace and a service account.
+      oc create namespace test-thanos-querier-web-cluster-monitoring-view
+      oc create serviceaccount thanos-client --namespace=test-thanos-querier-web-cluster-monitoring-view
+      # Bind the role to the service account.
+      # The binding in this example is applied to a service account but can also be applied to any user.
+      oc create rolebinding test-thanos-querier-web-cluster-monitoring-view \
+        --namespace=openshift-monitoring \
+        --clusterrole=cluster-monitoring-view \
+        --serviceaccount=test-thanos-querier-web-cluster-monitoring-view:thanos-client
+      # Generate a token to access the endpoints.
+      TOKEN=$(oc create token thanos-client --namespace=test-thanos-querier-web-cluster-monitoring-view)
+      # Access Thanos Querier endpoints externally.
+      ROUTE=$(oc get route thanos-querier --namespace=openshift-monitoring -ojsonpath={.spec.host})
+      curl -k -H "Authorization: Bearer $TOKEN" "https://$ROUTE/api/v1/query?query=up"
+      # Access Thanos Querier endpoints from within the cluster.
+      curl -k -H "Authorization: Bearer $TOKEN" "https://thanos-querier.openshift-monitoring:9091/api/v1/query?query=up"
+    tearDown: |
+      oc delete rolebinding test-thanos-querier-web-cluster-monitoring-view --namespace=openshift-monitoring
+      oc delete namespace test-thanos-querier-web-cluster-monitoring-view --wait=false
+  - script: |
+      ## The following example exercises permissions granted by the `cluster-monitoring-metrics-api` role.
+      ## The binding commands must be run by a user with the necessary privileges.
+      # Create a test namespace and a service account.
+      oc create namespace test-thanos-querier-web-cluster-monitoring-metrics-api
+      oc create serviceaccount thanos-client --namespace=test-thanos-querier-web-cluster-monitoring-metrics-api
+      # Bind the role to the service account.
+      # The binding in this example is applied to a service account but can also be applied to any user.
+      oc create rolebinding test-thanos-querier-web-cluster-monitoring-metrics-api \
+        --namespace=openshift-monitoring \
+        --role=cluster-monitoring-metrics-api  \
+        --serviceaccount=test-thanos-querier-web-cluster-monitoring-metrics-api:thanos-client
+      # Generate a token to access the endpoints.
+      TOKEN=$(oc create token thanos-client --namespace=test-thanos-querier-web-cluster-monitoring-metrics-api)
+      # Access Thanos Querier endpoints externally.
+      ROUTE=$(oc get route thanos-querier --namespace=openshift-monitoring -ojsonpath={.spec.host})
+      curl -k -H "Authorization: Bearer $TOKEN" "https://$ROUTE/api/v1/query?query=up"
+      # Access Thanos Querier endpoints from within the cluster.
+      curl -k -H "Authorization: Bearer $TOKEN" "https://thanos-querier.openshift-monitoring:9091/api/v1/query?query=up"
+    tearDown: |
+      oc delete rolebinding test-thanos-querier-web-cluster-monitoring-metrics-api --namespace=openshift-monitoring
+      oc delete namespace test-thanos-querier-web-cluster-monitoring-metrics-api --wait=false

@@ -15,63 +15,143 @@
 package e2e
 
 import (
+	"context"
+	"fmt"
+	"hash/fnv"
 	"os"
 	"path/filepath"
+	"strconv"
 	"testing"
+	"time"
 
+	"github.com/openshift/cluster-monitoring-operator/test/e2e/framework"
 	"github.com/openshift/cluster-monitoring-operator/test/e2e/test_command"
 	"github.com/stretchr/testify/require"
 	"gopkg.in/yaml.v3"
+	corev1 "k8s.io/api/core/v1"
+	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
+
+const (
+	testNamespace      = "test-doc-examples-in-cluster"
+	serviceAccount     = "tester"
+	clusterRoleBinding = "tester"
+)
+
+func toPodName(testName string) string {
+	h := fnv.New64()
+	h.Write([]byte(testName))
+	return "test-" + strconv.FormatUint(h.Sum64(), 32)
+}
+
+func setupEnv(t *testing.T) {
+	cleanupNS, err := f.CreateNamespace(testNamespace)
+	require.NoError(t, err)
+	t.Cleanup(func() {
+		require.NoError(t, cleanupNS())
+	})
+
+	cleanupSA, err := f.CreateServiceAccount(testNamespace, serviceAccount)
+	require.NoError(t, err)
+	t.Cleanup(func() {
+		require.NoError(t, cleanupSA())
+	})
+
+	cleanupBinding, err := f.CreateClusterRoleBinding(testNamespace, clusterRoleBinding, "cluster-admin")
+	require.NoError(t, err)
+	t.Cleanup(func() {
+		require.NoError(t, cleanupBinding())
+	})
+}
 
 func TestDocExamples(t *testing.T) {
 	filesDir := "test_command/scripts/"
 	tempDir := t.TempDir()
 	kubeConfigPath := f.KubeConfigPath
 
-	entries, err := os.ReadDir(filesDir)
+	scripts, err := os.ReadDir(filesDir)
 	require.NoError(t, err)
 	// In case there is a wiring issue.
-	require.Greater(t, len(entries), 0)
+	require.Greater(t, len(scripts), 3)
+	setupEnv(t)
 
-	for _, entry := range entries {
-		file, err := os.Open(filepath.Join(filesDir, entry.Name()))
-		require.NoError(t, err)
-		defer file.Close()
+	for _, script := range scripts {
+		t.Run(script.Name(), func(t *testing.T) {
+			t.Parallel()
+			file, err := os.Open(filepath.Join(filesDir, script.Name()))
+			require.NoError(t, err)
+			defer file.Close()
 
-		var suite test_command.Suite
-		decoder := yaml.NewDecoder(file)
-		decoder.KnownFields(true)
-		err = decoder.Decode(&suite)
-		require.NoError(t, err)
+			var suite test_command.Suite
+			decoder := yaml.NewDecoder(file)
+			decoder.KnownFields(true)
+			require.NoError(t, decoder.Decode(&suite))
 
-		for _, test := range suite.Tests {
-			// TODO: run in //
-			t.Run(entry.Name(), func(t *testing.T) {
-				// Set up cleaners
-				t.Cleanup(func() {
-					for _, c := range test.TearDown {
-						c.Run(t, tempDir, kubeConfigPath)
+			for i, test := range suite.Tests {
+				// Run the script inside a Pod as some of the endpoints are not exposed by default.
+				t.Run(fmt.Sprintf("test-%d", i), func(t *testing.T) {
+					t.Parallel()
+					t.Cleanup(func() {
+						test_command.RunScript(t, test.TearDown, tempDir, kubeConfigPath)
+					})
+
+					ctx := context.Background()
+					podName := toPodName(t.Name())
+					containerName := "test"
+					pod := &corev1.Pod{
+						ObjectMeta: metav1.ObjectMeta{
+							Name:      podName,
+							Namespace: testNamespace,
+						},
+						Spec: corev1.PodSpec{
+							ServiceAccountName: serviceAccount,
+							RestartPolicy:      corev1.RestartPolicyNever,
+							Containers: []corev1.Container{
+								{
+									Name:            containerName,
+									Image:           "registry.redhat.io/openshift4/ose-cli:latest",
+									ImagePullPolicy: corev1.PullIfNotPresent,
+									Command:         []string{"bash", "-c", test.Script},
+									SecurityContext: &corev1.SecurityContext{
+										Capabilities: &corev1.Capabilities{
+											Drop: []corev1.Capability{"ALL"},
+										},
+										SeccompProfile: &corev1.SeccompProfile{
+											Type: corev1.SeccompProfileTypeRuntimeDefault,
+										},
+									},
+								},
+							},
+						},
+					}
+
+					pod, err := f.KubeClient.CoreV1().Pods(testNamespace).Create(ctx, pod, metav1.CreateOptions{})
+					require.NoError(t, err)
+					t.Cleanup(func() {
+						err := f.KubeClient.CoreV1().Pods(testNamespace).Delete(context.Background(), podName, metav1.DeleteOptions{})
+						require.NoError(t, err)
+					})
+
+					err = framework.Poll(time.Second, time.Minute, func() error {
+						pod, err = f.KubeClient.CoreV1().Pods(testNamespace).Get(ctx, podName, metav1.GetOptions{})
+						if err != nil {
+							return err
+						}
+						if pod.Status.Phase != corev1.PodSucceeded && pod.Status.Phase != corev1.PodFailed {
+							return fmt.Errorf("waiting for pod")
+						}
+						return nil
+					})
+					require.NoError(t, err)
+
+					if pod.Status.Phase != corev1.PodSucceeded {
+						l, err := f.GetLogs(testNamespace, podName, containerName)
+						require.NoError(t, err)
+						t.Log(l)
+						require.Fail(t, "pod failed to execute script")
 					}
 				})
-
-				// Setup
-				envVars := map[string]string{}
-				for _, setup := range test.SetUp {
-					require.NoError(t, setup.Run(t, tempDir, kubeConfigPath))
-					if setup.EnvVarValue() == "" {
-						continue
-					}
-					// Check duplicated env vars.
-					require.NotContains(t, envVars, setup.EnvVar)
-					envVars[setup.EnvVar] = setup.EnvVarValue()
-				}
-
-				// Run the checks
-				for _, g := range test.Checks {
-					require.NoError(t, g.Run(t, tempDir, kubeConfigPath, envVars))
-				}
-			})
-		}
+			}
+		})
 	}
 }

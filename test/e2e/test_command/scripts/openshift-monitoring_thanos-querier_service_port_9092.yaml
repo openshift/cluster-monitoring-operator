@@ -1,0 +1,19 @@
+tests:
+  - script: |
+      ## The following example exercises permissions granted by the `view` cluster role.
+      ## The binding commands must be run by a user with the necessary privileges.
+      # Create a test namespace and a service account.
+      oc create namespace test-thanos-querier-tenancy-view
+      oc create serviceaccount thanos-client --namespace=test-thanos-querier-tenancy-view
+      # Bind the role to the service account.
+      # The binding in this example is applied to a service account but can also be applied to any user.
+      oc create rolebinding test-thanos-querier-tenancy-view \
+        --namespace=test-thanos-querier-tenancy-view \
+        --clusterrole=view \
+        --serviceaccount=test-thanos-querier-tenancy-view:thanos-client
+      # Generate a token to access the endpoints.
+      TOKEN=$(oc create token thanos-client --namespace=test-thanos-querier-tenancy-view)
+      # Access Thanos Querier endpoints from within the cluster. The port is not exposed externally by default.
+      curl -k -f -H "Authorization: Bearer $TOKEN" "https://thanos-querier.openshift-monitoring:9092/api/v1/query?query=up&namespace=test-thanos-querier-tenancy-view"
+    tearDown: |
+      oc delete namespace test-thanos-querier-tenancy-view --wait=false

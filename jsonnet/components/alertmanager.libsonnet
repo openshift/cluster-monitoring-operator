@@ -71,6 +71,7 @@ function(params)
             * Port %d provides access to all the Alertmanager endpoints. %s
             %s
             * Port %d provides access to the Alertmanager endpoints restricted to a given project. %s
+            %s
             * Port %d provides access to the `/metrics` endpoint only. This port is for internal use, and no other usage is guaranteed.
           ||| % [
             $.service.spec.ports[0].port,
@@ -78,6 +79,7 @@ function(params)
             testFilePlaceholder('openshift-monitoring', 'alertmanager-main', $.service.spec.ports[0].port),
             $.service.spec.ports[1].port,
             requiredClusterRoles(['monitoring-rules-edit', 'monitoring-edit'], false, ''),
+            testFilePlaceholder('openshift-monitoring', 'alertmanager-main', $.service.spec.ports[1].port),
             $.service.spec.ports[2].port,
           ],
         ),

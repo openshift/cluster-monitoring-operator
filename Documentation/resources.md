@@ -56,26 +56,93 @@ Expose the user-defined Alertmanager web server within the cluster on the follow
 Expose the Alertmanager web server within the cluster on the following ports:
 * Port 9094 provides access to all the Alertmanager endpoints. Granting access requires binding a user to the `monitoring-alertmanager-view` role (for read-only operations) or `monitoring-alertmanager-edit` role in the `openshift-monitoring` project.
 ```
-# monitoring-alertmanager-view grants read permissions.
-$ oc project openshift-monitoring
-$ oc create serviceaccount am-ro-client
-$ oc adm policy add-role-to-user monitoring-alertmanager-view \
-  --role-namespace=openshift-monitoring --rolebinding-name=am-ro-client \
-  --serviceaccount=am-ro-client
-$ TOKEN=$(oc create token am-ro-client)
-$ ROUTE=$(oc get route alertmanager-main -n openshift-monitoring -ojsonpath={.spec.host})
-$ curl -H "Authorization: Bearer $TOKEN" -k --fail-with-body "https://$ROUTE/api/v2/alerts?filter=alertname=Watchdog"
+# The following example exercises permissions granted by the `monitoring-alertmanager-view` role. The binding commands must be run by a user with the necessary privileges.
+
+# Create a test namespace and a service account.
+$ oc create namespace test-alertmanager-web-monitoring-alertmanager-view
+$ oc create serviceaccount am-client --namespace=test-alertmanager-web-monitoring-alertmanager-view
+# Bind the role to the service account.
+# The binding in this example is applied to a service account but can also be applied to any user.
+$ oc create rolebinding test-alertmanager-web-monitoring-alertmanager-view \
+  --namespace=openshift-monitoring \
+  --role=monitoring-alertmanager-view \
+  --serviceaccount=test-alertmanager-web-monitoring-alertmanager-view:am-client
+# Generate a token to access the endpoints.
+$ TOKEN=$(oc create token am-client --namespace=test-alertmanager-web-monitoring-alertmanager-view)
+# Access Alertmanager endpoints externally.
+$ ROUTE=$(oc get route alertmanager-main --namespace=openshift-monitoring -ojsonpath={.spec.host})
+$ curl -k -H "Authorization: Bearer $TOKEN" "https://$ROUTE/api/v2/alerts?filter=alertname=Watchdog"
+# Access Alertmanager endpoints from within the cluster.
+$ curl -k -H "Authorization: Bearer $TOKEN" "https://alertmanager-main.openshift-monitoring:9094/api/v2/alerts?filter=alertname=Watchdog"
 ```
 ```
-# monitoring-alertmanager-edit grants edit permissions.
-$ oc project openshift-monitoring
-$ oc create serviceaccount am-rw-client
-$ oc adm policy add-role-to-user monitoring-alertmanager-edit \
-  --role-namespace=openshift-monitoring --rolebinding-name=am-rw-client \
-  --serviceaccount=am-rw-client
-$ TOKEN=$(oc create token am-rw-client)
-$ ROUTE=$(oc get route alertmanager-main -n openshift-monitoring -ojsonpath={.spec.host})
-$ curl -X POST -H "Authorization: Bearer $TOKEN" -H "Content-Type: application/json" \
+# The following example exercises permissions granted by the `monitoring-alertmanager-edit` role. The binding commands must be run by a user with the necessary privileges.
+
+# Create a test namespace and a service account.
+$ oc create namespace test-alertmanager-web-monitoring-alertmanager-edit
+$ oc create serviceaccount am-client --namespace=test-alertmanager-web-monitoring-alertmanager-edit
+# Bind the role to the service account.
+# The binding in this example is applied to a service account but can also be applied to any user.
+$ oc create rolebinding test-alertmanager-web-monitoring-alertmanager-edit \
+  --namespace=openshift-monitoring \
+  --role=monitoring-alertmanager-edit \
+  --serviceaccount=test-alertmanager-web-monitoring-alertmanager-edit:am-client
+# Generate a token to access the endpoints.
+$ TOKEN=$(oc create token am-client --namespace=test-alertmanager-web-monitoring-alertmanager-edit)
+# Access Alertmanager endpoints externally.
+$ ROUTE=$(oc get route alertmanager-main --namespace=openshift-monitoring -ojsonpath={.spec.host})
+$ curl -k -X POST  "https://$ROUTE/api/v2/silences" \
+  -H "Authorization: Bearer $TOKEN" -H "Content-Type: application/json" \
+  -d '{
+    "matchers": [
+      {
+        "name": "alertname",
+        "value": "MyTestAlert1",
+        "isRegex": false
+      }
+    ],
+    "startsAt": "2044-01-01T00:00:00Z",
+    "endsAt": "2044-01-01T00:00:01Z",
+    "createdBy": "test-alertmanager-web-monitoring-alertmanager-edit/am-client",
+    "comment": "Silence test"
+  }'
+# Access Alertmanager endpoints from within the cluster.
+$ curl -k -X POST  "https://alertmanager-main.openshift-monitoring:9094/api/v2/silences" \
+  -H "Authorization: Bearer $TOKEN" -H "Content-Type: application/json" \
+  -d '{
+    "matchers": [
+      {
+        "name": "alertname",
+        "value": "MyTestAlert2",
+        "isRegex": false
+      }
+    ],
+    "startsAt": "2044-01-01T00:00:00Z",
+    "endsAt": "2044-01-01T00:00:01Z",
+    "createdBy": "test-alertmanager-web-monitoring-alertmanager-edit/am-client",
+    "comment": "Silence test"
+  }'
+```
+
+* Port 9092 provides access to the Alertmanager endpoints restricted to a given project. Granting access requires binding a user to the `monitoring-rules-edit` cluster role or `monitoring-edit` cluster role in the project.
+```
+# The following example exercises permissions granted by the `monitoring-rules-edit` cluster role. The binding commands must be run by a user with the necessary privileges.
+
+# Create a test namespace and a service account.
+$ oc create namespace test-alertmanager-tenancy-monitoring-rules-edit
+$ oc create serviceaccount am-client --namespace=test-alertmanager-tenancy-monitoring-rules-edit
+# Bind the role to the service account.
+# The binding in this example is applied to a service account but can also be applied to any user.
+$ oc create rolebinding test-alertmanager-tenancy-monitoring-rules-edit \
+  --namespace=test-alertmanager-tenancy-monitoring-rules-edit \
+  --clusterrole=monitoring-rules-edit \
+  --serviceaccount=test-alertmanager-tenancy-monitoring-rules-edit:am-client
+# Generate a token to access the endpoints.
+$ TOKEN=$(oc create token am-client --namespace=test-alertmanager-tenancy-monitoring-rules-edit)
+# Access Alertmanager endpoints from within the cluster. The port is not exposed externally by default.
+$ curl -k -f -H "Authorization: Bearer $TOKEN" "https://alertmanager-main.openshift-monitoring:9092/api/v2/alerts?namespace=test-alertmanager-tenancy-monitoring-rules-edit"
+$ curl -k -X POST -f "https://alertmanager-main.openshift-monitoring:9092/api/v2/silences?namespace=test-alertmanager-tenancy-monitoring-rules-edit" \
+  -H "Authorization: Bearer $TOKEN" -H "Content-Type: application/json" \
   -d '{
     "matchers": [
       {
@@ -86,13 +153,43 @@ $ curl -X POST -H "Authorization: Bearer $TOKEN" -H "Content-Type: application/j
     ],
     "startsAt": "2044-01-01T00:00:00Z",
     "endsAt": "2044-01-01T00:00:01Z",
-    "createdBy": "am-rw-client",
+    "createdBy": "test-alertmanager-tenancy-monitoring-rules-edit/am-client",
     "comment": "Silence test"
-  }' \
-  -k --fail-with-body "https://$ROUTE/api/v2/silences"
+  }'
+```
+```
+# The following example exercises permissions granted by the `monitoring-edit` cluster role. The binding commands must be run by a user with the necessary privileges.
+
+# Create a test namespace and a service account.
+$ oc create namespace test-alertmanager-tenancy-monitoring-edit
+$ oc create serviceaccount am-client --namespace=test-alertmanager-tenancy-monitoring-edit
+# Bind the role to the service account.
+# The binding in this example is applied to a service account but can also be applied to any user.
+$ oc create rolebinding test-alertmanager-tenancy-monitoring-edit \
+  --namespace=test-alertmanager-tenancy-monitoring-edit \
+  --clusterrole=monitoring-edit \
+  --serviceaccount=test-alertmanager-tenancy-monitoring-edit:am-client
+# Generate a token to access the endpoints.
+$ TOKEN=$(oc create token am-client --namespace=test-alertmanager-tenancy-monitoring-edit)
+# Access Alertmanager endpoints from within the cluster. The port is not exposed externally by default.
+$ curl -k -f -H "Authorization: Bearer $TOKEN" "https://alertmanager-main.openshift-monitoring:9092/api/v2/alerts?namespace=test-alertmanager-tenancy-monitoring-edit"
+$ curl -k -X POST -f "https://alertmanager-main.openshift-monitoring:9092/api/v2/silences?namespace=test-alertmanager-tenancy-monitoring-edit" \
+  -H "Authorization: Bearer $TOKEN" -H "Content-Type: application/json" \
+  -d '{
+    "matchers": [
+      {
+        "name": "alertname",
+        "value": "MyTestAlert",
+        "isRegex": false
+      }
+    ],
+    "startsAt": "2044-01-01T00:00:00Z",
+    "endsAt": "2044-01-01T00:00:01Z",
+    "createdBy": "test-alertmanager-tenancy-monitoring-edit/am-client",
+    "comment": "Silence test"
+  }'
 ```
 
-* Port 9092 provides access to the Alertmanager endpoints restricted to a given project. Granting access requires binding a user to the `monitoring-rules-edit` cluster role or `monitoring-edit` cluster role in the project.
 * Port 9097 provides access to the `/metrics` endpoint only. This port is for internal use, and no other usage is guaranteed.
 
 ### openshift-monitoring/kube-state-metrics
@@ -122,7 +219,48 @@ Expose openshift-state-metrics `/metrics` endpoints within the cluster on the fo
 ### openshift-monitoring/prometheus-k8s
 
 Expose the Prometheus web server within the cluster on the following ports:
-* Port 9091 provides access to all the Prometheus endpoints. Granting access requires binding a user to the `cluster-monitoring-view` cluster role.
+* Port 9091 provides access to all the Prometheus endpoints. Granting access requires binding a user to the `cluster-monitoring-view` cluster role or `cluster-monitoring-metrics-api` cluster role in the `openshift-monitoring` project.
+```
+# The following example exercises permissions granted by the `cluster-monitoring-view` cluster role. The binding commands must be run by a user with the necessary privileges.
+
+# Create a test namespace and a service account.
+$ oc create namespace test-prometheus-web-cluster-monitoring-view
+$ oc create serviceaccount prom-client --namespace=test-prometheus-web-cluster-monitoring-view
+# Bind the role to the service account.
+# The binding in this example is applied to a service account but can also be applied to any user.
+$ oc create rolebinding test-prometheus-web-cluster-monitoring-view \
+  --namespace=openshift-monitoring \
+  --clusterrole=cluster-monitoring-view \
+  --serviceaccount=test-prometheus-web-cluster-monitoring-view:prom-client
+# Generate a token to access the endpoints.
+$ TOKEN=$(oc create token prom-client --namespace=test-prometheus-web-cluster-monitoring-view)
+# Access Prometheus endpoints externally.
+$ ROUTE=$(oc get route prometheus-k8s --namespace=openshift-monitoring -ojsonpath={.spec.host})
+$ curl -k -H "Authorization: Bearer $TOKEN" "https://$ROUTE/api/v1/query?query=up"
+# Access Prometheus endpoints from within the cluster.
+$ curl -k -H "Authorization: Bearer $TOKEN" "https://prometheus-k8s.openshift-monitoring:9091/api/v1/query?query=up"
+```
+```
+# The following example exercises permissions granted by the `cluster-monitoring-metrics-api` role. The binding commands must be run by a user with the necessary privileges.
+
+# Create a test namespace and a service account.
+$ oc create namespace test-prometheus-web-cluster-monitoring-metrics-api
+$ oc create serviceaccount prom-client --namespace=test-prometheus-web-cluster-monitoring-metrics-api
+# Bind the role to the service account.
+# The binding in this example is applied to a service account but can also be applied to any user.
+$ oc create rolebinding test-prometheus-web-cluster-monitoring-metrics-api \
+  --namespace=openshift-monitoring \
+  --role=cluster-monitoring-metrics-api  \
+  --serviceaccount=test-prometheus-web-cluster-monitoring-metrics-api:prom-client
+# Generate a token to access the endpoints.
+$ TOKEN=$(oc create token prom-client --namespace=test-prometheus-web-cluster-monitoring-metrics-api)
+# Access Prometheus endpoints externally.
+$ ROUTE=$(oc get route prometheus-k8s --namespace=openshift-monitoring -ojsonpath={.spec.host})
+$ curl -k -H "Authorization: Bearer $TOKEN" "https://$ROUTE/api/v1/query?query=up"
+# Access Prometheus endpoints from within the cluster.
+$ curl -k -H "Authorization: Bearer $TOKEN" "https://prometheus-k8s.openshift-monitoring:9091/api/v1/query?query=up"
+```
+
 * Port 9092 provides access to the `/metrics` and `/federate` endpoints only. This port is for internal use, and no other usage is guaranteed.
 
 ### openshift-user-workload-monitoring/prometheus-operator
@@ -148,9 +286,123 @@ Expose the `/metrics` endpoint on port 8443. This port is for internal use, and 
 ### openshift-monitoring/thanos-querier
 
 Expose the Thanos Querier web server within the cluster on the following ports:
-* Port 9091 provides access to all the Thanos Querier endpoints. Granting access requires binding a user to the `cluster-monitoring-view` cluster role.
+* Port 9091 provides access to all the Thanos Querier endpoints. Granting access requires binding a user to the `cluster-monitoring-view` cluster role or `cluster-monitoring-metrics-api` cluster role in the `openshift-monitoring` project.
+```
+# The following example exercises permissions granted by the `cluster-monitoring-view` cluster role. The binding commands must be run by a user with the necessary privileges.
+
+# Create a test namespace and a service account.
+$ oc create namespace test-thanos-querier-web-cluster-monitoring-view
+$ oc create serviceaccount thanos-client --namespace=test-thanos-querier-web-cluster-monitoring-view
+# Bind the role to the service account.
+# The binding in this example is applied to a service account but can also be applied to any user.
+$ oc create rolebinding test-thanos-querier-web-cluster-monitoring-view \
+  --namespace=openshift-monitoring \
+  --clusterrole=cluster-monitoring-view \
+  --serviceaccount=test-thanos-querier-web-cluster-monitoring-view:thanos-client
+# Generate a token to access the endpoints.
+$ TOKEN=$(oc create token thanos-client --namespace=test-thanos-querier-web-cluster-monitoring-view)
+# Access Thanos Querier endpoints externally.
+$ ROUTE=$(oc get route thanos-querier --namespace=openshift-monitoring -ojsonpath={.spec.host})
+$ curl -k -H "Authorization: Bearer $TOKEN" "https://$ROUTE/api/v1/query?query=up"
+# Access Thanos Querier endpoints from within the cluster.
+$ curl -k -H "Authorization: Bearer $TOKEN" "https://thanos-querier.openshift-monitoring:9091/api/v1/query?query=up"
+```
+```
+# The following example exercises permissions granted by the `cluster-monitoring-metrics-api` role. The binding commands must be run by a user with the necessary privileges.
+
+# Create a test namespace and a service account.
+$ oc create namespace test-thanos-querier-web-cluster-monitoring-metrics-api
+$ oc create serviceaccount thanos-client --namespace=test-thanos-querier-web-cluster-monitoring-metrics-api
+# Bind the role to the service account.
+# The binding in this example is applied to a service account but can also be applied to any user.
+$ oc create rolebinding test-thanos-querier-web-cluster-monitoring-metrics-api \
+  --namespace=openshift-monitoring \
+  --role=cluster-monitoring-metrics-api  \
+  --serviceaccount=test-thanos-querier-web-cluster-monitoring-metrics-api:thanos-client
+# Generate a token to access the endpoints.
+$ TOKEN=$(oc create token thanos-client --namespace=test-thanos-querier-web-cluster-monitoring-metrics-api)
+# Access Thanos Querier endpoints externally.
+$ ROUTE=$(oc get route thanos-querier --namespace=openshift-monitoring -ojsonpath={.spec.host})
+$ curl -k -H "Authorization: Bearer $TOKEN" "https://$ROUTE/api/v1/query?query=up"
+# Access Thanos Querier endpoints from within the cluster.
+$ curl -k -H "Authorization: Bearer $TOKEN" "https://thanos-querier.openshift-monitoring:9091/api/v1/query?query=up"
+```
+
 * Port 9092 provides access to the `/api/v1/query`, `/api/v1/query_range/`, `/api/v1/labels`, `/api/v1/label/*/values`, and `/api/v1/series` endpoints restricted to a given project. Granting access requires binding a user to the `view` cluster role in the project.
+```
+# The following example exercises permissions granted by the `view` cluster role. The binding commands must be run by a user with the necessary privileges.
+
+# Create a test namespace and a service account.
+$ oc create namespace test-thanos-querier-tenancy-view
+$ oc create serviceaccount thanos-client --namespace=test-thanos-querier-tenancy-view
+# Bind the role to the service account.
+# The binding in this example is applied to a service account but can also be applied to any user.
+$ oc create rolebinding test-thanos-querier-tenancy-view \
+  --namespace=test-thanos-querier-tenancy-view \
+  --clusterrole=view \
+  --serviceaccount=test-thanos-querier-tenancy-view:thanos-client
+# Generate a token to access the endpoints.
+$ TOKEN=$(oc create token thanos-client --namespace=test-thanos-querier-tenancy-view)
+# Access Thanos Querier endpoints from within the cluster. The port is not exposed externally by default.
+$ curl -k -f -H "Authorization: Bearer $TOKEN" "https://thanos-querier.openshift-monitoring:9092/api/v1/query?query=up&namespace=test-thanos-querier-tenancy-view"
+```
+
 * Port 9093 provides access to the `/api/v1/alerts`, and `/api/v1/rules` endpoints restricted to a given project. Granting access requires binding a user to the `monitoring-rules-edit` cluster role or `monitoring-edit` cluster role or `monitoring-rules-view` cluster role in the project.
+```
+# The following example exercises permissions granted by the `monitoring-rules-edit` cluster role. The binding commands must be run by a user with the necessary privileges.
+
+# Create a test namespace and a service account.
+$ oc create namespace test-thanos-querier-tenancy-rules-monitoring-rules-edit
+$ oc create serviceaccount thanos-client --namespace=test-thanos-querier-tenancy-rules-monitoring-rules-edit
+# Bind the role to the service account.
+# The binding in this example is applied to a service account but can also be applied to any user.
+$ oc create rolebinding test-thanos-querier-tenancy-rules-monitoring-rules-edit \
+  --namespace=test-thanos-querier-tenancy-rules-monitoring-rules-edit \
+  --clusterrole=monitoring-rules-edit \
+  --serviceaccount=test-thanos-querier-tenancy-rules-monitoring-rules-edit:thanos-client
+# Generate a token to access the endpoints.
+$ TOKEN=$(oc create token thanos-client --namespace=test-thanos-querier-tenancy-rules-monitoring-rules-edit)
+# Access Thanos Querier endpoints from within the cluster. The port is not exposed externally by default.
+$ curl -k -f -H "Authorization: Bearer $TOKEN" "https://thanos-querier.openshift-monitoring:9093/api/v1/rules?namespace=test-thanos-querier-tenancy-rules-monitoring-rules-edit"
+$ curl -k -f -H "Authorization: Bearer $TOKEN" "https://thanos-querier.openshift-monitoring:9093/api/v1/alerts?namespace=test-thanos-querier-tenancy-rules-monitoring-rules-edit"
+```
+```
+# The following example exercises permissions granted by the `monitoring-edit` cluster role. The binding commands must be run by a user with the necessary privileges.
+
+# Create a test namespace and a service account.
+$ oc create namespace test-thanos-querier-tenancy-rules-monitoring-edit
+$ oc create serviceaccount thanos-client --namespace=test-thanos-querier-tenancy-rules-monitoring-edit
+# Bind the role to the service account.
+# The binding in this example is applied to a service account but can also be applied to any user.
+$ oc create rolebinding test-thanos-querier-tenancy-rules-monitoring-edit \
+  --namespace=test-thanos-querier-tenancy-rules-monitoring-edit \
+  --clusterrole=monitoring-edit \
+  --serviceaccount=test-thanos-querier-tenancy-rules-monitoring-edit:thanos-client
+# Generate a token to access the endpoints.
+$ TOKEN=$(oc create token thanos-client --namespace=test-thanos-querier-tenancy-rules-monitoring-edit)
+# Access Thanos Querier endpoints from within the cluster. The port is not exposed externally by default.
+$ curl -k -f -H "Authorization: Bearer $TOKEN" "https://thanos-querier.openshift-monitoring:9093/api/v1/rules?namespace=test-thanos-querier-tenancy-rules-monitoring-edit"
+$ curl -k -f -H "Authorization: Bearer $TOKEN" "https://thanos-querier.openshift-monitoring:9093/api/v1/alerts?namespace=test-thanos-querier-tenancy-rules-monitoring-edit"
+```
+```
+# The following example exercises permissions granted by the `monitoring-rules-view` cluster role. The binding commands must be run by a user with the necessary privileges.
+
+# Create a test namespace and a service account.
+$ oc create namespace test-thanos-querier-tenancy-rules-monitoring-rules-view
+$ oc create serviceaccount thanos-client --namespace=test-thanos-querier-tenancy-rules-monitoring-rules-view
+# Bind the role to the service account.
+# The binding in this example is applied to a service account but can also be applied to any user.
+$ oc create rolebinding test-thanos-querier-tenancy-rules-monitoring-rules-view \
+  --namespace=test-thanos-querier-tenancy-rules-monitoring-rules-view \
+  --clusterrole=monitoring-rules-view \
+  --serviceaccount=test-thanos-querier-tenancy-rules-monitoring-rules-view:thanos-client
+# Generate a token to access the endpoints.
+$ TOKEN=$(oc create token thanos-client --namespace=test-thanos-querier-tenancy-rules-monitoring-rules-view)
+# Access Thanos Querier endpoints from within the cluster. The port is not exposed externally by default.
+$ curl -k -f -H "Authorization: Bearer $TOKEN" "https://thanos-querier.openshift-monitoring:9093/api/v1/rules?namespace=test-thanos-querier-tenancy-rules-monitoring-rules-view"
+$ curl -k -f -H "Authorization: Bearer $TOKEN" "https://thanos-querier.openshift-monitoring:9093/api/v1/alerts?namespace=test-thanos-querier-tenancy-rules-monitoring-rules-view"
+```
+
 * Port 9094 provides access to the `/metrics` endpoint only. This port is for internal use, and no other usage is guaranteed.
 
 ### openshift-user-workload-monitoring/thanos-ruler

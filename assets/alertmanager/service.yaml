@@ -7,6 +7,7 @@ metadata:
       * Port 9094 provides access to all the Alertmanager endpoints. Granting access requires binding a user to the `monitoring-alertmanager-view` role (for read-only operations) or `monitoring-alertmanager-edit` role in the `openshift-monitoring` project.
       xx_omitted_before_deploy__test_file_name:openshift-monitoring_alertmanager-main_service_port_9094.yaml
       * Port 9092 provides access to the Alertmanager endpoints restricted to a given project. Granting access requires binding a user to the `monitoring-rules-edit` cluster role or `monitoring-edit` cluster role in the project.
+      xx_omitted_before_deploy__test_file_name:openshift-monitoring_alertmanager-main_service_port_9092.yaml
       * Port 9097 provides access to the `/metrics` endpoint only. This port is for internal use, and no other usage is guaranteed.
     service.beta.openshift.io/serving-cert-secret-name: alertmanager-main-tls
   labels:
