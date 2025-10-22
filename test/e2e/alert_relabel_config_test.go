@@ -82,12 +82,13 @@ func TestAlertRelabelConfig(t *testing.T) {
 
 	// Check Prometheus config is taking the AlertRelabelConfig into account.
 	validateCurrentRelabelConfig(t, append(initialRelabelConfig, &relabel.Config{
-		SourceLabels: model.LabelNames{"alertname", "severity"},
-		Regex:        relabel.MustNewRegexp("Watchdog;none"),
-		TargetLabel:  "severity",
-		Replacement:  "critical",
-		Action:       "replace",
-		Separator:    ";",
+		SourceLabels:         model.LabelNames{"alertname", "severity"},
+		Regex:                relabel.MustNewRegexp("Watchdog;none"),
+		TargetLabel:          "severity",
+		Replacement:          "critical",
+		Action:               "replace",
+		Separator:            ";",
+		NameValidationScheme: model.UTF8Validation,
 	}))
 
 	// Delete the AlertRelabelConfig.
@@ -108,12 +109,37 @@ func prometheusRelabelConfig(t *testing.T) []*relabel.Config {
 // validateCurrentRelabelConfig ensures that Prometheus config is using the expected relabel-config
 func validateCurrentRelabelConfig(t *testing.T, expectedRelabelConfig []*relabel.Config) {
 	err := framework.Poll(time.Second, 1*time.Minute, func() error {
-		currentRelabelConfig := prometheusRelabelConfig(t)
-		if !assert.ElementsMatch(t, expectedRelabelConfig, currentRelabelConfig) {
+		actualConfigs := prometheusRelabelConfig(t)
+
+		// Normalize both expected and actual configs by setting NameValidationScheme to UTF8Validation.
+		// Prometheus sets this field during config validation, so we normalize for consistent comparison.
+		normalizedExpected := normalizeNameValidationScheme(expectedRelabelConfig)
+		normalizedActual := normalizeNameValidationScheme(actualConfigs)
+
+		if !assert.ElementsMatch(t, normalizedExpected, normalizedActual) {
 			return errors.New("the expected relabel config is not applied yet.")
 		}
 		return nil
 	})
 
 	require.NoError(t, err, "Failed to validate relabel config in use.")
+}
+
+// normalizeNameValidationScheme sets NameValidationScheme to UTF8Validation on all configs.
+// This ensures consistent comparison since Prometheus sets this field during validation.
+func normalizeNameValidationScheme(configs []*relabel.Config) []*relabel.Config {
+	normalized := make([]*relabel.Config, len(configs))
+	for i, cfg := range configs {
+		normalized[i] = &relabel.Config{
+			SourceLabels:         cfg.SourceLabels,
+			Separator:            cfg.Separator,
+			Regex:                cfg.Regex,
+			Modulus:              cfg.Modulus,
+			TargetLabel:          cfg.TargetLabel,
+			Replacement:          cfg.Replacement,
+			Action:               cfg.Action,
+			NameValidationScheme: model.UTF8Validation,
+		}
+	}
+	return normalized
 }

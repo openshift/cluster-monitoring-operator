@@ -662,10 +662,34 @@ func (b *PrometheusSpecApplyConfiguration) WithNameValidationScheme(value monito
 	return b
 }
 
+// WithNameEscapingScheme sets the NameEscapingScheme field in the declarative configuration to the given value
+// and returns the receiver, so that objects can be built by chaining "With" function invocations.
+// If called multiple times, the NameEscapingScheme field is set to the value of the last call.
+func (b *PrometheusSpecApplyConfiguration) WithNameEscapingScheme(value monitoringv1.NameEscapingSchemeOptions) *PrometheusSpecApplyConfiguration {
+	b.CommonPrometheusFieldsApplyConfiguration.NameEscapingScheme = &value
+	return b
+}
+
+// WithConvertClassicHistogramsToNHCB sets the ConvertClassicHistogramsToNHCB field in the declarative configuration to the given value
+// and returns the receiver, so that objects can be built by chaining "With" function invocations.
+// If called multiple times, the ConvertClassicHistogramsToNHCB field is set to the value of the last call.
+func (b *PrometheusSpecApplyConfiguration) WithConvertClassicHistogramsToNHCB(value bool) *PrometheusSpecApplyConfiguration {
+	b.CommonPrometheusFieldsApplyConfiguration.ConvertClassicHistogramsToNHCB = &value
+	return b
+}
+
+// WithScrapeClassicHistograms sets the ScrapeClassicHistograms field in the declarative configuration to the given value
+// and returns the receiver, so that objects can be built by chaining "With" function invocations.
+// If called multiple times, the ScrapeClassicHistograms field is set to the value of the last call.
+func (b *PrometheusSpecApplyConfiguration) WithScrapeClassicHistograms(value bool) *PrometheusSpecApplyConfiguration {
+	b.CommonPrometheusFieldsApplyConfiguration.ScrapeClassicHistograms = &value
+	return b
+}
+
 // WithMinReadySeconds sets the MinReadySeconds field in the declarative configuration to the given value
 // and returns the receiver, so that objects can be built by chaining "With" function invocations.
 // If called multiple times, the MinReadySeconds field is set to the value of the last call.
-func (b *PrometheusSpecApplyConfiguration) WithMinReadySeconds(value uint32) *PrometheusSpecApplyConfiguration {
+func (b *PrometheusSpecApplyConfiguration) WithMinReadySeconds(value int32) *PrometheusSpecApplyConfiguration {
 	b.CommonPrometheusFieldsApplyConfiguration.MinReadySeconds = &value
 	return b
 }
@@ -873,6 +897,14 @@ func (b *PrometheusSpecApplyConfiguration) WithRuntime(value *RuntimeConfigApply
 // If called multiple times, the TerminationGracePeriodSeconds field is set to the value of the last call.
 func (b *PrometheusSpecApplyConfiguration) WithTerminationGracePeriodSeconds(value int64) *PrometheusSpecApplyConfiguration {
 	b.CommonPrometheusFieldsApplyConfiguration.TerminationGracePeriodSeconds = &value
+	return b
+}
+
+// WithHostUsers sets the HostUsers field in the declarative configuration to the given value
+// and returns the receiver, so that objects can be built by chaining "With" function invocations.
+// If called multiple times, the HostUsers field is set to the value of the last call.
+func (b *PrometheusSpecApplyConfiguration) WithHostUsers(value bool) *PrometheusSpecApplyConfiguration {
+	b.CommonPrometheusFieldsApplyConfiguration.HostUsers = &value
 	return b
 }
 
