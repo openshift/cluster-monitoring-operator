@@ -22,7 +22,7 @@ Appears in: link:clustermonitoringconfiguration.adoc[ClusterMonitoringConfigurat
 
 |enforcedBodySizeLimit|string|Enforces a body size limit for Prometheus scraped metrics. If a scraped target's body response is larger than the limit, the scrape will fail. The following values are valid: an empty value to specify no limit, a numeric value in Prometheus size format (such as `64MB`), or the string `automatic`, which indicates that the limit will be automatically calculated based on cluster capacity. The default value is empty, which indicates no limit.
 
-|externalLabels|ExternalLabels|Defines labels to be added to any time series or alerts when communicating with external systems such as federation, remote storage, and Alertmanager. By default, no labels are added.
+|externalLabels|ExternalLabels|Defines labels to be added to any time series or alerts when communicating with external systems such as federation, remote storage, and Alertmanager. The type is map[string]string. By default, no labels are added.
 
 |logLevel|string|Defines the log level setting for Prometheus. The possible values are: `error`, `warn`, `info`, and `debug`. The default value is `info`.
 

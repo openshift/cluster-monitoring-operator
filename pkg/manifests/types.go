@@ -195,7 +195,8 @@ type PrometheusK8sConfig struct {
 	EnforcedBodySizeLimit string `json:"enforcedBodySizeLimit,omitempty"`
 	// Defines labels to be added to any time series or alerts when
 	// communicating with external systems such as federation, remote storage,
-	// and Alertmanager. By default, no labels are added.
+	// and Alertmanager.
+	// The type is map[string]string. By default, no labels are added.
 	ExternalLabels ExternalLabels `json:"externalLabels,omitempty"`
 	// Defines the log level setting for Prometheus.
 	// The possible values are: `error`, `warn`, `info`, and `debug`.
@@ -659,7 +660,7 @@ type PrometheusRestrictedConfig struct {
 	// Defines labels to be added to any time series or alerts when
 	// communicating with external systems such as federation, remote storage,
 	// and Alertmanager.
-	// By default, no labels are added.
+	// The type is map[string]string. By default, no labels are added.
 	ExternalLabels ExternalLabels `json:"externalLabels,omitempty"`
 	// Defines the log level setting for Prometheus.
 	// The possible values are `error`, `warn`, `info`, and `debug`.
