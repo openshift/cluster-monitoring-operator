@@ -197,10 +197,11 @@ function(params)
                   $.volumeMount(tlsVolumeName, tlsMountPath),
                 ],
                 args: [
-                  '-config-path=/opt/app-root/web/dist',
-                  '-static-path=/opt/app-root/web/dist',
-                  '-cert=' + tlsCertPath,
-                  '-key=' + tlsKeyPath,
+                  '--config-path=/opt/app-root/web/dist',
+                  '--static-path=/opt/app-root/web/dist',
+                  '--cert=' + tlsCertPath,
+                  '--key=' + tlsKeyPath,
+                  '--tls-cipher-suites=' + cfg.tlsCipherSuites,
                 ],
                 command: [
                   '/opt/app-root/plugin-backend',

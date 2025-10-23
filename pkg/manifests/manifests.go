@@ -315,6 +315,8 @@ var (
 	MetricsServerTLSMinTLSVersionFlag                    = "--tls-min-version="
 	KubeRbacProxyTLSCipherSuitesFlag                     = "--tls-cipher-suites="
 	KubeRbacProxyMinTLSVersionFlag                       = "--tls-min-version="
+	MonitoringPluginTLSCipherSuitesFlag                  = "--tls-cipher-suites="
+	MonitoringPluginTLSMinTLSVersionFlag                 = "--tls-min-version="
 
 	AuthProxyExternalURLFlag  = "-external-url="
 	AuthProxyCookieDomainFlag = "-cookie-domain="
@@ -2834,6 +2836,8 @@ func (f *Factory) MonitoringPluginDeployment() (*appsv1.Deployment, error) {
 	}
 
 	containers[idx].Image = f.config.Images.MonitoringPlugin
+	containers[idx].Args = f.setTLSSecurityConfiguration(podSpec.Containers[0].Args,
+		MonitoringPluginTLSCipherSuitesFlag, MonitoringPluginTLSMinTLSVersionFlag)
 
 	cfg := f.config.ClusterMonitoringConfiguration.MonitoringPluginConfig
 	if cfg == nil {
