@@ -1365,7 +1365,7 @@ func TestRemoteWriteAuthorizationConfig(t *testing.T) {
 			checkFn: []func(*testing.T, monv1.RemoteWriteSpec){
 				func(t *testing.T, target monv1.RemoteWriteSpec) {
 					if target.Sigv4.Region != "eu" {
-						t.Fatalf("Region field not correct in section RemoteWriteSpec.Sigv4 expected 'eu', got %s", target.Sigv4)
+						t.Fatalf("Region field not correct in section RemoteWriteSpec.Sigv4 expected 'eu', got %s", target.Sigv4.Region)
 					}
 					if target.Sigv4.AccessKey.Name != "aws-credentials" {
 						t.Fatalf("Name field not correct in section RemoteWriteSpec.Sigv4.AccessKey expected 'aws-credentials', got %s", target.Sigv4.AccessKey.Name)
