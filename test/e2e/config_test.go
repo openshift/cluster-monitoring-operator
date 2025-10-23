@@ -1008,6 +1008,7 @@ func assertInClusterNetworkPolicyExists(t *testing.T) {
 		"monitoring-plugin",
 		"openshift-state-metrics",
 		"prometheus-operator",
+		"prometheus-operator-admission-webhook",
 		"telemeter-client",
 		"thanos-querier",
 	}

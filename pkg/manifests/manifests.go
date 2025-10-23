@@ -213,6 +213,7 @@ var (
 	AdmissionWebhookPodDisruptionBudget                 = "admission-webhook/pod-disruption-budget.yaml"
 	AdmissionWebhookService                             = "admission-webhook/service.yaml"
 	AdmissionWebhookServiceAccount                      = "admission-webhook/service-account.yaml"
+	AdmissionWebhookNetworkPolicy                       = "admission-webhook/network-policy-downstream.yaml"
 
 	PrometheusOperatorClusterRoleBinding  = "prometheus-operator/cluster-role-binding.yaml"
 	PrometheusOperatorClusterRole         = "prometheus-operator/cluster-role.yaml"
@@ -2169,6 +2170,10 @@ func (f *Factory) PrometheusOperatorNetworkPolicy() (*networkingv1.NetworkPolicy
 
 func (f *Factory) PrometheusOperatorAdmissionWebhookServiceAccount() (*v1.ServiceAccount, error) {
 	return f.NewServiceAccount(f.assets.MustNewAssetSlice(AdmissionWebhookServiceAccount))
+}
+
+func (f *Factory) AdmissionWebhookNetworkPolicy() (*networkingv1.NetworkPolicy, error) {
+	return f.NewNetworkPolicy(f.assets.MustNewAssetSlice(AdmissionWebhookNetworkPolicy))
 }
 
 func (f *Factory) PrometheusOperatorAdmissionWebhookService() (*v1.Service, error) {

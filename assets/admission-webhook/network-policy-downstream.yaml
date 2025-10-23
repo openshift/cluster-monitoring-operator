@@ -4,22 +4,18 @@ metadata:
   labels:
     app.kubernetes.io/managed-by: cluster-monitoring-operator
     app.kubernetes.io/part-of: openshift-monitoring
-  name: alertmanager
+  name: prometheus-operator-admission-webhook
   namespace: openshift-monitoring
 spec:
   egress:
   - {}
   ingress:
   - ports:
-    - port: tenancy
-      protocol: TCP
-    - port: web
-      protocol: TCP
-    - port: metrics
+    - port: https
       protocol: TCP
   podSelector:
     matchLabels:
-      app.kubernetes.io/name: alertmanager
+      app.kubernetes.io/name: prometheus-operator-admission-webhook
   policyTypes:
   - Ingress
   - Egress

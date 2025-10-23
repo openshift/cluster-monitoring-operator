@@ -440,8 +440,6 @@ function(params)
         ],
       },
     },
-    // Allow access to alertmanager 9092(port name: tenancy)/9095(port name: web)/9097(port name: metrics)
-    // and 9094(port name: udp-mesh for UDP, port name: tcp-mesh for TCP) ports
     networkPolicyDownstream: {
       apiVersion: 'networking.k8s.io/v1',
       kind: 'NetworkPolicy',
@@ -462,6 +460,12 @@ function(params)
         ingress: [
           {
             ports: [
+              {
+                // allow access to the Alertmanager endpoints restricted to a given project,
+                // port number 9092(port name: tenancy)
+                port: 'tenancy',
+                protocol: 'TCP',
+              },
               {
                 // allow prometheus to sent alerts to alertmanager, port number 9095(port name: web)
                 port: 'web',
