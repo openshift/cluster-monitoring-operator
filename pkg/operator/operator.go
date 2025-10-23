@@ -202,8 +202,9 @@ type Operator struct {
 
 	assets *manifests.Assets
 
-	ruleController    *alert.RuleController
-	relabelController *alert.RelabelConfigController
+	ruleController              *alert.RuleController
+	relabelController           *alert.RelabelConfigController
+	clusterMonitoringController *alert.ClusterMonitoringController
 }
 
 func New(
@@ -252,6 +253,11 @@ func New(
 		return nil, fmt.Errorf("failed to create alert relabel config controller: %w", err)
 	}
 
+	clusterMonitoringController, err := alert.NewClusterMonitoringController(ctx, c, version)
+	if err != nil {
+		return nil, fmt.Errorf("failed to create cluster monitoring controller: %w", err)
+	}
+
 	o := &Operator{
 		images:                    images,
 		telemetryMatches:          telemetryMatches,
@@ -265,12 +271,13 @@ func New(
 			workqueue.NewTypedItemExponentialFailureRateLimiter[string](50*time.Millisecond, 3*time.Minute),
 			workqueue.TypedRateLimitingQueueConfig[string]{Name: "cluster-monitoring"},
 		),
-		informers:            make([]cache.SharedIndexInformer, 0),
-		assets:               a,
-		informerFactories:    make([]informers.SharedInformerFactory, 0),
-		controllersToRunFunc: make([]func(context.Context, int), 0),
-		ruleController:       ruleController,
-		relabelController:    relabelController,
+		informers:                   make([]cache.SharedIndexInformer, 0),
+		assets:                      a,
+		informerFactories:           make([]informers.SharedInformerFactory, 0),
+		controllersToRunFunc:        make([]func(context.Context, int), 0),
+		ruleController:              ruleController,
+		relabelController:           relabelController,
+		clusterMonitoringController: clusterMonitoringController,
 	}
 
 	informer := cache.NewSharedIndexInformer(
@@ -532,6 +539,7 @@ func New(
 		csrMetricsServerController.Run,
 		o.ruleController.Run,
 		o.relabelController.Run,
+		o.clusterMonitoringController.Run,
 	)
 
 	return o, nil
