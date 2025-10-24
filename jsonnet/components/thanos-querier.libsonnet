@@ -650,5 +650,39 @@ function(params)
 
       },
     },
-
+    networkPolicyDownstream: {
+      apiVersion: 'networking.k8s.io/v1',
+      kind: 'NetworkPolicy',
+      metadata: {
+        name: 'thanos-querier',
+        namespace: cfg.namespace,
+      },
+      spec: {
+        podSelector: {
+          matchLabels: {
+            'app.kubernetes.io/name': 'thanos-query',
+          },
+        },
+        policyTypes: [
+          'Ingress',
+          'Egress',
+        ],
+        ingress: [
+          {
+            ports: [
+              // allow for thanos-querier tenancy endpoint, 9092 port(port name: tenancy),
+              // for example, expose tenancy-aware /api/v1/labels for thanos query,
+              // load metrics result on admin web UI
+              {
+                port: 'tenancy',
+                protocol: 'TCP',
+              },
+            ],
+          },
+        ],
+        egress: [
+          {},
+        ],
+      },
+    },
   }

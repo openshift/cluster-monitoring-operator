@@ -995,6 +995,33 @@ func expectVolumeMountsInContainer(containerName, mountName string) framework.Po
 	}
 }
 
+// assertInClusterNetworkPolicyExists ensures that the NetworkPolicies
+// are deployed under openshift-monitoring namespace
+func assertInClusterNetworkPolicyExists(t *testing.T) {
+	networkPolicyNames := []string{
+		"default-deny",
+		"cluster-monitoring-operator",
+		"alertmanager",
+		"prometheus",
+		"kube-state-metrics",
+		"metrics-server",
+		"monitoring-plugin",
+		"openshift-state-metrics",
+		"prometheus-operator",
+		"prometheus-operator-admission-webhook",
+		"telemeter-client",
+		"thanos-querier",
+	}
+
+	t.Run("check in-cluster monitoring NetworkPolicies", func(t *testing.T) {
+		for _, name := range networkPolicyNames {
+			t.Run(fmt.Sprintf("assert %s networkpolicy exists", name), func(t *testing.T) {
+				f.AssertNetworkPolicyExists(name, f.Ns)
+			})
+		}
+	})
+}
+
 func assertExternalLabelExists(namespace, crName, expectKey, expectValue string) func(t *testing.T) {
 	return func(t *testing.T) {
 		err := framework.Poll(time.Second, time.Minute*5, func() error {
