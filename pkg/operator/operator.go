@@ -622,6 +622,16 @@ func (o *Operator) keyFunc(obj interface{}) (string, bool) {
 	return k, true
 }
 
+// isServiceCASecret checks if the given key represents a service-CA generated secret
+// that should trigger reconciliation when rotated.
+func (o *Operator) isServiceCASecret(key string) bool {
+	if strings.HasPrefix(key, o.namespace+"/") || strings.HasPrefix(key, o.namespaceUserWorkload+"/") {
+		secretName := strings.Split(key, "/")[1]
+		return strings.HasSuffix(secretName, "-tls") || strings.HasSuffix(secretName, "-cert")
+	}
+	return false
+}
+
 func (o *Operator) handleEvent(obj interface{}) {
 	cmoConfigMap := o.namespace + "/" + o.configMapName
 
@@ -671,6 +681,10 @@ func (o *Operator) handleEvent(obj interface{}) {
 	case federateClientCerts:
 	case uwmConfigMap:
 	default:
+		if o.isServiceCASecret(key) {
+			klog.V(4).Infof("Service-CA secret updated, triggering reconciliation: %s", key)
+			break
+		}
 		klog.V(5).Infof("ConfigMap or Secret (%s) not triggering an update.", key)
 		return
 	}
