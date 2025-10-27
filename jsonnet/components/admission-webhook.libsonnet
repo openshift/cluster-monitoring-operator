@@ -2,6 +2,7 @@ local tlsVolumeName = 'prometheus-operator-admission-webhook-tls';
 local admissionWebhook = import 'github.com/prometheus-operator/prometheus-operator/jsonnet/prometheus-operator/admission-webhook.libsonnet';
 local antiAffinity = import 'github.com/prometheus-operator/kube-prometheus/jsonnet/kube-prometheus/addons/anti-affinity.libsonnet';
 local withDescription = (import '../utils/add-annotations.libsonnet').withDescription;
+local optIntoCapability = (import '../utils/opt-into-capability.libsonnet');
 
 function(params)
   local aw = admissionWebhook(params);
@@ -99,7 +100,7 @@ function(params)
         },
         annotations: {
           'service.beta.openshift.io/inject-cabundle': 'true',
-        },
+        } + withDescription('Validating webhook for `PrometheusRule` custom resources.'),
       },
       webhooks: [
         {
@@ -129,7 +130,7 @@ function(params)
       ],
     },
 
-    alertmanagerConfigValidatingWebhook: {
+    alertmanagerConfigValidatingWebhook: optIntoCapability.optionalMonitoringForObject({
       apiVersion: 'admissionregistration.k8s.io/v1',
       kind: 'ValidatingWebhookConfiguration',
       metadata: {
@@ -140,7 +141,7 @@ function(params)
         },
         annotations: {
           'service.beta.openshift.io/inject-cabundle': 'true',
-        },
+        } + withDescription('Validating webhook for `AlertmanagerConfig` custom resources. Note that this webhook is a part of optional monitoring, and will only be deployed if the `OptionalMonitoring` capability is enabled.'),
       },
       webhooks: [
         {
@@ -168,5 +169,5 @@ function(params)
           failurePolicy: 'Ignore',
         },
       ],
-    },
+    }),
   }

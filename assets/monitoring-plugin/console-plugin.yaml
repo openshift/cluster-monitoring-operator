@@ -1,6 +1,8 @@
 apiVersion: console.openshift.io/v1
 kind: ConsolePlugin
 metadata:
+  annotations:
+    capability.openshift.io/name: Console
   labels:
     app.kubernetes.io/component: monitoring-plugin
     app.kubernetes.io/managed-by: cluster-monitoring-operator
