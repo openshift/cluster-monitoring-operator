@@ -632,6 +632,14 @@ data:
     #   profile: full|minimal (refer: cluster-monitoring-operator/pkg/manifests#SupportedCollectionProfiles)
     - '{__name__="profile:cluster_monitoring_operator_collection_profile:max"}'
     #
+    # owners: (@openshift/openshift-team-monitoring)
+    #
+    # vendor_model:node_accelerator_cards:sum reports the total number of accelerator cards
+    # in the cluster per vendor and model.
+    # Possible label values are:
+    #   vendor: NVIDIA, AMD, GAUDI, INTEL, QUALCOMM, Marvell, Mellanox
+    - '{__name__="vendor_model:node_accelerator_cards:sum",vendor=~"NVIDIA|AMD|GAUDI|INTEL|QUALCOMM|Marvell|Mellanox"}'
+    #
     # owners: (https://github.com/integr8ly, @david-martin)
     #
     # rhmi_status reports the status of an RHMI installation.
@@ -822,6 +830,56 @@ data:
     # Number of jaeger instances used certain agent strategy
     - '{__name__="jaeger_operator_instances_agent_strategies"}'
     #
+    # owners: (@tracing-team)
+    #
+    # Number of Tempo instances per backend storage type.
+    - '{__name__="type:tempo_operator_tempostack_storage_backend:sum",type=~"azure|gcs|s3"}'
+    #
+    # owners: (@tracing-team)
+    #
+    # Number of Tempo instances per management state.
+    - '{__name__="state:tempo_operator_tempostack_managed:sum",state=~"Managed|Unmanaged"}'
+    #
+    # owners: (@tracing-team)
+    #
+    # Number of Tempo instances per multitenancy mode.
+    - '{__name__="type:tempo_operator_tempostack_multi_tenancy:sum",type=~"static|openshift|disabled"}'
+    #
+    # owners: (@tracing-team)
+    #
+    # Number of Tempo stacks with Jaeger UI enabled/disabled.
+    - '{__name__="enabled:tempo_operator_tempostack_jaeger_ui:sum",enabled=~"true|false"}'
+    #
+    # owners: (@tracing-team)
+    #
+    # Number of OpenTelemetry collectors using certain receiver types.
+    - '{__name__="type:opentelemetry_collector_receivers:sum",type=~"jaeger|hostmetrics|opencensus|prometheus|zipkin|kafka|filelog|journald|k8sevents|kubeletstats|k8scluster|k8sobjects|otlp"}'
+    #
+    # owners: (@tracing-team)
+    #
+    # Number of OpenTelemetry collectors used certain exporter type
+    - '{__name__="type:opentelemetry_collector_exporters:sum",type=~"debug|logging|otlp|otlphttp|prometheus|lokiexporter|kafka|awscloudwatchlogs|loadbalancing"}'
+    #
+    # owners: (@tracing-team)
+    #
+    # Number of OpenTelemetry collectors used certain processor type
+    - '{__name__="type:opentelemetry_collector_processors:sum",type=~"batch|memorylimiter|attributes|resource|span|k8sattributes|resourcedetection|filter|routing|cumulativetodelta|groupbyattrs"}'
+    #
+    # owners: (@tracing-team)
+    #
+    # Number of OpenTelemetry collectors used certain extension type
+    - '{__name__="type:opentelemetry_collector_extensions:sum",type=~"zpages|ballast|memorylimiter|jaegerremotesampling|healthcheck|pprof|oauth2clientauth|oidcauth|bearertokenauth|filestorage"}'
+    #
+    # owners: (@tracing-team)
+    #
+    # Number of OpenTelemetry collectors used certain connector type
+    - '{__name__="type:opentelemetry_collector_connectors:sum",type=~"spanmetrics|forward"}'
+    #
+    # owners: (@tracing-team)
+    #
+    # Number of OpenTelemetry collectors deployed using certain deployment type
+    - '{__name__="type:opentelemetry_collector_info:sum",type=~"deployment|daemonset|sidecar|statefulset"}'
+    #
     # owners: (https://github.com/redhat-developer/application-services-metering-operator)
     #
     # The current amount of CPU used by Application Services products, aggregated by product name.
@@ -991,6 +1049,16 @@ data:
     # platform:hypershift_nodepools:max is the total number of nodepools managed by the hypershift operator by cluster platform
     - '{__name__="platform:hypershift_nodepools:max"}'
     #
+    # owners: (@openshift/team-hypershift-maintainers)
+    #
+    # cluster_name:hypershift_nodepools_size:sum is the total number of desired nodepool replicas managed by the hypershift operator per HostedCluster identified by `the cluster_name` and `exported_namespace` labels.
+    - '{__name__="cluster_name:hypershift_nodepools_size:sum"}'
+    #
+    # owners: (@openshift/team-hypershift-maintainers)
+    #
+    # cluster_name:hypershift_nodepools_available_replicas:sum is the actual number of available nodepool replicas managed by the hypershift operator per HostedCluster identified by `the cluster_name` and `exported_namespace` labels.
+    - '{__name__="cluster_name:hypershift_nodepools_available_replicas:sum"}'
+    #
     # owners: (https://github.com/red-hat-storage/mcg-osd-deployer, Data Federation team)
     #
     # Number of unhealthy Object Bucket Claims in addon's namespace.
@@ -1046,6 +1114,13 @@ data:
     #
     # os_image_url_override:sum tells whether cluster is using default OS image or has been overridden by user
     - '{__name__="os_image_url_override:sum"}'
+    #
+    # owners: (https://github.com/openshift/machine-config-operator/)
+    #
+    # cluster:mcd_nodes_with_unsupported_packages:count is the total number of nodes with unsupported packages.
+    - '{__name__="cluster:mcd_nodes_with_unsupported_packages:count"}'
+    # cluster:mcd_total_unsupported_packages:sum is the sum of all unsupported packages across all nodes.
+    - '{__name__="cluster:mcd_total_unsupported_packages:sum"}'
     #
     # owners: (https://github.com/openshift/vmware-vsphere-csi-driver-operator, @openshift/storage)
     #
@@ -1155,6 +1230,30 @@ data:
     #
     # openshift:openshift_network_operator_ipsec_state:info shows the cluster ipsec status (Disabled, External, Full) and whether the legacy or new API was used to set the status
     - '{__name__="openshift:openshift_network_operator_ipsec_state:info"}'
+    #
+    # owners: (https://github.com/openshift/cluster-health-analyzer)
+    #
+    # cluster:health:group_severity:count shows the total number of firing incidents by severity
+    # Expected labels:
+    # - severity: "critical", "warning", "info" or "none".
+    - '{__name__="cluster:health:group_severity:count", severity=~"critical|warning|info|none"}'
+    #
+    # owners: (https://github.com/openshift/cluster-kube-apiserver-operator/)
+    #
+    # cluster:controlplane_topology:info shows the clusters control plane
+    # topology
+    - '{__name__="cluster:controlplane_topology:info", mode=~"HighlyAvailable|HighlyAvailableArbiter|SingleReplica|DualReplica|External"}'
+    #
+    # owners: (https://github.com/openshift/cluster-kube-apiserver-operator/)
+    #
+    # cluster:infrastructure_topology:info shows the clusters infrastructure
+    # topology
+    - '{__name__="cluster:infrastructure_topology:info", mode=~"HighlyAvailable|SingleReplica"}'
+    #
+    # owners: (https://github.com/openshift/cluster-storage-operator, @openshift/storage)
+    #
+    # cluster:selinux_warning_controller_selinux_volume_conflict:count represents number of pods that may fail to start when SELinuxMount feature gate is enabled and Pods caught by this metric land on the same node.
+    - '{__name__="cluster:selinux_warning_controller_selinux_volume_conflict:count"}'
 kind: ConfigMap
 metadata:
   name: telemetry-config
