@@ -6,7 +6,7 @@ metadata:
     app.kubernetes.io/managed-by: cluster-monitoring-operator
     app.kubernetes.io/name: node-exporter
     app.kubernetes.io/part-of: openshift-monitoring
-    app.kubernetes.io/version: 1.9.1
+    app.kubernetes.io/version: 1.10.2
     monitoring.openshift.io/collection-profile: full
   name: node-exporter
   namespace: openshift-monitoring
