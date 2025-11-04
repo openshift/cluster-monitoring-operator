@@ -93,14 +93,12 @@ local gatewayClassMetrics = [
       type: 'Info',
       info: {
         labelsFromPath: {
-          namespace: ['metadata', 'namespace'],
           gateway_class: ['metadata', 'name'],
           controller_name: ['spec', 'controllerName'],
           accepted: ['status', 'conditions', '[type=Accepted]', 'status'],
-          reason: ['status', 'conditions', '[type=Accepted]', 'reason']
-        }
-      }
-    }
+        },
+      },
+    },
   },
 ];
 
@@ -116,10 +114,9 @@ local gatewayMetrics = [
           gateway: ['metadata', 'name'],
           gateway_class_name: ['spec', 'gatewayClassName'],
           programmed: ['status', 'conditions', '[type=Programmed]', 'status'],
-          reason: ['status', 'conditions', '[type=Programmed]', 'reason']
-        }
-      }
-    }
+        },
+      },
+    },
   },
 ];
 
