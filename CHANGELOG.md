@@ -1,5 +1,9 @@
 # Note: This CHANGELOG is only for the monitoring team to track all monitoring related changes. Please see OpenShift release notes for official changes.
 
+## 4.21
+
+- [#2339](https://github.com/openshift/cluster-monitoring-operator/pull/2339) Add support to sysctl node-exporter collector
+
 ## 4.20
 
 - [#2595](https://github.com/openshift/cluster-monitoring-operator/pull/2595) Multi-tenant support for KSM's CRS feature-set downstream.
