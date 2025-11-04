@@ -7,6 +7,7 @@
   - `KubePdbNotEnoughHealthyPods`
   - `KubeNodePressure`
   - `KubeNodeEviction`
+- [#2677](https://github.com/openshift/cluster-monitoring-operator/pull/2677) Fix KSM deny-list typo that put `^kube_.+_annotations$^kube_customresource_.+_annotations_info$,` in the deny-list instead of seperate entries, like so, `^kube_.+_annotations$,^kube_customresource_.+_annotations_info$,`, due to the omission of a comma.
 
 ## 4.18
 
