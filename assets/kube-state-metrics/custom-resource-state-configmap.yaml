@@ -507,14 +507,6 @@ data:
                 "gateway_class":
                 - "metadata"
                 - "name"
-                "namespace":
-                - "metadata"
-                - "namespace"
-                "reason":
-                - "status"
-                - "conditions"
-                - "[type=Accepted]"
-                - "reason"
             "type": "Info"
           "help": "Information about GatewayClasses"
           "name": "gateway_class"
@@ -540,11 +532,6 @@ data:
                 - "conditions"
                 - "[type=Programmed]"
                 - "status"
-                "reason":
-                - "status"
-                - "conditions"
-                - "[type=Programmed]"
-                - "reason"
             "type": "Info"
           "help": "Information about Gateways"
           "name": "gateway"
