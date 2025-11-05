@@ -1,5 +1,9 @@
 # Note: This CHANGELOG is only for the monitoring team to track all monitoring related changes. Please see OpenShift release notes for official changes.
 
+## 4.19
+
+- [#2677](https://github.com/openshift/cluster-monitoring-operator/pull/2677) Fix KSM deny-list typo that put `^kube_.+_annotations$^kube_customresource_.+_annotations_info$,` in the deny-list instead of seperate entries, like so, `^kube_.+_annotations$,^kube_customresource_.+_annotations_info$,`, due to the omission of a comma.
+
 ## 4.18
 
 - [#2503](https://github.com/openshift/cluster-monitoring-operator/issues/2503) Expose `scrapeInterval` setting for UWM Prometheus.
