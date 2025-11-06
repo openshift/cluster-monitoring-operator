@@ -39,18 +39,6 @@ func NewMonitoringPluginTask(client *client.Client, factory *manifests.Factory, 
 }
 
 func (t *MonitoringPluginTask) Run(ctx context.Context) error {
-	{
-		netpol, err := t.factory.MonitoringPluginNetworkPolicy()
-		if err != nil {
-			return fmt.Errorf("initializing Console Plugin NetworkPolicy failed: %w", err)
-		}
-
-		err = t.client.CreateOrUpdateNetworkPolicy(ctx, netpol)
-		if err != nil {
-			return fmt.Errorf("reconciling Console Plugin NetworkPolicy failed: %w", err)
-		}
-	}
-
 	// NOTE:  console capability (like other capabilities) can only go from
 	// disabled -> enabled and not the other way around, meaning that CMO
 	// doesn't have to deal with removal of the console plugin resources.

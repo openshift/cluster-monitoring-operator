@@ -31,17 +31,6 @@ func NewMetricsServerTask(ctx context.Context, namespace string, client *client.
 
 func (t *MetricsServerTask) Run(ctx context.Context) error {
 	{
-		netpol, err := t.factory.MetricsServerNetworkPolicy()
-		if err != nil {
-			return fmt.Errorf("initializing MetricsServer NetworkPolicy failed: %w", err)
-		}
-
-		err = t.client.CreateOrUpdateNetworkPolicy(ctx, netpol)
-		if err != nil {
-			return fmt.Errorf("reconciling MetricsServer NetworkPolicy failed: %w", err)
-		}
-	}
-	{
 		// TODO: This is a temporary workaround until the requirements for https://github.com/openshift/cluster-monitoring-operator/pull/2329
 		// are ready.
 		// Because the metrics-server Pods rely on the system:serviceaccount:openshift-monitoring:prometheus-k8s SA to reach kubelet,
