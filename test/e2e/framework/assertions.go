@@ -311,6 +311,24 @@ func (f *Framework) AssertPrometheusExists(name, namespace string) func(t *testi
 	}
 }
 
+func (f *Framework) AssertPrometheusAlertmanagerEndpointsEmpty(name, namespace string) func(t *testing.T) {
+	return func(t *testing.T) {
+		err := Poll(time.Second, 5*time.Minute, func() error {
+			const prometheusConfigSecretName = "prometheus-k8s"
+			prometheusConfig := f.PrometheusConfigFromSecret(t, namespace, prometheusConfigSecretName)
+
+			if len(prometheusConfig.AlertingConfig.AlertmanagerConfigs) != 0 {
+				return fmt.Errorf("expected no alertmanager endpoints in runtime config, got %d", len(prometheusConfig.AlertingConfig.AlertmanagerConfigs))
+			}
+
+			return nil
+		})
+		if err != nil {
+			t.Fatal(err)
+		}
+	}
+}
+
 type PodAssertion func(pod v1.Pod) error
 
 // AssertPodConfiguration for each pod in the namespace that matches the label selector
