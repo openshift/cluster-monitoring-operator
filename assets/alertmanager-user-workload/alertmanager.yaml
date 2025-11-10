@@ -25,6 +25,7 @@ spec:
         namespaces:
         - openshift-user-workload-monitoring
         topologyKey: kubernetes.io/hostname
+  alertmanagerConfigSelector: null
   automountServiceAccountToken: true
   containers:
   - env:

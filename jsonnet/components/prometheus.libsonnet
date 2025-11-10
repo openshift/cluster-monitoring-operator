@@ -331,21 +331,6 @@ function(params)
         // Enable some experimental features.
         // More at https://prometheus.io/docs/prometheus/latest/feature_flags/
         enableFeatures+: ['delayed-compaction', 'use-uncached-io'],
-        alerting+: {
-          alertmanagers:
-            std.map(
-              function(a) a {
-                scheme: 'https',
-                tlsConfig: {
-                  caFile: '/etc/prometheus/configmaps/serving-certs-ca-bundle/service-ca.crt',
-                  serverName: 'alertmanager-main',
-                },
-                bearerTokenFile: '/var/run/secrets/kubernetes.io/serviceaccount/token',
-                apiVersion: 'v2',
-              },
-              super.alertmanagers,
-            ),
-        },
         resources: {
           requests: {
             memory: '1Gi',
