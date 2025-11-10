@@ -1105,13 +1105,16 @@ func TestPrometheusK8sRemoteWriteURLs(t *testing.T) {
 
 			config: func() *Config {
 				c := NewDefaultConfig()
-				c.ClusterMonitoringConfiguration.TelemeterClientConfig.ClusterID = "123"
-				c.ClusterMonitoringConfiguration.TelemeterClientConfig.Token = "secret"
+				c.ClusterMonitoringConfiguration.TelemetryConfig.ClusterID = "123"
+				c.ClusterMonitoringConfiguration.TelemetryConfig.Token = "secret"
 
 				return c
 			},
+			telemetrySecret: telemetrySecret,
 
-			expectedRemoteWriteURLs: nil,
+			expectedRemoteWriteURLs: []string{
+				"https://infogw.api.openshift.com/metrics/v1/receive",
+			},
 		},
 		{
 			name: "legacy telemetry and custom remote write",
@@ -1119,14 +1122,16 @@ func TestPrometheusK8sRemoteWriteURLs(t *testing.T) {
 			config: func() *Config {
 				c := NewDefaultConfig()
 				c.ClusterMonitoringConfiguration.PrometheusK8sConfig.RemoteWrite = []RemoteWriteSpec{{URL: "http://custom"}}
-				c.ClusterMonitoringConfiguration.TelemeterClientConfig.ClusterID = "123"
-				c.ClusterMonitoringConfiguration.TelemeterClientConfig.Token = "secret"
+				c.ClusterMonitoringConfiguration.TelemetryConfig.ClusterID = "123"
+				c.ClusterMonitoringConfiguration.TelemetryConfig.Token = "secret"
 
 				return c
 			},
+			telemetrySecret: telemetrySecret,
 
 			expectedRemoteWriteURLs: []string{
 				"http://custom",
+				"https://infogw.api.openshift.com/metrics/v1/receive",
 			},
 		},
 		{
@@ -1135,8 +1140,8 @@ func TestPrometheusK8sRemoteWriteURLs(t *testing.T) {
 			config: func() *Config {
 				c := NewDefaultConfig()
 				c.SetRemoteWrite(true)
-				c.ClusterMonitoringConfiguration.TelemeterClientConfig.ClusterID = "123"
-				c.ClusterMonitoringConfiguration.TelemeterClientConfig.Token = "secret"
+				c.ClusterMonitoringConfiguration.TelemetryConfig.ClusterID = "123"
+				c.ClusterMonitoringConfiguration.TelemetryConfig.Token = "secret"
 
 				return c
 			},
@@ -1153,8 +1158,8 @@ func TestPrometheusK8sRemoteWriteURLs(t *testing.T) {
 				c := NewDefaultConfig()
 				c.SetRemoteWrite(true)
 				c.ClusterMonitoringConfiguration.PrometheusK8sConfig.RemoteWrite = []RemoteWriteSpec{{URL: "http://custom"}}
-				c.ClusterMonitoringConfiguration.TelemeterClientConfig.ClusterID = "123"
-				c.ClusterMonitoringConfiguration.TelemeterClientConfig.Token = "secret"
+				c.ClusterMonitoringConfiguration.TelemetryConfig.ClusterID = "123"
+				c.ClusterMonitoringConfiguration.TelemetryConfig.Token = "secret"
 
 				return c
 			},
@@ -1171,10 +1176,10 @@ func TestPrometheusK8sRemoteWriteURLs(t *testing.T) {
 			config: func() *Config {
 				c := NewDefaultConfig()
 				c.SetRemoteWrite(true)
-				c.ClusterMonitoringConfiguration.TelemeterClientConfig.TelemeterServerURL = "http://custom-telemeter"
+				c.ClusterMonitoringConfiguration.TelemetryConfig.TelemeterServerURL = "http://custom-telemeter"
 				c.ClusterMonitoringConfiguration.PrometheusK8sConfig.RemoteWrite = []RemoteWriteSpec{{URL: "http://custom-remote-write"}}
-				c.ClusterMonitoringConfiguration.TelemeterClientConfig.ClusterID = "123"
-				c.ClusterMonitoringConfiguration.TelemeterClientConfig.Token = "secret"
+				c.ClusterMonitoringConfiguration.TelemetryConfig.ClusterID = "123"
+				c.ClusterMonitoringConfiguration.TelemetryConfig.Token = "secret"
 
 				return c
 			},
@@ -1182,6 +1187,28 @@ func TestPrometheusK8sRemoteWriteURLs(t *testing.T) {
 
 			expectedRemoteWriteURLs: []string{
 				"http://custom-remote-write",
+				"http://custom-telemeter",
+			},
+		},
+		{
+			name: "remote write telemetry with custom url via deprecated telemeterClientConfig",
+
+			config: func() *Config {
+				c, err := NewConfigFromString(`
+telemeterClient:
+  telemeterServerURL: http://custom-telemeter
+  clusterID: "123"
+  token: secret
+`, false)
+				if err != nil {
+					t.Fatal(err)
+				}
+				c.SetRemoteWrite(true)
+				return c
+			},
+			telemetrySecret: telemetrySecret,
+
+			expectedRemoteWriteURLs: []string{
 				"http://custom-telemeter",
 			},
 		},
@@ -4067,85 +4094,6 @@ grpc:
 		KubeRbacProxyMinTLSVersionFlag, APIServerDefaultMinTLSVersion)
 	if expectedKubeRbacProxyMinTLSVersionArg != kubeRbacProxyMinTLSVersionArg {
 		t.Fatalf("incorrect TLS version \n got %s, \nwant %s", kubeRbacProxyMinTLSVersionArg, expectedKubeRbacProxyMinTLSVersionArg)
-	}
-}
-
-func TestTelemeterConfiguration(t *testing.T) {
-	config := `telemeterClient:
-  resources:
-    requests:
-      cpu: 100m
-      memory: 100Mi
-    limits:
-      cpu: 200m
-      memory: 200Mi
-  topologySpreadConstraints:
-  - maxSkew: 1
-    topologyKey: type
-    whenUnsatisfiable: DoNotSchedule
-    labelSelector:
-      matchLabels:
-        foo: bar`
-
-	c, err := NewConfigFromString(config, false)
-	if err != nil {
-		t.Fatal(err)
-	}
-	f := NewFactory("openshift-monitoring", "openshift-user-workload-monitoring", c, defaultInfrastructureReader(), &fakeProxyReader{}, NewAssets(assetsPath), &APIServerConfig{}, &configv1.Console{})
-	d, err := f.TelemeterClientDeployment(&v1.ConfigMap{ObjectMeta: metav1.ObjectMeta{Name: "foo"}}, &v1.Secret{Data: map[string][]byte{"token": []byte("test")}})
-	if err != nil {
-		t.Fatal(err)
-	}
-
-	kubeRbacProxyTLSCipherSuitesArg := ""
-	kubeRbacProxyMinTLSVersionArg := ""
-	for _, container := range d.Spec.Template.Spec.Containers {
-		switch container.Name {
-		case "telemeter-client":
-			volumeName := "telemeter-trusted-ca-bundle"
-			if !volumeConfigured(d.Spec.Template.Spec.Volumes, volumeName) {
-				t.Fatalf("trusted CA bundle volume for %s is not configured correctly", container.Name)
-			}
-			if !volumeMountsConfigured(container.VolumeMounts, volumeName) {
-				t.Fatalf("trusted CA bundle volume mount for %s is not configured correctly", container.Name)
-			}
-			if !reflect.DeepEqual(container.Resources, *f.config.ClusterMonitoringConfiguration.TelemeterClientConfig.Resources) {
-				t.Fatal("telemeter-client resources not configured correctly")
-			}
-		case "kube-rbac-proxy":
-			kubeRbacProxyTLSCipherSuitesArg = getContainerArgValue(d.Spec.Template.Spec.Containers, KubeRbacProxyTLSCipherSuitesFlag, container.Name)
-			kubeRbacProxyMinTLSVersionArg = getContainerArgValue(d.Spec.Template.Spec.Containers, KubeRbacProxyMinTLSVersionFlag, container.Name)
-		}
-	}
-
-	expectedTokenHash := "8o29vfqfspfr9"
-
-	if tokenHash, ok := d.Spec.Template.Annotations["telemeter-token-hash"]; !ok {
-		t.Fatalf("telemeter-token-hash annotation not set in telemeter-client deployment")
-	} else if expectedTokenHash != tokenHash {
-		t.Fatalf("incorrect token hash on telemeter-token-hash annotation, \n got %s, \nwant %s", tokenHash, expectedTokenHash)
-	}
-
-	expectedKubeRbacProxyTLSCipherSuitesArg := fmt.Sprintf("%s%s",
-		KubeRbacProxyTLSCipherSuitesFlag,
-		strings.Join(crypto.OpenSSLToIANACipherSuites(APIServerDefaultTLSCiphers), ","))
-
-	if expectedKubeRbacProxyTLSCipherSuitesArg != kubeRbacProxyTLSCipherSuitesArg {
-		t.Fatalf("incorrect TLS ciphers, \n got %s, \nwant %s", kubeRbacProxyTLSCipherSuitesArg, expectedKubeRbacProxyTLSCipherSuitesArg)
-	}
-
-	expectedKubeRbacProxyMinTLSVersionArg := fmt.Sprintf("%s%s",
-		KubeRbacProxyMinTLSVersionFlag, APIServerDefaultMinTLSVersion)
-	if expectedKubeRbacProxyMinTLSVersionArg != kubeRbacProxyMinTLSVersionArg {
-		t.Fatalf("incorrect TLS version \n got %s, \nwant %s", kubeRbacProxyMinTLSVersionArg, expectedKubeRbacProxyMinTLSVersionArg)
-	}
-
-	if d.Spec.Template.Spec.TopologySpreadConstraints[0].MaxSkew != 1 {
-		t.Fatal("Telemeter topology spread constraints MaxSkew not configured correctly")
-	}
-
-	if d.Spec.Template.Spec.TopologySpreadConstraints[0].WhenUnsatisfiable != "DoNotSchedule" {
-		t.Fatal("Telemeter topology spread constraints WhenUnsatisfiable not configured correctly")
 	}
 }
 
