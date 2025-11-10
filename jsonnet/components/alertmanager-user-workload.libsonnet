@@ -195,6 +195,8 @@ function(params)
         },
       },
       spec+: {
+        // The value of alertmanagerConfigSelector is defined at runtime by the Cluster Monitoring Operator.
+        alertmanagerConfigSelector: null,
         automountServiceAccountToken: true,
         securityContext: {
           fsGroup: 65534,

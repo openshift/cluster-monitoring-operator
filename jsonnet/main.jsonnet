@@ -197,7 +197,20 @@ local inCluster =
         image: $.values.common.images.prometheus,
         commonLabels+: $.values.common.commonLabels,
         name: 'k8s',
-        alertmanagerName: $.values.alertmanager.name,
+        alerting: {
+          alertmanagers: [{
+            namespace: $.values.common.namespace,
+            name: 'alertmanager-' + $.values.alertmanager.name,
+            scheme: 'https',
+            port: 'web',
+            apiVersion: 'v2',
+            tlsConfig: {
+              caFile: '/etc/prometheus/configmaps/serving-certs-ca-bundle/service-ca.crt',
+              serverName: 'alertmanager-%s.%s.svc' % [$.values.alertmanager.name, $.values.common.namespace],
+            },
+            bearerTokenFile: '/var/run/secrets/kubernetes.io/serviceaccount/token',
+          }],
+        },
         namespaces+: [
           $.values.common.namespaceUserWorkload,
         ],
@@ -435,7 +448,20 @@ local userWorkload =
         version: $.values.common.versions.prometheus,
         image: $.values.common.images.prometheus,
         name: 'user-workload',
-        alertmanagerName: inCluster.values.alertmanager.name,
+        alerting: {
+          alertmanagers: [{
+            namespace: commonConfig.namespace,
+            name: 'alertmanager-' + inCluster.values.alertmanager.name,
+            scheme: 'https',
+            port: 'web',
+            apiVersion: 'v2',
+            tlsConfig: {
+              caFile: '/etc/prometheus/configmaps/serving-certs-ca-bundle/service-ca.crt',
+              serverName: 'alertmanager-%s.%s.svc' % [inCluster.values.alertmanager.name, commonConfig.namespace],
+            },
+            bearerTokenFile: '/var/run/secrets/kubernetes.io/serviceaccount/token',
+          }],
+        },
         commonLabels+: $.values.common.commonLabels,
         resources: {
           requests: { memory: '30Mi', cpu: '6m' },
