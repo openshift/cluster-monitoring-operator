@@ -307,4 +307,42 @@ function(params)
     },
 
     customResourceStateConfigmap: crsConfig,
+    networkPolicyDownstream: {
+      apiVersion: 'networking.k8s.io/v1',
+      kind: 'NetworkPolicy',
+      metadata: {
+        name: 'kube-state-metrics',
+        namespace: cfg.namespace,
+      },
+      spec: {
+        podSelector: {
+          matchLabels: {
+            'app.kubernetes.io/name': 'kube-state-metrics',
+          },
+        },
+        policyTypes: [
+          'Ingress',
+          'Egress',
+        ],
+        ingress: [
+          {
+            ports: [
+              // allow prometheus to scrape kube-state-metrics endpoints,
+              // 8443(port name: https-main)/9443(port name: https-self) ports
+              {
+                port: 'https-main',
+                protocol: 'TCP',
+              },
+              {
+                port: 'https-self',
+                protocol: 'TCP',
+              },
+            ],
+          },
+        ],
+        egress: [
+          {},
+        ],
+      },
+    },
   }

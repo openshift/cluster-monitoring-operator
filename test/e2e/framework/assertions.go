@@ -198,6 +198,22 @@ func (f *Framework) AssertNamespaceDoesNotExist(name string) func(t *testing.T) 
 	}
 }
 
+func (f *Framework) AssertNetworkPolicyExists(name string, namespace string) func(t *testing.T) {
+	return func(t *testing.T) {
+		assertResourceExists(t, func() (metav1.Object, error) {
+			return f.KubeClient.NetworkingV1().NetworkPolicies(namespace).Get(ctx, name, metav1.GetOptions{})
+		})
+	}
+}
+
+func (f *Framework) AssertNetworkPolicyDoesNotExist(name string, namespace string) func(t *testing.T) {
+	return func(t *testing.T) {
+		assertResourceDoesNotExists(t, func() (metav1.Object, error) {
+			return f.KubeClient.NetworkingV1().NetworkPolicies(namespace).Get(ctx, name, metav1.GetOptions{})
+		})
+	}
+}
+
 func (f *Framework) AssertPrometheusRuleExists(name string, namespace string) func(t *testing.T) {
 	return func(t *testing.T) {
 		assertResourceExists(t, func() (metav1.Object, error) {

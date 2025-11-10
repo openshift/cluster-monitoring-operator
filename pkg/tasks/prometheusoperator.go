@@ -35,6 +35,16 @@ func NewPrometheusOperatorTask(client *client.Client, factory *manifests.Factory
 }
 
 func (t *PrometheusOperatorTask) Run(ctx context.Context) error {
+	netpol, err := t.factory.PrometheusOperatorNetworkPolicy()
+	if err != nil {
+		return fmt.Errorf("initializing Prometheus Operator NetworkPolicy failed: %w", err)
+	}
+
+	err = t.client.CreateOrUpdateNetworkPolicy(ctx, netpol)
+	if err != nil {
+		return fmt.Errorf("reconciling Prometheus Operator NetworkPolicy failed: %w", err)
+	}
+
 	sa, err := t.factory.PrometheusOperatorServiceAccount()
 	if err != nil {
 		return fmt.Errorf("initializing Prometheus Operator ServiceAccount failed: %w", err)
@@ -123,10 +133,21 @@ func (t *PrometheusOperatorTask) Run(ctx context.Context) error {
 	if err != nil {
 		return fmt.Errorf("reconciling Prometheus Operator ServiceMonitor failed: %w", err)
 	}
+
 	return nil
 }
 
 func (t *PrometheusOperatorTask) runAdmissionWebhook(ctx context.Context) error {
+	netpol, err := t.factory.AdmissionWebhookNetworkPolicy()
+	if err != nil {
+		return fmt.Errorf("initializing Prometheus Operator Admission Webhook NetworkPolicy failed: %w", err)
+	}
+
+	err = t.client.CreateOrUpdateNetworkPolicy(ctx, netpol)
+	if err != nil {
+		return fmt.Errorf("reconciling Prometheus Operator Admission Webhook NetworkPolicy failed: %w", err)
+	}
+
 	// Deploy manifests for the admission webhook service.
 	sa, err := t.factory.PrometheusOperatorAdmissionWebhookServiceAccount()
 	if err != nil {
