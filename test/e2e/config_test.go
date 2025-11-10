@@ -998,6 +998,7 @@ func expectVolumeMountsInContainer(containerName, mountName string) framework.Po
 // assertInClusterNetworkPolicyExists ensures that the NetworkPolicies
 // are deployed under openshift-monitoring namespace
 func assertInClusterNetworkPolicyExists(t *testing.T) {
+	ctx := context.Background()
 	networkPolicyNames := []string{
 		"default-deny",
 		"cluster-monitoring-operator",
@@ -1018,6 +1019,17 @@ func assertInClusterNetworkPolicyExists(t *testing.T) {
 			t.Run(fmt.Sprintf("assert %s networkpolicy exists", name), func(t *testing.T) {
 				f.AssertNetworkPolicyExists(name, f.Ns)
 			})
+		}
+	})
+
+	// check the total count of deployed NetworkPolicies is equal to len(networkPolicyNames)
+	t.Run("assert total deployed NetworkPolicies count matches", func(t *testing.T) {
+		npList, err := f.KubeClient.NetworkingV1().NetworkPolicies(f.Ns).List(ctx, metav1.ListOptions{})
+		if err != nil {
+			t.Fatalf("failed to list NetworkPolicies: %v", err)
+		}
+		if len(npList.Items) != len(networkPolicyNames) {
+			t.Errorf("NetworkPolicies count = %d, want %d", len(npList.Items), len(networkPolicyNames))
 		}
 	})
 }
