@@ -1,5 +1,9 @@
 # Note: This CHANGELOG is only for the monitoring team to track all monitoring related changes. Please see OpenShift release notes for official changes.
 
+## 4.21
+
+- [#2553](https://github.com/openshift/cluster-monitoring-operator/pull/2553) Expose an `additionalLabelsAllowList` field in CMO's KubeStateMetrics configuration to allow users to specify which additional label metrics from Kubernetes objects should be exposed by KSM.
+
 ## 4.20
 
 - [#2595](https://github.com/openshift/cluster-monitoring-operator/pull/2595) Multi-tenant support for KSM's CRS feature-set downstream.
