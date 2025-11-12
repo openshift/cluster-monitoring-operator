@@ -1266,7 +1266,12 @@ data:
     #
     # cluster:mtv_migrations_status_total:max is the total number of VM migrations running on the cluster,
     # labeled with {status}, {provider}, {mode}, and {target}.
-    - '{__name__="cluster:mtv_migrations_status_total:max"}'
+    # Expected labels:
+    # - provider: "ova", "vsphere", "openstack", "openshift", "ovirt" or "awsec2"
+    # - target: "Local" or "Remote"
+    # - mode: "Cold", "Warm" or "RCM"
+    # - status: "Suceeded", "Failed" or "Canceled"
+    - '{__name__="cluster:mtv_migrations_status_total:max", provider=~"ova|vsphere|openstack|openshift|ovirt|awsec2", target=~"Local|Remote", mode=~"Cold|Warm|RCM", status=~"Succeeded|Failed|Canceled"}'
 kind: ConfigMap
 metadata:
   name: telemetry-config
