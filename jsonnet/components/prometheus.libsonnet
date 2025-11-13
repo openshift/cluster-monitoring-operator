@@ -201,6 +201,11 @@ function(params)
           resourceNames: ['k8s'],
           verbs: ['get', 'create', 'update'],
         },
+        {
+          apiGroups: ['discovery.k8s.io'],
+          resources: ['endpointslices'],
+          verbs: ['get', 'list', 'watch'],
+        },
       ],
     },
 
