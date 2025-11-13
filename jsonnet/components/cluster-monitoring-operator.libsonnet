@@ -322,6 +322,11 @@ function(params) {
         resources: ['alertmanagers/api'],
         verbs: ['*'],
       },
+      {
+        apiGroups: ['networking.k8s.io'],
+        resources: ['networkpolicies'],
+        verbs: ['create', 'get', 'list', 'watch', 'update', 'delete'],
+      },
     ],
   },
 
@@ -565,5 +570,57 @@ function(params) {
       resources: ['alertmanagerconfigs'],
       verbs: ['*'],
     }],
+  },
+
+  // 2 networkpolicies, the first is default deny all pods traffic, the second is allow access to CMO port 8443
+  networkPolicyDefaultDeny: {
+    apiVersion: 'networking.k8s.io/v1',
+    kind: 'NetworkPolicy',
+    metadata: {
+      name: 'default-deny',
+      namespace: cfg.namespace,
+    },
+    spec: {
+      podSelector: {
+      },
+      policyTypes: [
+        'Ingress',
+        'Egress',
+      ],
+    },
+  },
+  networkPolicyDownstream: {
+    apiVersion: 'networking.k8s.io/v1',
+    kind: 'NetworkPolicy',
+    metadata: {
+      name: 'cluster-monitoring-operator',
+      namespace: cfg.namespace,
+    },
+    spec: {
+      podSelector: {
+        matchLabels: {
+          'app.kubernetes.io/name': 'cluster-monitoring-operator',
+        },
+      },
+      policyTypes: [
+        'Ingress',
+        'Egress',
+      ],
+      ingress: [
+        {
+          ports: [
+            {
+              // allow prometheus to scrape cluster-monitoring-operator endpoint,
+              // 8443(port name: https) port
+              port: 'https',
+              protocol: 'TCP',
+            },
+          ],
+        },
+      ],
+      egress: [
+        {},
+      ],
+    },
   },
 }
