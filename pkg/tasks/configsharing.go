@@ -57,7 +57,11 @@ func (t *ConfigSharingTask) Run(ctx context.Context) error {
 			return fmt.Errorf("failed to retrieve Prometheus host: %w", err)
 		}
 
-		if t.config.ClusterMonitoringConfiguration.AlertmanagerMainConfig.IsEnabled() {
+		optionalMonitoringEnabled, err := t.client.HasOptionalMonitoringCapability(ctx)
+		if err != nil {
+			return fmt.Errorf("checking for optional monitoring capability failed: %w", err)
+		}
+		if t.config.ClusterMonitoringConfiguration.AlertmanagerMainConfig.IsEnabled() && optionalMonitoringEnabled {
 			amRoute, err := t.factory.AlertmanagerRoute()
 			if err != nil {
 				return fmt.Errorf("initializing Alertmanager Route failed: %w", err)

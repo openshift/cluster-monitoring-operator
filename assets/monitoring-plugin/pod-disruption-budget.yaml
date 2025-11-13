@@ -1,6 +1,8 @@
 apiVersion: policy/v1
 kind: PodDisruptionBudget
 metadata:
+  annotations:
+    capability.openshift.io/name: Console
   labels:
     app.kubernetes.io/component: monitoring-plugin
     app.kubernetes.io/managed-by: cluster-monitoring-operator
