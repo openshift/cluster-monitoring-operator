@@ -281,7 +281,7 @@ spec:
     seccompProfile:
       type: RuntimeDefault
   serviceAccountName: prometheus-user-workload
-  serviceDiscoveryRole: Endpoints
+  serviceDiscoveryRole: EndpointSlice
   serviceMonitorNamespaceSelector:
     matchExpressions:
     - key: openshift.io/cluster-monitoring
