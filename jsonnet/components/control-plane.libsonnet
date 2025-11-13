@@ -20,6 +20,7 @@ function(params)
         },
       },
       spec+: {
+        serviceDiscoveryRole: 'EndpointSlice',
         jobLabel: 'k8s-app',
         selector: {
           matchLabels: {
