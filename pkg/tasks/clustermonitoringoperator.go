@@ -45,11 +45,6 @@ func NewClusterMonitoringOperatorTask(
 }
 
 func (t *ClusterMonitoringOperatorTask) Run(ctx context.Context) error {
-	err = t.client.CreateOrUpdateNetworkPolicy(ctx, denyNetpol)
-	if err != nil {
-		return fmt.Errorf("reconciling deny all pods traffic NetworkPolicy failed: %w", err)
-	}
-
 	for name, crf := range map[string]func() (*rbacv1.ClusterRole, error){
 		"cluster-monitoring-view":          t.factory.ClusterMonitoringClusterRoleView,
 		"system:aggregated-metrics-reader": t.factory.ClusterMonitoringClusterRoleAggregatedMetricsReader,
