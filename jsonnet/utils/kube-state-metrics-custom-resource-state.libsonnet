@@ -87,14 +87,14 @@ local vpaMetrics = [
 
 local gatewayClassMetrics = [
   {
-    name: 'gateway_class',
+    name: 'gateway_class_info',
     help: 'Information about GatewayClasses',
     each: {
       type: 'Info',
       info: {
         labelsFromPath: {
           gateway_class: ['metadata', 'name'],
-          controller_name: ['spec', 'controllerName'],
+          controller: ['spec', 'controllerName'],
           accepted: ['status', 'conditions', '[type=Accepted]', 'status'],
         },
       },
@@ -104,7 +104,7 @@ local gatewayClassMetrics = [
 
 local gatewayMetrics = [
   {
-    name: 'gateway',
+    name: 'gateway_info',
     help: 'Information about Gateways',
     each: {
       type: 'Info',
@@ -112,7 +112,7 @@ local gatewayMetrics = [
         labelsFromPath: {
           namespace: ['metadata', 'namespace'],
           gateway: ['metadata', 'name'],
-          gateway_class_name: ['spec', 'gatewayClassName'],
+          gateway_class: ['spec', 'gatewayClassName'],
           programmed: ['status', 'conditions', '[type=Programmed]', 'status'],
         },
       },

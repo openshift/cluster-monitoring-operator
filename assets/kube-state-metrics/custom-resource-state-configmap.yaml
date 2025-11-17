@@ -501,7 +501,7 @@ data:
                 - "conditions"
                 - "[type=Accepted]"
                 - "status"
-                "controller_name":
+                "controller":
                 - "spec"
                 - "controllerName"
                 "gateway_class":
@@ -509,7 +509,7 @@ data:
                 - "name"
             "type": "Info"
           "help": "Information about GatewayClasses"
-          "name": "gateway_class"
+          "name": "gateway_class_info"
       - "groupVersionKind":
           "group": "gateway.networking.k8s.io"
           "kind": "Gateway"
@@ -521,7 +521,7 @@ data:
                 "gateway":
                 - "metadata"
                 - "name"
-                "gateway_class_name":
+                "gateway_class":
                 - "spec"
                 - "gatewayClassName"
                 "namespace":
@@ -534,7 +534,7 @@ data:
                 - "status"
             "type": "Info"
           "help": "Information about Gateways"
-          "name": "gateway"
+          "name": "gateway_info"
 kind: ConfigMap
 metadata:
   labels:
