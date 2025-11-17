@@ -45,23 +45,6 @@ func NewClusterMonitoringOperatorTask(
 }
 
 func (t *ClusterMonitoringOperatorTask) Run(ctx context.Context) error {
-	netpol, err := t.factory.ClusterMonitoringNetworkPolicy()
-	if err != nil {
-		return fmt.Errorf("initializing Cluster Monitoring Operator NetworkPolicy failed: %w", err)
-	}
-
-	err = t.client.CreateOrUpdateNetworkPolicy(ctx, netpol)
-	if err != nil {
-		return fmt.Errorf("reconciling Cluster Monitoring Operator NetworkPolicy failed: %w", err)
-	}
-
-	// Deploy the denyNetpol first would block CMO, deploy it last.
-	// TODO: maybe the NPs for CMO itself are better handled by CVO.
-	denyNetpol, err := t.factory.ClusterMonitoringDenyAllTraffic()
-	if err != nil {
-		return fmt.Errorf("initializing deny all pods traffic NetworkPolicy failed: %w", err)
-	}
-
 	err = t.client.CreateOrUpdateNetworkPolicy(ctx, denyNetpol)
 	if err != nil {
 		return fmt.Errorf("reconciling deny all pods traffic NetworkPolicy failed: %w", err)
