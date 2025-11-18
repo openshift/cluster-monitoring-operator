@@ -42,7 +42,7 @@ GOLANGCI_LINT_VERSION=v1.64.8
 PROMTOOL_BIN=$(BIN_DIR)/promtool
 DOCGEN_BIN=$(BIN_DIR)/docgen
 MISSPELL_BIN=$(BIN_DIR)/misspell
-TOOLING=$(EMBEDMD_BIN) $(JB_BIN) $(GOJSONTOYAML_BIN) $(JSONNET_BIN) $(JSONNETFMT_BIN) $(PROMTOOL_BIN) $(DOCGEN_BIN) $(GOLANGCI_LINT_BIN)
+TOOLING=$(EMBEDMD_BIN) $(JB_BIN) $(GOJSONTOYAML_BIN) $(JSONNET_BIN) $(JSONNETFMT_BIN) $(PROMTOOL_BIN) $(DOCGEN_BIN) $(GOLANGCI_LINT_BIN) $(MISSPELL_BIN)
 
 MANIFESTS_DIR ?= $(shell pwd)/manifests
 JSON_MANIFESTS_DIR ?= $(shell pwd)/tmp/json-manifests/manifests
@@ -226,11 +226,11 @@ golangci-lint-fix: $(GOLANGCI_LINT_BIN)
 	$(GOLANGCI_LINT_BIN) run --verbose --print-resources-usage --fix
 
 .PHONY:
-misspell:
+misspell: $(MISSPELL_BIN)
 	$(MISSPELL_BIN) -error $(MARKDOWN_DOCS)
 
 .PHONY:
-misspell-fix:
+misspell-fix: $(MISSPELL_BIN)
 	$(MISSPELL_BIN) -w $(MARKDOWN_DOCS)
 
 .PHONY: jsonnet-fmt
