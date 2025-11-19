@@ -5,6 +5,7 @@
 - [#2302](https://github.com/openshift/cluster-monitoring-operator/issues/2302) Enable feature `extra-scrape-metrics` in Prometheus user-workload
 - [#2319](https://github.com/openshift/cluster-monitoring-operator/pull/2319) Allow read-only access to the Alertmanager API (use `monitoring-alertmanager-view`).
 - [#2078](https://github.com/openshift/cluster-monitoring-operator/pull/2078) Support exporting VPA metrics from KSM.
+- [#2677](https://github.com/openshift/cluster-monitoring-operator/pull/2677) Fix KSM deny-list typo that put `^kube_.+_annotations$^kube_customresource_.+_annotations_info$,` in the deny-list instead of seperate entries, like so, `^kube_.+_annotations$,^kube_customresource_.+_annotations_info$,`, due to the omission of a comma.
 
 ## 4.15
 
