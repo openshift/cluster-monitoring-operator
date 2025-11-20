@@ -821,9 +821,11 @@ func (o *Operator) sync(ctx context.Context, key string) error {
 				newUWMTaskSpec("ThanosRuler", tasks.NewThanosRulerUserWorkloadTask(o.client, factory, config)),
 			}),
 		// The shared configmap depends on resources being created by the previous tasks hence run it last.
+		// Deploy default deny networkpolicy at the end to avoid possible deadlock and e2e cases failure.
 		tasks.NewTaskGroup(
 			[]*tasks.TaskSpec{
 				newTaskSpec("ConfigurationSharing", tasks.NewConfigSharingTask(o.client, factory, config)),
+				newTaskSpec("DefaultDenyNetpol", tasks.NewDefaultDenyNetpolTask(o.client, factory, config)),
 			},
 		),
 	)
