@@ -253,6 +253,7 @@ var (
 	ClusterMonitoringMetricsServerClientCertsSecret        = "cluster-monitoring-operator/metrics-server-client-certs.yaml"
 	ClusterMonitoringFederateClientCertsSecret             = "cluster-monitoring-operator/federate-client-certs.yaml"
 	ClusterMonitoringMetricsClientCACM                     = "cluster-monitoring-operator/metrics-client-ca.yaml"
+	ClusterMonitoringDenyAllTraffic                        = "cluster-monitoring-operator/network-policy-default-deny.yaml"
 
 	TelemeterClientClusterRole            = "telemeter-client/cluster-role.yaml"
 	TelemeterClientClusterRoleBinding     = "telemeter-client/cluster-role-binding.yaml"
@@ -2516,6 +2517,10 @@ func (f *Factory) ClusterMonitoringOperatorServiceMonitor() (*monv1.ServiceMonit
 
 func (f *Factory) ClusterMonitoringOperatorPrometheusRule() (*monv1.PrometheusRule, error) {
 	return f.NewPrometheusRule(f.assets.MustNewAssetSlice(ClusterMonitoringOperatorPrometheusRule))
+}
+
+func (f *Factory) ClusterMonitoringDenyAllTraffic() (*networkingv1.NetworkPolicy, error) {
+	return f.NewNetworkPolicy(f.assets.MustNewAssetSlice(ClusterMonitoringDenyAllTraffic))
 }
 
 func (f *Factory) ControlPlanePrometheusRule() (*monv1.PrometheusRule, error) {
