@@ -20,9 +20,31 @@ import (
 	"strings"
 
 	"golang.org/x/sync/errgroup"
+	"k8s.io/apimachinery/pkg/util/sets"
 	"k8s.io/klog/v2"
 
 	"github.com/openshift/cluster-monitoring-operator/pkg/client"
+)
+
+const (
+	MetricsClientCATaskName           = "MetricsScrapingClientCA"
+	PrometheusOperatorTaskName        = "PrometheusOperator"
+	ClusterMonitoringOperatorTaskName = "ClusterMonitoringOperatorDeps"
+	PrometheusTaskName                = "Prometheus"
+	AlertmanagerTaskName              = "Alertmanager"
+	NodeExporterTaskName              = "NodeExporter"
+	KubeStateMetricsTaskName          = "KubeStateMetrics"
+	OpenshiftStateMetricsTaskName     = "OpenshiftStateMetrics"
+	MetricsServerTaskName             = "MetricsServer"
+	TelemeterClientTaskName           = "TelemeterClient"
+	ThanosQuerierTaskName             = "ThanosQuerier"
+	ControlPlaneTaskName              = "ControlPlaneComponents"
+	MonitoringPluginTaskName          = "ConsolePluginComponents"
+	PrometheusOperatorUWMTaskName     = "PrometheusOperator"
+	PrometheusUWMTaskName             = "Prometheus"
+	AlertmanagerUWMTaskName           = "Alertmanager"
+	ThanosRulerUWMTaskName            = "ThanosRuler"
+	ConfigSharingTaskName             = "ConfigurationSharing"
 )
 
 // TaskRunner manages lists of task groups. Through the RunAll method task groups are
@@ -39,6 +61,44 @@ func NewTaskRunner(client *client.Client, taskGroups ...*TaskGroup) *TaskRunner 
 		client:     client,
 		taskGroups: append([]*TaskGroup{}, taskGroups...),
 	}
+}
+
+func (tl *TaskRunner) MaybeSkipOptionalTasks() error {
+	// Optional tasks reflect components that fall under optional monitoring, which will be skipped (not deployed)
+	// if the `OptionalMonitoring` capability is disabled.
+	optionalTasks := sets.New[string](
+		AlertmanagerTaskName,
+		PrometheusOperatorUWMTaskName,
+		PrometheusUWMTaskName,
+		AlertmanagerUWMTaskName,
+		ThanosRulerUWMTaskName,
+	)
+	optionalMonitoringEnabled, err := tl.client.HasOptionalMonitoringCapability(context.Background())
+	if err != nil {
+		return fmt.Errorf("could not determine optional monitoring capability status: %w", err)
+	}
+	if optionalMonitoringEnabled {
+		klog.V(2).Infof("OptionalMonitoring capability is enabled, all monitoring components will be deployed")
+		return nil
+	}
+
+	var filteredTaskGroups []*TaskGroup
+	for _, tg := range tl.taskGroups {
+		var filteredTasks []*TaskSpec
+		for _, t := range tg.tasks {
+			if optionalTasks.Has(t.Name) {
+				klog.V(2).Infof("skipping optional monitoring component %q as OptionalMonitoring capability is disabled", t.Name)
+				continue
+			}
+			filteredTasks = append(filteredTasks, t)
+		}
+		if len(filteredTasks) > 0 {
+			filteredTaskGroups = append(filteredTaskGroups, &TaskGroup{tasks: filteredTasks})
+		}
+	}
+	tl.taskGroups = append([]*TaskGroup{}, filteredTaskGroups...)
+
+	return nil
 }
 
 // RunAll executes all registered task groups sequentially. For each group the
