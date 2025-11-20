@@ -40,3 +40,6 @@ status:
     - group: monitoring.coreos.com
       name: ''
       resource: alertmanagerconfigs
+    - group: config.openshift.io
+      name: cluster
+      resource: clustermonitorings
