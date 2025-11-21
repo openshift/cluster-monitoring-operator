@@ -243,7 +243,7 @@ func (in *ConsulSDConfig) DeepCopyInto(out *ConsulSDConfig) {
 	}
 	if in.Scheme != nil {
 		in, out := &in.Scheme, &out.Scheme
-		*out = new(string)
+		*out = new(monitoringv1.Scheme)
 		**out = **in
 	}
 	if in.Services != nil {
@@ -2089,6 +2089,16 @@ func (in *PushoverConfig) DeepCopyInto(out *PushoverConfig) {
 		*out = new(string)
 		**out = **in
 	}
+	if in.HTML != nil {
+		in, out := &in.HTML, &out.HTML
+		*out = new(bool)
+		**out = **in
+	}
+	if in.Monospace != nil {
+		in, out := &in.Monospace, &out.Monospace
+		*out = new(bool)
+		**out = **in
+	}
 	if in.HTTPConfig != nil {
 		in, out := &in.HTTPConfig, &out.HTTPConfig
 		*out = new(HTTPConfig)
@@ -2805,7 +2815,7 @@ func (in *ScrapeConfigSpec) DeepCopyInto(out *ScrapeConfigSpec) {
 	}
 	if in.Scheme != nil {
 		in, out := &in.Scheme, &out.Scheme
-		*out = new(string)
+		*out = new(monitoringv1.Scheme)
 		**out = **in
 	}
 	if in.EnableCompression != nil {
