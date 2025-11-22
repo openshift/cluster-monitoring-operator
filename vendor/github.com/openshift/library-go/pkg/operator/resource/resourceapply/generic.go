@@ -147,7 +147,7 @@ func ApplyDirectly(ctx context.Context, clients *ClientHolder, recorder events.R
 			if clients.kubeClient == nil {
 				result.Error = fmt.Errorf("missing kubeClient")
 			} else {
-				result.Result, result.Changed, result.Error = ApplyNetworkPolicy(ctx, clients.kubeClient.NetworkingV1(), recorder, t)
+				result.Result, result.Changed, result.Error = ApplyNetworkPolicy(ctx, clients.kubeClient.NetworkingV1(), recorder, t, cache)
 			}
 		case *rbacv1.ClusterRole:
 			if clients.kubeClient == nil {
