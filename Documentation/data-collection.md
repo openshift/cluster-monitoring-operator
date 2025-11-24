@@ -1262,6 +1262,17 @@ data:
     #
     # cluster:selinux_warning_controller_selinux_volume_conflict:count represents number of pods that may fail to start when SELinuxMount feature gate is enabled and Pods caught by this metric land on the same node.
     - '{__name__="cluster:selinux_warning_controller_selinux_volume_conflict:count"}'
+    #
+    # owners: (https://github.com/kubev2v/forklift)
+    #
+    # cluster:mtv_migrations_status_total:sum is the total number of VM migrations running on the cluster,
+    # labeled with {status}, {provider}, {mode}, and {target}.
+    # Expected labels:
+    # - provider: "ova", "vsphere", "openstack", "openshift", "ovirt" or "awsec2"
+    # - target: "Local" or "Remote"
+    # - mode: "Cold", "Warm" or "RCM"
+    # - status: "Suceeded", "Failed" or "Canceled"
+    - '{__name__="cluster:mtv_migrations_status_total:sum", provider=~"ova|vsphere|openstack|openshift|ovirt|awsec2", target=~"Local|Remote", mode=~"Cold|Warm|RCM", status=~"Succeeded|Failed|Canceled"}'
 kind: ConfigMap
 metadata:
   name: telemetry-config
