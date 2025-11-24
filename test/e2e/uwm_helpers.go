@@ -167,7 +167,6 @@ func deployUserApplication(f *framework.Framework) error {
 			Endpoints: []monitoringv1.Endpoint{
 				{
 					Port:     "web",
-					Scheme:   "http",
 					Interval: "30s",
 				},
 			},
