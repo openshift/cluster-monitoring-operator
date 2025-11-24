@@ -1,6 +1,6 @@
 module github.com/openshift/cluster-monitoring-operator
 
-go 1.19
+go 1.21
 
 require (
 	github.com/Jeffail/gabs v1.4.0
