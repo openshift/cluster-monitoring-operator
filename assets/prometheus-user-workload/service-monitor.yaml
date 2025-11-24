@@ -26,3 +26,4 @@ spec:
       app.kubernetes.io/instance: user-workload
       app.kubernetes.io/name: prometheus
       app.kubernetes.io/part-of: openshift-monitoring
+  serviceDiscoveryRole: EndpointSlice
