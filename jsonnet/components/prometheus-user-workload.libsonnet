@@ -151,6 +151,11 @@ function(params)
           verbs: ['get', 'list', 'watch'],
         },
         {
+          apiGroups: ['discovery.k8s.io'],
+          resources: ['endpointslices'],
+          verbs: ['get', 'list', 'watch'],
+        },
+        {
           apiGroups: ['monitoring.coreos.com'],
           resources: ['alertmanagers'],
           verbs: ['get'],
