@@ -1,4 +1,4 @@
-// Copyright 2018 The Cluster Monitoring Operator Authors
+// Copyright 2025 The Cluster Monitoring Operator Authors
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -22,21 +22,21 @@ import (
 	"github.com/openshift/cluster-monitoring-operator/pkg/manifests"
 )
 
-type DefaultDenyNetpolTask struct {
+type DefaultDenyNetworkPolicyTask struct {
 	client  *client.Client
 	factory *manifests.Factory
 	config  *manifests.Config
 }
 
-func NewDefaultDenyNetpolTask(client *client.Client, factory *manifests.Factory, config *manifests.Config) *DefaultDenyNetpolTask {
-	return &DefaultDenyNetpolTask{
+func NewDefaultDenyNetworkPolicyTask(client *client.Client, factory *manifests.Factory, config *manifests.Config) *DefaultDenyNetworkPolicyTask {
+	return &DefaultDenyNetworkPolicyTask{
 		client:  client,
 		factory: factory,
 		config:  config,
 	}
 }
 
-func (t *DefaultDenyNetpolTask) Run(ctx context.Context) error {
+func (t *DefaultDenyNetworkPolicyTask) Run(ctx context.Context) error {
 	denyNetpol, err := t.factory.ClusterMonitoringDenyAllTraffic()
 	if err != nil {
 		return fmt.Errorf("initializing deny all pods traffic NetworkPolicy failed: %w", err)
