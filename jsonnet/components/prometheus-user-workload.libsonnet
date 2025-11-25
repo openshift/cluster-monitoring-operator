@@ -214,6 +214,7 @@ function(params)
 
     serviceMonitor+: {
       spec+: {
+        serviceDiscoveryRole: 'EndpointSlice',
         endpoints: [
           {
             port: 'metrics',
@@ -241,6 +242,7 @@ function(params)
 
     serviceMonitorThanosSidecar+: {
       spec+: {
+        serviceDiscoveryRole: 'EndpointSlice',
         jobLabel:: null,
         endpoints: [
           {
@@ -307,24 +309,6 @@ function(params)
               memory: '100Mi',
             },
           },
-        },
-        alerting+: {
-          alertmanagers:
-            std.map(
-              function(a) a {
-                scheme: 'https',
-                // the user-workload alertmanager configuration points to the openshift-monitoring namespace
-                // since there is no dedicated alertmanager in the user-workload monitoring stack.
-                namespace: 'openshift-monitoring',  //FIXME(paulfantom)
-                tlsConfig: {
-                  caFile: '/etc/prometheus/configmaps/serving-certs-ca-bundle/service-ca.crt',
-                  serverName: 'alertmanager-main.openshift-monitoring.svc',
-                },
-                bearerTokenFile: '/var/run/secrets/kubernetes.io/serviceaccount/token',
-                apiVersion: 'v2',
-              },
-              super.alertmanagers,
-            ),
         },
         podMetadata+: {
           annotations+: {

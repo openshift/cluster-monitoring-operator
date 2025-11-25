@@ -54,6 +54,11 @@ function(params)
           resources: ['verticalpodautoscalers'],
           verbs: ['list', 'watch'],
         },
+        {
+          apiGroups: ['gateway.networking.k8s.io'],
+          resources: ['gatewayclasses', 'gateways'],
+          verbs: ['list', 'watch'],
+        },
       ],
     },
 

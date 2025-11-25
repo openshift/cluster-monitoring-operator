@@ -201,6 +201,11 @@ function(params)
           resourceNames: ['k8s'],
           verbs: ['get', 'create', 'update'],
         },
+        {
+          apiGroups: ['discovery.k8s.io'],
+          resources: ['endpointslices'],
+          verbs: ['get', 'list', 'watch'],
+        },
       ],
     },
 
@@ -275,6 +280,7 @@ function(params)
 
     serviceMonitor+: {
       spec+: {
+        serviceDiscoveryRole: 'EndpointSlice',
         endpoints: [
           {
             port: 'metrics',
@@ -302,6 +308,7 @@ function(params)
 
     serviceMonitorThanosSidecar+: {
       spec+: {
+        serviceDiscoveryRole: 'EndpointSlice',
         jobLabel:: null,
         endpoints: [
           {
@@ -331,21 +338,6 @@ function(params)
         // Enable some experimental features.
         // More at https://prometheus.io/docs/prometheus/latest/feature_flags/
         enableFeatures+: ['delayed-compaction', 'use-uncached-io'],
-        alerting+: {
-          alertmanagers:
-            std.map(
-              function(a) a {
-                scheme: 'https',
-                tlsConfig: {
-                  caFile: '/etc/prometheus/configmaps/serving-certs-ca-bundle/service-ca.crt',
-                  serverName: 'alertmanager-main',
-                },
-                bearerTokenFile: '/var/run/secrets/kubernetes.io/serviceaccount/token',
-                apiVersion: 'v2',
-              },
-              super.alertmanagers,
-            ),
-        },
         resources: {
           requests: {
             memory: '1Gi',

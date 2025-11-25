@@ -218,6 +218,7 @@ function(params)
 
     serviceMonitor+: {
       spec+: {
+        serviceDiscoveryRole: 'EndpointSlice',
         endpoints: [
           {
             port: 'metrics',
@@ -235,6 +236,8 @@ function(params)
         },
       },
       spec+: {
+        // The value of alertmanagerConfigSelector is defined at runtime by the Cluster Monitoring Operator.
+        alertmanagerConfigSelector: null,
         podMetadata+: {
           annotations+: {
             'openshift.io/required-scc': 'nonroot',

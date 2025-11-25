@@ -43,7 +43,7 @@ spec:
             namespaces:
             - openshift-monitoring
             topologyKey: kubernetes.io/hostname
-      automountServiceAccountToken: false
+      automountServiceAccountToken: true
       containers:
       - args:
         - --config-path=/opt/app-root/web/dist
@@ -87,6 +87,7 @@ spec:
         runAsNonRoot: true
         seccompProfile:
           type: RuntimeDefault
+      serviceAccountName: monitoring-plugin
       volumes:
       - name: monitoring-plugin-cert
         secret:

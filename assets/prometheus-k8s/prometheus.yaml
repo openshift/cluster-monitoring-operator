@@ -42,7 +42,7 @@ spec:
       scheme: https
       tlsConfig:
         caFile: /etc/prometheus/configmaps/serving-certs-ca-bundle/service-ca.crt
-        serverName: alertmanager-main
+        serverName: alertmanager-main.openshift-monitoring.svc
   configMaps:
   - serving-certs-ca-bundle
   - kubelet-serving-ca-bundle

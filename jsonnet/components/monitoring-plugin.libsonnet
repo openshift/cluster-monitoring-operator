@@ -168,7 +168,7 @@ function(params)
 
               },  // podAntiAffinity
             },  // affinity
-            automountServiceAccountToken: false,
+            automountServiceAccountToken: true,
             containers: [
               {  // monitoring-plugin container
                 name: $._config.name,
@@ -213,6 +213,7 @@ function(params)
             nodeSelector: { 'kubernetes.io/os': 'linux' },
             priorityClassName: 'system-cluster-critical',
             restartPolicy: 'Always',
+            serviceAccountName: 'monitoring-plugin',
             securityContext: {
               runAsNonRoot: true,
               seccompProfile: { type: 'RuntimeDefault' },

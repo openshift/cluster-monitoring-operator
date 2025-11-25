@@ -313,10 +313,16 @@ spec:
         description: Namespace {{ $labels.namespace }} is using {{ $value | humanizePercentage }} of its {{ $labels.resource }} quota.
         summary: Namespace quota is going to be full.
       expr: |
-        kube_resourcequota{namespace=~"(openshift-.*|kube-.*|default)",job="kube-state-metrics", type="used"}
-          / ignoring(instance, job, type)
-        (kube_resourcequota{namespace=~"(openshift-.*|kube-.*|default)",job="kube-state-metrics", type="hard"} > 0)
-          > 0.9 < 1
+        max without (instance, job, type) (
+          kube_resourcequota{namespace=~"(openshift-.*|kube-.*|default)",job="kube-state-metrics", type="used"}
+        )
+        / on (cluster, namespace, resource, resourcequota) group_left()
+        (
+          max without (instance, job, type) (
+            kube_resourcequota{namespace=~"(openshift-.*|kube-.*|default)",job="kube-state-metrics", type="hard"}
+          ) > 0
+        )
+        > 0.9 < 1
       for: 15m
       labels:
         severity: info
@@ -325,10 +331,16 @@ spec:
         description: Namespace {{ $labels.namespace }} is using {{ $value | humanizePercentage }} of its {{ $labels.resource }} quota.
         summary: Namespace quota is fully used.
       expr: |
-        kube_resourcequota{namespace=~"(openshift-.*|kube-.*|default)",job="kube-state-metrics", type="used"}
-          / ignoring(instance, job, type)
-        (kube_resourcequota{namespace=~"(openshift-.*|kube-.*|default)",job="kube-state-metrics", type="hard"} > 0)
-          == 1
+        max without (instance, job, type) (
+          kube_resourcequota{namespace=~"(openshift-.*|kube-.*|default)",job="kube-state-metrics", type="used"}
+        )
+        / on (cluster, namespace, resource, resourcequota) group_left()
+        (
+          max without (instance, job, type) (
+            kube_resourcequota{namespace=~"(openshift-.*|kube-.*|default)",job="kube-state-metrics", type="hard"}
+          ) > 0
+        )
+        == 1
       for: 15m
       labels:
         severity: info
@@ -337,10 +349,15 @@ spec:
         description: Namespace {{ $labels.namespace }} is using {{ $value | humanizePercentage }} of its {{ $labels.resource }} quota.
         summary: Namespace quota has exceeded the limits.
       expr: |
-        kube_resourcequota{namespace=~"(openshift-.*|kube-.*|default)",job="kube-state-metrics", type="used"}
-          / ignoring(instance, job, type)
-        (kube_resourcequota{namespace=~"(openshift-.*|kube-.*|default)",job="kube-state-metrics", type="hard"} > 0)
-          > 1
+        max without (instance, job, type) (
+          kube_resourcequota{namespace=~"(openshift-.*|kube-.*|default)",job="kube-state-metrics", type="used"}
+        )
+        / on (cluster, namespace, resource, resourcequota) group_left()
+        (
+          max without (instance, job, type) (
+            kube_resourcequota{namespace=~"(openshift-.*|kube-.*|default)",job="kube-state-metrics", type="hard"}
+          ) > 0
+        ) > 1
       for: 15m
       labels:
         severity: warning
@@ -495,7 +512,7 @@ spec:
         runbook_url: https://github.com/openshift/runbooks/blob/master/alerts/cluster-monitoring-operator/KubeletDown.md
         summary: Target disappeared from Prometheus target discovery.
       expr: |
-        absent(up{job="kubelet", metrics_path="/metrics"} == 1)
+        absent(up{job="kubelet", metrics_path="/metrics"})
       for: 15m
       labels:
         namespace: kube-system
@@ -756,10 +773,10 @@ spec:
   - name: kube-scheduler.rules
     rules:
     - expr: |
-        histogram_quantile(0.99, sum(rate(scheduler_e2e_scheduling_duration_seconds_bucket{job="scheduler"}[5m])) without(instance, pod))
+        histogram_quantile(0.99, sum(rate(scheduler_scheduling_attempt_duration_seconds_bucket{job="scheduler"}[5m])) without(instance, pod))
       labels:
         quantile: "0.99"
-      record: cluster_quantile:scheduler_e2e_scheduling_duration_seconds:histogram_quantile
+      record: cluster_quantile:scheduler_scheduling_attempt_duration_seconds:histogram_quantile
     - expr: |
         histogram_quantile(0.99, sum(rate(scheduler_scheduling_algorithm_duration_seconds_bucket{job="scheduler"}[5m])) without(instance, pod))
       labels:
@@ -771,10 +788,10 @@ spec:
         quantile: "0.99"
       record: cluster_quantile:scheduler_binding_duration_seconds:histogram_quantile
     - expr: |
-        histogram_quantile(0.9, sum(rate(scheduler_e2e_scheduling_duration_seconds_bucket{job="scheduler"}[5m])) without(instance, pod))
+        histogram_quantile(0.9, sum(rate(scheduler_scheduling_attempt_duration_seconds_bucket{job="scheduler"}[5m])) without(instance, pod))
       labels:
         quantile: "0.9"
-      record: cluster_quantile:scheduler_e2e_scheduling_duration_seconds:histogram_quantile
+      record: cluster_quantile:scheduler_scheduling_attempt_duration_seconds:histogram_quantile
     - expr: |
         histogram_quantile(0.9, sum(rate(scheduler_scheduling_algorithm_duration_seconds_bucket{job="scheduler"}[5m])) without(instance, pod))
       labels:
@@ -786,10 +803,10 @@ spec:
         quantile: "0.9"
       record: cluster_quantile:scheduler_binding_duration_seconds:histogram_quantile
     - expr: |
-        histogram_quantile(0.5, sum(rate(scheduler_e2e_scheduling_duration_seconds_bucket{job="scheduler"}[5m])) without(instance, pod))
+        histogram_quantile(0.5, sum(rate(scheduler_scheduling_attempt_duration_seconds_bucket{job="scheduler"}[5m])) without(instance, pod))
       labels:
         quantile: "0.5"
-      record: cluster_quantile:scheduler_e2e_scheduling_duration_seconds:histogram_quantile
+      record: cluster_quantile:scheduler_scheduling_attempt_duration_seconds:histogram_quantile
     - expr: |
         histogram_quantile(0.5, sum(rate(scheduler_scheduling_algorithm_duration_seconds_bucket{job="scheduler"}[5m])) without(instance, pod))
       labels:
