@@ -40,6 +40,8 @@ import (
 	"k8s.io/client-go/util/cert"
 
 	"github.com/openshift/cluster-monitoring-operator/test/e2e/framework"
+	"k8s.io/apimachinery/pkg/util/intstr"
+	"k8s.io/utils/ptr"
 )
 
 type scenario struct {
@@ -1555,4 +1557,161 @@ func assertServiceMonitorOptOut(t *testing.T) {
 	f.ThanosQuerierClient.WaitForTargetsReturn(t, 5*time.Minute, func(body []byte) error {
 		return getActiveTarget(body, serviceMonitorJobName)
 	})
+}
+
+// TestPrometheusUserWorkloadEndpointSliceDiscovery verifies that
+// prometheus-user-workload can discover and scrape targets using endpoint slices.
+func TestPrometheusUserWorkloadEndpointSliceDiscovery(t *testing.T) {
+	ctx := context.Background()
+	setupUserWorkloadAssetsWithTeardownHook(t, f)
+
+	f.AssertStatefulSetExistsAndRollout("prometheus-user-workload", f.UserWorkloadMonitoringNs)(t)
+
+	testNs := "endpointslice-test"
+	appName := "endpointslice-test-app"
+
+	_, err := f.KubeClient.CoreV1().Namespaces().Create(ctx, &v1.Namespace{
+		ObjectMeta: metav1.ObjectMeta{
+			Name: testNs,
+			Labels: map[string]string{
+				framework.E2eTestLabelName: framework.E2eTestLabelValue,
+			},
+		},
+	}, metav1.CreateOptions{})
+	if err != nil && !apierrors.IsAlreadyExists(err) {
+		t.Fatalf("failed to create namespace: %v", err)
+	}
+	defer func() {
+		if err := f.KubeClient.CoreV1().Namespaces().Delete(ctx, testNs, metav1.DeleteOptions{}); err != nil && !apierrors.IsNotFound(err) {
+			t.Logf("failed to delete namespace %s: %v", testNs, err)
+		}
+	}()
+
+	deployment, err := f.KubeClient.AppsV1().Deployments(testNs).Create(ctx, &appsv1.Deployment{
+		ObjectMeta: metav1.ObjectMeta{
+			Name: appName,
+			Labels: map[string]string{
+				framework.E2eTestLabelName: framework.E2eTestLabelValue,
+			},
+		},
+		Spec: appsv1.DeploymentSpec{
+			Replicas: ptr.To(int32(1)),
+			Selector: &metav1.LabelSelector{
+				MatchLabels: map[string]string{
+					"app": appName,
+				},
+			},
+			Template: v1.PodTemplateSpec{
+				ObjectMeta: metav1.ObjectMeta{
+					Labels: map[string]string{
+						"app": appName,
+					},
+				},
+				Spec: v1.PodSpec{
+					Containers: []v1.Container{
+						{
+							Name:            appName,
+							Image:           "ghcr.io/rhobs/prometheus-example-app:0.3.0",
+							SecurityContext: getSecurityContextRestrictedProfile(),
+						},
+					},
+				},
+			},
+		},
+	}, metav1.CreateOptions{})
+	if err != nil && !apierrors.IsAlreadyExists(err) {
+		t.Fatalf("failed to create deployment: %v", err)
+	}
+	if err == nil {
+		if err := f.OperatorClient.WaitForDeploymentRollout(ctx, deployment); err != nil {
+			t.Fatalf("failed to wait for deployment rollout: %v", err)
+		}
+	}
+
+	_, err = f.KubeClient.CoreV1().Services(testNs).Create(ctx, &v1.Service{
+		ObjectMeta: metav1.ObjectMeta{
+			Name: appName,
+			Labels: map[string]string{
+				"app":                      appName,
+				framework.E2eTestLabelName: framework.E2eTestLabelValue,
+			},
+		},
+		Spec: v1.ServiceSpec{
+			Ports: []v1.ServicePort{
+				{
+					Name:       "web",
+					Protocol:   "TCP",
+					Port:       8080,
+					TargetPort: intstr.FromInt(8080),
+				},
+			},
+			Selector: map[string]string{
+				"app": appName,
+			},
+			Type: v1.ServiceTypeClusterIP,
+		},
+	}, metav1.CreateOptions{})
+	if err != nil && !apierrors.IsAlreadyExists(err) {
+		t.Fatalf("failed to create service: %v", err)
+	}
+
+	// Create ServiceMonitor with EndpointSlice discovery
+	_, err = f.MonitoringClient.ServiceMonitors(testNs).Create(ctx, &monitoringv1.ServiceMonitor{
+		ObjectMeta: metav1.ObjectMeta{
+			Name: appName,
+			Labels: map[string]string{
+				"app":                      appName,
+				framework.E2eTestLabelName: framework.E2eTestLabelValue,
+			},
+		},
+		Spec: monitoringv1.ServiceMonitorSpec{
+			ServiceDiscoveryRole: ptr.To(monitoringv1.EndpointSliceRole),
+			Endpoints: []monitoringv1.Endpoint{
+				{
+					Port:     "web",
+					Scheme:   ptr.To(monitoringv1.Scheme("http")),
+					Interval: "30s",
+				},
+			},
+			Selector: metav1.LabelSelector{
+				MatchLabels: map[string]string{
+					"app": appName,
+				},
+			},
+		},
+	}, metav1.CreateOptions{})
+	if err != nil && !apierrors.IsAlreadyExists(err) {
+		t.Fatalf("failed to create ServiceMonitor: %v", err)
+	}
+	defer func() {
+		if err := f.MonitoringClient.ServiceMonitors(testNs).Delete(ctx, appName, metav1.DeleteOptions{}); err != nil && !apierrors.IsNotFound(err) {
+			t.Logf("failed to delete ServiceMonitor: %v", err)
+		}
+	}()
+
+	// Verify the target is discovered and scraped via endpoint slices
+	// Query through Thanos Querier which aggregates both cluster and user workload Prometheus
+	err = framework.Poll(5*time.Second, 5*time.Minute, func() error {
+		query := fmt.Sprintf(`up{job="%s",namespace="%s"}`, appName, testNs)
+		body, err := f.ThanosQuerierClient.PrometheusQuery(query)
+		if err != nil {
+			return fmt.Errorf("failed to query Thanos Querier: %w", err)
+		}
+
+		v, err := framework.GetFirstValueFromPromQuery(body)
+		if err != nil {
+			return fmt.Errorf("failed to parse query result: %w", err)
+		}
+
+		if v != 1 {
+			return fmt.Errorf("expected target to be up (value=1), got %v", v)
+		}
+
+		return nil
+	})
+	if err != nil {
+		t.Fatalf("failed to verify endpoint slice discovery: %v", err)
+	}
+
+	t.Logf("Successfully verified endpoint slice discovery for prometheus-user-workload")
 }
