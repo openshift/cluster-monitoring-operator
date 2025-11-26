@@ -4305,6 +4305,36 @@ func TestThanosRulerRetentionConfig(t *testing.T) {
 	}
 }
 
+func TestThanosRulerRetentionDefaultsToPrometheusRetention(t *testing.T) {
+	// Construct a user-workload configuration the same way the operator does in
+	// production, i.e. via NewUserConfigFromString, so that UserWorkloadConfiguration
+	// defaulting (including retention alignment) is applied.
+	uwc, err := NewUserConfigFromString(`
+prometheus:
+  retention: 45d
+`)
+	require.NoError(t, err)
+
+	c := NewDefaultConfig()
+	c.UserWorkloadConfiguration = uwc
+
+	f := NewFactory("openshift-monitoring", "openshift-user-workload-monitoring", c, defaultInfrastructureReader(), &fakeProxyReader{}, NewAssets(assetsPath), &APIServerConfig{}, &configv1.Console{})
+
+	tr, err := f.ThanosRulerCustomResource(
+		&v1.Secret{ObjectMeta: metav1.ObjectMeta{Name: "foo"}},
+		nil,
+	)
+
+	if err != nil {
+		t.Fatalf("Unexpected error occured %v", err)
+		return
+	}
+
+	if tr.Spec.Retention != "45d" {
+		t.Fatalf("Retention is not configured correctly, expected %s, got %s", "45d", tr.Spec.Retention)
+	}
+}
+
 func TestPrometheusGoGCRelatedConfig(t *testing.T) {
 	for _, tc := range []struct {
 		ir    InfrastructureReader

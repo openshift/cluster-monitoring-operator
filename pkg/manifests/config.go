@@ -664,6 +664,13 @@ func (u *UserWorkloadConfiguration) applyDefaults() {
 	if u.ThanosRuler == nil {
 		u.ThanosRuler = &ThanosRulerConfig{}
 	}
+	// If the user configured a retention for user-workload Prometheus but did not
+	// explicitly set a retention for Thanos Ruler, default Thanos Ruler retention
+	// to the same value as Prometheus. This keeps the effective retention aligned
+	// unless the user overrides it for Thanos Ruler.
+	if u.ThanosRuler.Retention == "" && u.Prometheus != nil && u.Prometheus.Retention != "" {
+		u.ThanosRuler.Retention = u.Prometheus.Retention
+	}
 	if u.Alertmanager == nil {
 		u.Alertmanager = &AlertmanagerUserWorkloadConfig{}
 	}
