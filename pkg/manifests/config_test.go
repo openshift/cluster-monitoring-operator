@@ -261,6 +261,34 @@ thanosRuler:
 				return ``
 			},
 		},
+		{
+			name: "thanosRuler.retention defaults to prometheus.retention when unset",
+			configString: func() string {
+				return `
+prometheus:
+  retention: 15d
+`
+			},
+			configCheck: func(uwmc *UserWorkloadConfiguration) {
+				require.Equal(t, "15d", uwmc.Prometheus.Retention)
+				require.Equal(t, "15d", uwmc.ThanosRuler.Retention)
+			},
+		},
+		{
+			name: "explicit thanosRuler.retention overrides prometheus.retention",
+			configString: func() string {
+				return `
+prometheus:
+  retention: 15d
+thanosRuler:
+  retention: 7d
+`
+			},
+			configCheck: func(uwmc *UserWorkloadConfiguration) {
+				require.Equal(t, "15d", uwmc.Prometheus.Retention)
+				require.Equal(t, "7d", uwmc.ThanosRuler.Retention)
+			},
+		},
 	}
 
 	for _, tc := range tcs {
