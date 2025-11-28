@@ -2,11 +2,11 @@ package framework
 
 import (
 	"context"
-	"io/ioutil"
 	apiextv1 "k8s.io/apiextensions-apiserver/pkg/apis/apiextensions/v1"
 	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/apimachinery/pkg/runtime/serializer"
 	"k8s.io/client-go/kubernetes/scheme"
+	"os"
 	"path/filepath"
 	"testing"
 	"time"
@@ -80,7 +80,7 @@ func (f *Framework) buildConfigMap(o metav1.ObjectMeta, config string) (*v1.Conf
 // ReadManifest reads a manifest from the provided path.
 func (f *Framework) ReadManifest(manifestPath string) ([]byte, error) {
 	manifestPath = filepath.Clean(manifestPath)
-	return ioutil.ReadFile(manifestPath)
+	return os.ReadFile(manifestPath)
 }
 
 // BuildCRD builds a CRD from the provided manifest.
