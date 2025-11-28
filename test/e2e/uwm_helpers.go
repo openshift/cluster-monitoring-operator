@@ -107,7 +107,7 @@ func deployUserApplication(f *framework.Framework) error {
 					Containers: []v1.Container{
 						{
 							Name:            "prometheus-example-app",
-							Image:           "ghcr.io/rhobs/prometheus-example-app:0.5.0",
+							Image:           "ghcr.io/rhobs/prometheus-example-app:0.5.1",
 							SecurityContext: getSecurityContextRestrictedProfile(),
 						},
 					},
