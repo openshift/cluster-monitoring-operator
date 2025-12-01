@@ -37,6 +37,7 @@ func TestUserWorkloadAlertmanager(t *testing.T) {
 
 	f.AssertStatefulSetExistsAndRollout("alertmanager-user-workload", f.UserWorkloadMonitoringNs)(t)
 	f.AssertServiceExists("alertmanager-user-workload", f.UserWorkloadMonitoringNs)(t)
+	f.AssertNetworkPolicyExists("alertmanager-user-workload", f.UserWorkloadMonitoringNs)(t)
 
 	for _, scenario := range []struct {
 		name string

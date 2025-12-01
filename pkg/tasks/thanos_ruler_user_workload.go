@@ -48,6 +48,16 @@ func (t *ThanosRulerUserWorkloadTask) Run(ctx context.Context) error {
 }
 
 func (t *ThanosRulerUserWorkloadTask) create(ctx context.Context) error {
+	netpol, err := t.factory.ThanosRulerNetworkPolicy()
+	if err != nil {
+		return fmt.Errorf("initializing Thanos Ruler NetworkPolicy failed: %w", err)
+	}
+
+	err = t.client.CreateOrUpdateNetworkPolicy(ctx, netpol)
+	if err != nil {
+		return fmt.Errorf("reconciling Thanos Ruler NetworkPolicy failed: %w", err)
+	}
+
 	svc, err := t.factory.ThanosRulerService()
 	if err != nil {
 		return fmt.Errorf("initializing Thanos Ruler Service failed: %w", err)
@@ -282,6 +292,16 @@ func (t *ThanosRulerUserWorkloadTask) create(ctx context.Context) error {
 }
 
 func (t *ThanosRulerUserWorkloadTask) destroy(ctx context.Context) error {
+	netpol, err := t.factory.ThanosRulerNetworkPolicy()
+	if err != nil {
+		return fmt.Errorf("initializing Thanos Ruler NetworkPolicy failed: %w", err)
+	}
+
+	err = t.client.DeleteNetworkPolicy(ctx, netpol)
+	if err != nil {
+		return fmt.Errorf("deleting Thanos Ruler NetworkPolicy failed: %w", err)
+	}
+
 	prmrl, err := t.factory.ThanosRulerPrometheusRule()
 	if err != nil {
 		return fmt.Errorf("initializing Thanos Ruler PrometheusRule failed: %w", err)
