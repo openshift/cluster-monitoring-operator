@@ -169,38 +169,4 @@ function(params)
         },
       ],
     },
-    networkPolicyDownstream: {
-      apiVersion: 'networking.k8s.io/v1',
-      kind: 'NetworkPolicy',
-      metadata: {
-        name: 'prometheus-operator-admission-webhook',
-        namespace: 'openshift-monitoring',
-      },
-      spec: {
-        podSelector: {
-          matchLabels: {
-            'app.kubernetes.io/name': 'prometheus-operator-admission-webhook',
-          },
-        },
-        policyTypes: [
-          'Ingress',
-          'Egress',
-        ],
-        ingress: [
-          {
-            ports: [
-              {
-                // allow apiserver reach to prometheus-operator-admission-webhook
-                // 8443(port name: https) port to validate customresourcedefinitions
-                port: 'https',
-                protocol: 'TCP',
-              },
-            ],
-          },
-        ],
-        egress: [
-          {},
-        ],
-      },
-    },
   }

@@ -322,11 +322,6 @@ function(params) {
         resources: ['alertmanagers/api'],
         verbs: ['*'],
       },
-      {
-        apiGroups: ['networking.k8s.io'],
-        resources: ['networkpolicies'],
-        verbs: ['create', 'get', 'list', 'watch', 'update', 'delete'],
-      },
     ],
   },
 
@@ -570,23 +565,5 @@ function(params) {
       resources: ['alertmanagerconfigs'],
       verbs: ['*'],
     }],
-  },
-
-  // Default deny all pods traffic
-  networkPolicyDefaultDeny: {
-    apiVersion: 'networking.k8s.io/v1',
-    kind: 'NetworkPolicy',
-    metadata: {
-      name: 'default-deny',
-      namespace: cfg.namespace,
-    },
-    spec: {
-      podSelector: {
-      },
-      policyTypes: [
-        'Ingress',
-        'Egress',
-      ],
-    },
   },
 }

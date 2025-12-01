@@ -37,16 +37,6 @@ func NewThanosQuerierTask(client *client.Client, factory *manifests.Factory, cfg
 }
 
 func (t *ThanosQuerierTask) Run(ctx context.Context) error {
-	netpol, err := t.factory.ThanosQuerierNetworkPolicy()
-	if err != nil {
-		return fmt.Errorf("initializing Thanos Querier NetworkPolicy failed: %w", err)
-	}
-
-	err = t.client.CreateOrUpdateNetworkPolicy(ctx, netpol)
-	if err != nil {
-		return fmt.Errorf("reconciling Thanos Querier NetworkPolicy failed: %w", err)
-	}
-
 	svc, err := t.factory.ThanosQuerierService()
 	if err != nil {
 		return fmt.Errorf("initializing Thanos Querier Service failed: %w", err)

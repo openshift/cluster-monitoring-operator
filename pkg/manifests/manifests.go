@@ -43,7 +43,6 @@ import (
 	appsv1 "k8s.io/api/apps/v1"
 	corev1 "k8s.io/api/core/v1"
 	v1 "k8s.io/api/core/v1"
-	networkingv1 "k8s.io/api/networking/v1"
 	policyv1 "k8s.io/api/policy/v1"
 	rbacv1 "k8s.io/api/rbac/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
@@ -96,7 +95,6 @@ var (
 	AlertmanagerTrustedCABundle       = "alertmanager/trusted-ca-bundle.yaml"
 	AlertmanagerPrometheusRule        = "alertmanager/prometheus-rule.yaml"
 	AlertmanagerPodDisruptionBudget   = "alertmanager/pod-disruption-budget.yaml"
-	AlertmanagerNetworkPolicy         = "alertmanager/network-policy-downstream.yaml"
 
 	AlertmanagerUserWorkloadSecret                 = "alertmanager-user-workload/secret.yaml"
 	AlertmanagerUserWorkloadService                = "alertmanager-user-workload/service.yaml"
@@ -121,7 +119,6 @@ var (
 	KubeStateMetricsPrometheusRule        = "kube-state-metrics/prometheus-rule.yaml"
 	KubeStateMetricsKubeRbacProxySecret   = "kube-state-metrics/kube-rbac-proxy-secret.yaml"
 	KubeStateMetricsCRSConfig             = "kube-state-metrics/custom-resource-state-configmap.yaml"
-	KubeStateMetricsNetworkPolicy         = "kube-state-metrics/network-policy-downstream.yaml"
 
 	OpenShiftStateMetricsClusterRoleBinding  = "openshift-state-metrics/cluster-role-binding.yaml"
 	OpenShiftStateMetricsClusterRole         = "openshift-state-metrics/cluster-role.yaml"
@@ -130,7 +127,6 @@ var (
 	OpenShiftStateMetricsService             = "openshift-state-metrics/service.yaml"
 	OpenShiftStateMetricsServiceMonitor      = "openshift-state-metrics/service-monitor.yaml"
 	OpenShiftStateMetricsKubeRbacProxySecret = "openshift-state-metrics/kube-rbac-proxy-secret.yaml"
-	OpenShiftStateMetricsNetworkPolicy       = "openshift-state-metrics/network-policy-downstream.yaml"
 
 	NodeExporterDaemonSet                  = "node-exporter/daemonset.yaml"
 	NodeExporterService                    = "node-exporter/service.yaml"
@@ -171,7 +167,6 @@ var (
 	PrometheusK8sTAlertmanagerRoleBinding         = "prometheus-k8s/alertmanager-role-binding.yaml"
 	PrometheusK8sPodDisruptionBudget              = "prometheus-k8s/pod-disruption-budget.yaml"
 	PrometheusK8sTelemetry                        = "prometheus-k8s/telemetry-secret.yaml"
-	PrometheusK8sNetworkPolicy                    = "prometheus-k8s/network-policy-downstream.yaml"
 
 	PrometheusUserWorkloadServingCertsCABundle                = "prometheus-user-workload/serving-certs-ca-bundle.yaml"
 	PrometheusUserWorkloadTrustedCABundle                     = "prometheus-user-workload/trusted-ca-bundle.yaml"
@@ -205,7 +200,6 @@ var (
 	MetricsServerService                         = "metrics-server/service.yaml"
 	MetricsServerServiceMonitor                  = "metrics-server/service-monitor.yaml"
 	MetricsServerPodDisruptionBudget             = "metrics-server/pod-disruption-budget.yaml"
-	MetricsServerNetworkPolicy                   = "metrics-server/network-policy-downstream.yaml"
 
 	AdmissionWebhookRuleValidatingWebhook               = "admission-webhook/prometheus-rule-validating-webhook.yaml"
 	AdmissionWebhookAlertmanagerConfigValidatingWebhook = "admission-webhook/alertmanager-config-validating-webhook.yaml"
@@ -213,7 +207,6 @@ var (
 	AdmissionWebhookPodDisruptionBudget                 = "admission-webhook/pod-disruption-budget.yaml"
 	AdmissionWebhookService                             = "admission-webhook/service.yaml"
 	AdmissionWebhookServiceAccount                      = "admission-webhook/service-account.yaml"
-	AdmissionWebhookNetworkPolicy                       = "admission-webhook/network-policy-downstream.yaml"
 
 	PrometheusOperatorClusterRoleBinding  = "prometheus-operator/cluster-role-binding.yaml"
 	PrometheusOperatorClusterRole         = "prometheus-operator/cluster-role.yaml"
@@ -223,7 +216,6 @@ var (
 	PrometheusOperatorServiceMonitor      = "prometheus-operator/service-monitor.yaml"
 	PrometheusOperatorPrometheusRule      = "prometheus-operator/prometheus-rule.yaml"
 	PrometheusOperatorKubeRbacProxySecret = "prometheus-operator/kube-rbac-proxy-secret.yaml"
-	PrometheusOperatorNetworkPolicy       = "prometheus-operator/network-policy-downstream.yaml"
 
 	PrometheusOperatorUserWorkloadServiceAccount      = "prometheus-operator-user-workload/service-account.yaml"
 	PrometheusOperatorUserWorkloadClusterRole         = "prometheus-operator-user-workload/cluster-role.yaml"
@@ -253,7 +245,6 @@ var (
 	ClusterMonitoringMetricsServerClientCertsSecret        = "cluster-monitoring-operator/metrics-server-client-certs.yaml"
 	ClusterMonitoringFederateClientCertsSecret             = "cluster-monitoring-operator/federate-client-certs.yaml"
 	ClusterMonitoringMetricsClientCACM                     = "cluster-monitoring-operator/metrics-client-ca.yaml"
-	ClusterMonitoringDenyAllTraffic                        = "cluster-monitoring-operator/network-policy-default-deny.yaml"
 
 	TelemeterClientClusterRole            = "telemeter-client/cluster-role.yaml"
 	TelemeterClientClusterRoleBinding     = "telemeter-client/cluster-role-binding.yaml"
@@ -266,7 +257,6 @@ var (
 	TelemeterClientServingCertsCABundle   = "telemeter-client/serving-certs-ca-bundle.yaml"
 	TelemeterClientKubeRbacProxySecret    = "telemeter-client/kube-rbac-proxy-secret.yaml"
 	TelemeterClientPrometheusRule         = "telemeter-client/prometheus-rule.yaml"
-	TelemeterClientNetworkPolicy          = "telemeter-client/network-policy-downstream.yaml"
 
 	ThanosQuerierDeployment             = "thanos-querier/deployment.yaml"
 	ThanosQuerierPodDisruptionBudget    = "thanos-querier/pod-disruption-budget.yaml"
@@ -282,7 +272,6 @@ var (
 	ThanosQuerierClusterRole            = "thanos-querier/cluster-role.yaml"
 	ThanosQuerierClusterRoleBinding     = "thanos-querier/cluster-role-binding.yaml"
 	ThanosQuerierGrpcTLSSecret          = "thanos-querier/grpc-tls-secret.yaml"
-	ThanosQuerierNetworkPolicy          = "thanos-querier/network-policy-downstream.yaml"
 
 	ThanosRulerCustomResource                                = "thanos-ruler/thanos-ruler.yaml"
 	ThanosRulerService                                       = "thanos-ruler/service.yaml"
@@ -314,7 +303,6 @@ var (
 	MonitoringPluginServiceAccount      = "monitoring-plugin/service-account.yaml"
 	MonitoringPluginService             = "monitoring-plugin/service.yaml"
 	MonitoringPluginPodDisruptionBudget = "monitoring-plugin/pod-disruption-budget.yaml"
-	MonitoringPluginNetworkPolicy       = "monitoring-plugin/network-policy-downstream.yaml"
 )
 
 var (
@@ -739,10 +727,6 @@ func (f *Factory) AlertmanagerPodDisruptionBudget() (*policyv1.PodDisruptionBudg
 	return f.NewPodDisruptionBudget(f.assets.MustNewAssetSlice(AlertmanagerPodDisruptionBudget))
 }
 
-func (f *Factory) AlertmanagerNetworkPolicy() (*networkingv1.NetworkPolicy, error) {
-	return f.NewNetworkPolicy(f.assets.MustNewAssetSlice(AlertmanagerNetworkPolicy))
-}
-
 func (f *Factory) AlertmanagerUserWorkloadPodDisruptionBudget() (*policyv1.PodDisruptionBudget, error) {
 	return f.NewPodDisruptionBudget(f.assets.MustNewAssetSlice(AlertmanagerUserWorkloadPodDisruptionBudget))
 }
@@ -816,10 +800,6 @@ func (f *Factory) KubeStateMetricsCRSConfigMap() (*v1.ConfigMap, error) {
 	return f.NewConfigMap(f.assets.MustNewAssetSlice(KubeStateMetricsCRSConfig))
 }
 
-func (f *Factory) KubeStateMetricsNetworkPolicy() (*networkingv1.NetworkPolicy, error) {
-	return f.NewNetworkPolicy(f.assets.MustNewAssetSlice(KubeStateMetricsNetworkPolicy))
-}
-
 func (f *Factory) OpenShiftStateMetricsClusterRoleBinding() (*rbacv1.ClusterRoleBinding, error) {
 	return f.NewClusterRoleBinding(f.assets.MustNewAssetSlice(OpenShiftStateMetricsClusterRoleBinding))
 }
@@ -877,10 +857,6 @@ func (f *Factory) OpenShiftStateMetricsService() (*v1.Service, error) {
 
 func (f *Factory) OpenShiftStateMetricsRBACProxySecret() (*v1.Secret, error) {
 	return f.NewSecret(f.assets.MustNewAssetSlice(OpenShiftStateMetricsKubeRbacProxySecret))
-}
-
-func (f *Factory) OpenShiftStateMetricsNetworkPolicy() (*networkingv1.NetworkPolicy, error) {
-	return f.NewNetworkPolicy(f.assets.MustNewAssetSlice(OpenShiftStateMetricsNetworkPolicy))
 }
 
 func (f *Factory) NodeExporterServiceMonitors() ([]*monv1.ServiceMonitor, error) {
@@ -1068,10 +1044,6 @@ func (f *Factory) PrometheusK8sAlertmanagerRoleBinding() (*rbacv1.RoleBinding, e
 
 func (f *Factory) ThanosQuerierClusterRoleBinding() (*rbacv1.ClusterRoleBinding, error) {
 	return f.NewClusterRoleBinding(f.assets.MustNewAssetSlice(ThanosQuerierClusterRoleBinding))
-}
-
-func (f *Factory) ThanosQuerierNetworkPolicy() (*networkingv1.NetworkPolicy, error) {
-	return f.NewNetworkPolicy(f.assets.MustNewAssetSlice(ThanosQuerierNetworkPolicy))
 }
 
 func (f *Factory) PrometheusUserWorkloadClusterRoleBinding() (*rbacv1.ClusterRoleBinding, error) {
@@ -2116,10 +2088,6 @@ func (f *Factory) MetricsServerAPIService() (*apiregistrationv1.APIService, erro
 	return f.NewAPIService(f.assets.MustNewAssetSlice(MetricsServerAPIService))
 }
 
-func (f *Factory) MetricsServerNetworkPolicy() (*networkingv1.NetworkPolicy, error) {
-	return f.NewNetworkPolicy(f.assets.MustNewAssetSlice(MetricsServerNetworkPolicy))
-}
-
 func (f *Factory) PrometheusOperatorServiceMonitor() (*monv1.ServiceMonitor, error) {
 	return f.NewServiceMonitor(f.assets.MustNewAssetSlice(PrometheusOperatorServiceMonitor))
 }
@@ -2172,16 +2140,8 @@ func (f *Factory) PrometheusOperatorRBACProxySecret() (*v1.Secret, error) {
 	return f.NewSecret(f.assets.MustNewAssetSlice(PrometheusOperatorKubeRbacProxySecret))
 }
 
-func (f *Factory) PrometheusOperatorNetworkPolicy() (*networkingv1.NetworkPolicy, error) {
-	return f.NewNetworkPolicy(f.assets.MustNewAssetSlice(PrometheusOperatorNetworkPolicy))
-}
-
 func (f *Factory) PrometheusOperatorAdmissionWebhookServiceAccount() (*v1.ServiceAccount, error) {
 	return f.NewServiceAccount(f.assets.MustNewAssetSlice(AdmissionWebhookServiceAccount))
-}
-
-func (f *Factory) AdmissionWebhookNetworkPolicy() (*networkingv1.NetworkPolicy, error) {
-	return f.NewNetworkPolicy(f.assets.MustNewAssetSlice(AdmissionWebhookNetworkPolicy))
 }
 
 func (f *Factory) PrometheusOperatorAdmissionWebhookService() (*v1.Service, error) {
@@ -2439,10 +2399,6 @@ func (f *Factory) PrometheusK8sPodDisruptionBudget() (*policyv1.PodDisruptionBud
 	return f.NewPodDisruptionBudget(f.assets.MustNewAssetSlice(PrometheusK8sPodDisruptionBudget))
 }
 
-func (f *Factory) PrometheusK8sNetworkPolicy() (*networkingv1.NetworkPolicy, error) {
-	return f.NewNetworkPolicy(f.assets.MustNewAssetSlice(PrometheusK8sNetworkPolicy))
-}
-
 func (f *Factory) PrometheusUserWorkloadPodDisruptionBudget() (*policyv1.PodDisruptionBudget, error) {
 	return f.NewPodDisruptionBudget(f.assets.MustNewAssetSlice(PrometheusUserWorkloadPodDisruptionBudget))
 }
@@ -2517,10 +2473,6 @@ func (f *Factory) ClusterMonitoringOperatorServiceMonitor() (*monv1.ServiceMonit
 
 func (f *Factory) ClusterMonitoringOperatorPrometheusRule() (*monv1.PrometheusRule, error) {
 	return f.NewPrometheusRule(f.assets.MustNewAssetSlice(ClusterMonitoringOperatorPrometheusRule))
-}
-
-func (f *Factory) ClusterMonitoringDenyAllTraffic() (*networkingv1.NetworkPolicy, error) {
-	return f.NewNetworkPolicy(f.assets.MustNewAssetSlice(ClusterMonitoringDenyAllTraffic))
 }
 
 func (f *Factory) ControlPlanePrometheusRule() (*monv1.PrometheusRule, error) {
@@ -2787,15 +2739,6 @@ func (f *Factory) NewAPIService(manifest []byte) (*apiregistrationv1.APIService,
 	return &s, nil
 }
 
-func (f *Factory) NewNetworkPolicy(manifest []byte) (*networkingv1.NetworkPolicy, error) {
-	np := networkingv1.NetworkPolicy{}
-	err := decodeYAML(manifest, &np)
-	if err != nil {
-		return nil, err
-	}
-	return &np, nil
-}
-
 func (f *Factory) NewSecurityContextConstraints(manifest []byte) (*securityv1.SecurityContextConstraints, error) {
 	s := securityv1.SecurityContextConstraints{}
 	err := decodeYAML(manifest, &s)
@@ -2897,10 +2840,6 @@ func (f *Factory) MonitoringPluginDeployment() (*appsv1.Deployment, error) {
 
 func (f *Factory) MonitoringPluginPodDisruptionBudget() (*policyv1.PodDisruptionBudget, error) {
 	return f.NewPodDisruptionBudget(f.assets.MustNewAssetSlice(MonitoringPluginPodDisruptionBudget))
-}
-
-func (f *Factory) MonitoringPluginNetworkPolicy() (*networkingv1.NetworkPolicy, error) {
-	return f.NewNetworkPolicy(f.assets.MustNewAssetSlice(MonitoringPluginNetworkPolicy))
 }
 
 func (f *Factory) MonitoringPluginServiceAccount() (*v1.ServiceAccount, error) {
@@ -3054,10 +2993,6 @@ func (f *Factory) TelemeterClientKubeRbacProxySecret() (*v1.Secret, error) {
 
 func (f *Factory) TelemeterClientPrometheusRule() (*monv1.PrometheusRule, error) {
 	return f.NewPrometheusRule(f.assets.MustNewAssetSlice(TelemeterClientPrometheusRule))
-}
-
-func (f *Factory) TelemeterClientNetworkPolicy() (*networkingv1.NetworkPolicy, error) {
-	return f.NewNetworkPolicy(f.assets.MustNewAssetSlice(TelemeterClientNetworkPolicy))
 }
 
 // TelemeterClientDeployment generates a new Deployment for Telemeter client.
