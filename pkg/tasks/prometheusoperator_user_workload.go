@@ -48,6 +48,16 @@ func (t *PrometheusOperatorUserWorkloadTask) Run(ctx context.Context) error {
 }
 
 func (t *PrometheusOperatorUserWorkloadTask) create(ctx context.Context) error {
+	netpol, err := t.factory.PrometheusOperatorUserWorkloadNetworkPolicy()
+	if err != nil {
+		return fmt.Errorf("initializing UserWorkload Prometheus Operator NetworkPolicy failed: %w", err)
+	}
+
+	err = t.client.CreateOrUpdateNetworkPolicy(ctx, netpol)
+	if err != nil {
+		return fmt.Errorf("reconciling UserWorkload Prometheus Operator NetworkPolicy failed: %w", err)
+	}
+
 	sa, err := t.factory.PrometheusOperatorUserWorkloadServiceAccount()
 	if err != nil {
 		return fmt.Errorf("initializing UserWorkload Prometheus Operator ServiceAccount failed: %w", err)

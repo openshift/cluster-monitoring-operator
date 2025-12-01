@@ -196,4 +196,39 @@ function(params)
         ],
       },
     },
+
+    networkPolicyDownstream: {
+      apiVersion: 'networking.k8s.io/v1',
+      kind: 'NetworkPolicy',
+      metadata: {
+        name: 'prometheus-operator-user-workload',
+        namespace: 'openshift-user-workload-monitoring',
+      },
+      spec: {
+        podSelector: {
+          matchLabels: {
+            'app.kubernetes.io/name': 'prometheus-operator',
+          },
+        },
+        policyTypes: [
+          'Ingress',
+          'Egress',
+        ],
+        ingress: [
+          {
+            ports: [
+              // allow prometheus-operator to to watch resources and allow prometheus
+              // to scrape prometheus-operator endpoint, 8443(port name: https) port
+              {
+                port: 'https',
+                protocol: 'TCP',
+              },
+            ],
+          },
+        ],
+        egress: [
+          {},
+        ],
+      },
+    },
   }

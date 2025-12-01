@@ -1,0 +1,21 @@
+apiVersion: networking.k8s.io/v1
+kind: NetworkPolicy
+metadata:
+  labels:
+    app.kubernetes.io/managed-by: cluster-monitoring-operator
+    app.kubernetes.io/part-of: openshift-monitoring
+  name: prometheus-operator-user-workload
+  namespace: openshift-user-workload-monitoring
+spec:
+  egress:
+  - {}
+  ingress:
+  - ports:
+    - port: https
+      protocol: TCP
+  podSelector:
+    matchLabels:
+      app.kubernetes.io/name: prometheus-operator
+  policyTypes:
+  - Ingress
+  - Egress

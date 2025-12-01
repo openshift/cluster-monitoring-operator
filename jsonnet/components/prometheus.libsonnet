@@ -601,8 +601,6 @@ function(params)
         ],
       },
     },
-    // Allow access to prometheus 9091(port name: web)/9092(port name: metrics) ports
-    // and 10901(port name: grpc)/10903(port name: thanos-proxy) ports
     networkPolicyDownstream: {
       apiVersion: 'networking.k8s.io/v1',
       kind: 'NetworkPolicy',

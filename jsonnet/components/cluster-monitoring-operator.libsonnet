@@ -572,13 +572,30 @@ function(params) {
     }],
   },
 
-  // Default deny all pods traffic
+  // Default deny all pods traffic for in-cluster monitoring
   networkPolicyDefaultDeny: {
     apiVersion: 'networking.k8s.io/v1',
     kind: 'NetworkPolicy',
     metadata: {
       name: 'default-deny',
       namespace: cfg.namespace,
+    },
+    spec: {
+      podSelector: {
+      },
+      policyTypes: [
+        'Ingress',
+        'Egress',
+      ],
+    },
+  },
+  // Default deny all pods traffic for user workload monitoring
+  networkPolicyDefaultDenyUserWorkload: {
+    apiVersion: 'networking.k8s.io/v1',
+    kind: 'NetworkPolicy',
+    metadata: {
+      name: 'default-deny-user-workload',
+      namespace: 'openshift-user-workload-monitoring',
     },
     spec: {
       podSelector: {
