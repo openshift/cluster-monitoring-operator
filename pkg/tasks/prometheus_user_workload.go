@@ -327,6 +327,16 @@ func (t *PrometheusUserWorkloadTask) create(ctx context.Context) error {
 }
 
 func (t *PrometheusUserWorkloadTask) destroy(ctx context.Context) error {
+	netpol, err := t.factory.PrometheusUserWorkloadNetworkPolicy()
+	if err != nil {
+		return fmt.Errorf("initializing Prometheus User Workload NetworkPolicy failed: %w", err)
+	}
+
+	err = t.client.DeleteNetworkPolicy(ctx, netpol)
+	if err != nil {
+		return fmt.Errorf("deleting Prometheus User Workload NetworkPolicy failed: %w", err)
+	}
+
 	smt, err := t.factory.PrometheusUserWorkloadThanosSidecarServiceMonitor()
 	if err != nil {
 		return fmt.Errorf("initializing UserWorkload Thanos sidecar ServiceMonitor failed: %w", err)

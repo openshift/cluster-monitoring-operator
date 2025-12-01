@@ -163,6 +163,16 @@ func (t *PrometheusOperatorUserWorkloadTask) create(ctx context.Context) error {
 }
 
 func (t *PrometheusOperatorUserWorkloadTask) destroy(ctx context.Context) error {
+	netpol, err := t.factory.PrometheusOperatorUserWorkloadNetworkPolicy()
+	if err != nil {
+		return fmt.Errorf("initializing UserWorkload Prometheus Operator NetworkPolicy failed: %w", err)
+	}
+
+	err = t.client.DeleteNetworkPolicy(ctx, netpol)
+	if err != nil {
+		return fmt.Errorf("deleting UserWorkload Prometheus Operator NetworkPolicy failed: %w", err)
+	}
+
 	dep, err := t.factory.PrometheusOperatorUserWorkloadDeployment()
 	if err != nil {
 		return fmt.Errorf("initializing UserWorkload Prometheus Operator Deployment failed: %w", err)

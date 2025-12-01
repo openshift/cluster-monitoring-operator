@@ -65,14 +65,26 @@ func NewDefaultDenyUserWorkloadNetworkPolicyTask(client *client.Client, factory 
 }
 
 func (t *DefaultDenyUserWorkloadNetworkPolicyTask) Run(ctx context.Context) error {
+	if *t.config.ClusterMonitoringConfiguration.UserWorkloadEnabled {
+		denyNetpol, err := t.factory.UserWorkloadMonitoringDenyAllTraffic()
+		if err != nil {
+			return fmt.Errorf("initializing deny all pods traffic NetworkPolicy for User Workload failed: %w", err)
+		}
+
+		err = t.client.CreateOrUpdateNetworkPolicy(ctx, denyNetpol)
+		if err != nil {
+			return fmt.Errorf("reconciling deny all pods traffic NetworkPolicy for User Workload failed: %w", err)
+		}
+	}
+
 	denyNetpol, err := t.factory.UserWorkloadMonitoringDenyAllTraffic()
 	if err != nil {
 		return fmt.Errorf("initializing deny all pods traffic NetworkPolicy for User Workload failed: %w", err)
 	}
 
-	err = t.client.CreateOrUpdateNetworkPolicy(ctx, denyNetpol)
+	err = t.client.DeleteNetworkPolicy(ctx, denyNetpol)
 	if err != nil {
-		return fmt.Errorf("reconciling deny all pods traffic NetworkPolicy for User Workload failed: %w", err)
+		return fmt.Errorf("deleting deny all pods traffic NetworkPolicy for User Workload failed: %w", err)
 	}
 
 	return nil
