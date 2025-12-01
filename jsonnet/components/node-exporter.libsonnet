@@ -250,14 +250,12 @@ function(params)
     },
 
     clusterRole+: {
-      rules+: [
-        {
-          apiGroups: ['security.openshift.io'],
-          resources: ['securitycontextconstraints'],
-          resourceNames: ['node-exporter'],
-          verbs: ['use'],
-        },
-      ],
+      rules+: [{
+        apiGroups: ['security.openshift.io'],
+        resources: ['securitycontextconstraints'],
+        resourceNames: ['node-exporter'],
+        verbs: ['use'],
+      }],
     },
 
     // This configures the kube-rbac-proxies to use the serving cert
