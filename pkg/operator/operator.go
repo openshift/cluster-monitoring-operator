@@ -826,6 +826,7 @@ func (o *Operator) sync(ctx context.Context, key string) error {
 			[]*tasks.TaskSpec{
 				newTaskSpec("ConfigurationSharing", tasks.NewConfigSharingTask(o.client, factory, config)),
 				newTaskSpec("DefaultDenyNetworkPolicy", tasks.NewDefaultDenyNetworkPolicyTask(o.client, factory, config)),
+				newUWMTaskSpec("DefaultDenyUserWorkloadNetworkPolicy", tasks.DefaultDenyUserWorkloadNetworkPolicyTask(o.client, factory, config)),
 			},
 		),
 	)
