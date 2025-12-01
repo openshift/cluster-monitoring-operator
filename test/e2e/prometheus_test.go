@@ -17,11 +17,13 @@ package e2e
 import (
 	"context"
 	"fmt"
+	"reflect"
 	"testing"
 	"time"
 
 	_ "github.com/prometheus/prometheus/discovery/kubernetes" // required for promConfig.Load to parse kubernetes_sd_configs
 	v1 "k8s.io/api/core/v1"
+	rbacv1 "k8s.io/api/rbac/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/types"
 
@@ -385,4 +387,62 @@ func TestBodySizeLimit(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
+}
+
+func TestEndpointslice(t *testing.T) {
+	ctx := context.Background()
+
+	t.Run("ClusterRolePermissions", func(t *testing.T) {
+		roleName := "prometheus-k8s"
+		clusterRole, err := f.KubeClient.RbacV1().ClusterRoles().Get(ctx, roleName, metav1.GetOptions{})
+		if err != nil {
+			t.Fatalf("failed to get ClusterRole %s: %v", roleName, err)
+		}
+
+		// % oc get clusterRole prometheus-k8s -o jsonpath='{.rules[?(@.resources[*]=="endpointslices")]}'
+		// {"apiGroups":["discovery.k8s.io"],"resources":["endpointslices"],"verbs":["get","list","watch"]}%
+		expectedRule := &rbacv1.PolicyRule{
+			APIGroups: []string{"discovery.k8s.io"},
+			Resources: []string{"endpointslices"},
+			Verbs:     []string{"get", "list", "watch"},
+		}
+
+		var endpointSliceRule *rbacv1.PolicyRule
+		for i, rule := range clusterRole.Rules {
+			for _, resource := range rule.Resources {
+				if resource == "endpointslices" {
+					endpointSliceRule = &clusterRole.Rules[i]
+					break
+				}
+			}
+			if endpointSliceRule != nil {
+				break
+			}
+		}
+
+		if endpointSliceRule == nil {
+			t.Fatal("no rule found for endpointslices resource in prometheus-k8s ClusterRole")
+		}
+		if !reflect.DeepEqual(endpointSliceRule, expectedRule) {
+			t.Errorf("unexpected rule for endpointslices:\ngot\n\t%#v\nwant\n\t%#v", endpointSliceRule, expectedRule)
+		}
+	})
+
+	t.Run("ServiceMonitorUsesEndpointSlices", func(t *testing.T) {
+		smName := "prometheus-k8s"
+		sm, err := f.MonitoringClient.ServiceMonitors(f.Ns).Get(ctx, smName, metav1.GetOptions{})
+		if err != nil {
+			t.Fatalf("failed to get ServiceMonitor %s: %v", smName, err)
+		}
+
+		if sm.Spec.ServiceDiscoveryRole == nil {
+			t.Fatal("expected ServiceMonitor ServiceDiscoveryRole to be set, but it was nil")
+		}
+
+		expectedRole := "EndpointSlice"
+		actualRole := string(*sm.Spec.ServiceDiscoveryRole)
+		if actualRole != expectedRole {
+			t.Errorf("expected ServiceMonitor ServiceDiscoveryRole to be %q, but got %q", expectedRole, actualRole)
+		}
+	})
 }
