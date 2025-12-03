@@ -136,7 +136,7 @@ The `ClusterMonitoringConfiguration` resource defines settings that customize th
 | prometheusOperator | *[PrometheusOperatorConfig](#prometheusoperatorconfig) | `PrometheusOperatorConfig` defines settings for the Prometheus Operator component. |
 | prometheusOperatorAdmissionWebhook | *[PrometheusOperatorAdmissionWebhookConfig](#prometheusoperatoradmissionwebhookconfig) | `PrometheusOperatorAdmissionWebhookConfig` defines settings for the Prometheus Operator's admission webhook component. |
 | openshiftStateMetrics | *[OpenShiftStateMetricsConfig](#openshiftstatemetricsconfig) | `OpenShiftMetricsConfig` defines settings for the `openshift-state-metrics` agent. |
-| telemeterClient | *[TelemeterClientConfig](#telemeterclientconfig) | `TelemeterClientConfig` defines settings for the Telemeter Client component. |
+| telemetryConfig | *[TelemetryConfig](#telemetryconfig) | TelemetryConfig defines settings for telemetry reporting. |
 | thanosQuerier | *[ThanosQuerierConfig](#thanosquerierconfig) | `ThanosQuerierConfig` defines settings for the Thanos Querier component. |
 | nodeExporter | [NodeExporterConfig](#nodeexporterconfig) | `NodeExporterConfig` defines settings for the `node-exporter` agent. |
 | monitoringPlugin | *[MonitoringPluginConfig](#monitoringpluginconfig) | `MonitoringPluginConfig` defines settings for the monitoring `console-plugin`. |
@@ -568,9 +568,6 @@ The `TLSConfig` resource configures the settings for TLS connections.
 #### Required
    - ` nodeSelector `
    - ` tolerations `
-
-<em>appears in: [ClusterMonitoringConfiguration](#clustermonitoringconfiguration)</em>
-
 | Property | Type | Description |
 | -------- | ---- | ----------- |
 | nodeSelector | map[string]string | Defines the nodes on which the pods are scheduled. |
