@@ -97,5 +97,42 @@ function(params) {
     },
   },
   serviceMonitor: osm.openshiftStateMetrics.serviceMonitor,
-
+  networkPolicyDownstream: {
+    apiVersion: 'networking.k8s.io/v1',
+    kind: 'NetworkPolicy',
+    metadata: {
+      name: 'openshift-state-metrics',
+      namespace: cfg.namespace,
+    },
+    spec: {
+      podSelector: {
+        matchLabels: {
+          'app.kubernetes.io/name': 'openshift-state-metrics',
+        },
+      },
+      policyTypes: [
+        'Ingress',
+        'Egress',
+      ],
+      ingress: [
+        {
+          ports: [
+            // allow prometheus to scrape openshift-state-metrics endpoints,
+            // 8443(port name: https-main)/9443(port name: https-self) ports
+            {
+              port: 'https-main',
+              protocol: 'TCP',
+            },
+            {
+              port: 'https-self',
+              protocol: 'TCP',
+            },
+          ],
+        },
+      ],
+      egress: [
+        {},
+      ],
+    },
+  },
 }
