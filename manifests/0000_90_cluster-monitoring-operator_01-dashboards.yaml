@@ -1,3 +1,4 @@
+# Any future change to these dashboards should be made here directly.
 ---
 apiVersion: v1
 data:
@@ -74,7 +75,7 @@ data:
                         "steppedLine": false,
                         "targets": [
                             {
-                                "expr": "((\n  instance:node_cpu_utilisation:rate1m{job=\"node-exporter\", cluster=\"$cluster\"}\n  *\n  instance:node_num_cpu:sum{job=\"node-exporter\", cluster=\"$cluster\"}\n) != 0 )\n/ scalar(sum(instance:node_num_cpu:sum{job=\"node-exporter\", cluster=\"$cluster\"}))\n",
+                                "expr": "((\n  instance:node_cpu_utilisation:rate1m{job=\"node-exporter\"}\n  *\n  instance:node_num_cpu:sum{job=\"node-exporter\"}\n) != 0 )\n/ scalar(sum(instance:node_num_cpu:sum{job=\"node-exporter\"}))\n",
                                 "format": "time_series",
                                 "intervalFactor": 2,
                                 "legendFormat": "{{ instance }}",
@@ -167,7 +168,7 @@ data:
                         "steppedLine": false,
                         "targets": [
                             {
-                                "expr": "(\n  instance:node_load1_per_cpu:ratio{job=\"node-exporter\", cluster=\"$cluster\"}\n  / scalar(count(instance:node_load1_per_cpu:ratio{job=\"node-exporter\", cluster=\"$cluster\"}))\n)  != 0\n",
+                                "expr": "(\n  instance:node_load1_per_cpu:ratio{job=\"node-exporter\"}\n  / scalar(count(instance:node_load1_per_cpu:ratio{job=\"node-exporter\"}))\n)  != 0\n",
                                 "format": "time_series",
                                 "intervalFactor": 2,
                                 "legendFormat": "{{instance}}",
@@ -273,7 +274,7 @@ data:
                         "steppedLine": false,
                         "targets": [
                             {
-                                "expr": "(\n  instance:node_memory_utilisation:ratio{job=\"node-exporter\", cluster=\"$cluster\"}\n  / scalar(count(instance:node_memory_utilisation:ratio{job=\"node-exporter\", cluster=\"$cluster\"}))\n) != 0\n",
+                                "expr": "(\n  instance:node_memory_utilisation:ratio{job=\"node-exporter\"}\n  / scalar(count(instance:node_memory_utilisation:ratio{job=\"node-exporter\"}))\n) != 0\n",
                                 "format": "time_series",
                                 "intervalFactor": 2,
                                 "legendFormat": "{{instance}}",
@@ -366,7 +367,7 @@ data:
                         "steppedLine": false,
                         "targets": [
                             {
-                                "expr": "instance:node_vmstat_pgmajfault:rate1m{job=\"node-exporter\", cluster=\"$cluster\"}",
+                                "expr": "instance:node_vmstat_pgmajfault:rate1m{job=\"node-exporter\"}",
                                 "format": "time_series",
                                 "intervalFactor": 2,
                                 "legendFormat": "{{instance}}",
@@ -480,14 +481,14 @@ data:
                         "steppedLine": false,
                         "targets": [
                             {
-                                "expr": "instance:node_network_receive_bytes_excluding_lo:rate1m{job=\"node-exporter\", cluster=\"$cluster\"} != 0",
+                                "expr": "instance:node_network_receive_bytes_excluding_lo:rate1m{job=\"node-exporter\"} != 0",
                                 "format": "time_series",
                                 "intervalFactor": 2,
                                 "legendFormat": "{{instance}} Receive",
                                 "refId": "A"
                             },
                             {
-                                "expr": "instance:node_network_transmit_bytes_excluding_lo:rate1m{job=\"node-exporter\", cluster=\"$cluster\"} != 0",
+                                "expr": "instance:node_network_transmit_bytes_excluding_lo:rate1m{job=\"node-exporter\"} != 0",
                                 "format": "time_series",
                                 "intervalFactor": 2,
                                 "legendFormat": "{{instance}} Transmit",
@@ -588,14 +589,14 @@ data:
                         "steppedLine": false,
                         "targets": [
                             {
-                                "expr": "instance:node_network_receive_drop_excluding_lo:rate1m{job=\"node-exporter\", cluster=\"$cluster\"} != 0",
+                                "expr": "instance:node_network_receive_drop_excluding_lo:rate1m{job=\"node-exporter\"} != 0",
                                 "format": "time_series",
                                 "intervalFactor": 2,
                                 "legendFormat": "{{instance}} Receive",
                                 "refId": "A"
                             },
                             {
-                                "expr": "instance:node_network_transmit_drop_excluding_lo:rate1m{job=\"node-exporter\", cluster=\"$cluster\"} != 0",
+                                "expr": "instance:node_network_transmit_drop_excluding_lo:rate1m{job=\"node-exporter\"} != 0",
                                 "format": "time_series",
                                 "intervalFactor": 2,
                                 "legendFormat": "{{instance}} Transmit",
@@ -701,7 +702,7 @@ data:
                         "steppedLine": false,
                         "targets": [
                             {
-                                "expr": "(\n  instance_device:node_disk_io_time_seconds:rate1m{job=\"node-exporter\", cluster=\"$cluster\"}\n  / scalar(count(instance_device:node_disk_io_time_seconds:rate1m{job=\"node-exporter\", cluster=\"$cluster\"}))\n) != 0\n",
+                                "expr": "(\n  instance_device:node_disk_io_time_seconds:rate1m{job=\"node-exporter\"}\n  / scalar(count(instance_device:node_disk_io_time_seconds:rate1m{job=\"node-exporter\"}))\n) != 0\n",
                                 "format": "time_series",
                                 "intervalFactor": 2,
                                 "legendFormat": "{{instance}} {{device}}",
@@ -794,7 +795,7 @@ data:
                         "steppedLine": false,
                         "targets": [
                             {
-                                "expr": "(\n  instance_device:node_disk_io_time_weighted_seconds:rate1m{job=\"node-exporter\", cluster=\"$cluster\"}\n  / scalar(count(instance_device:node_disk_io_time_weighted_seconds:rate1m{job=\"node-exporter\", cluster=\"$cluster\"}))\n) != 0\n",
+                                "expr": "(\n  instance_device:node_disk_io_time_weighted_seconds:rate1m{job=\"node-exporter\"}\n  / scalar(count(instance_device:node_disk_io_time_weighted_seconds:rate1m{job=\"node-exporter\"}))\n) != 0\n",
                                 "format": "time_series",
                                 "intervalFactor": 2,
                                 "legendFormat": "{{instance}} {{device}}",
@@ -900,7 +901,7 @@ data:
                         "steppedLine": false,
                         "targets": [
                             {
-                                "expr": "sum without (device) (\n  max without (fstype, mountpoint) ((\n    node_filesystem_size_bytes{job=\"node-exporter\", fstype!=\"\", mountpoint!~\"/var/lib/ibmc-s3fs.*\", cluster=\"$cluster\"}\n    -\n    node_filesystem_avail_bytes{job=\"node-exporter\", fstype!=\"\", mountpoint!~\"/var/lib/ibmc-s3fs.*\", cluster=\"$cluster\"}\n  ) != 0)\n)\n/ scalar(sum(max without (fstype, mountpoint) (node_filesystem_size_bytes{job=\"node-exporter\", fstype!=\"\", mountpoint!~\"/var/lib/ibmc-s3fs.*\", cluster=\"$cluster\"})))\n",
+                                "expr": "sum without (device) (\n  max without (fstype, mountpoint) ((\n    node_filesystem_size_bytes{job=\"node-exporter\", fstype!=\"\", mountpoint!~\"/var/lib/ibmc-s3fs.*\"}\n    -\n    node_filesystem_avail_bytes{job=\"node-exporter\", fstype!=\"\", mountpoint!~\"/var/lib/ibmc-s3fs.*\"}\n  ) != 0)\n)\n/ scalar(sum(max without (fstype, mountpoint) (node_filesystem_size_bytes{job=\"node-exporter\", fstype!=\"\", mountpoint!~\"/var/lib/ibmc-s3fs.*\"})))\n",
                                 "format": "time_series",
                                 "intervalFactor": 2,
                                 "legendFormat": "{{instance}}",
@@ -979,33 +980,6 @@ data:
                     "refresh": 1,
                     "regex": "",
                     "type": "datasource"
-                },
-                {
-                    "allValue": null,
-                    "current": {
-                        "text": "",
-                        "value": ""
-                    },
-                    "datasource": "$datasource",
-                    "hide": 2,
-                    "includeAll": false,
-                    "label": null,
-                    "multi": false,
-                    "name": "cluster",
-                    "options": [
-
-                    ],
-                    "query": "label_values(node_time_seconds, cluster)",
-                    "refresh": 2,
-                    "regex": "",
-                    "sort": 1,
-                    "tagValuesQuery": "",
-                    "tags": [
-
-                    ],
-                    "tagsQuery": "",
-                    "type": "query",
-                    "useTags": false
                 }
             ]
         },
@@ -1132,7 +1106,7 @@ data:
                         "steppedLine": false,
                         "targets": [
                             {
-                                "expr": "instance:node_cpu_utilisation:rate1m{job=\"node-exporter\", instance=\"$instance\", cluster=\"$cluster\"} != 0",
+                                "expr": "instance:node_cpu_utilisation:rate1m{job=\"node-exporter\", instance=\"$instance\"} != 0",
                                 "format": "time_series",
                                 "intervalFactor": 2,
                                 "legendFormat": "Utilisation",
@@ -1225,7 +1199,7 @@ data:
                         "steppedLine": false,
                         "targets": [
                             {
-                                "expr": "instance:node_load1_per_cpu:ratio{job=\"node-exporter\", instance=\"$instance\", cluster=\"$cluster\"} != 0",
+                                "expr": "instance:node_load1_per_cpu:ratio{job=\"node-exporter\", instance=\"$instance\"} != 0",
                                 "format": "time_series",
                                 "intervalFactor": 2,
                                 "legendFormat": "Saturation",
@@ -1331,7 +1305,7 @@ data:
                         "steppedLine": false,
                         "targets": [
                             {
-                                "expr": "instance:node_memory_utilisation:ratio{job=\"node-exporter\", instance=\"$instance\", cluster=\"$cluster\"} != 0",
+                                "expr": "instance:node_memory_utilisation:ratio{job=\"node-exporter\", instance=\"$instance\"} != 0",
                                 "format": "time_series",
                                 "intervalFactor": 2,
                                 "legendFormat": "Utilisation",
@@ -1424,7 +1398,7 @@ data:
                         "steppedLine": false,
                         "targets": [
                             {
-                                "expr": "instance:node_vmstat_pgmajfault:rate1m{job=\"node-exporter\", instance=\"$instance\", cluster=\"$cluster\"} != 0",
+                                "expr": "instance:node_vmstat_pgmajfault:rate1m{job=\"node-exporter\", instance=\"$instance\"} != 0",
                                 "format": "time_series",
                                 "intervalFactor": 2,
                                 "legendFormat": "Major page Faults",
@@ -1538,14 +1512,14 @@ data:
                         "steppedLine": false,
                         "targets": [
                             {
-                                "expr": "instance:node_network_receive_bytes_excluding_lo:rate1m{job=\"node-exporter\", instance=\"$instance\", cluster=\"$cluster\"} != 0",
+                                "expr": "instance:node_network_receive_bytes_excluding_lo:rate1m{job=\"node-exporter\", instance=\"$instance\"} != 0",
                                 "format": "time_series",
                                 "intervalFactor": 2,
                                 "legendFormat": "Receive",
                                 "refId": "A"
                             },
                             {
-                                "expr": "instance:node_network_transmit_bytes_excluding_lo:rate1m{job=\"node-exporter\", instance=\"$instance\", cluster=\"$cluster\"} != 0",
+                                "expr": "instance:node_network_transmit_bytes_excluding_lo:rate1m{job=\"node-exporter\", instance=\"$instance\"} != 0",
                                 "format": "time_series",
                                 "intervalFactor": 2,
                                 "legendFormat": "Transmit",
@@ -1646,14 +1620,14 @@ data:
                         "steppedLine": false,
                         "targets": [
                             {
-                                "expr": "instance:node_network_receive_drop_excluding_lo:rate1m{job=\"node-exporter\", instance=\"$instance\", cluster=\"$cluster\"} != 0",
+                                "expr": "instance:node_network_receive_drop_excluding_lo:rate1m{job=\"node-exporter\", instance=\"$instance\"} != 0",
                                 "format": "time_series",
                                 "intervalFactor": 2,
                                 "legendFormat": "Receive",
                                 "refId": "A"
                             },
                             {
-                                "expr": "instance:node_network_transmit_drop_excluding_lo:rate1m{job=\"node-exporter\", instance=\"$instance\", cluster=\"$cluster\"} != 0",
+                                "expr": "instance:node_network_transmit_drop_excluding_lo:rate1m{job=\"node-exporter\", instance=\"$instance\"} != 0",
                                 "format": "time_series",
                                 "intervalFactor": 2,
                                 "legendFormat": "Transmit",
@@ -1759,7 +1733,7 @@ data:
                         "steppedLine": false,
                         "targets": [
                             {
-                                "expr": "instance_device:node_disk_io_time_seconds:rate1m{job=\"node-exporter\", instance=\"$instance\", cluster=\"$cluster\"} != 0",
+                                "expr": "instance_device:node_disk_io_time_seconds:rate1m{job=\"node-exporter\", instance=\"$instance\"} != 0",
                                 "format": "time_series",
                                 "intervalFactor": 2,
                                 "legendFormat": "{{device}}",
@@ -1852,7 +1826,7 @@ data:
                         "steppedLine": false,
                         "targets": [
                             {
-                                "expr": "instance_device:node_disk_io_time_weighted_seconds:rate1m{job=\"node-exporter\", instance=\"$instance\", cluster=\"$cluster\"} != 0",
+                                "expr": "instance_device:node_disk_io_time_weighted_seconds:rate1m{job=\"node-exporter\", instance=\"$instance\"} != 0",
                                 "format": "time_series",
                                 "intervalFactor": 2,
                                 "legendFormat": "{{device}}",
@@ -1958,7 +1932,7 @@ data:
                         "steppedLine": false,
                         "targets": [
                             {
-                                "expr": "sort_desc(1 -\n  (\n   max without (mountpoint, fstype) (node_filesystem_avail_bytes{job=\"node-exporter\", fstype!=\"\", instance=\"$instance\", cluster=\"$cluster\"})\n   /\n   max without (mountpoint, fstype) (node_filesystem_size_bytes{job=\"node-exporter\", fstype!=\"\", instance=\"$instance\", cluster=\"$cluster\"})\n  ) != 0\n)\n",
+                                "expr": "sort_desc(1 -\n  (\n   max without (mountpoint, fstype) (node_filesystem_avail_bytes{job=\"node-exporter\", fstype!=\"\", instance=\"$instance\"})\n   /\n   max without (mountpoint, fstype) (node_filesystem_size_bytes{job=\"node-exporter\", fstype!=\"\", instance=\"$instance\"})\n  ) != 0\n)\n",
                                 "format": "time_series",
                                 "intervalFactor": 2,
                                 "legendFormat": "{{device}}",
@@ -2039,33 +2013,6 @@ data:
                     "type": "datasource"
                 },
                 {
-                    "allValue": null,
-                    "current": {
-                        "text": "",
-                        "value": ""
-                    },
-                    "datasource": "$datasource",
-                    "hide": 2,
-                    "includeAll": false,
-                    "label": null,
-                    "multi": false,
-                    "name": "cluster",
-                    "options": [
-
-                    ],
-                    "query": "label_values(node_time_seconds, cluster)",
-                    "refresh": 2,
-                    "regex": "",
-                    "sort": 1,
-                    "tagValuesQuery": "",
-                    "tags": [
-
-                    ],
-                    "tagsQuery": "",
-                    "type": "query",
-                    "useTags": false
-                },
-                {
                     "allValue": ".+",
                     "current": {
                         "text": "all",
@@ -2080,7 +2027,7 @@ data:
                     "options": [
 
                     ],
-                    "query": "label_values(kube_node_role{cluster=\"$cluster\"}, role)",
+                    "query": "label_values(kube_node_role{}, role)",
                     "refresh": 2,
                     "regex": "",
                     "sort": 1,
@@ -2107,7 +2054,7 @@ data:
                     "options": [
 
                     ],
-                    "query": "label_values(kube_node_info{cluster=\"$cluster\"} * on (node) group_right kube_node_role{cluster=\"$cluster\", role=~\"$role\"}, node)",
+                    "query": "label_values(kube_node_info{} * on (node) group_right kube_node_role{role=~\"$role\"}, node)",
                     "refresh": 2,
                     "regex": "",
                     "sort": 1,
