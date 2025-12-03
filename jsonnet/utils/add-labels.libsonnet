@@ -9,7 +9,7 @@
 
   addLabels(labels, o): {
     // ignore *List types. metav1.ListMeta does not include metadata.
-    [k]: o[k] + if !std.endsWith(o[k].kind, 'List') then { metadata+: { labels+: labels { 'app.kubernetes.io/managed-by': managedBy(o[k]) } } } else {}
+    [k]: o[k] + if !std.endsWith(o[k].kind, 'List') then { metadata+: { labels+: labels { 'app.kubernetes.io/managed-by': managedBy(o[k]), 'app.kubernetes.io/part-of': 'openshift-monitoring' } } } else {}
     for k in std.objectFields(o)
   },
 }
