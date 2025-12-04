@@ -23,6 +23,7 @@ spec:
       labels:
         app: cluster-monitoring-operator
         app.kubernetes.io/name: cluster-monitoring-operator
+        app.kubernetes.io/part-of: openshift-monitoring
     spec:
       containers:
       - args:

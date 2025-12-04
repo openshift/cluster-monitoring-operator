@@ -6,6 +6,7 @@ metadata:
   labels:
     app: cluster-monitoring-operator
     app.kubernetes.io/name: cluster-monitoring-operator
+    app.kubernetes.io/part-of: openshift-monitoring
   annotations:
     include.release.openshift.io/self-managed-high-availability: "true"
     include.release.openshift.io/single-node-developer: "true"
@@ -19,6 +20,7 @@ spec:
       labels:
         app: cluster-monitoring-operator
         app.kubernetes.io/name: cluster-monitoring-operator
+        app.kubernetes.io/part-of: openshift-monitoring
       annotations:
         target.workload.openshift.io/management: '{"effect": "PreferredDuringScheduling"}'
         openshift.io/required-scc: restricted-v2
