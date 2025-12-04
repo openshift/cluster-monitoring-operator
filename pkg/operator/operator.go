@@ -24,6 +24,7 @@ import (
 
 	"github.com/blang/semver/v4"
 	configv1 "github.com/openshift/api/config/v1"
+	configv1alpha1 "github.com/openshift/api/config/v1alpha1"
 	"github.com/openshift/api/features"
 	configv1client "github.com/openshift/client-go/config/clientset/versioned"
 	configv1informers "github.com/openshift/client-go/config/informers/externalversions"
@@ -177,12 +178,13 @@ const (
 type Operator struct {
 	namespace, namespaceUserWorkload string
 
-	configMapName             string
-	userWorkloadConfigMapName string
-	images                    map[string]string
-	telemetryMatches          []string
-	remoteWrite               bool
-	CollectionProfilesEnabled bool
+	configMapName                  string
+	userWorkloadConfigMapName      string
+	images                         map[string]string
+	telemetryMatches               []string
+	remoteWrite                    bool
+	CollectionProfilesEnabled      bool
+	ClusterMonitoringConfigEnabled bool
 
 	lastKnowInfrastructureConfig *InfrastructureConfig
 	lastKnowProxyConfig          *ProxyConfig
@@ -452,8 +454,28 @@ func New(
 			return nil, err
 		}
 		o.CollectionProfilesEnabled = featureGates.Enabled(features.FeatureGateMetricsCollectionProfiles)
+		o.ClusterMonitoringConfigEnabled = featureGates.Enabled(features.FeatureGateClusterMonitoringConfig)
 	case <-time.After(1 * time.Minute):
 		return nil, fmt.Errorf("timed out waiting for FeatureGate detection")
+	}
+
+	// Watch the ClusterMonitoring config resource if the feature gate is enabled
+	if o.ClusterMonitoringConfigEnabled {
+		informer = cache.NewSharedIndexInformer(
+			o.client.ClusterMonitoringListWatch(ctx),
+			&configv1alpha1.ClusterMonitoring{},
+			resyncPeriod,
+			cache.Indexers{},
+		)
+		_, err = informer.AddEventHandler(cache.ResourceEventHandlerFuncs{
+			AddFunc:    o.handleEvent,
+			UpdateFunc: func(_, newObj interface{}) { o.handleEvent(newObj) },
+			DeleteFunc: o.handleEvent,
+		})
+		if err != nil {
+			return nil, err
+		}
+		o.informers = append(o.informers, informer)
 	}
 
 	// csrController runs a controller that requests a client TLS certificate
@@ -630,7 +652,8 @@ func (o *Operator) handleEvent(obj interface{}) {
 		*configv1.APIServer,
 		*configv1.Console,
 		*configv1.ClusterOperator,
-		*configv1.ClusterVersion:
+		*configv1.ClusterVersion,
+		*configv1alpha1.ClusterMonitoring:
 		// Log GroupKind and Name of the obj
 		rtObj := obj.(k8sruntime.Object)
 		gk := rtObj.GetObjectKind().GroupVersionKind().GroupKind()
