@@ -26,6 +26,7 @@ import (
 	configv1 "github.com/openshift/api/config/v1"
 	"github.com/openshift/cluster-monitoring-operator/test/e2e/framework"
 
+	v1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/util/wait"
 	"k8s.io/client-go/tools/clientcmd"
@@ -226,4 +227,29 @@ func TestNetworkPolicy(t *testing.T) {
 			t.Errorf("NetworkPolicies count = %d, want %d", len(npList.Items), len(networkPolicyNames))
 		}
 	})
+}
+
+func TestPodsLabels(t *testing.T) {
+	// Verify that all pods in the openshift-monitoring namespace have the
+	// app.kubernetes.io/part-of: openshift-monitoring label.
+	// This label is used among other things to limit the deny-all NP to CMO and its operands only.
+	f.AssertPodConfiguration(
+		f.Ns,
+		"",
+		[]framework.PodAssertion{
+			expectLabel("app.kubernetes.io/part-of", "openshift-monitoring"),
+		},
+	)(t)
+}
+
+func expectLabel(labelKey, expectedValue string) framework.PodAssertion {
+	return func(pod v1.Pod) error {
+		if value, ok := pod.Labels[labelKey]; ok {
+			if value == expectedValue {
+				return nil
+			}
+			return fmt.Errorf("pod %s has label %s with value %q, expected %q", pod.Name, labelKey, value, expectedValue)
+		}
+		return fmt.Errorf("pod %s is missing required label %s", pod.Name, labelKey)
+	}
 }
