@@ -4,10 +4,12 @@ metadata:
   labels:
     app.kubernetes.io/managed-by: cluster-monitoring-operator
     app.kubernetes.io/part-of: openshift-monitoring
-  name: default-deny
+  name: deny-cluster-monitoring-operator-and-operands
   namespace: openshift-monitoring
 spec:
-  podSelector: {}
+  podSelector:
+    matchLabels:
+      app.kubernetes.io/part-of: openshift-monitoring
   policyTypes:
   - Ingress
   - Egress
