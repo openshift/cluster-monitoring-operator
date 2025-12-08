@@ -1245,6 +1245,17 @@ data:
     # Expected labels:
     # - severity: "critical", "warning", "info" or "none".
     - '{__name__="cluster:health:group_severity:count", severity=~"critical|warning|info|none"}'
+    #
+    # owners: (https://github.com/kubev2v/forklift)
+    #
+    # cluster:mtv_migrations_status_total:sum is the total number of VM migrations running on the cluster,
+    # labeled with {status}, {provider}, {mode}, and {target}.
+    # Expected labels:
+    # - provider: "ova", "vsphere", "openstack", "openshift", "ovirt" or "awsec2"
+    # - target: "Local" or "Remote"
+    # - mode: "Cold", "Warm" or "RCM"
+    # - status: "Suceeded", "Failed" or "Canceled"
+    - '{__name__="cluster:mtv_migrations_status_total:sum", provider=~"ova|vsphere|openstack|openshift|ovirt|awsec2", target=~"Local|Remote", mode=~"Cold|Warm|RCM", status=~"Succeeded|Failed|Canceled"}'
 kind: ConfigMap
 metadata:
   name: telemetry-config
