@@ -83,6 +83,53 @@ func TestClusterMonitoringOperatorConfiguration(t *testing.T) {
 	f.AssertOperatorCondition(configv1.OperatorAvailable, configv1.ConditionTrue)(t)
 }
 
+func TestClusterMonitoringOperatorConfigurationInvalidExternalLabels(t *testing.T) {
+	setupUserWorkloadAssets(t, f)
+	defer tearDownUserWorkloadAssets(t, f)
+
+	t.Log("asserting that CMO is healthy")
+	f.AssertOperatorCondition(configv1.OperatorDegraded, configv1.ConditionFalse)(t)
+	f.AssertOperatorCondition(configv1.OperatorAvailable, configv1.ConditionTrue)(t)
+	f.AssertOperatorCondition(configv1.OperatorUpgradeable, configv1.ConditionTrue)(t)
+	f.AssertOperatorConditionReason(configv1.OperatorUpgradeable, "")(t)
+	f.AssertOperatorConditionMessage(configv1.OperatorUpgradeable, "")(t)
+
+	t.Log("using invalid external labels for Platform Prometheus")
+	f.MustCreateOrUpdateConfigMap(t, f.BuildCMOConfigMap(t, `enableUserWorkload: true
+prometheusK8s:
+  externalLabels:
+    prometheus: foo`))
+
+	f.AssertOperatorCondition(configv1.OperatorUpgradeable, configv1.ConditionFalse)(t)
+	f.AssertOperatorConditionReason(configv1.OperatorUpgradeable, "InvalidConfiguration")(t)
+	f.AssertOperatorConditionMessageContains(configv1.OperatorUpgradeable, `configuration in the "openshift-monitoring/cluster-monitoring-config" ConfigMap is invalid and should be fixed`)(t)
+	f.AssertOperatorCondition(configv1.OperatorDegraded, configv1.ConditionFalse)(t)
+	f.AssertOperatorCondition(configv1.OperatorAvailable, configv1.ConditionTrue)(t)
+
+	t.Log("using invalid external labels for User Workload Prometheus")
+	uwmCM := f.BuildUserWorkloadConfigMap(t, `prometheus:
+  externalLabels:
+    cluster: foo`)
+	f.MustCreateOrUpdateConfigMap(t, uwmCM)
+
+	f.AssertOperatorCondition(configv1.OperatorUpgradeable, configv1.ConditionFalse)(t)
+	f.AssertOperatorConditionReason(configv1.OperatorUpgradeable, "InvalidConfiguration")(t)
+	f.AssertOperatorConditionMessageContains(configv1.OperatorUpgradeable, `configuration in the "openshift-user-workload-monitoring/user-workload-monitoring-config" ConfigMap is invalid and should be fixed`)(t)
+	f.AssertOperatorConditionMessageContains(configv1.OperatorUpgradeable, `configuration in the "openshift-monitoring/cluster-monitoring-config" ConfigMap is invalid and should be fixed`)(t)
+	f.AssertOperatorCondition(configv1.OperatorDegraded, configv1.ConditionFalse)(t)
+	f.AssertOperatorCondition(configv1.OperatorAvailable, configv1.ConditionTrue)(t)
+
+	t.Log("restoring the initial configurations")
+	f.MustCreateOrUpdateConfigMap(t, getUserWorkloadEnabledConfigMap(t, f))
+	f.MustDeleteConfigMap(t, uwmCM)
+
+	f.AssertOperatorCondition(configv1.OperatorUpgradeable, configv1.ConditionTrue)(t)
+	f.AssertOperatorConditionReason(configv1.OperatorUpgradeable, "")(t)
+	f.AssertOperatorConditionMessage(configv1.OperatorUpgradeable, "")(t)
+	f.AssertOperatorCondition(configv1.OperatorDegraded, configv1.ConditionFalse)(t)
+	f.AssertOperatorCondition(configv1.OperatorAvailable, configv1.ConditionTrue)(t)
+}
+
 func TestClusterMonitoringStatus(t *testing.T) {
 	const (
 		storage = "2Gi"

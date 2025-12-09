@@ -265,7 +265,8 @@ thanosRuler:
 
 	for _, tc := range tcs {
 		t.Run(tc.name, func(t *testing.T) {
-			c, err := NewUserConfigFromString(tc.configString())
+			c, warn, err := NewUserConfigFromString(tc.configString())
+			require.Nil(t, warn)
 			if tc.err != "" {
 				require.ErrorContains(t, err, tc.err)
 				return
@@ -347,12 +348,53 @@ prometheus:
 
 	for _, tc := range tcs {
 		t.Run(tc.name, func(t *testing.T) {
-			_, err := NewUserConfigFromString(tc.configString())
+			_, warn, err := NewUserConfigFromString(tc.configString())
+			require.Nil(t, warn)
 			if tc.shouldFail {
 				require.ErrorIs(t, err, errAlertmanagerV1NotSupported)
 				return
 			}
 			require.NoError(t, err)
+		})
+	}
+}
+
+func TestNewUserConfigFromStringInvalidExternalLabels(t *testing.T) {
+	tcs := []struct {
+		name         string
+		configString func() string
+		shouldWarn   bool
+	}{
+		{
+			name: "invalid prometheus external label",
+			configString: func() string {
+				return `
+prometheus:
+  externalLabels:
+    prometheus: foo`
+			},
+			shouldWarn: true,
+		},
+		{
+			name: "valid prometheus external label",
+			configString: func() string {
+				return `
+prometheus:
+  externalLabels:
+    datacenter: eu-west`
+			},
+		},
+	}
+
+	for _, tc := range tcs {
+		t.Run(tc.name, func(t *testing.T) {
+			_, warn, err := NewUserConfigFromString(tc.configString())
+			require.NoError(t, err)
+			if tc.shouldWarn {
+				require.NotNil(t, warn)
+			} else {
+				require.Nil(t, warn)
+			}
 		})
 	}
 }
@@ -647,7 +689,8 @@ func TestScrapeIntervalUWM(t *testing.T) {
 		},
 	} {
 		t.Run(tc.name, func(t *testing.T) {
-			_, err := NewUserConfigFromString(tc.uwmconfig)
+			_, warn, err := NewUserConfigFromString(tc.uwmconfig)
+			require.Nil(t, warn)
 			if tc.expectedError {
 				require.Error(t, err)
 				return
@@ -740,7 +783,8 @@ func TestEvaluationIntervalUWM(t *testing.T) {
 		},
 	} {
 		t.Run(tc.name, func(t *testing.T) {
-			_, err := NewUserConfigFromString(tc.uwmconfig)
+			_, warn, err := NewUserConfigFromString(tc.uwmconfig)
+			require.Nil(t, warn)
 			if tc.expectedError {
 				require.Error(t, err)
 				return
@@ -791,7 +835,8 @@ func TestCollectionProfilePreCheck(t *testing.T) {
 		t.Run(tc.name, func(t *testing.T) {
 			c, err := NewConfigFromString(tc.config, true)
 			require.NoError(t, err)
-			err = c.Precheck()
+			warn, err := c.Precheck()
+			require.Nil(t, warn)
 			if err != nil && tc.expectedError {
 				return
 			}
@@ -832,7 +877,8 @@ func TestDeprecatedConfig(t *testing.T) {
 		t.Run(tc.name, func(t *testing.T) {
 			c, err := NewConfigFromString(tc.config, true)
 			require.NoError(t, err)
-			err = c.Precheck()
+			warn, err := c.Precheck()
+			require.Nil(t, warn)
 			require.NoError(t, err)
 			require.Equal(t, tc.expectedMetricValue, prom_testutil.ToFloat64(metrics.DeprecatedConfig))
 		})
@@ -874,11 +920,48 @@ func TestUnsupportedAlertmanagerVersion(t *testing.T) {
 		t.Run(tc.name, func(t *testing.T) {
 			c, err := NewConfigFromString(tc.config, true)
 			require.NoError(t, err)
-			err = c.Precheck()
+			warn, err := c.Precheck()
+			require.Nil(t, warn)
 			if tc.shouldFail {
 				require.ErrorIs(t, err, errAlertmanagerV1NotSupported)
 			} else {
 				require.NoError(t, err)
+			}
+		})
+	}
+}
+
+func TestInvalidExternalLabels(t *testing.T) {
+	for _, tc := range []struct {
+		name       string
+		config     string
+		shouldWarn bool
+	}{
+		{
+			name: "using unsupported Alertmanager v1 API",
+			config: `prometheusK8s:
+  externalLabels:
+    prometheus: foo
+  `,
+			shouldWarn: true,
+		},
+		{
+			name: "using supported Alertmanager v2 API",
+			config: `prometheusK8s:
+  externalLabels:
+    datacenter: eu-west
+  `,
+		},
+	} {
+		t.Run(tc.name, func(t *testing.T) {
+			c, err := NewConfigFromString(tc.config, true)
+			require.NoError(t, err)
+			warn, err := c.Precheck()
+			require.NoError(t, err)
+			if tc.shouldWarn {
+				require.NotNil(t, warn)
+			} else {
+				require.Nil(t, warn)
 			}
 		})
 	}
