@@ -1642,7 +1642,7 @@ func TestPrometheusK8sConfiguration(t *testing.T) {
 func TestPrometheusUserWorkloadConfiguration(t *testing.T) {
 	c := NewDefaultConfig()
 
-	uwc, err := NewUserConfigFromString(`prometheus:
+	uwc, warn, err := NewUserConfigFromString(`prometheus:
   scrapeInterval: 15s
   evaluationInterval: 15s
   resources:
@@ -1659,6 +1659,7 @@ func TestPrometheusUserWorkloadConfiguration(t *testing.T) {
     labelSelector:
       matchLabels:
         foo: bar`)
+	require.Nil(t, warn)
 
 	c.UserWorkloadConfiguration = uwc
 	if err != nil {
@@ -2569,7 +2570,8 @@ func TestThanosRulerAdditionalAlertManagerConfigsSecret(t *testing.T) {
 				t.Fatal(err)
 			}
 
-			uwc, err := NewUserConfigFromString(tt.userWorkloadConfig)
+			uwc, warn, err := NewUserConfigFromString(tt.userWorkloadConfig)
+			require.Nil(t, warn)
 			if err != nil {
 				t.Fatal(err)
 			}
@@ -3183,7 +3185,7 @@ func TestAlertmanagerMainConfiguration(t *testing.T) {
 
 func TestAlertManagerUserWorkloadConfiguration(t *testing.T) {
 	c := NewDefaultConfig()
-	uwc, err := NewUserConfigFromString(`alertmanager:
+	uwc, warn, err := NewUserConfigFromString(`alertmanager:
   resources:
     requests:
       cpu: 100m
@@ -3202,6 +3204,7 @@ func TestAlertManagerUserWorkloadConfiguration(t *testing.T) {
   - test-secret
   - slack-api-token
   `)
+	require.Nil(t, warn)
 
 	c.UserWorkloadConfiguration = uwc
 
@@ -4213,7 +4216,7 @@ func TestTelemeterClientSecret(t *testing.T) {
 
 func TestThanosRulerConfiguration(t *testing.T) {
 	c, err := NewConfigFromString(``, false)
-	uwc, err := NewUserConfigFromString(`thanosRuler:
+	uwc, warn, err := NewUserConfigFromString(`thanosRuler:
   evaluationInterval: 20s
   resources:
     requests:
@@ -4229,7 +4232,7 @@ func TestThanosRulerConfiguration(t *testing.T) {
     labelSelector:
       matchLabels:
         foo: bar`)
-
+	require.Nil(t, warn)
 	c.UserWorkloadConfiguration = uwc
 	if err != nil {
 		t.Fatal(err)
@@ -4675,7 +4678,7 @@ func TestPodDisruptionBudget(t *testing.T) {
 
 func TestPrometheusOperatorUserWorkloadConfiguration(t *testing.T) {
 	c := NewDefaultConfig()
-	uwc, err := NewUserConfigFromString(`prometheusOperator:
+	uwc, warn, err := NewUserConfigFromString(`prometheusOperator:
   topologySpreadConstraints:
   - maxSkew: 1
     topologyKey: type
@@ -4684,7 +4687,7 @@ func TestPrometheusOperatorUserWorkloadConfiguration(t *testing.T) {
       matchLabels:
         foo: bar
   `)
-
+	require.Nil(t, warn)
 	c.UserWorkloadConfiguration = uwc
 
 	c.SetImages(map[string]string{

@@ -51,7 +51,21 @@ const (
 	automaticBodySizeLimit = "automatic"
 
 	configKey = "config.yaml"
+
+	clusterMonitorConfigMapName      = "openshift-monitoring/cluster-monitoring-config"
+	userWorkloadMonitorConfigMapName = "openshift-user-workload-monitoring/user-workload-monitoring-config"
 )
+
+type InvalidConfigWarning struct {
+	ConfigMap string
+	Err       error
+}
+
+func (e *InvalidConfigWarning) Warning() string {
+	return fmt.Sprintf("configuration in the %q ConfigMap is invalid and should be fixed: %s", e.ConfigMap, e.Err)
+}
+
+var reservedPrometheusExternalLabels = []string{"prometheus", "prometheus_replica", "cluster"}
 
 var errAlertmanagerV1NotSupported = errors.New("alertmanager's apiVersion=v1 is no longer supported, v2 has been available since Alertmanager 0.16.0")
 
@@ -226,30 +240,33 @@ func alertmanagerV1(version string) bool {
 	return version == "v1"
 }
 
-func (u *UserWorkloadConfiguration) check() error {
+func (u *UserWorkloadConfiguration) check() (*InvalidConfigWarning, error) {
 	if u == nil {
-		return nil
+		return nil, nil
 	}
 
 	if err := u.checkScrapeInterval(); err != nil {
-		return err
+		return nil, err
 	}
 
 	if err := u.checkPrometheusEvaluationInterval(); err != nil {
-		return err
+		return nil, err
 	}
 
 	if err := u.checkThanosRulerEvaluationInterval(); err != nil {
-		return err
+		return nil, err
 	}
 
 	// TODO: remove after 4.19
 	// Only to assist with the migration to Prometheus 3; fail early if Alertmanager v1 is still in use.
 	if err := u.checkAlertmanagerVersion(); err != nil {
-		return err
+		return nil, err
 	}
 
-	return nil
+	// This will be enforced in 4.20's config validation
+	warn := checkExternalLabels(userWorkloadMonitorConfigMapName, u.Prometheus.ExternalLabels)
+
+	return warn, nil
 }
 
 type Images struct {
@@ -616,9 +633,9 @@ func (c *Config) checkAlertmanagerVersion() error {
 	return nil
 }
 
-func (c *Config) Precheck() error {
+func (c *Config) Precheck() (*InvalidConfigWarning, error) {
 	if c.ClusterMonitoringConfiguration.PrometheusK8sConfig.CollectionProfile != FullCollectionProfile && !c.CollectionProfilesFeatureGateEnabled {
-		return fmt.Errorf("%w: collectionProfiles is currently a TechPreview feature behind the \"MetricsCollectionProfiles\" feature-gate, to be able to use a profile different from the default (\"full\") please enable it first", ErrConfigValidation)
+		return nil, fmt.Errorf("%w: collectionProfiles is currently a TechPreview feature behind the \"MetricsCollectionProfiles\" feature-gate, to be able to use a profile different from the default (\"full\") please enable it first", ErrConfigValidation)
 	}
 
 	// Validate the configured collection profile iff tech preview is enabled, even if the default profile is set.
@@ -631,7 +648,7 @@ func (c *Config) Precheck() error {
 			metrics.CollectionProfile.WithLabelValues(string(profile)).Set(v)
 		}
 		if !slices.Contains(SupportedCollectionProfiles, c.ClusterMonitoringConfiguration.PrometheusK8sConfig.CollectionProfile) {
-			return fmt.Errorf(`%q is not supported, supported collection profiles are: %q: %w`, c.ClusterMonitoringConfiguration.PrometheusK8sConfig.CollectionProfile, SupportedCollectionProfiles.String(), ErrConfigValidation)
+			return nil, fmt.Errorf(`%q is not supported, supported collection profiles are: %q: %w`, c.ClusterMonitoringConfiguration.PrometheusK8sConfig.CollectionProfile, SupportedCollectionProfiles.String(), ErrConfigValidation)
 		}
 	}
 
@@ -647,7 +664,23 @@ func (c *Config) Precheck() error {
 	// TODO: remove after 4.19
 	// Only to assist with the migration to Prometheus 3; fail early if Alertmanager v1 is still in use.
 	if err := c.checkAlertmanagerVersion(); err != nil {
-		return err
+		return nil, err
+	}
+
+	// This will be enforced in 4.20's config validation
+	warn := checkExternalLabels(clusterMonitorConfigMapName, c.ClusterMonitoringConfiguration.PrometheusK8sConfig.ExternalLabels)
+
+	return warn, nil
+}
+
+func checkExternalLabels(configMapName string, externalLabels map[string]string) *InvalidConfigWarning {
+	for _, label := range reservedPrometheusExternalLabels {
+		if _, ok := externalLabels[label]; ok {
+			return &InvalidConfigWarning{
+				ConfigMap: configMapName,
+				Err:       fmt.Errorf("label %q which is one of %v is reserved and should not be used", label, reservedPrometheusExternalLabels),
+			}
+		}
 	}
 
 	return nil
@@ -717,38 +750,40 @@ func (u *UserWorkloadConfiguration) applyDefaults() {
 	}
 }
 
-func NewUserConfigFromString(content string) (*UserWorkloadConfiguration, error) {
+func NewUserConfigFromString(content string) (*UserWorkloadConfiguration, *InvalidConfigWarning, error) {
 	if content == "" {
-		return NewDefaultUserWorkloadMonitoringConfig(), nil
+		return NewDefaultUserWorkloadMonitoringConfig(), nil, nil
 	}
 	u := &UserWorkloadConfiguration{}
 	err := UnmarshalStrict([]byte(content), &u)
 	if err != nil {
-		return nil, err
+		return nil, nil, err
 	}
 
 	u.applyDefaults()
 
-	if err := u.check(); err != nil {
-		return nil, err
+	warn, err := u.check()
+	if err != nil {
+		return nil, warn, err
 	}
 
-	return u, nil
+	return u, warn, nil
 }
 
-func NewUserWorkloadConfigFromConfigMap(c *v1.ConfigMap) (*UserWorkloadConfiguration, error) {
+func NewUserWorkloadConfigFromConfigMap(c *v1.ConfigMap) (*UserWorkloadConfiguration, *InvalidConfigWarning, error) {
 	configContent, found := c.Data[configKey]
 
 	if !found {
 		klog.Warningf("the user workload monitoring configmap does not contain the %q key", configKey)
-		return NewDefaultUserWorkloadMonitoringConfig(), nil
+		return NewDefaultUserWorkloadMonitoringConfig(), nil, nil
 	}
 
-	uwc, err := NewUserConfigFromString(configContent)
+	uwc, warn, err := NewUserConfigFromString(configContent)
 	if err != nil {
-		return nil, fmt.Errorf("the user workload monitoring configuration in %q could not be parsed: %w", configKey, err)
+		return nil, nil, fmt.Errorf("the user workload monitoring configuration in %q could not be parsed: %w", configKey, err)
 	}
-	return uwc, nil
+
+	return uwc, warn, nil
 }
 
 func NewDefaultUserWorkloadMonitoringConfig() *UserWorkloadConfiguration {

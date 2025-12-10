@@ -43,7 +43,7 @@ func configParser(collectionProfilesEnabled bool) parseConfig {
 
 func uwmConfigParser() parseConfig {
 	return func(c *corev1.ConfigMap) error {
-		_, err := manifests.NewUserWorkloadConfigFromConfigMap(c)
+		_, _, err := manifests.NewUserWorkloadConfigFromConfigMap(c)
 		return err
 	}
 }

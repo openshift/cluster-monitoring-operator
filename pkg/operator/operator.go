@@ -790,14 +790,28 @@ func newUWMTaskSpec(targetName string, task tasks.Task) *tasks.TaskSpec {
 	return tasks.NewTaskSpec(UWMTaskPrefix+targetName, task)
 }
 
-func (o *Operator) sync(ctx context.Context, key string) error {
-	config, err := o.Config(ctx, key)
+func (o *Operator) setUpgradeable(ctx context.Context, status configv1.ConditionStatus, message, reason string) {
+	err := o.client.StatusReporter().SetUpgradeable(ctx, status, message, reason)
 	if err != nil {
-		reason := "InvalidConfiguration"
+		klog.Errorf("error occurred while setting Upgradeable status: %v", err)
+	}
+}
+
+func (o *Operator) sync(ctx context.Context, key string) error {
+	config, warnings, err := o.Config(ctx, key)
+
+	invalidConfigReason := "InvalidConfiguration"
+	if warnings != nil {
+		o.setUpgradeable(ctx, configv1.ConditionFalse, strings.Join(warnings, ". "), invalidConfigReason)
+	} else {
+		o.setUpgradeable(ctx, configv1.ConditionTrue, "", "")
+	}
+
+	if err != nil {
 		if errors.Is(err, ErrUserWorkloadInvalidConfiguration) {
-			reason = "UserWorkloadInvalidConfiguration"
+			invalidConfigReason = "UserWorkloadInvalidConfiguration"
 		}
-		o.reportFailed(ctx, newRunReportForError(reason, err))
+		o.reportFailed(ctx, newRunReportForError(invalidConfigReason, err))
 		return err
 	}
 	config.SetImages(o.images)
@@ -907,12 +921,6 @@ func (o *Operator) sync(ctx context.Context, key string) error {
 		klog.Errorf("error occurred while setting status to done: %v", err)
 	}
 
-	// CMO always reports Upgradeable=True.
-	err = o.client.StatusReporter().SetUpgradeable(ctx, configv1.ConditionTrue, "", "")
-	if err != nil {
-		klog.Errorf("error occurred while setting Upgradeable status: %v", err)
-	}
-
 	return nil
 }
 
@@ -1000,17 +1008,17 @@ func (o *Operator) loadConsoleConfig(ctx context.Context) (*configv1.Console, er
 	return o.lastKnownConsoleConfig, err
 }
 
-func (o *Operator) loadUserWorkloadConfig(ctx context.Context) (*manifests.UserWorkloadConfiguration, error) {
+func (o *Operator) loadUserWorkloadConfig(ctx context.Context) (*manifests.UserWorkloadConfiguration, *manifests.InvalidConfigWarning, error) {
 	cmKey := fmt.Sprintf("%s/%s", o.namespaceUserWorkload, o.userWorkloadConfigMapName)
 
 	userCM, err := o.client.GetConfigmap(ctx, o.namespaceUserWorkload, o.userWorkloadConfigMapName)
 	if err != nil {
 		if apierrors.IsNotFound(err) {
 			klog.Warningf("User Workload Monitoring %q ConfigMap not found. Using defaults.", cmKey)
-			return manifests.NewDefaultUserWorkloadMonitoringConfig(), nil
+			return manifests.NewDefaultUserWorkloadMonitoringConfig(), nil, nil
 		}
 		klog.Warningf("Error loading User Workload Monitoring %q ConfigMap. Error: %v", cmKey, err)
-		return nil, fmt.Errorf("the User Workload Monitoring %q ConfigMap could not be loaded: %w", cmKey, err)
+		return nil, nil, fmt.Errorf("the User Workload Monitoring %q ConfigMap could not be loaded: %w", cmKey, err)
 	}
 
 	return manifests.NewUserWorkloadConfigFromConfigMap(userCM)
@@ -1031,15 +1039,20 @@ func (o *Operator) loadConfig(key string) (*manifests.Config, error) {
 	return manifests.NewConfigFromConfigMap(cmap, o.CollectionProfilesEnabled)
 }
 
-func (o *Operator) Config(ctx context.Context, key string) (*manifests.Config, error) {
+func (o *Operator) Config(ctx context.Context, key string) (*manifests.Config, []string, error) {
+	var warnings []string
+
 	c, err := o.loadConfig(key)
 	if err != nil {
-		return nil, err
+		return nil, warnings, err
 	}
 
-	err = c.Precheck()
+	warn, err := c.Precheck()
+	if warn != nil {
+		warnings = append(warnings, warn.Warning())
+	}
 	if err != nil {
-		return nil, err
+		return nil, warnings, err
 	}
 
 	// Only use User Workload Monitoring ConfigMap from user ns and populate if
@@ -1047,9 +1060,12 @@ func (o *Operator) Config(ctx context.Context, key string) (*manifests.Config, e
 	// loadConfig() already initializes the structs with nil values for
 	// UserWorkloadConfiguration struct.
 	if *c.ClusterMonitoringConfiguration.UserWorkloadEnabled {
-		c.UserWorkloadConfiguration, err = o.loadUserWorkloadConfig(ctx)
+		c.UserWorkloadConfiguration, warn, err = o.loadUserWorkloadConfig(ctx)
+		if warn != nil {
+			warnings = append(warnings, warn.Warning())
+		}
 		if err != nil {
-			return nil, fmt.Errorf("%w: %w", ErrUserWorkloadInvalidConfiguration, err)
+			return nil, warnings, fmt.Errorf("%w: %w", ErrUserWorkloadInvalidConfiguration, err)
 		}
 	}
 
@@ -1077,7 +1093,7 @@ func (o *Operator) Config(ctx context.Context, key string) (*manifests.Config, e
 			klog.Warningf("Error loading token from API. Proceeding without it: %v", err)
 		}
 	}
-	return c, nil
+	return c, warnings, nil
 }
 
 // storageNotConfiguredMessage returns the message to be set if a pvc has not
