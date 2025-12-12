@@ -161,7 +161,6 @@ const (
 	// see https://github.com/kubernetes/apiserver/blob/b571c70e6e823fd78910c3f5b9be895a756f4cbb/pkg/server/options/authentication.go#L239
 	apiAuthenticationConfigMap    = "kube-system/extension-apiserver-authentication"
 	kubeletServingCAConfigMap     = "openshift-config-managed/kubelet-serving-ca"
-	telemeterCABundleConfigMap    = "openshift-monitoring/telemeter-trusted-ca-bundle"
 	alertmanagerCABundleConfigMap = "openshift-monitoring/alertmanager-trusted-ca-bundle"
 	grpcTLS                       = "openshift-monitoring/grpc-tls"
 	metricsClientCerts            = "openshift-monitoring/metrics-client-certs"
@@ -480,30 +479,6 @@ func New(
 		return nil, fmt.Errorf("failed to create client certificate controller: %w", err)
 	}
 
-	// csrFederateController runs a controller that requests a client TLS
-	// certificate for the telemeter client. This certificate is used to
-	// authenticate against the Prometheus /federate API endpoint.
-	csrFederateController, err := csr.NewClientCertificateController(
-		csr.ClientCertOption{
-			SecretNamespace: "openshift-monitoring",
-			SecretName:      "federate-client-certs",
-			AdditionalAnnotations: certrotation.AdditionalAnnotations{
-				JiraComponent: "Monitoring",
-			},
-		},
-		csrOption,
-		kubeInformersOperatorNS.Certificates().V1().CertificateSigningRequests(),
-		o.client.KubernetesInterface().CertificatesV1().CertificateSigningRequests(),
-		kubeInformersOperatorNS.Core().V1().Secrets(),
-		o.client.KubernetesInterface().CoreV1(),
-		o.client.EventRecorder(),
-		"OpenShiftMonitoringTelemeterClientCertRequester",
-	)
-
-	if err != nil {
-		return nil, fmt.Errorf("failed to create federate certificate controller: %w", err)
-	}
-
 	csrMetricsServerController, err := csr.NewClientCertificateController(
 		csr.ClientCertOption{
 			SecretNamespace: "openshift-monitoring",
@@ -527,7 +502,6 @@ func New(
 
 	o.controllersToRunFunc = append(
 		o.controllersToRunFunc,
-		csrFederateController.Run,
 		csrController.Run,
 		csrMetricsServerController.Run,
 		o.ruleController.Run,
@@ -664,7 +638,6 @@ func (o *Operator) handleEvent(obj interface{}) {
 	case apiAuthenticationConfigMap:
 	case kubeletServingCAConfigMap:
 	case metricsServerClientCerts:
-	case telemeterCABundleConfigMap:
 	case alertmanagerCABundleConfigMap:
 	case grpcTLS:
 	case metricsClientCerts:
@@ -1008,7 +981,7 @@ func (o *Operator) Config(ctx context.Context, key string) (*manifests.Config, e
 	}
 
 	// Only fetch the token and cluster ID if they have not been specified in the config.
-	if c.ClusterMonitoringConfiguration.TelemeterClientConfig.ClusterID == "" || c.ClusterMonitoringConfiguration.TelemeterClientConfig.Token == "" {
+	if c.ClusterMonitoringConfiguration.TelemetryConfig.ClusterID == "" || c.ClusterMonitoringConfiguration.TelemetryConfig.Token == "" {
 		err := c.LoadClusterID(func() (*configv1.ClusterVersion, error) {
 			return o.client.GetClusterVersion(ctx, "version")
 		})

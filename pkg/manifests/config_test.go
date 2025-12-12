@@ -17,7 +17,9 @@ package manifests
 import (
 	"context"
 	"errors"
+	"fmt"
 	"os"
+	"strings"
 	"testing"
 
 	"github.com/openshift/cluster-monitoring-operator/pkg/metrics"
@@ -303,6 +305,105 @@ thanosRuler:
 				tc.configCheck(c)
 			}
 		})
+	}
+}
+
+func TestTelemetryConfig(t *testing.T) {
+	truev, falsev := true, false
+
+	tcs := []struct {
+		enabled bool
+		cfg     *TelemetryConfig
+	}{
+		{
+			cfg:     nil,
+			enabled: false,
+		},
+		{
+			cfg:     &TelemetryConfig{},
+			enabled: false,
+		},
+		{
+			cfg: &TelemetryConfig{
+				Enabled: &truev,
+			},
+			enabled: false,
+		},
+		{
+			cfg: &TelemetryConfig{
+				Enabled: &falsev,
+			},
+			enabled: false,
+		},
+		{
+			cfg: &TelemetryConfig{
+				ClusterID: "test",
+			},
+			enabled: false,
+		},
+		{
+			cfg: &TelemetryConfig{
+				ClusterID: "test",
+				Enabled:   &falsev,
+			},
+			enabled: false,
+		},
+		{
+			cfg: &TelemetryConfig{
+				ClusterID: "test",
+				Enabled:   &truev,
+			},
+			enabled: false,
+		},
+		{
+			cfg: &TelemetryConfig{
+				Token: "test",
+			},
+			enabled: false,
+		},
+		{
+			cfg: &TelemetryConfig{
+				Token:   "test",
+				Enabled: &falsev,
+			},
+			enabled: false,
+		},
+		{
+			cfg: &TelemetryConfig{
+				Token:   "test",
+				Enabled: &truev,
+			},
+			enabled: false,
+		},
+		{
+			cfg: &TelemetryConfig{
+				ClusterID: "test",
+				Token:     "test",
+			},
+			enabled: true, // opt-in by default
+		},
+		{
+			cfg: &TelemetryConfig{
+				ClusterID: "test",
+				Token:     "test",
+				Enabled:   &truev,
+			},
+			enabled: true,
+		},
+		{
+			cfg: &TelemetryConfig{
+				ClusterID: "test",
+				Token:     "test",
+				Enabled:   &falsev, // explicitely opt-out
+			},
+			enabled: false,
+		},
+	}
+
+	for i, tc := range tcs {
+		if got := tc.cfg.IsEnabled(); got != tc.enabled {
+			t.Errorf("testcase %d: expected enabled %t, got %t", i, tc.enabled, got)
+		}
 	}
 }
 
@@ -752,9 +853,9 @@ func TestCollectionProfilePreCheck(t *testing.T) {
 
 func TestDeprecatedConfig(t *testing.T) {
 	for _, tc := range []struct {
-		name                string
-		config              string
-		expectedMetricValue float64
+		name     string
+		config   string
+		expected [][]interface{}
 	}{
 		{
 			name: "setting a field in k8sPrometheusAdapter",
@@ -764,18 +865,27 @@ func TestDeprecatedConfig(t *testing.T) {
       cpu: 1m
       memory: 20Mi
   `,
-			expectedMetricValue: 1,
+			expected: [][]interface{}{
+				{"openshift-monitoring/cluster-monitoring-config", "4.16", "k8sPrometheusAdapter", "1"},
+				{"openshift-monitoring/cluster-monitoring-config", "4.21", "telemeterClientConfig", "0"},
+			},
 		},
 		{
 			name: "k8sPrometheusAdapter nil",
 			config: `k8sPrometheusAdapter:
   `,
-			expectedMetricValue: 0,
+			expected: [][]interface{}{
+				{"openshift-monitoring/cluster-monitoring-config", "4.16", "k8sPrometheusAdapter", "0"},
+				{"openshift-monitoring/cluster-monitoring-config", "4.21", "telemeterClientConfig", "0"},
+			},
 		},
 		{
-			name:                "no config set",
-			config:              "",
-			expectedMetricValue: 0,
+			name:   "no config set",
+			config: "",
+			expected: [][]interface{}{
+				{"openshift-monitoring/cluster-monitoring-config", "4.16", "k8sPrometheusAdapter", "0"},
+				{"openshift-monitoring/cluster-monitoring-config", "4.21", "telemeterClientConfig", "0"},
+			},
 		},
 	} {
 		t.Run(tc.name, func(t *testing.T) {
@@ -783,7 +893,20 @@ func TestDeprecatedConfig(t *testing.T) {
 			require.NoError(t, err)
 			err = c.Precheck()
 			require.NoError(t, err)
-			require.Equal(t, tc.expectedMetricValue, prom_testutil.ToFloat64(metrics.DeprecatedConfig))
+			meta := `
+	# HELP cluster_monitoring_operator_deprecated_config_in_use [ALPHA] Set to 1 for deprecated configuration fields that are still in use, else 0.
+	# TYPE cluster_monitoring_operator_deprecated_config_in_use  gauge
+	`
+			metric := `
+	cluster_monitoring_operator_deprecated_config_in_use {configmap="%s", deprecation_version = "%s", field = "%s"} %s
+	`
+			var b strings.Builder
+			b.WriteString(meta)
+			for _, e := range tc.expected {
+				b.WriteString(fmt.Sprintf(metric, e...))
+			}
+			err = prom_testutil.CollectAndCompare(metrics.DeprecatedConfig, strings.NewReader(b.String()))
+			require.NoError(t, err)
 		})
 	}
 }

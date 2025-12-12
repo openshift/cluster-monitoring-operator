@@ -15,9 +15,6 @@
 * `nodeSelector`
 * `tolerations`
 
-
-Appears in: link:clustermonitoringconfiguration.adoc[ClusterMonitoringConfiguration]
-
 [options="header"]
 |===
 | Property | Type | Description 

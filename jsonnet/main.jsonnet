@@ -26,6 +26,7 @@ local thanosQuerier = import './components/thanos-querier.libsonnet';
 
 local openshiftStateMetrics = import './components/openshift-state-metrics.libsonnet';
 local telemeterClient = import './components/telemeter-client.libsonnet';
+local telemetryRecordingRules = import './components/telemetry-recording-rules.libsonnet';
 
 // Common configuration
 local commonConfig = {
@@ -360,6 +361,10 @@ local inCluster =
           },
         },
       },
+      telemetryRecordingRules: {
+        namespace: $.values.common.namespace,
+        commonLabels+: $.values.common.commonLabels,
+      },
     },
 
     // Objects
@@ -403,6 +408,7 @@ local inCluster =
     telemeterClient: telemeterClient($.values.telemeterClient),
     monitoringPlugin: monitoringPlugin($.values.monitoringPlugin),
     openshiftStateMetrics: openshiftStateMetrics($.values.openshiftStateMetrics),
+    telemetryRecordingRules: telemetryRecordingRules($.values.telemetryRecordingRules),
   } +
   (import './utils/anti-affinity.libsonnet') +
   (import 'github.com/prometheus-operator/kube-prometheus/jsonnet/kube-prometheus/addons/ksm-lite.libsonnet') +
@@ -522,6 +528,7 @@ setTerminationMessagePolicy(
                 { ['thanos-querier/' + name]: inCluster.thanosQuerier[name] for name in std.objectFields(inCluster.thanosQuerier) } +
                 { ['thanos-ruler/' + name]: inCluster.thanosRuler[name] for name in std.objectFields(inCluster.thanosRuler) } +
                 { ['control-plane/' + name]: inCluster.controlPlane[name] for name in std.objectFields(inCluster.controlPlane) } +
+                { ['telemetry-recording-rules/' + name]: inCluster.telemetryRecordingRules[name] for name in std.objectFields(inCluster.telemetryRecordingRules) } +
                 { ['manifests/' + name]: inCluster.manifests[name] for name in std.objectFields(inCluster.manifests) } +
                 {}
               )

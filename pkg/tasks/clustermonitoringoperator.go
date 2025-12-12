@@ -140,6 +140,15 @@ func (t *ClusterMonitoringOperatorTask) Run(ctx context.Context) error {
 		return fmt.Errorf("reconciling cluster-monitoring-operator rules PrometheusRule failed: %w", err)
 	}
 
+	trr, err := t.factory.TelemetryRecordingRulesPrometheusRule()
+	if err != nil {
+		return fmt.Errorf("initializing telemetry recording rules PrometheusRule failed: %w", err)
+	}
+	err = t.client.CreateOrUpdatePrometheusRule(ctx, trr)
+	if err != nil {
+		return fmt.Errorf("reconciling telemetry recording rules PrometheusRule failed: %w", err)
+	}
+
 	smcmo, err := t.factory.ClusterMonitoringOperatorServiceMonitor()
 	if err != nil {
 		return fmt.Errorf("initializing Cluster Monitoring Operator ServiceMonitor failed: %w", err)
