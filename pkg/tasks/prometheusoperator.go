@@ -180,14 +180,20 @@ func (t *PrometheusOperatorTask) runAdmissionWebhook(ctx context.Context) error 
 		return fmt.Errorf("reconciling Prometheus Rule Validating Webhook failed: %w", err)
 	}
 
-	aw, err := t.factory.AlertManagerConfigValidatingWebhook()
+	optionalMonitoringEnabled, err := t.client.HasOptionalMonitoringCapability(ctx)
 	if err != nil {
-		return fmt.Errorf("initializing AlertManagerConfig Validating Webhook failed: %w", err)
+		return fmt.Errorf("checking for optional monitoring capability failed: %w", err)
 	}
+	if optionalMonitoringEnabled {
+		aw, err := t.factory.AlertManagerConfigValidatingWebhook()
+		if err != nil {
+			return fmt.Errorf("initializing AlertManagerConfig Validating Webhook failed: %w", err)
+		}
 
-	err = t.client.CreateOrUpdateValidatingWebhookConfiguration(ctx, aw)
-	if err != nil {
-		return fmt.Errorf("reconciling AlertManagerConfig Validating Webhook failed: %w", err)
+		err = t.client.CreateOrUpdateValidatingWebhookConfiguration(ctx, aw)
+		if err != nil {
+			return fmt.Errorf("reconciling AlertManagerConfig Validating Webhook failed: %w", err)
+		}
 	}
 
 	return nil

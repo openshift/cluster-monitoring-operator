@@ -1,4 +1,5 @@
 local withDescription = (import '../utils/add-annotations.libsonnet').withDescription;
+local optIntoCapability = (import '../utils/opt-into-capability.libsonnet');
 
 function(params)
   local cfg = params;
@@ -20,7 +21,7 @@ function(params)
   local tlsCertPath = tlsMountPath + '/tls.crt';
   local tlsKeyPath = tlsMountPath + '/tls.key';
 
-  {
+  local o = {
     _config+:: {
       name: pluginName,
       namespace: 'openshift-monitoring',
@@ -225,4 +226,6 @@ function(params)
         },  // template
       },  // spec
     },  // deployment
-  }
+  };
+
+  optIntoCapability.consoleForObjectWithWalk(o)

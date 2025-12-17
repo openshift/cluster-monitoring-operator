@@ -45,15 +45,23 @@ func NewClusterMonitoringOperatorTask(
 }
 
 func (t *ClusterMonitoringOperatorTask) Run(ctx context.Context) error {
-	for name, crf := range map[string]func() (*rbacv1.ClusterRole, error){
+	optionalMonitoringEnabled, err := t.client.HasOptionalMonitoringCapability(ctx)
+	if err != nil {
+		return fmt.Errorf("checking for optional monitoring capability failed: %w", err)
+	}
+
+	crfs := map[string]func() (*rbacv1.ClusterRole, error){
 		"cluster-monitoring-view":          t.factory.ClusterMonitoringClusterRoleView,
 		"system:aggregated-metrics-reader": t.factory.ClusterMonitoringClusterRoleAggregatedMetricsReader,
 		"pod-metrics-reader":               t.factory.ClusterMonitoringClusterRolePodMetricsReader,
 		"monitoring-rules-edit":            t.factory.ClusterMonitoringRulesEditClusterRole,
 		"monitoring-rules-view":            t.factory.ClusterMonitoringRulesViewClusterRole,
 		"monitoring-edit":                  t.factory.ClusterMonitoringEditClusterRole,
-		"alert-routing-edit":               t.factory.ClusterMonitoringAlertingEditClusterRole,
-	} {
+	}
+	if optionalMonitoringEnabled {
+		crfs["alert-routing-edit"] = t.factory.ClusterMonitoringAlertingEditClusterRole
+	}
+	for name, crf := range crfs {
 		cr, err := crf()
 		if err != nil {
 			return fmt.Errorf("initializing %s ClusterRole failed: %w", name, err)
@@ -65,34 +73,35 @@ func (t *ClusterMonitoringOperatorTask) Run(ctx context.Context) error {
 		}
 	}
 
-	uwcr, err := t.factory.ClusterMonitoringEditUserWorkloadConfigRole()
-	if err != nil {
-		return fmt.Errorf("initializing UserWorkloadConfigEdit Role failed: %w", err)
-	}
+	if optionalMonitoringEnabled {
+		uwcr, err := t.factory.ClusterMonitoringEditUserWorkloadConfigRole()
+		if err != nil {
+			return fmt.Errorf("initializing UserWorkloadConfigEdit Role failed: %w", err)
+		}
 
-	err = t.client.CreateOrUpdateRole(ctx, uwcr)
-	if err != nil {
-		return fmt.Errorf("reconciling UserWorkloadConfigEdit Role failed: %w", err)
-	}
+		err = t.client.CreateOrUpdateRole(ctx, uwcr)
+		if err != nil {
+			return fmt.Errorf("reconciling UserWorkloadConfigEdit Role failed: %w", err)
+		}
+		uwar, err := t.factory.ClusterMonitoringEditUserWorkloadAlertmanagerApiReader()
+		if err != nil {
+			return fmt.Errorf("initializing UserWorkloadAlertmanagerApiReader Role failed: %w", err)
+		}
 
-	uwar, err := t.factory.ClusterMonitoringEditUserWorkloadAlertmanagerApiReader()
-	if err != nil {
-		return fmt.Errorf("initializing UserWorkloadAlertmanagerApiReader Role failed: %w", err)
-	}
+		err = t.client.CreateOrUpdateRole(ctx, uwar)
+		if err != nil {
+			return fmt.Errorf("reconciling UserWorkloadAlertmanagerApiReader Role failed: %w", err)
+		}
 
-	err = t.client.CreateOrUpdateRole(ctx, uwar)
-	if err != nil {
-		return fmt.Errorf("reconciling UserWorkloadAlertmanagerApiReader Role failed: %w", err)
-	}
+		uwaw, err := t.factory.ClusterMonitoringEditUserWorkloadAlertmanagerApiWriter()
+		if err != nil {
+			return fmt.Errorf("initializing UserWorkloadAlertmanagerApiWriter Role failed: %w", err)
+		}
 
-	uwaw, err := t.factory.ClusterMonitoringEditUserWorkloadAlertmanagerApiWriter()
-	if err != nil {
-		return fmt.Errorf("initializing UserWorkloadAlertmanagerApiWriter Role failed: %w", err)
-	}
-
-	err = t.client.CreateOrUpdateRole(ctx, uwaw)
-	if err != nil {
-		return fmt.Errorf("reconciling UserWorkloadAlertmanagerApiWriter Role failed: %w", err)
+		err = t.client.CreateOrUpdateRole(ctx, uwaw)
+		if err != nil {
+			return fmt.Errorf("reconciling UserWorkloadAlertmanagerApiWriter Role failed: %w", err)
+		}
 	}
 
 	amrr, err := t.factory.ClusterMonitoringAlertManagerViewRole()
@@ -104,8 +113,7 @@ func (t *ClusterMonitoringOperatorTask) Run(ctx context.Context) error {
 	if err != nil {
 		return fmt.Errorf("initializing AlertmanagerWrite Role failed: %w", err)
 	}
-
-	if t.config.ClusterMonitoringConfiguration.AlertmanagerMainConfig.IsEnabled() {
+	if t.config.ClusterMonitoringConfiguration.AlertmanagerMainConfig.IsEnabled() && optionalMonitoringEnabled {
 		if err = t.client.CreateOrUpdateRole(ctx, amwr); err != nil {
 			return fmt.Errorf("reconciling AlertmanagerWrite Role failed: %w", err)
 		}

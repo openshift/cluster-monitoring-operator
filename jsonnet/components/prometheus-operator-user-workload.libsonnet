@@ -4,11 +4,12 @@ local operator = import 'github.com/prometheus-operator/kube-prometheus/jsonnet/
 local generateSecret = import '../utils/generate-secret.libsonnet';
 local rbac = import '../utils/rbac.libsonnet';
 local withDescription = (import '../utils/add-annotations.libsonnet').withDescription;
+local optIntoCapability = (import '../utils/opt-into-capability.libsonnet');
 
 function(params)
   local po = operator(params);
 
-  po {
+  local opo = po {
 
     mixin:: null,
     prometheusRule:: null,
@@ -196,4 +197,6 @@ function(params)
         ],
       },
     },
-  }
+  };
+
+  optIntoCapability.optionalMonitoringForObjectWithWalk(opo)

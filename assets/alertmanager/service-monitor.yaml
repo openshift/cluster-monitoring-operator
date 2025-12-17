@@ -1,6 +1,8 @@
 apiVersion: monitoring.coreos.com/v1
 kind: ServiceMonitor
 metadata:
+  annotations:
+    capability.openshift.io/name: OptionalMonitoring
   labels:
     app.kubernetes.io/component: alert-router
     app.kubernetes.io/instance: main

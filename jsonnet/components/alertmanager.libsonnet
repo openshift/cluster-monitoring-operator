@@ -7,13 +7,14 @@ local withDescription = (import '../utils/add-annotations.libsonnet').withDescri
 local testFilePlaceholder = (import '../utils/add-annotations.libsonnet').testFilePlaceholder;
 local requiredRoles = (import '../utils/add-annotations.libsonnet').requiredRoles;
 local requiredClusterRoles = (import '../utils/add-annotations.libsonnet').requiredClusterRoles;
+local optIntoCapability = (import '../utils/opt-into-capability.libsonnet');
 
 function(params)
   local cfg = params {
     replicas: 2,
   };
 
-  alertmanager(cfg) {
+  local o = alertmanager(cfg) {
     trustedCaBundle: generateCertInjection.trustedCNOCaBundleCM(cfg.namespace, 'alertmanager-trusted-ca-bundle'),
 
     // OpenShift route to access the Alertmanager UI.
@@ -445,4 +446,6 @@ function(params)
         ],
       },
     },
-  }
+  };
+
+  optIntoCapability.optionalMonitoringForObjectWithWalk(o)

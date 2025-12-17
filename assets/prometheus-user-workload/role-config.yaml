@@ -1,6 +1,8 @@
 apiVersion: rbac.authorization.k8s.io/v1
 kind: Role
 metadata:
+  annotations:
+    capability.openshift.io/name: OptionalMonitoring
   labels:
     app.kubernetes.io/component: prometheus
     app.kubernetes.io/instance: user-workload

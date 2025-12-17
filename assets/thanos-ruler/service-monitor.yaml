@@ -1,6 +1,8 @@
 apiVersion: monitoring.coreos.com/v1
 kind: ServiceMonitor
 metadata:
+  annotations:
+    capability.openshift.io/name: OptionalMonitoring
   labels:
     app.kubernetes.io/component: rule-evaluation-engine
     app.kubernetes.io/instance: thanos-ruler

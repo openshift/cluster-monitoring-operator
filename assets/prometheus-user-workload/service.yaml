@@ -2,6 +2,7 @@ apiVersion: v1
 kind: Service
 metadata:
   annotations:
+    capability.openshift.io/name: OptionalMonitoring
     openshift.io/description: |-
       Expose the Prometheus web server within the cluster on the following ports:
       * Port 9091 provides access to the `/metrics` endpoint only. This port is for internal use, and no other usage is guaranteed.

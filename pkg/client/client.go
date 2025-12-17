@@ -1748,6 +1748,10 @@ func (c *Client) HasConsoleCapability(ctx context.Context) (bool, error) {
 	return c.HasClusterCapability(ctx, configv1.ClusterVersionCapabilityConsole)
 }
 
+func (c *Client) HasOptionalMonitoringCapability(ctx context.Context) (bool, error) {
+	return true, nil // TODO: implement when the capability is added in /api
+}
+
 // CreateOrUpdateConsolePlugin function uses retries because API requests related to the ConsolePlugin resource
 // may depend on the availability of a conversion container. This container is part of the console-operator Pod, which is not duplicated.
 // If this pod is down (due to restarts for upgrades or other reasons), transient failures will be reported.

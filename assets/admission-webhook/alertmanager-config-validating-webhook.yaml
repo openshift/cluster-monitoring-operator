@@ -2,6 +2,8 @@ apiVersion: admissionregistration.k8s.io/v1
 kind: ValidatingWebhookConfiguration
 metadata:
   annotations:
+    capability.openshift.io/name: OptionalMonitoring
+    openshift.io/description: Validating webhook for `AlertmanagerConfig` custom resources. Note that this webhook is a part of optional monitoring, and will only be deployed if the `OptionalMonitoring` capability is enabled.
     service.beta.openshift.io/inject-cabundle: "true"
   labels:
     app.kubernetes.io/component: controller

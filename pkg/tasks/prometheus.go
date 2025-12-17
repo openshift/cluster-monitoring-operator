@@ -173,7 +173,11 @@ func (t *PrometheusTask) create(ctx context.Context) error {
 		return fmt.Errorf("initializing Prometheus Alertmanager RoleBinding failed: %w", err)
 	}
 
-	if t.config.ClusterMonitoringConfiguration.AlertmanagerMainConfig.IsEnabled() {
+	optionalMonitoringEnabled, err := t.client.HasOptionalMonitoringCapability(ctx)
+	if err != nil {
+		return fmt.Errorf("checking for optional monitoring capability failed: %w", err)
+	}
+	if t.config.ClusterMonitoringConfiguration.AlertmanagerMainConfig.IsEnabled() && optionalMonitoringEnabled {
 		if err = t.client.CreateOrUpdateRoleBinding(ctx, amrb); err != nil {
 			return fmt.Errorf("reconciling Prometheus Alertmanager RoleBinding failed: %w", err)
 		}

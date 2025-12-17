@@ -3,6 +3,7 @@ data: {}
 kind: ConfigMap
 metadata:
   annotations:
+    capability.openshift.io/name: OptionalMonitoring
     openshift.io/owning-component: Monitoring
   labels:
     app.kubernetes.io/managed-by: cluster-monitoring-operator

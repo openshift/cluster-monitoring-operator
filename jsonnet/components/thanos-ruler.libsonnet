@@ -3,6 +3,7 @@ local generateSecret = import '../utils/generate-secret.libsonnet';
 local ruler = import 'github.com/thanos-io/kube-thanos/jsonnet/kube-thanos/kube-thanos-rule.libsonnet';
 local withDescription = (import '../utils/add-annotations.libsonnet').withDescription;
 local requiredClusterRoles = (import '../utils/add-annotations.libsonnet').requiredClusterRoles;
+local optIntoCapability = (import '../utils/opt-into-capability.libsonnet');
 
 local defaults = {
   volumeClaimTemplate: {},
@@ -13,7 +14,7 @@ function(params)
   local cfg = defaults + params;
   local tr = ruler(cfg);
 
-  tr {
+  local o = tr {
     mixin:: (import 'github.com/thanos-io/thanos/mixin/alerts/rule.libsonnet') {
       targetGroups: {
         namespace: tr.config.namespace,
@@ -569,4 +570,6 @@ function(params)
 
     statefulSet:: {},
 
-  }
+  };
+
+  optIntoCapability.optionalMonitoringForObjectWithWalk(o)
