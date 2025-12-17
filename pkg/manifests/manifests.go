@@ -905,6 +905,12 @@ func (f *Factory) updateNodeExporterArgs(args []string) ([]string, error) {
 		args = setArg(args, "--no-collector.tcpstat", "")
 	}
 
+	if f.config.ClusterMonitoringConfiguration.NodeExporterConfig.Collectors.Ethtool.Enabled {
+		args = setArg(args, "--collector.ethtool", "")
+	} else {
+		args = setArg(args, "--no-collector.ethtool", "")
+	}
+
 	var excludedDevices string
 	if f.config.ClusterMonitoringConfiguration.NodeExporterConfig.Collectors.NetDev.Enabled ||
 		f.config.ClusterMonitoringConfiguration.NodeExporterConfig.Collectors.NetClass.Enabled {

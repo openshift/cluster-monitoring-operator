@@ -355,6 +355,9 @@ type NodeExporterCollectorConfig struct {
 	// Defines the configuration of the `tcpstat` collector, which collects TCP connection statistics.
 	// Disabled by default.
 	TcpStat NodeExporterCollectorTcpStatConfig `json:"tcpstat,omitempty"`
+	// Defines the configuration of the `ethtool` collector, which collects ethernet device statistics.
+	// Disabled by default.
+	Ethtool NodeExporterCollectorEthtoolConfig `json:"ethtool,omitempty"`
 	// Defines the configuration of the `netdev` collector, which collects network devices statistics.
 	// Enabled by default.
 	NetDev NodeExporterCollectorNetDevConfig `json:"netdev,omitempty"`
@@ -395,6 +398,14 @@ type NodeExporterCollectorCpufreqConfig struct {
 // By default, the `tcpstat` collector is disabled.
 type NodeExporterCollectorTcpStatConfig struct {
 	// A Boolean flag that enables or disables the `tcpstat` collector.
+	Enabled bool `json:"enabled,omitempty"`
+}
+
+// The `NodeExporterCollectorEthtoolConfig` resource works as an on/off switch for
+// the `ethtool` collector of the `node-exporter` agent.
+// By default, the `ethtool` collector is disabled.
+type NodeExporterCollectorEthtoolConfig struct {
+	// A Boolean flag that enables or disables the `ethtool` collector.
 	Enabled bool `json:"enabled,omitempty"`
 }
 
