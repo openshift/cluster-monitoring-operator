@@ -248,6 +248,11 @@ function(params) {
         verbs: ['get', 'list', 'watch'],
       },
       {
+        apiGroups: ['config.openshift.io'],
+        resources: ['clustermonitorings'],
+        verbs: ['get', 'list', 'watch'],
+      },
+      {
         apiGroups: ['certificates.k8s.io'],
         resources: ['certificatesigningrequests'],
         verbs: ['create', 'get', 'list', 'watch', 'update', 'delete'],
