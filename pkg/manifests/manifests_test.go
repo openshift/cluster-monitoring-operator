@@ -3431,6 +3431,18 @@ nodeExporter:
 			argsAbsent:  []string{"--no-collector.ethtool"},
 		},
 		{
+			name: "enable ethtool collector with custom ignored devices",
+			config: `
+nodeExporter:
+  ignoredNetworkDevices: ["br-int", "lo"]
+  collectors:
+    ethtool:
+      enabled: true
+`,
+			argsPresent: []string{"--collector.ethtool", "--collector.ethtool.device-exclude=^(br-int|lo)$"},
+			argsAbsent:  []string{"--no-collector.ethtool"},
+		},
+		{
 			name: "disable netdev collector",
 			config: `
 nodeExporter:
