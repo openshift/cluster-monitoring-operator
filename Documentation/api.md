@@ -29,6 +29,7 @@ Configuring Cluster Monitoring is optional. If the config does not exist or is e
 * [NodeExporterCollectorBuddyInfoConfig](#nodeexportercollectorbuddyinfoconfig)
 * [NodeExporterCollectorConfig](#nodeexportercollectorconfig)
 * [NodeExporterCollectorCpufreqConfig](#nodeexportercollectorcpufreqconfig)
+* [NodeExporterCollectorEthtoolConfig](#nodeexportercollectorethtoolconfig)
 * [NodeExporterCollectorKSMDConfig](#nodeexportercollectorksmdconfig)
 * [NodeExporterCollectorMountStatsConfig](#nodeexportercollectormountstatsconfig)
 * [NodeExporterCollectorNetClassConfig](#nodeexportercollectornetclassconfig)
@@ -243,6 +244,7 @@ The `NodeExporterCollectorConfig` resource defines settings for individual colle
 | -------- | ---- | ----------- |
 | cpufreq | [NodeExporterCollectorCpufreqConfig](#nodeexportercollectorcpufreqconfig) | Defines the configuration of the `cpufreq` collector, which collects CPU frequency statistics. Disabled by default. |
 | tcpstat | [NodeExporterCollectorTcpStatConfig](#nodeexportercollectortcpstatconfig) | Defines the configuration of the `tcpstat` collector, which collects TCP connection statistics. Disabled by default. |
+| ethtool | [NodeExporterCollectorEthtoolConfig](#nodeexportercollectorethtoolconfig) | Defines the configuration of the `ethtool` collector, which collects ethernet device statistics. Disabled by default. |
 | netdev | [NodeExporterCollectorNetDevConfig](#nodeexportercollectornetdevconfig) | Defines the configuration of the `netdev` collector, which collects network devices statistics. Enabled by default. |
 | netclass | [NodeExporterCollectorNetClassConfig](#nodeexportercollectornetclassconfig) | Defines the configuration of the `netclass` collector, which collects information about network devices. Enabled by default. |
 | buddyinfo | [NodeExporterCollectorBuddyInfoConfig](#nodeexportercollectorbuddyinfoconfig) | Defines the configuration of the `buddyinfo` collector, which collects statistics about memory fragmentation from the `node_buddyinfo_blocks` metric. This metric collects data from `/proc/buddyinfo`. Disabled by default. |
@@ -265,6 +267,21 @@ The `NodeExporterCollectorCpufreqConfig` resource works as an on/off switch for 
 | Property | Type | Description |
 | -------- | ---- | ----------- |
 | enabled | bool | A Boolean flag that enables or disables the `cpufreq` collector. |
+
+[Back to TOC](#table-of-contents)
+
+## NodeExporterCollectorEthtoolConfig
+
+#### Description
+
+The `NodeExporterCollectorEthtoolConfig` resource works as an on/off switch for the `ethtool` collector of the `node-exporter` agent. By default, the `ethtool` collector is disabled.
+
+
+<em>appears in: [NodeExporterCollectorConfig](#nodeexportercollectorconfig)</em>
+
+| Property | Type | Description |
+| -------- | ---- | ----------- |
+| enabled | bool | A Boolean flag that enables or disables the `ethtool` collector. |
 
 [Back to TOC](#table-of-contents)
 
