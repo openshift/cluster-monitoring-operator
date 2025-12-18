@@ -50,7 +50,6 @@ type scenario struct {
 }
 
 func TestUserWorkloadMonitoringInvalidConfig(t *testing.T) {
-	// Deploy an invalid UWM config
 	uwmCM := &v1.ConfigMap{
 		ObjectMeta: metav1.ObjectMeta{
 			Name:      framework.UserWorkloadMonitorConfigMapName,
@@ -60,7 +59,7 @@ func TestUserWorkloadMonitoringInvalidConfig(t *testing.T) {
 			},
 		},
 		Data: map[string]string{
-			"config.yaml": `invalid config`,
+			"config.yaml": `cannot be deserialized`,
 		},
 	}
 	err := f.OperatorClient.CreateOrUpdateConfigMap(ctx, uwmCM)
@@ -78,10 +77,23 @@ func TestUserWorkloadMonitoringInvalidConfig(t *testing.T) {
 	f.MustCreateOrUpdateConfigMap(t, cm)
 	defer f.MustDeleteConfigMap(t, cm)
 
+	t.Log("invalid UWM configuration with malformed YAML/JSON")
 	f.AssertOperatorCondition(configv1.OperatorDegraded, configv1.ConditionTrue)(t)
 	f.AssertOperatorCondition(configv1.OperatorAvailable, configv1.ConditionFalse)(t)
+	// operator should stay upgradeable even when a malformed config was
+	// rejected
+	f.AssertOperatorCondition(configv1.OperatorUpgradeable, configv1.ConditionTrue)(t)
 	f.AssertOperatorConditionReason(configv1.OperatorDegraded, "UserWorkloadInvalidConfiguration")
 	f.AssertOperatorConditionReason(configv1.OperatorAvailable, "UserWorkloadInvalidConfiguration")
+
+	t.Log("restoring the initial configurations")
+	uwmCM.Data["config.yaml"] = ``
+	f.MustCreateOrUpdateConfigMap(t, uwmCM)
+	f.AssertOperatorCondition(configv1.OperatorDegraded, configv1.ConditionFalse)(t)
+	f.AssertOperatorCondition(configv1.OperatorAvailable, configv1.ConditionTrue)(t)
+	f.AssertOperatorCondition(configv1.OperatorUpgradeable, configv1.ConditionTrue)(t)
+	f.AssertOperatorConditionReason(configv1.OperatorUpgradeable, "")(t)
+	f.AssertOperatorConditionMessage(configv1.OperatorUpgradeable, "")(t)
 }
 
 func TestUserWorkloadMonitoringMetrics(t *testing.T) {
