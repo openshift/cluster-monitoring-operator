@@ -22,6 +22,8 @@ Appears in: link:nodeexporterconfig.adoc[NodeExporterConfig]
 
 |tcpstat|link:nodeexportercollectortcpstatconfig.adoc[NodeExporterCollectorTcpStatConfig]|Defines the configuration of the `tcpstat` collector, which collects TCP connection statistics. Disabled by default.
 
+|ethtool|link:nodeexportercollectorethtoolconfig.adoc[NodeExporterCollectorEthtoolConfig]|Defines the configuration of the `ethtool` collector, which collects ethernet device statistics. Disabled by default.
+
 |netdev|link:nodeexportercollectornetdevconfig.adoc[NodeExporterCollectorNetDevConfig]|Defines the configuration of the `netdev` collector, which collects network devices statistics. Enabled by default.
 
 |netclass|link:nodeexportercollectornetclassconfig.adoc[NodeExporterCollectorNetClassConfig]|Defines the configuration of the `netclass` collector, which collects information about network devices. Enabled by default.

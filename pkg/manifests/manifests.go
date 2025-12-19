@@ -907,7 +907,8 @@ func (f *Factory) updateNodeExporterArgs(args []string) ([]string, error) {
 
 	var excludedDevices string
 	if f.config.ClusterMonitoringConfiguration.NodeExporterConfig.Collectors.NetDev.Enabled ||
-		f.config.ClusterMonitoringConfiguration.NodeExporterConfig.Collectors.NetClass.Enabled {
+		f.config.ClusterMonitoringConfiguration.NodeExporterConfig.Collectors.NetClass.Enabled ||
+		f.config.ClusterMonitoringConfiguration.NodeExporterConfig.Collectors.Ethtool.Enabled {
 		devs := *f.config.ClusterMonitoringConfiguration.NodeExporterConfig.IgnoredNetworkDevices
 		// An empty list generates a regular expression matching empty strings: `^()$`
 		// It is therefore preferable not to set the exclusion regex at all.
@@ -935,6 +936,13 @@ func (f *Factory) updateNodeExporterArgs(args []string) ([]string, error) {
 		args = setArg(args, "--collector.netclass.ignored-devices=", excludedDevices)
 	} else {
 		args = setArg(args, "--no-collector.netclass", "")
+	}
+
+	if f.config.ClusterMonitoringConfiguration.NodeExporterConfig.Collectors.Ethtool.Enabled {
+		args = setArg(args, "--collector.ethtool", "")
+		args = setArg(args, "--collector.ethtool.device-exclude=", excludedDevices)
+	} else {
+		args = setArg(args, "--no-collector.ethtool", "")
 	}
 
 	if f.config.ClusterMonitoringConfiguration.NodeExporterConfig.Collectors.BuddyInfo.Enabled {

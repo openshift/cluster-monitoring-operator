@@ -46,6 +46,14 @@ nodeExporter:
       enabled: true`,
 		},
 		{
+			nameCollector: "ethtool",
+			config: `
+nodeExporter:
+  collectors:
+    ethtool:
+      enabled: true`,
+		},
+		{
 			nameCollector: "buddyinfo",
 			config: `
 nodeExporter:
