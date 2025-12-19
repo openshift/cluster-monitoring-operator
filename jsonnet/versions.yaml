@@ -21,6 +21,6 @@ versions:
     monitoringPlugin: 1.0.0
     nodeExporter: 1.10.2
     promLabelProxy: 0.12.1
-    prometheus: 3.6.0
-    prometheusOperator: 0.86.2
+    prometheus: 3.7.3
+    prometheusOperator: 0.87.1
     thanos: 0.39.2

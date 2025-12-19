@@ -9,7 +9,7 @@ metadata:
     app.kubernetes.io/managed-by: cluster-monitoring-operator
     app.kubernetes.io/name: prometheus-operator
     app.kubernetes.io/part-of: openshift-monitoring
-    app.kubernetes.io/version: 0.86.2
+    app.kubernetes.io/version: 0.87.1
   name: prometheus-operator
   namespace: openshift-user-workload-monitoring
 spec:

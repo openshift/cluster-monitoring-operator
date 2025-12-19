@@ -12,7 +12,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-package manifests_test
+package manifests
 
 import (
 	"reflect"
@@ -20,17 +20,15 @@ import (
 	"testing"
 
 	configv1 "github.com/openshift/api/config/v1"
-
-	"github.com/openshift/cluster-monitoring-operator/pkg/manifests"
 )
 
 func TestGetTLSCiphers(t *testing.T) {
-	defaultCiphers := manifests.APIServerDefaultTLSCiphers
-	defaultTLSVersion := manifests.APIServerDefaultMinTLSVersion
+	defaultCiphers := APIServerDefaultTLSCiphers
+	defaultTLSVersion := APIServerDefaultMinTLSVersion
 
 	testCases := []struct {
 		name                  string
-		config                *manifests.APIServerConfig
+		config                *APIServerConfig
 		expectedCiphers       []string
 		expectedMinTLSVersion configv1.TLSProtocolVersion
 	}{
@@ -42,7 +40,7 @@ func TestGetTLSCiphers(t *testing.T) {
 		},
 		{
 			name:                  "nil config",
-			config:                manifests.NewAPIServerConfig(nil),
+			config:                NewAPIServerConfig(nil),
 			expectedCiphers:       defaultCiphers,
 			expectedMinTLSVersion: defaultTLSVersion,
 		},
@@ -154,8 +152,8 @@ func TestGetTLSCiphers(t *testing.T) {
 	}
 }
 
-func newApiserverConfig(profile *configv1.TLSSecurityProfile) *manifests.APIServerConfig {
-	config := manifests.NewAPIServerConfig(&configv1.APIServer{
+func newApiserverConfig(profile *configv1.TLSSecurityProfile) *APIServerConfig {
+	config := NewAPIServerConfig(&configv1.APIServer{
 		Spec: configv1.APIServerSpec{
 			TLSSecurityProfile: profile,
 		},

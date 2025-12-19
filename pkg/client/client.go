@@ -418,6 +418,19 @@ func (c *Client) ClusterOperatorListWatch(ctx context.Context, name string) *cac
 	}
 }
 
+func (c *Client) ClusterMonitoringListWatch(ctx context.Context) *cache.ListWatch {
+	clusterMonitoringInterface := c.oscclient.ConfigV1alpha1().ClusterMonitorings()
+
+	return &cache.ListWatch{
+		ListFunc: func(options metav1.ListOptions) (runtime.Object, error) {
+			return clusterMonitoringInterface.List(ctx, metav1.ListOptions{})
+		},
+		WatchFunc: func(options metav1.ListOptions) (watch.Interface, error) {
+			return clusterMonitoringInterface.Watch(ctx, options)
+		},
+	}
+}
+
 func (c *Client) HasRouteCapability(ctx context.Context) (bool, error) {
 	_, err := c.oscclient.ConfigV1().ClusterOperators().Get(ctx, "ingress", metav1.GetOptions{})
 	if apierrors.IsNotFound(err) {
