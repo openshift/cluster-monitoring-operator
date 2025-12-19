@@ -55,6 +55,17 @@ const (
 
 var reservedPrometheusExternalLabels = []string{"prometheus", "prometheus_replica", "cluster"}
 
+type InvalidConfigWarning struct {
+	ConfigMap string
+	Err       error
+}
+
+func (e *InvalidConfigWarning) Warning() string {
+	return fmt.Sprintf("configuration in the %q ConfigMap is invalid and should be fixed: %s", e.ConfigMap, e.Err)
+}
+
+var errPrometheusAdapterDeprecated = errors.New("k8sPrometheusAdapter is deprecated and usage should be removed, use metricsServer instead")
+
 type Config struct {
 	Images                               *Images `json:"-"`
 	RemoteWrite                          bool    `json:"-"`
@@ -328,6 +339,7 @@ func UnmarshalStrict(data []byte, v interface{}) error {
 
 func newConfig(content []byte, collectionProfilesFeatureGateEnabled bool) (*Config, error) {
 	c := Config{CollectionProfilesFeatureGateEnabled: collectionProfilesFeatureGateEnabled}
+
 	cmc := defaultClusterMonitoringConfiguration()
 	err := UnmarshalStrict(content, &cmc)
 	if err != nil {
@@ -574,9 +586,9 @@ func (c *Config) LoadEnforcedBodySizeLimit(pcr PodCapacityReader, ctx context.Co
 	return nil
 }
 
-func (c *Config) Precheck() error {
+func (c *Config) Precheck() (*InvalidConfigWarning, error) {
 	if c.ClusterMonitoringConfiguration.PrometheusK8sConfig.CollectionProfile != FullCollectionProfile && !c.CollectionProfilesFeatureGateEnabled {
-		return fmt.Errorf("%w: collectionProfiles is currently a TechPreview feature behind the \"MetricsCollectionProfiles\" feature-gate, to be able to use a profile different from the default (\"full\") please enable it first", ErrConfigValidation)
+		return nil, fmt.Errorf("%w: collectionProfiles is currently a TechPreview feature behind the \"MetricsCollectionProfiles\" feature-gate, to be able to use a profile different from the default (\"full\") please enable it first", ErrConfigValidation)
 	}
 
 	// Validate the configured collection profile iff tech preview is enabled, even if the default profile is set.
@@ -589,20 +601,22 @@ func (c *Config) Precheck() error {
 			metrics.CollectionProfile.WithLabelValues(string(profile)).Set(v)
 		}
 		if !slices.Contains(SupportedCollectionProfiles, c.ClusterMonitoringConfiguration.PrometheusK8sConfig.CollectionProfile) {
-			return fmt.Errorf(`%q is not supported, supported collection profiles are: %q: %w`, c.ClusterMonitoringConfiguration.PrometheusK8sConfig.CollectionProfile, SupportedCollectionProfiles.String(), ErrConfigValidation)
+			return nil, fmt.Errorf(`%q is not supported, supported collection profiles are: %q: %w`, c.ClusterMonitoringConfiguration.PrometheusK8sConfig.CollectionProfile, SupportedCollectionProfiles.String(), ErrConfigValidation)
 		}
 	}
 
 	// Highlight deprecated config fields.
 	var d float64
+	var warn *InvalidConfigWarning
 	if c.ClusterMonitoringConfiguration.K8sPrometheusAdapter != nil {
 		klog.Infof("k8sPrometheusAdapter is a deprecated config use metricsServer instead")
 		d = 1
+		warn = &InvalidConfigWarning{ConfigMap: "openshift-monitoring/cluster-monitoring-config", Err: errPrometheusAdapterDeprecated}
 	}
 	// Prometheus-Adapter is replaced with Metrics Server by default from 4.16
 	metrics.DeprecatedConfig.WithLabelValues("openshift-monitoring/cluster-monitoring-config", "k8sPrometheusAdapter", "4.16").Set(d)
 
-	return nil
+	return warn, nil
 }
 
 func calculateBodySizeLimit(podCapacity int) string {
@@ -680,6 +694,7 @@ func NewUserConfigFromString(content string) (*UserWorkloadConfiguration, error)
 	if content == "" {
 		return NewDefaultUserWorkloadMonitoringConfig(), nil
 	}
+
 	u := &UserWorkloadConfiguration{}
 	err := UnmarshalStrict([]byte(content), &u)
 	if err != nil {
