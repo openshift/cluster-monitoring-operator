@@ -572,16 +572,21 @@ function(params) {
     }],
   },
 
-  // Default deny all pods traffic for in-cluster monitoring
+  // default deny all pods traffic for pods which controlled by cluster-monitoring-operator,
+  // so it won't block with any extra pods controlled by other operators that deployed under
+  // openshift-monitoring project, example issue: https://issues.redhat.com/browse/ROSA-634
   networkPolicyDefaultDeny: {
     apiVersion: 'networking.k8s.io/v1',
     kind: 'NetworkPolicy',
     metadata: {
-      name: 'default-deny',
+      name: 'deny-cluster-monitoring-operator-and-operands',
       namespace: cfg.namespace,
     },
     spec: {
       podSelector: {
+        matchLabels: {
+          'app.kubernetes.io/part-of': 'openshift-monitoring',
+        },
       },
       policyTypes: [
         'Ingress',
