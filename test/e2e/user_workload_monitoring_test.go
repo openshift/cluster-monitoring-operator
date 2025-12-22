@@ -267,6 +267,37 @@ func TestUserWorkloadMonitoringWithAdditionalAlertmanagerConfigs(t *testing.T) {
 	}
 }
 
+// TestUserWorkloadNetworkPolicyExists ensures that the NetworkPolicies
+// are deployed under openshift-user-workload-monitoring namespace
+func TestUserWorkloadNetworkPolicyExists(t *testing.T) {
+	ctx := context.Background()
+	networkPolicyNames := []string{
+		"default-deny-user-workload",
+		"prometheus-operator-user-workload",
+		"prometheus-user-workload",
+		"thanos-ruler",
+	}
+
+	t.Run("check user workload monitoring NetworkPolicies", func(t *testing.T) {
+		for _, name := range networkPolicyNames {
+			t.Run(fmt.Sprintf("assert %s networkpolicy exists", name), func(t *testing.T) {
+				f.AssertNetworkPolicyExists(name, f.UserWorkloadMonitoringNs)
+			})
+		}
+	})
+
+	// check the total count of deployed NetworkPolicies is equal to len(networkPolicyNames)
+	t.Run("assert total deployed NetworkPolicies count matches", func(t *testing.T) {
+		npList, err := f.KubeClient.NetworkingV1().NetworkPolicies(f.UserWorkloadMonitoringNs).List(ctx, metav1.ListOptions{})
+		if err != nil {
+			t.Fatalf("failed to list NetworkPolicies: %v", err)
+		}
+		if len(npList.Items) != len(networkPolicyNames) {
+			t.Errorf("NetworkPolicies count = %d, want %d", len(npList.Items), len(networkPolicyNames))
+		}
+	})
+}
+
 func createSelfSignedCertificateSecret(secretName string) error {
 	crt, key, err := cert.GenerateSelfSignedCertKey("host", []net.IP{}, []string{})
 	if err != nil {
