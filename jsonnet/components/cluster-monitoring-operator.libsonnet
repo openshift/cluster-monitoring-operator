@@ -1,5 +1,6 @@
 local metrics = import 'github.com/openshift/telemeter/jsonnet/telemeter/metrics.jsonnet';
 
+local generateServiceMonitor = import '../utils/generate-service-monitors.libsonnet';
 local cmoRules = import './../rules.libsonnet';
 local kubePrometheus = import 'github.com/prometheus-operator/kube-prometheus/jsonnet/kube-prometheus/components/mixin/custom.libsonnet';
 
@@ -158,6 +159,12 @@ function(params) {
       ],
     },
   },
+
+  telemetryServiceMonitor: generateServiceMonitor.telemetry(
+    self.serviceMonitor, std.join('|', [
+      'cluster_monitoring_operator_collection_profile',
+    ])
+  ),
 
   // This is the base for the cluster-monitoring-operator ClusterRole. It will
   // be extended with the rules from all other ClusterRoles in main.jsonnet.
