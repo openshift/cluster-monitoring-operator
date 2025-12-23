@@ -271,7 +271,7 @@ func TestUserWorkloadMonitoringWithAdditionalAlertmanagerConfigs(t *testing.T) {
 // are deployed under openshift-user-workload-monitoring namespace
 func TestUserWorkloadNetworkPolicyExists(t *testing.T) {
 	// Enable UWM
-	cm := getUserWorkloadEnabledConfigMap(t, f)
+	cm := f.BuildCMOConfigMap(t, `enableUserWorkload: true`)
 	f.MustCreateOrUpdateConfigMap(t, cm)
 	defer f.MustDeleteConfigMap(t, cm)
 
