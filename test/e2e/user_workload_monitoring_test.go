@@ -273,7 +273,10 @@ func TestUserWorkloadNetworkPolicyExists(t *testing.T) {
 	// Enable UWM
 	cm := f.BuildCMOConfigMap(t, `enableUserWorkload: true`)
 	f.MustCreateOrUpdateConfigMap(t, cm)
-	defer f.MustDeleteConfigMap(t, cm)
+
+	// comment out f.MustDeleteConfigMap, it may caused "assert total deployed NetworkPolicies count matches" failed
+	// example: NetworkPolicies count = 1, want 4
+	// defer f.MustDeleteConfigMap(t, cm)
 
 	ctx := context.Background()
 	networkPolicyNames := []string{
