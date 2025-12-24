@@ -273,10 +273,7 @@ func TestUserWorkloadNetworkPolicyExists(t *testing.T) {
 	// Enable UWM
 	cm := f.BuildCMOConfigMap(t, `enableUserWorkload: true`)
 	f.MustCreateOrUpdateConfigMap(t, cm)
-
-	// comment out f.MustDeleteConfigMap, it may caused "assert total deployed NetworkPolicies count matches" failed
-	// example: NetworkPolicies count = 1, want 4
-	// defer f.MustDeleteConfigMap(t, cm)
+	defer f.MustDeleteConfigMap(t, cm)
 
 	ctx := context.Background()
 	networkPolicyNames := []string{
@@ -296,12 +293,34 @@ func TestUserWorkloadNetworkPolicyExists(t *testing.T) {
 
 	// check the total count of deployed NetworkPolicies is equal to len(networkPolicyNames)
 	t.Run("assert total deployed NetworkPolicies count matches", func(t *testing.T) {
-		npList, err := f.KubeClient.NetworkingV1().NetworkPolicies(f.UserWorkloadMonitoringNs).List(ctx, metav1.ListOptions{})
+		err := framework.Poll(5*time.Second, 5*time.Minute, func() error {
+			npList, err := f.KubeClient.NetworkingV1().NetworkPolicies(f.UserWorkloadMonitoringNs).List(ctx, metav1.ListOptions{})
+			if err != nil {
+				return fmt.Errorf("failed to list NetworkPolicies: %w", err)
+			}
+
+			if len(npList.Items) != len(networkPolicyNames) {
+				if len(npList.Items) > 0 {
+					for _, np := range npList.Items {
+						t.Logf("Found NetworkPolicy: %s", np.Name)
+					}
+				}
+				return fmt.Errorf("NetworkPolicies count = %d, want %d", len(npList.Items), len(networkPolicyNames))
+			}
+
+			for _, np := range npList.Items {
+				t.Logf("Found NetworkPolicy: %s", np.Name)
+			}
+
+			return nil
+		})
+
 		if err != nil {
-			t.Fatalf("failed to list NetworkPolicies: %v", err)
-		}
-		if len(npList.Items) != len(networkPolicyNames) {
-			t.Errorf("NetworkPolicies count = %d, want %d", len(npList.Items), len(networkPolicyNames))
+			if wait.Interrupted(err) {
+				t.Errorf("Timeout waiting for NetworkPolicies to match expected count: %v", err)
+			} else {
+				t.Errorf("Failed to check NetworkPolicies count: %v", err)
+			}
 		}
 	})
 }
