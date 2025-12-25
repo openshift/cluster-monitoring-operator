@@ -49,3 +49,37 @@ func (t *DefaultDenyNetworkPolicyTask) Run(ctx context.Context) error {
 
 	return nil
 }
+
+type DefaultDenyUserWorkloadNetworkPolicyTask struct {
+	client  *client.Client
+	factory *manifests.Factory
+	config  *manifests.Config
+}
+
+func NewDefaultDenyUserWorkloadNetworkPolicyTask(client *client.Client, factory *manifests.Factory, config *manifests.Config) *DefaultDenyUserWorkloadNetworkPolicyTask {
+	return &DefaultDenyUserWorkloadNetworkPolicyTask{
+		client:  client,
+		factory: factory,
+		config:  config,
+	}
+}
+
+func (t *DefaultDenyUserWorkloadNetworkPolicyTask) Run(ctx context.Context) error {
+	denyNetpol, err := t.factory.UserWorkloadMonitoringDenyAllTraffic()
+	if err != nil {
+		return fmt.Errorf("initializing deny all pods traffic NetworkPolicy for User Workload failed: %w", err)
+	}
+
+	if *t.config.ClusterMonitoringConfiguration.UserWorkloadEnabled {
+		err = t.client.CreateOrUpdateNetworkPolicy(ctx, denyNetpol)
+		if err != nil {
+			return fmt.Errorf("reconciling deny all pods traffic NetworkPolicy for User Workload failed: %w", err)
+		}
+	} else {
+		err = t.client.DeleteNetworkPolicy(ctx, denyNetpol)
+		if err != nil {
+			return fmt.Errorf("deleting deny all pods traffic NetworkPolicy for User Workload failed: %w", err)
+		}
+	}
+	return nil
+}
