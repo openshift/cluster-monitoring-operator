@@ -270,12 +270,9 @@ func TestUserWorkloadMonitoringWithAdditionalAlertmanagerConfigs(t *testing.T) {
 // TestUserWorkloadNetworkPolicyExists ensures that the NetworkPolicies
 // are deployed under openshift-user-workload-monitoring namespace
 func TestUserWorkloadNetworkPolicyExists(t *testing.T) {
-	// Enable UWM
-	cm := f.BuildCMOConfigMap(t, `enableUserWorkload: true`)
-	f.MustCreateOrUpdateConfigMap(t, cm)
-	defer f.MustDeleteConfigMap(t, cm)
-
 	ctx := context.Background()
+	setupUserWorkloadAssetsWithTeardownHook(t, f)
+
 	networkPolicyNames := []string{
 		"default-deny-user-workload",
 		"prometheus-operator-user-workload",
