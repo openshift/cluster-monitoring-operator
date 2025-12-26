@@ -53,6 +53,16 @@ func (t *AlertmanagerTask) Run(ctx context.Context) error {
 }
 
 func (t *AlertmanagerTask) create(ctx context.Context) error {
+	netpol, err := t.factory.AlertmanagerNetworkPolicy()
+	if err != nil {
+		return fmt.Errorf("initializing Alertmanager NetworkPolicy failed: %w", err)
+	}
+
+	err = t.client.CreateOrUpdateNetworkPolicy(ctx, netpol)
+	if err != nil {
+		return fmt.Errorf("reconciling Alertmanager NetworkPolicy failed: %w", err)
+	}
+
 	hasRoutes, err := t.client.HasRouteCapability(ctx)
 	if err != nil {
 		return fmt.Errorf("checking for Route capability failed: %w", err)
@@ -327,6 +337,16 @@ func (t *AlertmanagerTask) destroy(ctx context.Context) error {
 		if err != nil {
 			return fmt.Errorf("deleting Alertmanager PodDisruptionBudget object failed: %w", err)
 		}
+	}
+
+	netpol, err := t.factory.AlertmanagerNetworkPolicy()
+	if err != nil {
+		return fmt.Errorf("initializing Alertmanager NetworkPolicy object failed: %w", err)
+	}
+
+	err = t.client.DeleteNetworkPolicy(ctx, netpol)
+	if err != nil {
+		return fmt.Errorf("deleting Alertmanager NetworkPolicy object failed: %w", err)
 	}
 
 	{
