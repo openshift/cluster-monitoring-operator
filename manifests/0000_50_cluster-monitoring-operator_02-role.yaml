@@ -570,9 +570,9 @@ rules:
   - list
   - watch
 - apiGroups:
-  - ""
+  - discovery.k8s.io
   resources:
-  - endpoints
+  - endpointslices
   verbs:
   - get
   - list
@@ -613,14 +613,6 @@ rules:
 - apiGroups:
   - ""
   resources:
-  - endpoints
-  verbs:
-  - get
-  - list
-  - watch
-- apiGroups:
-  - ""
-  resources:
   - services
   - pods
   verbs:
@@ -654,7 +646,43 @@ rules:
 - apiGroups:
   - ""
   resources:
-  - endpoints
+  - services
+  - pods
+  verbs:
+  - get
+  - list
+  - watch
+- apiGroups:
+  - extensions
+  resources:
+  - ingresses
+  verbs:
+  - get
+  - list
+  - watch
+- apiGroups:
+  - networking.k8s.io
+  resources:
+  - ingresses
+  verbs:
+  - get
+  - list
+  - watch
+- apiGroups:
+  - discovery.k8s.io
+<<<<<<< HEAD
+  resources:
+  - endpointslices
+  verbs:
+  - get
+  - list
+  - watch
+- apiGroups:
+  - ""
+=======
+>>>>>>> 8bfcc2bd2 (try setting serviceDiscoveryRole: EndpointSlice globally)
+  resources:
+  - endpointslices
   verbs:
   - get
   - list
