@@ -11,6 +11,8 @@ import (
 	"github.com/openshift/cluster-monitoring-operator/test/e2e/framework"
 	monitoringv1 "github.com/prometheus-operator/prometheus-operator/pkg/apis/monitoring/v1"
 	"github.com/stretchr/testify/require"
+	corev1 "k8s.io/api/core/v1"
+	networkingv1 "k8s.io/api/networking/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/util/intstr"
 )
@@ -27,9 +29,48 @@ func TestUserWorkloadThanosRulerWithAdditionalAlertmanagers(t *testing.T) {
 	// Deploy the additional alertmanager in f.UserWorkloadMonitoringNs.
 	addAlertmanagerName := "test-additional-alertmanager"
 	addAlertmanagerService := "alertmanager-operated"
+	addAlertmanagerNetworkPolicyName := "test-alertmanager-networkpolicy"
+	networkpolicy := networkingv1.NetworkPolicy{
+		ObjectMeta: metav1.ObjectMeta{
+			Name:      addAlertmanagerNetworkPolicyName,
+			Namespace: f.UserWorkloadMonitoringNs,
+		},
+		Spec: networkingv1.NetworkPolicySpec{
+			PodSelector: metav1.LabelSelector{
+				MatchLabels: map[string]string{
+					"app.kubernetes.io/name": "alertmanager",
+				},
+			},
+			PolicyTypes: []networkingv1.PolicyType{
+				networkingv1.PolicyTypeIngress,
+				networkingv1.PolicyTypeEgress,
+			},
+			Ingress: []networkingv1.NetworkPolicyIngressRule{
+				{
+					Ports: []networkingv1.NetworkPolicyPort{
+						{
+							Protocol: func() *corev1.Protocol {
+								protocol := corev1.ProtocolTCP
+								return &protocol
+							}(),
+							Port: &intstr.IntOrString{
+								Type:   intstr.Int,
+								IntVal: 9093,
+							},
+						},
+					},
+				},
+			},
+			Egress: []networkingv1.NetworkPolicyEgressRule{
+				{},
+			},
+		},
+	}
 
+	createNetworkPolicy(t, &networkpolicy)
 	createAlertmanager(t, f.UserWorkloadMonitoringNs, addAlertmanagerName)
 	t.Cleanup(func() {
+		deleteNetworkPolicy(t, &networkpolicy)
 		deleteAlertmanager(t, f.UserWorkloadMonitoringNs, addAlertmanagerName)
 	})
 
@@ -141,4 +182,13 @@ func verifyAlertmanagerReceivedAlerts(t *testing.T, namespace, svc string) {
 		return nil
 	})
 	require.NoError(t, err)
+}
+
+func createNetworkPolicy(t *testing.T, networkpolicy *networkingv1.NetworkPolicy) {
+	ctx := context.Background()
+	require.NoError(t, f.OperatorClient.CreateOrUpdateNetworkPolicy(ctx, networkpolicy))
+}
+
+func deleteNetworkPolicy(t *testing.T, networkpolicy *networkingv1.NetworkPolicy) {
+	require.NoError(t, f.OperatorClient.DeleteNetworkPolicy(ctx, networkpolicy))
 }
