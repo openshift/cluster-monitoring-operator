@@ -2977,8 +2977,10 @@ var _ = g.Describe("[sig-monitoring] Cluster_Observability parallel monitoring",
 		checkMetric(oc, `https://thanos-querier.openshift-monitoring.svc:9091/api/v1/query --data-urlencode 'query=ALERTS{alertname="TargetDown",job="prometheus-example-app"}'`, token, `"alertname":"TargetDown"`, 3*uwmLoadTime)
 	})
 
+	// The case has been covered in prometheus upstream test:
+	// prometheus/discovery/kubernetes/kubernetes_test.go: TestFailuresCountMetric
 	// author: tagao@redhat.com
-	g.It("Author:tagao-Medium-74734-Alert for broken Prometheus Kube Service Discovery", func() {
+	/* g.It("Author:tagao-Medium-74734-Alert for broken Prometheus Kube Service Discovery", func() {
 		var (
 			exampleApp = filepath.Join(monitoringBaseDir, "example-app.yaml")
 		)
@@ -3018,7 +3020,7 @@ var _ = g.Describe("[sig-monitoring] Cluster_Observability parallel monitoring",
 
 		exutil.By("check logs in prometheus pod")
 		checkLogWithLabel(oc, "openshift-monitoring", "app.kubernetes.io/name=prometheus", "prometheus", `cannot list resource \"pods\" in API group \"\" in the namespace \"`+ns+`\"`, true)
-	})
+	}) */
 
 	// author: tagao@redhat.com
 	g.It("Author:tagao-Medium-74311-trigger PrometheusRemoteWriteBehind alert [Serial]", func() {
