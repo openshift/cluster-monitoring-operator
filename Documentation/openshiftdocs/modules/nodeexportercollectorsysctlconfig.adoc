@@ -1,0 +1,29 @@
+// DO NOT EDIT THE CONTENT IN THIS FILE. It is automatically generated from the 
+	// source code for the Cluster Monitoring Operator. Any changes made to this 
+	// file will be overwritten when the content is re-generated. If you wish to 
+	// make edits, read the docgen utility instructions in the source code for the 
+	// CMO.
+	:_content-type: ASSEMBLY
+
+== NodeExporterCollectorSysctlConfig
+
+=== Description
+
+The `NodeExporterCollectorSysctlConfig` resource works as an on/off switch for the `sysctl` collector of the `node-exporter` agent. Caution! Exposing metrics like kernel.random.uuid can disrupt Prometheus, as it generates new data series with every scrape. Use this option judiciously! By default, the `sysctl` collector is disabled.
+
+
+
+Appears in: link:nodeexportercollectorconfig.adoc[NodeExporterCollectorConfig]
+
+[options="header"]
+|===
+| Property | Type | Description 
+|enabled|bool|A Boolean flag that enables or disables the `sysctl` collector.
+
+|includeSysctlMetrics|[]string|A list of numeric sysctl values. Note that a sysctl can contain multiple values, for example: `net.ipv4.tcp_rmem = 4096\t131072\t6291456`. Using `includeSysctlMetrics: ['net.ipv4.tcp_rmem']` the collector will expose: `node_sysctl_net_ipv4_tcp_rmem{index=\"0\"} 4096`, `node_sysctl_net_ipv4_tcp_rmem{index=\"1\"} 131072`, `node_sysctl_net_ipv4_tcp_rmem{index=\"2\"} 6291456`. If the indexes have defined meaning like in this case, the values can be mapped to multiple metrics: `includeSysctlMetrics: ['net.ipv4.tcp_rmem:min,default,max']`. The collector will expose these metrics as such: `node_sysctl_net_ipv4_tcp_rmem_min 4096`, `node_sysctl_net_ipv4_tcp_rmem_default 131072`, `node_sysctl_net_ipv4_tcp_rmem_max 6291456`.
+
+|includeInfoSysctlMetrics|[]string|A list of string sysctl values. For example: `includeSysctlMetrics: ['kernel.core_pattern', 'kernel.seccomp.actions_avail = kill_process kill_thread']`. The collector will expose these metrics as such: `node_sysctl_info{name=\"kernel.core_pattern\", value=\"core\"} 1`, `node_sysctl_info{name=\"kernel.seccomp.actions_avail\", index=\"0\", value=\"kill_process\"} 1`, `node_sysctl_info{name=\"kernel.seccomp.actions_avail\", index=\"1\", value=\"kill_thread\"} 1`, ...
+
+|===
+
+link:../index.adoc[Back to TOC]

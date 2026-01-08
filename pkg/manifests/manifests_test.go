@@ -3374,6 +3374,7 @@ func TestNodeExporterCollectorSettings(t *testing.T) {
 			name:   "default config",
 			config: "",
 			argsPresent: []string{"--no-collector.cpufreq",
+				"--no-collector.sysctl",
 				"--no-collector.tcpstat",
 				"--collector.netdev",
 				"--collector.netclass",
@@ -3386,6 +3387,7 @@ func TestNodeExporterCollectorSettings(t *testing.T) {
 				"--no-collector.systemd",
 			},
 			argsAbsent: []string{"--collector.cpufreq",
+				"--collector.sysctl",
 				"--collector.tcpstat",
 				"--no-collector.netdev",
 				"--no-collector.netclass",
@@ -3550,6 +3552,38 @@ nodeExporter:
 			argsPresent: []string{"--collector.systemd",
 				"--collector.systemd.unit-include=^(network.+|nss.+)$"},
 			argsAbsent: []string{"--no-collector.systemd"},
+		},
+		{
+			name: "disable sysctl collector",
+			config: `
+nodeExporter:
+  collectors:
+    sysctl:
+      enabled: false
+`,
+			argsPresent: []string{"--no-collector.sysctl"},
+			argsAbsent:  []string{"--collector.sysctl"},
+		},
+		{
+			name: "enable sysctl collector",
+			config: `
+nodeExporter:
+  collectors:
+    sysctl:
+      enabled: true
+      includeSysctlMetrics:
+        - net.ipv4.tcp_rmem:min,default,max
+        - net.ipv4.tcp_mem
+      includeInfoSysctlMetrics:
+        - kernel.core_pattern
+        - kernel.seccomp.actions_avail
+`,
+			argsPresent: []string{"--collector.sysctl",
+				"--collector.sysctl.include=net.ipv4.tcp_rmem:min,default,max",
+				"--collector.sysctl.include=net.ipv4.tcp_mem",
+				"--collector.sysctl.include-info=kernel.core_pattern",
+				"--collector.sysctl.include-info=kernel.seccomp.actions_avail"},
+			argsAbsent: []string{"--no-collector.sysctl"},
 		},
 	}
 
