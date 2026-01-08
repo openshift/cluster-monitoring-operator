@@ -357,6 +357,9 @@ function(params)
           annotations+: {
             'openshift.io/required-scc': 'nonroot-v2',
           },
+          labels: {
+            'app.kubernetes.io/part-of': 'openshift-monitoring',
+          },
         },
         securityContext: {
           fsGroup: 65534,
