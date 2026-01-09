@@ -15,9 +15,12 @@
 package e2e
 
 import (
+	"context"
 	"fmt"
 	"testing"
 	"time"
+
+	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
 
 func TestNodeExporterCollectorEnablement(t *testing.T) {
@@ -406,4 +409,64 @@ nodeExporter:
 
 	})
 
+}
+
+// TestNodeExporterDefaultDisabledCollectors verifies that certain collectors known to be
+// disabled by default are indeed not running. It does this by checking for the
+// absence of their metrics and the presence of the correct command-line arguments
+// in the node-exporter daemonset.
+func TestNodeExporterDefaultDisabledCollectors(t *testing.T) {
+	tests := []struct {
+		nameCollector string
+	}{
+		{
+			nameCollector: "btrfs",
+		},
+	}
+
+	ds, err := f.KubeClient.AppsV1().DaemonSets(f.Ns).Get(context.Background(), "node-exporter", metav1.GetOptions{})
+	if err != nil {
+		t.Fatalf("failed to get node-exporter daemonset: %v", err)
+	}
+
+	var neArgs []string
+	for _, c := range ds.Spec.Template.Spec.Containers {
+		if c.Name == "node-exporter" {
+			neArgs = c.Args
+			break
+		}
+	}
+
+	if neArgs == nil {
+		t.Fatal("could not find node-exporter container in daemonset")
+	}
+
+	for _, test := range tests {
+		t.Run("Default Disabled Collector: "+test.nameCollector, func(st *testing.T) {
+			// First, verify that the metric for the collector is absent.
+			f.PrometheusK8sClient.WaitForQueryReturn(
+				st, 1*time.Minute, fmt.Sprintf(`absent(node_scrape_collector_success{collector="%s"})`, test.nameCollector),
+				func(v float64) error {
+					if v == 1 {
+						return nil
+					}
+					return fmt.Errorf(`expecting absent(node_scrape_collector_success{collector="%s"}) = 1 but got %v`, test.nameCollector, v)
+				},
+			)
+
+			// Second, verify that the daemonset args contain the explicit disablement flag.
+			expectedArg := fmt.Sprintf("--no-collector.%s", test.nameCollector)
+			found := false
+			for _, arg := range neArgs {
+				if arg == expectedArg {
+					found = true
+					break
+				}
+			}
+
+			if !found {
+				st.Errorf("expected to find argument %q in node-exporter daemonset args, but it was not present", expectedArg)
+			}
+		})
+	}
 }
