@@ -201,12 +201,18 @@ function(params)
           resourceNames: ['k8s'],
           verbs: ['get', 'create', 'update'],
         },
+      ],
+    },
+
+    // Grant permissions to list/watch endpointslice resources on specific namespaces.
+    roleSpecificNamespaces+: {
+      items: [x { rules+: [
         {
           apiGroups: ['discovery.k8s.io'],
           resources: ['endpointslices'],
           verbs: ['get', 'list', 'watch'],
         },
-      ],
+      ] } for x in super.items],
     },
 
     alertmanagerRoleBinding: {
