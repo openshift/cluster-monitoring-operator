@@ -545,20 +545,6 @@ var _ = g.Describe("[sig-monitoring] Cluster_Observability parallel monitoring",
 		checkMetric(oc, `https://alertmanager-main.openshift-monitoring.svc:9094/api/v2/alerts?&filter={alertname="Watchdog"}`, token, `"severity":"critical"`, 2*platformLoadTime)
 	}) */
 
-	// TODO: could be merged with test/e2e/node_exporter_test.go::TestNodeExporterCollectorDisablement
-	// author: tagao@redhat.com
-	g.It("Author:tagao-Low-67008-node-exporter: disable btrfs collector", func() {
-		exutil.By("Get token of SA prometheus-k8s")
-		token := getSAToken(oc, "prometheus-k8s", "openshift-monitoring")
-
-		exutil.By("should not see btrfs collector related metrics")
-		checkMetric(oc, `https://prometheus-k8s.openshift-monitoring.svc:9091/api/v1/query --data-urlencode 'query=node_scrape_collector_success{collector="btrfs"}'`, token, "\"result\":[]", uwmLoadTime)
-
-		exutil.By("check btrfs collector is disabled by default")
-		output, _ := oc.AsAdmin().WithoutNamespace().Run("get").Args("daemonset.apps/node-exporter", "-ojsonpath={.spec.template.spec.containers[?(@.name==\"node-exporter\")].args}", "-n", "openshift-monitoring").Output()
-		o.Expect(output).To(o.ContainSubstring("no-collector.btrfs"))
-	})
-
 	// author: tagao@redhat.com
 	g.It("Author:tagao-LEVEL0-Medium-68292-Limit the value of GOMAXPROCS on node-exporter to 4", func() {
 		exutil.By("check the gomaxprocs value in logs")
