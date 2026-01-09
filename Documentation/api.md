@@ -29,6 +29,7 @@ Configuring Cluster Monitoring is optional. If the config does not exist or is e
 * [NodeExporterCollectorBuddyInfoConfig](#nodeexportercollectorbuddyinfoconfig)
 * [NodeExporterCollectorConfig](#nodeexportercollectorconfig)
 * [NodeExporterCollectorCpufreqConfig](#nodeexportercollectorcpufreqconfig)
+* [NodeExporterCollectorEthtoolConfig](#nodeexportercollectorethtoolconfig)
 * [NodeExporterCollectorKSMDConfig](#nodeexportercollectorksmdconfig)
 * [NodeExporterCollectorMountStatsConfig](#nodeexportercollectormountstatsconfig)
 * [NodeExporterCollectorNetClassConfig](#nodeexportercollectornetclassconfig)
@@ -243,6 +244,7 @@ The `NodeExporterCollectorConfig` resource defines settings for individual colle
 | -------- | ---- | ----------- |
 | cpufreq | [NodeExporterCollectorCpufreqConfig](#nodeexportercollectorcpufreqconfig) | Defines the configuration of the `cpufreq` collector, which collects CPU frequency statistics. Disabled by default. |
 | tcpstat | [NodeExporterCollectorTcpStatConfig](#nodeexportercollectortcpstatconfig) | Defines the configuration of the `tcpstat` collector, which collects TCP connection statistics. Disabled by default. |
+| ethtool | [NodeExporterCollectorEthtoolConfig](#nodeexportercollectorethtoolconfig) | Defines the configuration of the `ethtool` collector, which collects ethernet device statistics. Disabled by default. |
 | netdev | [NodeExporterCollectorNetDevConfig](#nodeexportercollectornetdevconfig) | Defines the configuration of the `netdev` collector, which collects network devices statistics. Enabled by default. |
 | netclass | [NodeExporterCollectorNetClassConfig](#nodeexportercollectornetclassconfig) | Defines the configuration of the `netclass` collector, which collects information about network devices. Enabled by default. |
 | buddyinfo | [NodeExporterCollectorBuddyInfoConfig](#nodeexportercollectorbuddyinfoconfig) | Defines the configuration of the `buddyinfo` collector, which collects statistics about memory fragmentation from the `node_buddyinfo_blocks` metric. This metric collects data from `/proc/buddyinfo`. Disabled by default. |
@@ -265,6 +267,21 @@ The `NodeExporterCollectorCpufreqConfig` resource works as an on/off switch for 
 | Property | Type | Description |
 | -------- | ---- | ----------- |
 | enabled | bool | A Boolean flag that enables or disables the `cpufreq` collector. |
+
+[Back to TOC](#table-of-contents)
+
+## NodeExporterCollectorEthtoolConfig
+
+#### Description
+
+The `NodeExporterCollectorEthtoolConfig` resource works as an on/off switch for the `ethtool` collector of the `node-exporter` agent. By default, the `ethtool` collector is disabled.
+
+
+<em>appears in: [NodeExporterCollectorConfig](#nodeexportercollectorconfig)</em>
+
+| Property | Type | Description |
+| -------- | ---- | ----------- |
+| enabled | bool | A Boolean flag that enables or disables the `ethtool` collector. |
 
 [Back to TOC](#table-of-contents)
 
@@ -388,7 +405,7 @@ The `NodeExporterConfig` resource defines settings for the `node-exporter` agent
 | -------- | ---- | ----------- |
 | collectors | [NodeExporterCollectorConfig](#nodeexportercollectorconfig) | Defines which collectors are enabled and their additional configuration parameters. |
 | maxProcs | uint32 | The target number of CPUs on which the Node Exporter's process will run. Use this setting to override the default value, which is set either to `4` or to the number of CPUs on the host, whichever is smaller. The default value is computed at runtime and set via the `GOMAXPROCS` environment variable before Node Exporter is launched. If a kernel deadlock occurs or if performance degrades when reading from `sysfs` concurrently, you can change this value to `1`, which limits Node Exporter to running on one CPU. For nodes with a high CPU count, setting the limit to a low number saves resources by preventing Go routines from being scheduled to run on all CPUs. However, I/O performance degrades if the `maxProcs` value is set too low, and there are many metrics to collect. |
-| ignoredNetworkDevices | *[]string | A list of network devices, as regular expressions, to be excluded from the relevant collector configuration such as `netdev` and `netclass`. When not set, the Cluster Monitoring Operator uses a predefined list of devices to be excluded to minimize the impact on memory usage. When set as an empty list, no devices are excluded. If you modify this setting, monitor the `prometheus-k8s` deployment closely for excessive memory usage. |
+| ignoredNetworkDevices | *[]string | A list of network devices, as regular expressions, to be excluded from the relevant collector configuration such as `netdev`, `netclass` and `ethtool`. When not set, the Cluster Monitoring Operator uses a predefined list of devices to be excluded to minimize the impact on memory usage. When set as an empty list, no devices are excluded. If you modify this setting, monitor the `prometheus-k8s` deployment closely for excessive memory usage. |
 | resources | *[v1.ResourceRequirements](https://kubernetes.io/docs/reference/generated/kubernetes-api/v1.34/#resourcerequirements-v1-core) | Defines resource requests and limits for the NodeExporter container. |
 
 [Back to TOC](#table-of-contents)
