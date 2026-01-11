@@ -224,6 +224,17 @@ function(params)
                                      ])
     ),
 
+    telemetryServiceMonitor: generateServiceMonitor.telemetry(
+      self.serviceMonitor, std.join('|', [
+        'node_accelerator_card_info',
+        'node_cpu_info',
+        'node_cpu_seconds_total',
+        'node_memory_MemAvailable_bytes',
+        'node_memory_MemTotal_bytes',
+        'virt_platform',
+      ])
+    ),
+
     securityContextConstraints: {
       allowHostDirVolumePlugin: true,
       allowHostNetwork: true,
