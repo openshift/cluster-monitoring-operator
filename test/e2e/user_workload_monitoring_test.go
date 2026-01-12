@@ -1727,3 +1727,17 @@ func TestPrometheusUserWorkloadEndpointSliceDiscovery(t *testing.T) {
 
 	t.Logf("Successfully verified endpoint slice discovery for prometheus-user-workload")
 }
+
+func TestUserWorkloadPodsLabels(t *testing.T) {
+	// Verify that all pods in the openshift-user-workload-monitoring namespace have the
+	// app.kubernetes.io/part-of: openshift-monitoring label.
+	// This label is used among other things to limit the deny-all NP to User Workload Pods only.
+	setupUserWorkloadAssetsWithTeardownHook(t, f)
+	f.AssertPodConfiguration(
+		f.UserWorkloadMonitoringNs,
+		"",
+		[]framework.PodAssertion{
+			expectLabel("app.kubernetes.io/part-of", "openshift-monitoring"),
+		},
+	)(t)
+}
