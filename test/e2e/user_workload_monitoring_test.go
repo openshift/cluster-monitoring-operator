@@ -277,7 +277,7 @@ func TestUserWorkloadNetworkPolicyExists(t *testing.T) {
 
 	ctx := context.Background()
 	networkPolicyNames := []string{
-		"default-deny-user-workload",
+		"default-deny-user-workload-operands",
 		"prometheus-operator-user-workload",
 		"prometheus-user-workload",
 		"thanos-ruler",
