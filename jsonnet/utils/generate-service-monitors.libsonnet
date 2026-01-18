@@ -1,17 +1,13 @@
 {
-  local minimalLabel = {
-    'monitoring.openshift.io/collection-profile': 'minimal',
-  },
-  local telemetryLabel = {
-    'monitoring.openshift.io/collection-profile': 'telemetry',
-  },
   // 1. Add the profile prefix to the ServiceMonitor name
   // 2. Add the profile label "monitoring.openshift.io/collection-profile: <profile>"
   // 3. Add a metricRelabelings with action keep and regex equal to metrics
-  local run(sm, metrics, label) = sm {
+  local run(sm, metrics, profile) = sm {
     metadata+: {
-      name+: '-' + label['monitoring.openshift.io/collection-profile'],
-      labels+: label,
+      name+: '-' + profile,
+      labels+: {
+        'monitoring.openshift.io/collection-profile': profile,
+      },
     },
     spec+: {
       endpoints: std.map(
@@ -42,6 +38,6 @@
     },
   },
 
-  minimal(sm, metrics): run(removeDrop(sm), metrics, minimalLabel),
-  telemetry(sm, metrics): run(removeDrop(sm), metrics, telemetryLabel),
+  minimal(sm, metrics): run(removeDrop(sm), metrics, 'minimal'),
+  telemetry(sm, metrics): run(removeDrop(sm), metrics, 'telemetry'),
 }

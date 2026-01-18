@@ -189,13 +189,13 @@ func (t *TelemeterClientTask) create(ctx context.Context) error {
 
 	sms, err := t.factory.TelemeterClientServiceMonitors()
 	if err != nil {
-		return fmt.Errorf("initializing Telemeter client ServiceMonitor failed: %w", err)
+		return fmt.Errorf("initializing Telemeter client ServiceMonitors failed: %w", err)
 	}
 
 	for _, sm := range sms {
 		err = t.client.CreateOrUpdateServiceMonitor(ctx, sm)
 		if err != nil {
-			return fmt.Errorf("reconciling Telemeter client ServiceMonitor failed: %w", err)
+			return fmt.Errorf("reconciling Telemeter client %q ServiceMonitor failed: %w", sm.GetName(), err)
 		}
 	}
 
