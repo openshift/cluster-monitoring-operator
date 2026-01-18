@@ -405,7 +405,7 @@ local inCluster =
     monitoringPlugin: monitoringPlugin($.values.monitoringPlugin),
     openshiftStateMetrics: openshiftStateMetrics($.values.openshiftStateMetrics),
 
-    # Replace the telemetry whitelist manifest with the generated one.
+    // Replace the telemetry whitelist manifest with the generated one.
     manifests: {
       '0000_50_cluster-monitoring-operator_04-config': telemetryLib.whitelist,
     },

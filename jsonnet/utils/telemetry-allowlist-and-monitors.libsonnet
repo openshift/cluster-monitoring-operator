@@ -1,7 +1,6 @@
-// This file acts as the single source of truth for the telemetry allowlist as
+// This file acts as the single source of truth for the telemetry whitelist as
 // well as the associated monitors for the telemetry collection profile. Before
 // adding a telemery entry, please read the following notes:
-// * Both of these assets are generated from this file.
 // * Teams are advised to add entries for telemetry (as they did ealier in
 // manifests/0000_50_cluster-monitoring-operator_04-config.yaml), here instead.
 // * Each entry must have the following fields, the absence of which will cause
@@ -21,12 +20,14 @@
 //      * all metric names used in the rule must be associated with at least one
 //      monitor in this map. These must be exhaustive and account for all
 //      metrics used in the rule.
-// * After adding entries here, don't forget to run `make generate-telemetry`.
-// This will use the metadata and the rules below to generate the allowlist, and
-// the metrics and monitor maps to generate telemetry monitors IF they are
-// associated with in-cluster components. Monitors for external components
-// external to what's housed under the cluster-monitoring-operator are not
-// generated, but that information is still maintained.
+// * After adding entries here, don't forget to run `make generate`.
+//
+// This will use the entries below to generate the whitelist, as well as the
+// monitor-to-metrics maps to help generate telemetry monitors IF they are
+// associated with in-cluster components.
+//
+// Monitors for components external to what's housed under this repository are
+// not generated, but that information is still maintained.
 
 // validateEntry does basic validation of an entry to ensure all required fields
 // and their children are present, and have expected types.
