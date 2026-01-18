@@ -7,6 +7,7 @@ local withDescription = (import '../utils/add-annotations.libsonnet').withDescri
 local testFilePlaceholder = (import '../utils/add-annotations.libsonnet').testFilePlaceholder;
 local requiredRoles = (import '../utils/add-annotations.libsonnet').requiredRoles;
 local requiredClusterRoles = (import '../utils/add-annotations.libsonnet').requiredClusterRoles;
+local generateServiceMonitor = import '../utils/generate-service-monitors.libsonnet';
 
 function(params)
   local cfg = params {
@@ -228,6 +229,13 @@ function(params)
         ],
       },
     },
+
+    telemetryServiceMonitor: generateServiceMonitor.telemetry(
+      self.serviceMonitor, std.join(
+        '|',
+        (import '../utils/telemetry-allowlist-and-monitors.libsonnet').monitorKeysToMetricsMap[cfg.namespace + '/' + 'alertmanager-main-telemetry']
+      )
+    ),
 
     alertmanager+: {
       metadata+: {

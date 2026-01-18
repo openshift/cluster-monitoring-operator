@@ -1,6 +1,7 @@
 local generateCertInjection = import '../utils/generate-certificate-injection.libsonnet';
 local generateSecret = import '../utils/generate-secret.libsonnet';
 local withDescription = (import '../utils/add-annotations.libsonnet').withDescription;
+local generateServiceMonitor = import '../utils/generate-service-monitors.libsonnet';
 
 function(params) {
   local cfg = params,
@@ -43,6 +44,12 @@ function(params) {
       ],
     },
   },
+  telemetryServiceMonitor: generateServiceMonitor.telemetry(
+    self.serviceMonitor, std.join(
+      '|',
+      (import '../utils/telemetry-allowlist-and-monitors.libsonnet').monitorKeysToMetricsMap[cfg.namespace + '/' + 'telemeter-client-telemetry']
+    )
+  ),
   secret: tc.telemeterClient.secret,
   servingCertsCABundle: tc.telemeterClient.servingCertsCABundle,
   kubeRbacProxySecret: generateSecret.staticAuthSecret(cfg.namespace, cfg.commonLabels, 'telemeter-client-kube-rbac-proxy-config'),

@@ -224,6 +224,13 @@ function(params)
                                      ])
     ),
 
+    telemetryServiceMonitor: generateServiceMonitor.telemetry(
+      super.serviceMonitor, std.join(
+        '|',
+        (import '../utils/telemetry-allowlist-and-monitors.libsonnet').monitorKeysToMetricsMap[cfg.namespace + '/' + 'node-exporter-telemetry']
+      )
+    ),
+
     securityContextConstraints: {
       allowHostDirVolumePlugin: true,
       allowHostNetwork: true,

@@ -175,6 +175,13 @@ function(params)
                                     ])
     ),
 
+    telemetryServiceMonitor: generateServiceMonitor.telemetry(
+      self.serviceMonitor, std.join(
+        '|',
+        (import '../utils/telemetry-allowlist-and-monitors.libsonnet').monitorKeysToMetricsMap[cfg.namespace + '/' + 'kube-state-metrics-telemetry']
+      )
+    ),
+
     kubeRbacProxySecret: generateSecret.staticAuthSecret(cfg.namespace, cfg.commonLabels, 'kube-state-metrics-kube-rbac-proxy-config'),
 
     // This removes the upstream addon-resizer and all resource requests and
