@@ -1,14 +1,13 @@
 {
-  local minimalLabel = {
-    'monitoring.openshift.io/collection-profile': 'minimal',
-  },
-  // 1. Add the prefix minimal to the ServiceMonitor name
-  // 2. Add the minimal label "monitoring.openshift.io/collection-profile: minimal"
+  // 1. Add the profile prefix to the ServiceMonitor name
+  // 2. Add the profile label "monitoring.openshift.io/collection-profile: <profile>"
   // 3. Add a metricRelabelings with action keep and regex equal to metrics
-  local minimal(sm, metrics) = sm {
+  local run(sm, metrics, profile) = sm {
     metadata+: {
-      name+: '-minimal',
-      labels+: minimalLabel,
+      name+: '-' + profile,
+      labels+: {
+        'monitoring.openshift.io/collection-profile': profile,
+      },
     },
     spec+: {
       endpoints: std.map(
@@ -39,5 +38,6 @@
     },
   },
 
-  minimal(sm, metrics): minimal(removeDrop(sm), metrics),
+  minimal(sm, metrics): run(removeDrop(sm), metrics, 'minimal'),
+  telemetry(sm, metrics): run(removeDrop(sm), metrics, 'telemetry'),
 }

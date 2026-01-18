@@ -1,4 +1,5 @@
 local generateServiceMonitor = import '../utils/generate-service-monitors.libsonnet';
+local telemetryGen = import '../utils/telemetry-allowlist-and-monitors.libsonnet';
 local controlPlane = import 'github.com/prometheus-operator/kube-prometheus/jsonnet/kube-prometheus/components/k8s-control-plane.libsonnet';
 
 function(params)
@@ -167,6 +168,14 @@ function(params)
                                              'storage_operation_duration_seconds_count',
                                            ])
     ),
+
+    telemetryServiceMonitorKubelet: generateServiceMonitor.telemetry(
+      self.serviceMonitorKubelet, std.join(
+        '|',
+        telemetryGen.monitorKeysToMetricsMap[cfg.namespace + '/' + 'kubelet-telemetry']
+      )
+    ),
+
 
     // This avoids creating service monitors which are already managed by the respective operators.
     serviceMonitorApiserver:: {},

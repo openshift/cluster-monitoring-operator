@@ -1,0 +1,35 @@
+apiVersion: monitoring.coreos.com/v1
+kind: ServiceMonitor
+metadata:
+  labels:
+    app.kubernetes.io/component: alert-router
+    app.kubernetes.io/instance: main
+    app.kubernetes.io/managed-by: cluster-monitoring-operator
+    app.kubernetes.io/name: alertmanager
+    app.kubernetes.io/part-of: openshift-monitoring
+    app.kubernetes.io/version: 0.29.0
+    monitoring.openshift.io/collection-profile: telemetry
+  name: alertmanager-main-telemetry
+  namespace: openshift-monitoring
+spec:
+  endpoints:
+  - bearerTokenFile: ""
+    interval: 30s
+    metricRelabelings:
+    - action: keep
+      regex: (alertmanager_integrations)
+      sourceLabels:
+      - __name__
+    port: metrics
+    scheme: https
+    tlsConfig:
+      insecureSkipVerify: false
+      serverName: alertmanager-main.openshift-monitoring.svc
+  scrapeClass: tls-client-certificate-auth
+  selector:
+    matchLabels:
+      app.kubernetes.io/component: alert-router
+      app.kubernetes.io/instance: main
+      app.kubernetes.io/name: alertmanager
+      app.kubernetes.io/part-of: openshift-monitoring
+  serviceDiscoveryRole: EndpointSlice

@@ -1,0 +1,119 @@
+apiVersion: monitoring.coreos.com/v1
+kind: ServiceMonitor
+metadata:
+  labels:
+    app.kubernetes.io/component: kubernetes
+    app.kubernetes.io/managed-by: cluster-monitoring-operator
+    app.kubernetes.io/name: kubelet
+    app.kubernetes.io/part-of: openshift-monitoring
+    k8s-app: kubelet
+    monitoring.openshift.io/collection-profile: telemetry
+  name: kubelet-telemetry
+  namespace: openshift-monitoring
+spec:
+  attachMetadata:
+    node: true
+  endpoints:
+  - bearerTokenFile: ""
+    honorLabels: true
+    interval: 30s
+    metricRelabelings:
+    - action: keep
+      regex: (apiserver_current_inflight_requests|apiserver_request_total|apiserver_storage_objects|container_cpu_usage_seconds_total|container_memory_working_set_bytes|kubelet_containers_per_pod_count_sum|kubelet_volume_stats_used_bytes|pv_collector_total_pv_count|selinux_warning_controller_selinux_volume_conflict|volume_manager_selinux_pod_context_mismatch_errors_total|volume_manager_selinux_pod_context_mismatch_warnings_total|volume_manager_selinux_volume_context_mismatch_errors_total|volume_manager_selinux_volume_context_mismatch_warnings_total|volume_manager_selinux_volumes_admitted_total)
+      sourceLabels:
+      - __name__
+    port: https-metrics
+    relabelings:
+    - action: replace
+      sourceLabels:
+      - __metrics_path__
+      targetLabel: metrics_path
+    scheme: https
+    scrapeTimeout: 30s
+    tlsConfig:
+      caFile: /etc/prometheus/configmaps/kubelet-serving-ca-bundle/ca-bundle.crt
+      insecureSkipVerify: false
+  - bearerTokenFile: ""
+    honorLabels: true
+    honorTimestamps: true
+    interval: 30s
+    metricRelabelings:
+    - action: labeldrop
+      regex: __tmp_keep_metric
+    - action: keep
+      regex: (apiserver_current_inflight_requests|apiserver_request_total|apiserver_storage_objects|container_cpu_usage_seconds_total|container_memory_working_set_bytes|kubelet_containers_per_pod_count_sum|kubelet_volume_stats_used_bytes|pv_collector_total_pv_count|selinux_warning_controller_selinux_volume_conflict|volume_manager_selinux_pod_context_mismatch_errors_total|volume_manager_selinux_pod_context_mismatch_warnings_total|volume_manager_selinux_volume_context_mismatch_errors_total|volume_manager_selinux_volume_context_mismatch_warnings_total|volume_manager_selinux_volumes_admitted_total)
+      sourceLabels:
+      - __name__
+    path: /metrics/cadvisor
+    port: https-metrics
+    relabelings:
+    - action: replace
+      sourceLabels:
+      - __metrics_path__
+      targetLabel: metrics_path
+    scheme: https
+    scrapeTimeout: 30s
+    tlsConfig:
+      caFile: /etc/prometheus/configmaps/kubelet-serving-ca-bundle/ca-bundle.crt
+      insecureSkipVerify: false
+    trackTimestampsStaleness: true
+  - bearerTokenFile: ""
+    honorLabels: true
+    interval: 30s
+    metricRelabelings:
+    - action: keep
+      regex: (apiserver_current_inflight_requests|apiserver_request_total|apiserver_storage_objects|container_cpu_usage_seconds_total|container_memory_working_set_bytes|kubelet_containers_per_pod_count_sum|kubelet_volume_stats_used_bytes|pv_collector_total_pv_count|selinux_warning_controller_selinux_volume_conflict|volume_manager_selinux_pod_context_mismatch_errors_total|volume_manager_selinux_pod_context_mismatch_warnings_total|volume_manager_selinux_volume_context_mismatch_errors_total|volume_manager_selinux_volume_context_mismatch_warnings_total|volume_manager_selinux_volumes_admitted_total)
+      sourceLabels:
+      - __name__
+    path: /metrics/probes
+    port: https-metrics
+    relabelings:
+    - action: replace
+      sourceLabels:
+      - __metrics_path__
+      targetLabel: metrics_path
+    scheme: https
+    scrapeTimeout: 30s
+    tlsConfig:
+      caFile: /etc/prometheus/configmaps/kubelet-serving-ca-bundle/ca-bundle.crt
+      insecureSkipVerify: false
+  - bearerTokenFile: ""
+    interval: 30s
+    metricRelabelings:
+    - action: keep
+      regex: (apiserver_current_inflight_requests|apiserver_request_total|apiserver_storage_objects|container_cpu_usage_seconds_total|container_memory_working_set_bytes|kubelet_containers_per_pod_count_sum|kubelet_volume_stats_used_bytes|pv_collector_total_pv_count|selinux_warning_controller_selinux_volume_conflict|volume_manager_selinux_pod_context_mismatch_errors_total|volume_manager_selinux_pod_context_mismatch_warnings_total|volume_manager_selinux_volume_context_mismatch_errors_total|volume_manager_selinux_volume_context_mismatch_warnings_total|volume_manager_selinux_volumes_admitted_total)
+      sourceLabels:
+      - __name__
+    port: https-metrics
+    relabelings:
+    - action: keep
+      regex: (linux|)
+      sourceLabels:
+      - __meta_kubernetes_node_label_kubernetes_io_os
+    - action: replace
+      regex: (.+)(?::\d+)
+      replacement: $1:9637
+      sourceLabels:
+      - __address__
+      targetLabel: __address__
+    - action: replace
+      replacement: crio
+      sourceLabels:
+      - endpoint
+      targetLabel: endpoint
+    - action: replace
+      replacement: crio
+      targetLabel: job
+    scheme: https
+    tlsConfig:
+      caFile: /etc/prometheus/configmaps/kubelet-serving-ca-bundle/ca-bundle.crt
+      insecureSkipVerify: false
+  jobLabel: k8s-app
+  namespaceSelector:
+    matchNames:
+    - kube-system
+  scrapeClass: tls-client-certificate-auth
+  selector:
+    matchLabels:
+      k8s-app: kubelet
+  serviceDiscoveryRole: EndpointSlice

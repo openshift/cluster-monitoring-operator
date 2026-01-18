@@ -1,0 +1,27 @@
+apiVersion: monitoring.coreos.com/v1
+kind: ServiceMonitor
+metadata:
+  labels:
+    app.kubernetes.io/managed-by: cluster-monitoring-operator
+    app.kubernetes.io/name: cluster-monitoring-operator
+    app.kubernetes.io/part-of: openshift-monitoring
+    monitoring.openshift.io/collection-profile: telemetry
+  name: cluster-monitoring-operator-telemetry
+  namespace: openshift-monitoring
+spec:
+  endpoints:
+  - bearerTokenFile: ""
+    metricRelabelings:
+    - action: keep
+      regex: (cluster_monitoring_operator_collection_profile)
+      sourceLabels:
+      - __name__
+    port: https
+    scheme: https
+    tlsConfig:
+      insecureSkipVerify: false
+      serverName: cluster-monitoring-operato.openshift-monitoring.svc
+  scrapeClass: tls-client-certificate-auth
+  selector:
+    matchLabels:
+      app.kubernetes.io/name: cluster-monitoring-operator
