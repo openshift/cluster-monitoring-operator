@@ -7,6 +7,7 @@ local kubeStateMetricsCRS = import '../utils/kube-state-metrics-custom-resource-
 local generateSecret = import '../utils/generate-secret.libsonnet';
 local generateServiceMonitor = import '../utils/generate-service-monitors.libsonnet';
 local withDescription = (import '../utils/add-annotations.libsonnet').withDescription;
+local telemetryGen = import '../utils/telemetry-allowlist-and-monitors.libsonnet';
 
 function(params)
   local cfg = params;
@@ -178,7 +179,7 @@ function(params)
     telemetryServiceMonitor: generateServiceMonitor.telemetry(
       self.serviceMonitor, std.join(
         '|',
-        (import '../utils/telemetry-allowlist-and-monitors.libsonnet').monitorKeysToMetricsMap[cfg.namespace + '/' + 'kube-state-metrics-telemetry']
+        telemetryGen.monitorKeysToMetricsMap[cfg.namespace + '/' + 'kube-state-metrics-telemetry']
       )
     ),
 

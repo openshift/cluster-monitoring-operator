@@ -1,6 +1,7 @@
 local metrics = import 'github.com/openshift/telemeter/jsonnet/telemeter/metrics.jsonnet';
 
 local generateServiceMonitor = import '../utils/generate-service-monitors.libsonnet';
+local telemetryGen = import '../utils/telemetry-allowlist-and-monitors.libsonnet';
 local cmoRules = import './../rules.libsonnet';
 local kubePrometheus = import 'github.com/prometheus-operator/kube-prometheus/jsonnet/kube-prometheus/components/mixin/custom.libsonnet';
 
@@ -163,7 +164,7 @@ function(params) {
   telemetryServiceMonitor: generateServiceMonitor.telemetry(
     self.serviceMonitor, std.join(
       '|',
-      (import '../utils/telemetry-allowlist-and-monitors.libsonnet').monitorKeysToMetricsMap[cfg.namespace + '/' + 'cluster-monitoring-operator-telemetry']
+      telemetryGen.monitorKeysToMetricsMap[cfg.namespace + '/' + 'cluster-monitoring-operator-telemetry']
     )
   ),
 

@@ -1,3 +1,5 @@
+local telemetryGen = import '../utils/telemetry-allowlist-and-monitors.libsonnet';
+
 local textfileDir = '/var/node_exporter/textfile';
 local textfileVolumeName = 'node-exporter-textfile';
 local tlsVolumeName = 'node-exporter-tls';
@@ -227,7 +229,7 @@ function(params)
     telemetryServiceMonitor: generateServiceMonitor.telemetry(
       super.serviceMonitor, std.join(
         '|',
-        (import '../utils/telemetry-allowlist-and-monitors.libsonnet').monitorKeysToMetricsMap[cfg.namespace + '/' + 'node-exporter-telemetry']
+        telemetryGen.monitorKeysToMetricsMap[cfg.namespace + '/' + 'node-exporter-telemetry']
       )
     ),
 

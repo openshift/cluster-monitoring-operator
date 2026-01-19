@@ -1,4 +1,5 @@
 local generateServiceMonitor = import '../utils/generate-service-monitors.libsonnet';
+local telemetryGen = import '../utils/telemetry-allowlist-and-monitors.libsonnet';
 local controlPlane = import 'github.com/prometheus-operator/kube-prometheus/jsonnet/kube-prometheus/components/k8s-control-plane.libsonnet';
 
 function(params)
@@ -171,7 +172,7 @@ function(params)
     telemetryServiceMonitorKubelet: generateServiceMonitor.telemetry(
       self.serviceMonitorKubelet, std.join(
         '|',
-        (import '../utils/telemetry-allowlist-and-monitors.libsonnet').monitorKeysToMetricsMap[cfg.namespace + '/' + 'kubelet-telemetry']
+        telemetryGen.monitorKeysToMetricsMap[cfg.namespace + '/' + 'kubelet-telemetry']
       )
     ),
 
