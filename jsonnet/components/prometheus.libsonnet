@@ -286,7 +286,6 @@ function(params)
 
     serviceMonitor+: {
       spec+: {
-        serviceDiscoveryRole: 'EndpointSlice',
         endpoints: [
           {
             port: 'metrics',
@@ -314,7 +313,6 @@ function(params)
 
     serviceMonitorThanosSidecar+: {
       spec+: {
-        serviceDiscoveryRole: 'EndpointSlice',
         jobLabel:: null,
         endpoints: [
           {
