@@ -626,6 +626,11 @@ data:
     #
     # owners: (@openshift/openshift-team-monitoring)
     #
+    # collector:node_scrape_collector_success:avg reports the average success of optional node_exporter's collectors running in the cluster.
+    - '{__name__="collector:node_scrape_collector_success:avg",collector=~"ethtool|cpufreq|tcpstat|netdev|netclass|buddyinfo|mountstats|ksmd|processes|systemd"}'
+    #
+    # owners: (@openshift/openshift-team-monitoring)
+    #
     # monitoring:haproxy_server_http_responses_total:sum tracks the number of times users access
     # monitoring routes.
     - '{__name__="monitoring:haproxy_server_http_responses_total:sum"}'

@@ -467,10 +467,21 @@ function(params)
         groups+: [
           {
             name: 'telemetry',
-            rules: [{
-              record: 'vendor_model:node_accelerator_cards:sum',
-              expr: 'sum by(vendor,model) (node_accelerator_card_info)',
-            }],
+            rules: [
+              {
+                record: 'vendor_model:node_accelerator_cards:sum',
+                expr: 'sum by(vendor,model) (node_accelerator_card_info)',
+              },
+              // recording the average value allows us to understand which
+              // optional collectors are installed across the fleet (e.g.
+              // "count by(collector) (group by(_id, collector)
+              // (collector:node_scrape_collector_success:avg)") and get a
+              // sense of how well they perform.
+              {
+                record: 'collector:node_scrape_collector_success:avg',
+                expr: 'avg by(collector) (node_scrape_collector_success)',
+              },
+            ],
           },
         ],
       },
