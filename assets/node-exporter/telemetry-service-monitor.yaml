@@ -30,7 +30,7 @@ spec:
     scheme: https
     tlsConfig:
       insecureSkipVerify: false
-      serverName: node-expo.openshift-monitoring.svc
+      serverName: node-exporter.openshift-monitoring.svc
   jobLabel: app.kubernetes.io/name
   scrapeClass: tls-client-certificate-auth
   selector:
