@@ -6,7 +6,7 @@ metadata:
     app.kubernetes.io/managed-by: cluster-monitoring-operator
     app.kubernetes.io/name: kube-state-metrics
     app.kubernetes.io/part-of: openshift-monitoring
-    app.kubernetes.io/version: 2.17.0
+    app.kubernetes.io/version: 2.18.0
     monitoring.openshift.io/collection-profile: minimal
   name: kube-state-metrics-minimal
   namespace: openshift-monitoring
