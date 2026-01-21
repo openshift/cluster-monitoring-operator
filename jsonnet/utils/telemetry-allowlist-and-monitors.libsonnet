@@ -1,12 +1,12 @@
 // This file acts as the single source of truth for the telemetry whitelist as
 // well as the associated monitors for the telemetry collection profile. Before
-// adding a telemery entry, please read the following notes:
-// * Teams are advised to add entries for telemetry (as they did ealier in
+// adding a telemetry entry, please read the following notes:
+// * Teams are advised to add entries for telemetry (as they did earlier in
 // manifests/0000_50_cluster-monitoring-operator_04-config.yaml), here instead.
 // * Each entry must have the following fields, the absence of which will cause
 // generation to fail:
 //   * metadata: The metadata associated with the rule. This consists of:
-//     * owners: The entities that owns this rule.
+//     * owners: The entities that own this rule.
 //     * description: A description of what this rule captures, and why.
 //     * label_values: The set of bounded label values for all the selectors the
 //     rule allows.
@@ -33,7 +33,7 @@ local entries = o.entries;
 local cmoMonitors = o.cmoMonitors;
 
 // Each entry in the whitelist will continue to adhere to the existing pattern,
-// with he exception of marker comments, i.e.,
+// with the exception of marker comments, i.e.,
 // #
 // # owners: (`metadata.owners`)
 // #
