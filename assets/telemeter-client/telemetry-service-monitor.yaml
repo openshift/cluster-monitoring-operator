@@ -21,7 +21,7 @@ spec:
     scheme: https
     tlsConfig:
       insecureSkipVerify: false
-      serverName: telemeter-clien.openshift-monitoring.svc
+      serverName: telemeter-client.openshift-monitoring.svc
   jobLabel: k8s-app
   scrapeClass: tls-client-certificate-auth
   selector:

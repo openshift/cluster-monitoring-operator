@@ -20,7 +20,7 @@ spec:
     scheme: https
     tlsConfig:
       insecureSkipVerify: false
-      serverName: cluster-monitoring-operato.openshift-monitoring.svc
+      serverName: cluster-monitoring-operator.openshift-monitoring.svc
   scrapeClass: tls-client-certificate-auth
   selector:
     matchLabels:
