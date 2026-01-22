@@ -141,13 +141,13 @@ func TestUserWorkloadNetworkPolicy(t *testing.T) {
 
 	// check the total count of deployed NetworkPolicies is equal to len(networkPolicyNames)
 	t.Run("assert total deployed NetworkPolicies count matches", func(t *testing.T) {
-			npList, err := f.KubeClient.NetworkingV1().NetworkPolicies(f.UserWorkloadMonitoringNs).List(ctx, metav1.ListOptions{})
-			if err != nil {
-				t.Fatalf("failed to list NetworkPolicies: %v", err)
-			}
+		npList, err := f.KubeClient.NetworkingV1().NetworkPolicies(f.UserWorkloadMonitoringNs).List(ctx, metav1.ListOptions{})
+		if err != nil {
+			t.Fatalf("failed to list NetworkPolicies: %v", err)
+		}
 
-			if len(npList.Items) != len(networkPolicyNames) {
-				t.Errorf("NetworkPolicies count = %d, want %d", len(npList.Items), len(networkPolicyNames))
-			}
+		if len(npList.Items) != len(networkPolicyNames) {
+			t.Errorf("NetworkPolicies count = %d, want %d", len(npList.Items), len(networkPolicyNames))
+		}
 	})
 }
