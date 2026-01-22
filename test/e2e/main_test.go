@@ -190,6 +190,45 @@ func TestMemoryUsageRecordingRule(t *testing.T) {
 	)
 }
 
+// TestNetworkPolicy ensures that the NetworkPolicies
+// are deployed under openshift-monitoring namespace
+func TestNetworkPolicy(t *testing.T) {
+	ctx := context.Background()
+	networkPolicyNames := []string{
+		"deny-cluster-monitoring-operator-and-operands",
+		"cluster-monitoring-operator",
+		"alertmanager",
+		"prometheus",
+		"kube-state-metrics",
+		"metrics-server",
+		"monitoring-plugin",
+		"openshift-state-metrics",
+		"prometheus-operator",
+		"prometheus-operator-admission-webhook",
+		"telemeter-client",
+		"thanos-querier",
+	}
+
+	t.Run("check in-cluster monitoring NetworkPolicies", func(t *testing.T) {
+		for _, name := range networkPolicyNames {
+			t.Run(fmt.Sprintf("assert %s networkpolicy exists", name), func(t *testing.T) {
+				f.AssertNetworkPolicyExists(name, f.Ns)
+			})
+		}
+	})
+
+	// check the total count of deployed NetworkPolicies is equal to len(networkPolicyNames)
+	t.Run("assert total deployed NetworkPolicies count matches", func(t *testing.T) {
+		npList, err := f.KubeClient.NetworkingV1().NetworkPolicies(f.Ns).List(ctx, metav1.ListOptions{})
+		if err != nil {
+			t.Fatalf("failed to list NetworkPolicies: %v", err)
+		}
+		if len(npList.Items) != len(networkPolicyNames) {
+			t.Errorf("NetworkPolicies count = %d, want %d", len(npList.Items), len(networkPolicyNames))
+		}
+	})
+}
+
 func TestPodsLabels(t *testing.T) {
 	// Verify that all pods in the openshift-monitoring namespace have the
 	// app.kubernetes.io/part-of: openshift-monitoring label.
