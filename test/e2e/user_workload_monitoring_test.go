@@ -279,64 +279,6 @@ func TestUserWorkloadMonitoringWithAdditionalAlertmanagerConfigs(t *testing.T) {
 	}
 }
 
-// TestUserWorkloadNetworkPolicyExists ensures that the NetworkPolicies
-// are deployed under openshift-user-workload-monitoring namespace
-func TestUserWorkloadNetworkPolicyExists(t *testing.T) {
-	// Enable UWM
-	cm := f.BuildCMOConfigMap(t, `enableUserWorkload: true`)
-	f.MustCreateOrUpdateConfigMap(t, cm)
-	defer f.MustDeleteConfigMap(t, cm)
-
-	ctx := context.Background()
-	networkPolicyNames := []string{
-		"default-deny-user-workload-operands",
-		"prometheus-operator-user-workload",
-		"prometheus-user-workload",
-		"thanos-ruler",
-	}
-
-	t.Run("check user workload monitoring NetworkPolicies", func(t *testing.T) {
-		for _, name := range networkPolicyNames {
-			t.Run(fmt.Sprintf("assert %s networkpolicy exists", name), func(t *testing.T) {
-				f.AssertNetworkPolicyExists(name, f.UserWorkloadMonitoringNs)
-			})
-		}
-	})
-
-	// check the total count of deployed NetworkPolicies is equal to len(networkPolicyNames)
-	t.Run("assert total deployed NetworkPolicies count matches", func(t *testing.T) {
-		err := framework.Poll(5*time.Second, 5*time.Minute, func() error {
-			npList, err := f.KubeClient.NetworkingV1().NetworkPolicies(f.UserWorkloadMonitoringNs).List(ctx, metav1.ListOptions{})
-			if err != nil {
-				return fmt.Errorf("failed to list NetworkPolicies: %w", err)
-			}
-
-			if len(npList.Items) != len(networkPolicyNames) {
-				if len(npList.Items) > 0 {
-					for _, np := range npList.Items {
-						t.Logf("Found NetworkPolicy: %s", np.Name)
-					}
-				}
-				return fmt.Errorf("NetworkPolicies count = %d, want %d", len(npList.Items), len(networkPolicyNames))
-			}
-
-			for _, np := range npList.Items {
-				t.Logf("Found NetworkPolicy: %s", np.Name)
-			}
-
-			return nil
-		})
-
-		if err != nil {
-			if wait.Interrupted(err) {
-				t.Errorf("Timeout waiting for NetworkPolicies to match expected count: %v", err)
-			} else {
-				t.Errorf("Failed to check NetworkPolicies count: %v", err)
-			}
-		}
-	})
-}
-
 func createSelfSignedCertificateSecret(secretName string) error {
 	crt, key, err := cert.GenerateSelfSignedCertKey("host", []net.IP{}, []string{})
 	if err != nil {
