@@ -217,8 +217,7 @@ function(params)
         ingress: [
           {
             ports: [
-              // allow prometheus-operator to to watch resources and allow prometheus
-              // to scrape prometheus-operator endpoint, 8443(port name: https) port
+              // allow prometheus to scrape prometheus-operator endpoint, 8443(port name: https) port
               {
                 port: 'https',
                 protocol: 'TCP',
