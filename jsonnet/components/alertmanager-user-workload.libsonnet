@@ -417,4 +417,43 @@ function(params)
         ],
       },
     },
+    networkPolicyDownstream: {
+      apiVersion: 'networking.k8s.io/v1',
+      kind: 'NetworkPolicy',
+      metadata: {
+        name: 'alertmanager-user-workload',
+        namespace: cfg.namespace,
+      },
+      spec: {
+        podSelector: {
+          matchLabels: {
+            'app.kubernetes.io/name': 'alertmanager',
+          },
+        },
+        policyTypes: [
+          'Ingress',
+          'Egress',
+        ],
+        ingress: [
+          {
+            ports: [
+              // allow access to the Alertmanager endpoints restricted to a given project,
+              // port number 9092(port name: tenancy)
+              {
+                port: 'tenancy',
+                protocol: 'TCP',
+              },
+              // allow prometheus to scrape user workload alertmanager 9097(port name: metrics) port
+              {
+                port: 'metrics',
+                protocol: 'TCP',
+              },
+            ],
+          },
+        ],
+        egress: [
+          {},
+        ],
+      },
+    },
   }

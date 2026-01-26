@@ -49,6 +49,16 @@ func (t *PrometheusUserWorkloadTask) Run(ctx context.Context) error {
 }
 
 func (t *PrometheusUserWorkloadTask) create(ctx context.Context) error {
+	netpol, err := t.factory.PrometheusUserWorkloadNetworkPolicy()
+	if err != nil {
+		return fmt.Errorf("initializing Prometheus User Workload NetworkPolicy failed: %w", err)
+	}
+
+	err = t.client.CreateOrUpdateNetworkPolicy(ctx, netpol)
+	if err != nil {
+		return fmt.Errorf("reconciling Prometheus User Workload NetworkPolicy failed: %w", err)
+	}
+
 	cacm, err := t.factory.PrometheusUserWorkloadServingCertsCABundle()
 	if err != nil {
 		return fmt.Errorf("initializing UserWorkload serving certs CA Bundle ConfigMap failed: %w", err)
@@ -546,5 +556,16 @@ func (t *PrometheusUserWorkloadTask) destroy(ctx context.Context) error {
 	if err != nil {
 		return fmt.Errorf("deleting UserWorkload federate Route failed: %w", err)
 	}
+
+	netpol, err := t.factory.PrometheusUserWorkloadNetworkPolicy()
+	if err != nil {
+		return fmt.Errorf("initializing Prometheus User Workload NetworkPolicy failed: %w", err)
+	}
+
+	err = t.client.DeleteNetworkPolicy(ctx, netpol)
+	if err != nil {
+		return fmt.Errorf("deleting Prometheus User Workload NetworkPolicy failed: %w", err)
+	}
+
 	return nil
 }

@@ -599,4 +599,26 @@ function(params) {
       ],
     },
   },
+  // Default deny all pods traffic for user workload monitoring,
+  // so it won't block with any extra pods controlled by other operators
+  // that deployed under openshift-user-workload-monitoring project
+  networkPolicyDefaultDenyUserWorkload: {
+    apiVersion: 'networking.k8s.io/v1',
+    kind: 'NetworkPolicy',
+    metadata: {
+      name: 'default-deny-user-workload-operands',
+      namespace: 'openshift-user-workload-monitoring',
+    },
+    spec: {
+      podSelector: {
+        matchLabels: {
+          'app.kubernetes.io/part-of': 'openshift-monitoring',
+        },
+      },
+      policyTypes: [
+        'Ingress',
+        'Egress',
+      ],
+    },
+  },
 }

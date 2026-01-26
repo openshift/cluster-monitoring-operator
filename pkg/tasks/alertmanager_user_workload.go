@@ -53,6 +53,16 @@ func (t *AlertmanagerUserWorkloadTask) Run(ctx context.Context) error {
 }
 
 func (t *AlertmanagerUserWorkloadTask) create(ctx context.Context) error {
+	netpol, err := t.factory.AlertmanagerUserWorkloadNetworkPolicy()
+	if err != nil {
+		return fmt.Errorf("initializing Alertmanager User Workload NetworkPolicy failed: %w", err)
+	}
+
+	err = t.client.CreateOrUpdateNetworkPolicy(ctx, netpol)
+	if err != nil {
+		return fmt.Errorf("reconciling Alertmanager User Workload NetworkPolicy failed: %w", err)
+	}
+
 	s, err := t.factory.AlertmanagerUserWorkloadSecret()
 	if err != nil {
 		return fmt.Errorf("initializing Alertmanager User Workload configuration Secret failed: %w", err)
@@ -320,6 +330,16 @@ func (t *AlertmanagerUserWorkloadTask) destroy(ctx context.Context) error {
 	err = t.client.DeleteServiceMonitor(ctx, smam)
 	if err != nil {
 		return fmt.Errorf("deleting Alertmanager User Workload ServiceMonitor failed: %w", err)
+	}
+
+	netpol, err := t.factory.AlertmanagerUserWorkloadNetworkPolicy()
+	if err != nil {
+		return fmt.Errorf("initializing Alertmanager User Workload NetworkPolicy object failed: %w", err)
+	}
+
+	err = t.client.DeleteNetworkPolicy(ctx, netpol)
+	if err != nil {
+		return fmt.Errorf("deleting Alertmanager User Workload NetworkPolicy object failed: %w", err)
 	}
 
 	return nil

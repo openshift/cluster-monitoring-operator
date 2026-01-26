@@ -110,6 +110,7 @@ var (
 	AlertmanagerUserWorkloadTrustedCABundle        = "alertmanager-user-workload/trusted-ca-bundle.yaml"
 	AlertmanagerUserWorkloadPodDisruptionBudget    = "alertmanager-user-workload/pod-disruption-budget.yaml"
 	AlertmanagerUserWorkloadServiceMonitor         = "alertmanager-user-workload/service-monitor.yaml"
+	AlertmanagerUserWorkloadNetworkPolicy          = "alertmanager-user-workload/network-policy-downstream.yaml"
 
 	KubeStateMetricsClusterRoleBinding    = "kube-state-metrics/cluster-role-binding.yaml"
 	KubeStateMetricsClusterRole           = "kube-state-metrics/cluster-role.yaml"
@@ -193,6 +194,7 @@ var (
 	PrometheusUserWorkloadPodDisruptionBudget                 = "prometheus-user-workload/pod-disruption-budget.yaml"
 	PrometheusUserWorkloadConfigMap                           = "prometheus-user-workload/config-map.yaml"
 	PrometheusUserWorkloadFederateRoute                       = "prometheus-user-workload/federate-route.yaml"
+	PrometheusUserWorkloadNetworkPolicy                       = "prometheus-user-workload/network-policy-downstream.yaml"
 
 	MetricsServerAPIService                      = "metrics-server/api-service.yaml"
 	MetricsServerServiceAccount                  = "metrics-server/service-account.yaml"
@@ -232,6 +234,7 @@ var (
 	PrometheusOperatorUserWorkloadDeployment          = "prometheus-operator-user-workload/deployment.yaml"
 	PrometheusOperatorUserWorkloadServiceMonitor      = "prometheus-operator-user-workload/service-monitor.yaml"
 	PrometheusOperatorUserWorkloadKubeRbacProxySecret = "prometheus-operator-user-workload/kube-rbac-proxy-secret.yaml"
+	PrometheusOperatorUserWorkloadNetworkPolicy       = "prometheus-operator-user-workload/network-policy-downstream.yaml"
 
 	ClusterMonitoringOperatorServiceMonitor                = "cluster-monitoring-operator/service-monitor.yaml"
 	ClusterMonitoringClusterRoleView                       = "cluster-monitoring-operator/cluster-role-view.yaml"
@@ -301,6 +304,7 @@ var (
 	ThanosRulerPrometheusRule                                = "thanos-ruler/thanos-ruler-prometheus-rule.yaml"
 	ThanosRulerAlertmanagerRoleBinding                       = "thanos-ruler/alertmanager-role-binding.yaml"
 	ThanosRulerPodDisruptionBudget                           = "thanos-ruler/pod-disruption-budget.yaml"
+	ThanosRulerNetworkPolicy                                 = "thanos-ruler/network-policy-downstream.yaml"
 
 	TelemeterTrustedCABundle = "telemeter-client/trusted-ca-bundle.yaml"
 
@@ -315,6 +319,8 @@ var (
 	MonitoringPluginService             = "monitoring-plugin/service.yaml"
 	MonitoringPluginPodDisruptionBudget = "monitoring-plugin/pod-disruption-budget.yaml"
 	MonitoringPluginNetworkPolicy       = "monitoring-plugin/network-policy-downstream.yaml"
+
+	UserWorkloadMonitoringDenyAllTraffic = "cluster-monitoring-operator/network-policy-default-deny-user-workload.yaml"
 )
 
 var (
@@ -436,6 +442,10 @@ func (f *Factory) AlertmanagerServiceMonitor() (*monv1.ServiceMonitor, error) {
 
 func (f *Factory) AlertmanagerUserWorkloadServiceMonitor() (*monv1.ServiceMonitor, error) {
 	return f.NewServiceMonitor(f.assets.MustNewAssetSlice(AlertmanagerUserWorkloadServiceMonitor))
+}
+
+func (f *Factory) AlertmanagerUserWorkloadNetworkPolicy() (*networkingv1.NetworkPolicy, error) {
+	return f.NewNetworkPolicy(f.assets.MustNewAssetSlice(AlertmanagerUserWorkloadNetworkPolicy))
 }
 
 func (f *Factory) AlertmanagerTrustedCABundle() (*v1.ConfigMap, error) {
@@ -1136,6 +1146,10 @@ func (f *Factory) PrometheusUserWorkloadRoleList() (*rbacv1.RoleList, error) {
 
 func (f *Factory) PrometheusUserWorkloadFederateRoute() (*routev1.Route, error) {
 	return f.NewRoute(f.assets.MustNewAssetSlice(PrometheusUserWorkloadFederateRoute))
+}
+
+func (f *Factory) PrometheusUserWorkloadNetworkPolicy() (*networkingv1.NetworkPolicy, error) {
+	return f.NewNetworkPolicy(f.assets.MustNewAssetSlice(PrometheusUserWorkloadNetworkPolicy))
 }
 
 func (f *Factory) PrometheusK8sPrometheusRule() (*monv1.PrometheusRule, error) {
@@ -2160,6 +2174,10 @@ func (f *Factory) PrometheusOperatorUserWorkloadCRBACProxySecret() (*v1.Secret, 
 	return f.NewSecret(f.assets.MustNewAssetSlice(PrometheusOperatorUserWorkloadKubeRbacProxySecret))
 }
 
+func (f *Factory) PrometheusOperatorUserWorkloadNetworkPolicy() (*networkingv1.NetworkPolicy, error) {
+	return f.NewNetworkPolicy(f.assets.MustNewAssetSlice(PrometheusOperatorUserWorkloadNetworkPolicy))
+}
+
 func (f *Factory) PrometheusOperatorClusterRole() (*rbacv1.ClusterRole, error) {
 	return f.NewClusterRole(f.assets.MustNewAssetSlice(PrometheusOperatorClusterRole))
 }
@@ -2459,6 +2477,10 @@ func (f *Factory) ThanosRulerPodDisruptionBudget() (*policyv1.PodDisruptionBudge
 	return f.NewPodDisruptionBudget(f.assets.MustNewAssetSlice(ThanosRulerPodDisruptionBudget))
 }
 
+func (f *Factory) ThanosRulerNetworkPolicy() (*networkingv1.NetworkPolicy, error) {
+	return f.NewNetworkPolicy(f.assets.MustNewAssetSlice(ThanosRulerNetworkPolicy))
+}
+
 func (f *Factory) PrometheusUserWorkloadService() (*v1.Service, error) {
 	return f.NewService(f.assets.MustNewAssetSlice(PrometheusUserWorkloadService))
 }
@@ -2529,6 +2551,10 @@ func (f *Factory) ClusterMonitoringOperatorPrometheusRule() (*monv1.PrometheusRu
 
 func (f *Factory) ClusterMonitoringDenyAllTraffic() (*networkingv1.NetworkPolicy, error) {
 	return f.NewNetworkPolicy(f.assets.MustNewAssetSlice(ClusterMonitoringDenyAllTraffic))
+}
+
+func (f *Factory) UserWorkloadMonitoringDenyAllTraffic() (*networkingv1.NetworkPolicy, error) {
+	return f.NewNetworkPolicy(f.assets.MustNewAssetSlice(UserWorkloadMonitoringDenyAllTraffic))
 }
 
 func (f *Factory) ControlPlanePrometheusRule() (*monv1.PrometheusRule, error) {
