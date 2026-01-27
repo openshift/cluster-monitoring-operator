@@ -1,8 +1,8 @@
+version: "2"
 run:
   timeout: 5m
   tests: true
   modules-download-mode: vendor
-
 linters:
   disable-all: true
   enable:
@@ -10,7 +10,6 @@ linters:
     - errcheck
     - errorlint
     - bodyclose
-    - gosimple
     - govet
     - ineffassign
     - misspell
@@ -18,52 +17,61 @@ linters:
     - nosprintfhostport
     - staticcheck
     - usetesting
-    - typecheck
     - unconvert
     - unused
     - wastedassign
     - whitespace
-    - gci
-
-issues:
-  exclude-dirs:
-    - vendor
-    - test
-  exclude-rules:
-    - path: _test\.go
-      linters:
-        # The list of linters below is exhaustive with respect to the linters defined above, and as such, and linter
-        # that needs to be run on test files should be dropped from here.
-        - depguard
-        - errcheck
-        - errorlint
-        - bodyclose
-        - gosimple
-        - ineffassign
-        - misspell
-        - nolintlint
-        - nosprintfhostport
-        - staticcheck
-        - usetesting
-        - typecheck
-        - unconvert
-        - unused
-        - wastedassign
-        - whitespace
-        - gci
-
-linters-settings:
-  depguard:
+  settings:
+    staticcheck:
+      checks:
+        - "all"
+        - "-QF*"     # quickfix suggestions (style preference)
+        - "-ST1000"  # package comments (style preference)
+        - "-ST1003"  # naming conventions like API vs Api (style preference)
+        - "-ST1005"  # error string capitalization (style preference)
+        - "-ST1019"  # duplicate imports (style preference)
+        - "-ST1020"  # comment format on functions (style preference)
+        - "-ST1021"  # comment format on types (style preference)
+    depguard:
+      rules:
+        # Name of a rule.
+        main:
+          deny:
+            - pkg: "github.com/pkg/errors"
+              desc: "Use 'errors' or 'fmt' instead"
+            - pkg: "golang.org/x/exp/slices"
+              desc: "Use 'slices' instead"
+  exclusions:
+    paths:
+      - vendor
+      - test
+      - hack
+      - examples
     rules:
-      # Name of a rule.
-      main:
-        deny:
-          - pkg: "github.com/pkg/errors"
-            desc: "Use 'errors' or 'fmt' instead"
-          - pkg: "golang.org/x/exp/slices"
-            desc: "Use 'slices' instead"
-  gci:
-    sections:
-      - standard
-      - default
-      - prefix(github.com/openshift/cluster-monitoring-operator)
+      - path: _test\.go
+        linters:
+          # The list of linters below is exhaustive with respect to the linters defined above, and as such, and linter
+          # that needs to be run on test files should be dropped from here.
+          - depguard
+          - errcheck
+          - errorlint
+          - bodyclose
+          - ineffassign
+          - misspell
+          - nolintlint
+          - nosprintfhostport
+          - staticcheck
+          - usetesting
+          - unconvert
+          - unused
+          - wastedassign
+          - whitespace
+formatters:
+  enable:
+    - gci
+  settings:
+    gci:
+      sections:
+        - standard
+        - default
+        - prefix(github.com/openshift/cluster-monitoring-operator)
