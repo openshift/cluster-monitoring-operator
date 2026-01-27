@@ -210,7 +210,7 @@ spec:
         runbook_url: https://github.com/openshift/runbooks/blob/master/alerts/cluster-monitoring-operator/NodeRAIDDegraded.md
         summary: RAID Array is degraded.
       expr: |
-        node_md_disks_required{job="node-exporter",device=~"mmcblk.p.+|nvme.+|sd.+|vd.+|xvd.+|dm-.+|dasd.+"} - ignoring (state) (node_md_disks{state="active",job="node-exporter",device=~"mmcblk.p.+|nvme.+|sd.+|vd.+|xvd.+|dm-.+|dasd.+"}) > 0
+        node_md_disks_required{job="node-exporter",device=~"mmcblk.p.+|nvme.+|sd.+|vd.+|xvd.+|dm-.+|md[0-9]+|dasd.+"} - ignoring (state) (node_md_disks{state="active",job="node-exporter",device=~"mmcblk.p.+|nvme.+|sd.+|vd.+|xvd.+|dm-.+|md[0-9]+|dasd.+"}) > 0
       for: 15m
       labels:
         severity: critical
@@ -219,7 +219,7 @@ spec:
         description: At least one device in RAID array at {{ $labels.instance }} failed. Array '{{ $labels.device }}' needs attention and possibly a disk swap.
         summary: Failed device in RAID array.
       expr: |
-        node_md_disks{state="failed",job="node-exporter",device=~"mmcblk.p.+|nvme.+|sd.+|vd.+|xvd.+|dm-.+|dasd.+"} > 0
+        node_md_disks{state="failed",job="node-exporter",device=~"mmcblk.p.+|nvme.+|sd.+|vd.+|xvd.+|dm-.+|md[0-9]+|dasd.+"} > 0
       labels:
         severity: warning
     - alert: NodeFileDescriptorLimit
@@ -329,10 +329,10 @@ spec:
         rate(node_vmstat_pgmajfault{job="node-exporter"}[1m])
       record: instance:node_vmstat_pgmajfault:rate1m
     - expr: |
-        rate(node_disk_io_time_seconds_total{job="node-exporter", device=~"mmcblk.p.+|nvme.+|sd.+|vd.+|xvd.+|dm-.+|dasd.+"}[1m])
+        rate(node_disk_io_time_seconds_total{job="node-exporter", device=~"mmcblk.p.+|nvme.+|sd.+|vd.+|xvd.+|dm-.+|md[0-9]+|dasd.+"}[1m])
       record: instance_device:node_disk_io_time_seconds:rate1m
     - expr: |
-        rate(node_disk_io_time_weighted_seconds_total{job="node-exporter", device=~"mmcblk.p.+|nvme.+|sd.+|vd.+|xvd.+|dm-.+|dasd.+"}[1m])
+        rate(node_disk_io_time_weighted_seconds_total{job="node-exporter", device=~"mmcblk.p.+|nvme.+|sd.+|vd.+|xvd.+|dm-.+|md[0-9]+|dasd.+"}[1m])
       record: instance_device:node_disk_io_time_weighted_seconds:rate1m
     - expr: |
         sum without (device) (
