@@ -416,11 +416,11 @@ func TestAlertmanagerDataReplication(t *testing.T) {
 	for _, test := range []scenario{
 		{
 			name:      "test the alertmanager-main statefulset is rolled out",
-			assertion: f.AssertStatefulSetExistsAndRollout(statefulSetName, f.Ns),
+			assertion: f.AssertStatefulSetExistsAndRolloutFunc(statefulSetName, f.Ns),
 		},
 		{
 			name: "assert pod configuration is as expected",
-			assertion: f.AssertPodConfiguration(
+			assertion: f.AssertPodConfigurationFunc(
 				f.Ns,
 				"app.kubernetes.io/name=alertmanager,app.kubernetes.io/instance=main",
 				[]framework.PodAssertion{
@@ -683,28 +683,28 @@ func TestAlertmanagerDisabling(t *testing.T) {
 		name      string
 		assertion framework.AssertionFunc
 	}{
-		{name: "assert alertmanager does not exist", assertion: f.AssertStatefulsetDoesNotExist("alertmanager-main", f.Ns)},
-		{name: "assert route does not exist", assertion: f.AssertRouteDoesNotExist("alertmanager-main", f.Ns)},
-		{name: "assert alertmanager main config does not exist", assertion: f.AssertSecretDoesNotExist("alertmanager-main", f.Ns)},
-		{name: "assert kube-rbac-proxy secret does not exist", assertion: f.AssertSecretDoesNotExist("alertmanager-kube-rbac-proxy", f.Ns)},
-		{name: "assert service alertmanager-main does not exist", assertion: f.AssertServiceDoesNotExist("alertmanager-main", f.Ns)},
-		{name: "assert service alertmanager-operated does not exist", assertion: f.AssertServiceDoesNotExist("alertmanager-operated", f.Ns)},
-		{name: "assert serviceaccount alertmanager-main does not exist", assertion: f.AssertServiceAccountDoesNotExist("alertmanager-main", f.Ns)},
-		{name: "assert role monitoring-alertmanager-edit does not exist", assertion: f.AssertRoleDoesNotExist("monitoring-alertmanager-edit", "openshift-monitoring")},
-		{name: "assert rolebinding alertmanager-prometheusk8s does not exist", assertion: f.AssertRoleBindingDoesNotExist("alertmanager-prometheusk8s", "openshift-monitoring")},
-		{name: "assert rolebinding alertmanager-prometheususer-workload does not exist", assertion: f.AssertRoleBindingDoesNotExist("alertmanager-prometheususer-workload", "openshift-monitoring")},
-		{name: "assert rolebinding alertmanager-thanos-ruler does not exist", assertion: f.AssertRoleBindingDoesNotExist("alertmanager-thanos-ruler", "openshift-monitoring")},
-		{name: "assert clusterrole alertmanager-main does not exist", assertion: f.AssertClusterRoleDoesNotExist("alertmanager-main")},
-		{name: "assert clusterrolebinding alertmanager-main does not exist", assertion: f.AssertClusterRoleBindingDoesNotExist("alertmanager-main")},
-		{name: "assert trusted-ca-bundle does not exist", assertion: f.AssertConfigmapDoesNotExist("alertmanager-trusted-ca-bundle", f.Ns)},
-		{name: "assert prometheus rule does not exist", assertion: f.AssertPrometheusRuleDoesNotExist("alertmanager-main-rules", f.Ns)},
-		{name: "assert service monitor does not exist", assertion: f.AssertServiceMonitorDoesNotExist("alertmanager-main", f.Ns)},
-		{name: "assert old service monitor does not exist", assertion: f.AssertServiceMonitorDoesNotExist("alertmanager", f.Ns)},
-		{name: "assert alertmanager networkpolicy does not exist", assertion: f.AssertNetworkPolicyDoesNotExist("alertmanager", f.Ns)},
-		{name: "alertmanager public URL is unset", assertion: f.AssertValueInConfigMapEquals(
+		{name: "assert alertmanager does not exist", assertion: f.AssertStatefulsetDoesNotExistFunc("alertmanager-main", f.Ns)},
+		{name: "assert route does not exist", assertion: f.AssertRouteDoesNotExistFunc("alertmanager-main", f.Ns)},
+		{name: "assert alertmanager main config does not exist", assertion: f.AssertSecretDoesNotExistFunc("alertmanager-main", f.Ns)},
+		{name: "assert kube-rbac-proxy secret does not exist", assertion: f.AssertSecretDoesNotExistFunc("alertmanager-kube-rbac-proxy", f.Ns)},
+		{name: "assert service alertmanager-main does not exist", assertion: f.AssertServiceDoesNotExistFunc("alertmanager-main", f.Ns)},
+		{name: "assert service alertmanager-operated does not exist", assertion: f.AssertServiceDoesNotExistFunc("alertmanager-operated", f.Ns)},
+		{name: "assert serviceaccount alertmanager-main does not exist", assertion: f.AssertServiceAccountDoesNotExistFunc("alertmanager-main", f.Ns)},
+		{name: "assert role monitoring-alertmanager-edit does not exist", assertion: f.AssertRoleDoesNotExistFunc("monitoring-alertmanager-edit", "openshift-monitoring")},
+		{name: "assert rolebinding alertmanager-prometheusk8s does not exist", assertion: f.AssertRoleBindingDoesNotExistFunc("alertmanager-prometheusk8s", "openshift-monitoring")},
+		{name: "assert rolebinding alertmanager-prometheususer-workload does not exist", assertion: f.AssertRoleBindingDoesNotExistFunc("alertmanager-prometheususer-workload", "openshift-monitoring")},
+		{name: "assert rolebinding alertmanager-thanos-ruler does not exist", assertion: f.AssertRoleBindingDoesNotExistFunc("alertmanager-thanos-ruler", "openshift-monitoring")},
+		{name: "assert clusterrole alertmanager-main does not exist", assertion: f.AssertClusterRoleDoesNotExistFunc("alertmanager-main")},
+		{name: "assert clusterrolebinding alertmanager-main does not exist", assertion: f.AssertClusterRoleBindingDoesNotExistFunc("alertmanager-main")},
+		{name: "assert trusted-ca-bundle does not exist", assertion: f.AssertConfigmapDoesNotExistFunc("alertmanager-trusted-ca-bundle", f.Ns)},
+		{name: "assert prometheus rule does not exist", assertion: f.AssertPrometheusRuleDoesNotExistFunc("alertmanager-main-rules", f.Ns)},
+		{name: "assert service monitor does not exist", assertion: f.AssertServiceMonitorDoesNotExistFunc("alertmanager-main", f.Ns)},
+		{name: "assert old service monitor does not exist", assertion: f.AssertServiceMonitorDoesNotExistFunc("alertmanager", f.Ns)},
+		{name: "assert alertmanager networkpolicy does not exist", assertion: f.AssertNetworkPolicyDoesNotExistFunc("alertmanager", f.Ns)},
+		{name: "alertmanager public URL is unset", assertion: f.AssertValueInConfigMapEqualsFunc(
 			"monitoring-shared-config", "openshift-config-managed", "alertmanagerPublicURL", "")},
-		{name: "assert prometheus alertmanager endpoints empty", assertion: f.AssertPrometheusAlertmanagerEndpointsEmpty("prometheus-k8s", f.Ns)},
-		{name: "assert operator not degraded", assertion: f.AssertOperatorCondition(statusv1.OperatorDegraded, statusv1.ConditionFalse)},
+		{name: "assert prometheus alertmanager endpoints empty", assertion: f.AssertPrometheusAlertmanagerEndpointsEmptyFunc("prometheus-k8s", f.Ns)},
+		{name: "assert operator not degraded", assertion: f.AssertOperatorConditionFunc(statusv1.OperatorDegraded, statusv1.ConditionFalse)},
 	}
 	t.Run("disable alertmanager", func(t *testing.T) {
 		for _, assertion := range assertions {
@@ -720,26 +720,26 @@ func TestAlertmanagerDisabling(t *testing.T) {
 		assertion framework.AssertionFunc
 	}{
 		{name: "assert alertmanager networkpolicy exists", assertion: f.AssertNetworkPolicyExistsFunc("alertmanager", f.Ns)},
-		{name: "assert alertmanager exists", assertion: f.AssertStatefulsetExists("alertmanager-main", f.Ns)},
-		{name: "assert route exists", assertion: f.AssertRouteExists("alertmanager-main", f.Ns)},
-		{name: "assert alertmanager main config exists", assertion: f.AssertSecretExists("alertmanager-main", f.Ns)},
-		{name: "assert kube-rbac-proxy secret exists", assertion: f.AssertSecretExists("alertmanager-kube-rbac-proxy", f.Ns)},
-		{name: "assert service alertmanager-main exists", assertion: f.AssertServiceExists("alertmanager-main", f.Ns)},
-		{name: "assert service alertmanager-operated exists", assertion: f.AssertServiceExists("alertmanager-operated", f.Ns)},
-		{name: "assert serviceaccount alertmanager exists", assertion: f.AssertServiceAccountExists("alertmanager-main", f.Ns)},
-		{name: "assert role monitoring-alertmanager-edit exists", assertion: f.AssertRoleExists("monitoring-alertmanager-edit", "openshift-monitoring")},
-		{name: "assert rolebinding alertmanager-prometheusk8s exists", assertion: f.AssertRoleBindingExists("alertmanager-prometheusk8s", "openshift-monitoring")},
-		{name: "assert rolebinding alertmanager-prometheususer-workload exists", assertion: f.AssertRoleBindingExists("alertmanager-prometheususer-workload", "openshift-monitoring")},
-		{name: "assert rolebinding alertmanager-thanos-ruler exists", assertion: f.AssertRoleBindingExists("alertmanager-thanos-ruler", "openshift-monitoring")},
-		{name: "assert clusterrole alertmanager-main exists", assertion: f.AssertClusterRoleExists("alertmanager-main")},
-		{name: "assert clusterrolebinding alertmanager-main exists", assertion: f.AssertClusterRoleBindingExists("alertmanager-main")},
-		{name: "assert trusted-ca-bundle exists", assertion: f.AssertConfigmapExists("alertmanager-trusted-ca-bundle", f.Ns)},
-		{name: "assert prometheus rule exists", assertion: f.AssertPrometheusRuleExists("alertmanager-main-rules", f.Ns)},
-		{name: "assert service monitor exists", assertion: f.AssertServiceMonitorExists("alertmanager-main", f.Ns)},
-		{name: "assert old service monitor does not exists", assertion: f.AssertServiceMonitorDoesNotExist("alertmanager", f.Ns)},
-		{name: "alertmanager public URL properly set", assertion: f.AssertValueInConfigMapNotEquals(
+		{name: "assert alertmanager exists", assertion: f.AssertStatefulsetExistsFunc("alertmanager-main", f.Ns)},
+		{name: "assert route exists", assertion: f.AssertRouteExistsFunc("alertmanager-main", f.Ns)},
+		{name: "assert alertmanager main config exists", assertion: f.AssertSecretExistsFunc("alertmanager-main", f.Ns)},
+		{name: "assert kube-rbac-proxy secret exists", assertion: f.AssertSecretExistsFunc("alertmanager-kube-rbac-proxy", f.Ns)},
+		{name: "assert service alertmanager-main exists", assertion: f.AssertServiceExistsFunc("alertmanager-main", f.Ns)},
+		{name: "assert service alertmanager-operated exists", assertion: f.AssertServiceExistsFunc("alertmanager-operated", f.Ns)},
+		{name: "assert serviceaccount alertmanager exists", assertion: f.AssertServiceAccountExistsFunc("alertmanager-main", f.Ns)},
+		{name: "assert role monitoring-alertmanager-edit exists", assertion: f.AssertRoleExistsFunc("monitoring-alertmanager-edit", "openshift-monitoring")},
+		{name: "assert rolebinding alertmanager-prometheusk8s exists", assertion: f.AssertRoleBindingExistsFunc("alertmanager-prometheusk8s", "openshift-monitoring")},
+		{name: "assert rolebinding alertmanager-prometheususer-workload exists", assertion: f.AssertRoleBindingExistsFunc("alertmanager-prometheususer-workload", "openshift-monitoring")},
+		{name: "assert rolebinding alertmanager-thanos-ruler exists", assertion: f.AssertRoleBindingExistsFunc("alertmanager-thanos-ruler", "openshift-monitoring")},
+		{name: "assert clusterrole alertmanager-main exists", assertion: f.AssertClusterRoleExistsFunc("alertmanager-main")},
+		{name: "assert clusterrolebinding alertmanager-main exists", assertion: f.AssertClusterRoleBindingExistsFunc("alertmanager-main")},
+		{name: "assert trusted-ca-bundle exists", assertion: f.AssertConfigmapExistsFunc("alertmanager-trusted-ca-bundle", f.Ns)},
+		{name: "assert prometheus rule exists", assertion: f.AssertPrometheusRuleExistsFunc("alertmanager-main-rules", f.Ns)},
+		{name: "assert service monitor exists", assertion: f.AssertServiceMonitorExistsFunc("alertmanager-main", f.Ns)},
+		{name: "assert old service monitor does not exists", assertion: f.AssertServiceMonitorDoesNotExistFunc("alertmanager", f.Ns)},
+		{name: "alertmanager public URL properly set", assertion: f.AssertValueInConfigMapNotEqualsFunc(
 			"monitoring-shared-config", "openshift-config-managed", "alertmanagerPublicURL", "")},
-		{name: "assert operator not degraded", assertion: f.AssertOperatorCondition(statusv1.OperatorDegraded, statusv1.ConditionFalse)},
+		{name: "assert operator not degraded", assertion: f.AssertOperatorConditionFunc(statusv1.OperatorDegraded, statusv1.ConditionFalse)},
 	}
 	t.Run("enable alertmanager", func(t *testing.T) {
 		for _, assertion := range assertions {

@@ -311,9 +311,9 @@ func TestPrometheusRemoteWrite(t *testing.T) {
 
 			f.MustCreateOrUpdateConfigMap(t, f.BuildCMOConfigMap(t, cmoConfigMap))
 
-			f.AssertOperatorCondition(osConfigv1.OperatorDegraded, osConfigv1.ConditionFalse)(t)
-			f.AssertOperatorCondition(osConfigv1.OperatorProgressing, osConfigv1.ConditionFalse)(t)
-			f.AssertOperatorCondition(osConfigv1.OperatorAvailable, osConfigv1.ConditionTrue)(t)
+			f.AssertOperatorConditionFunc(osConfigv1.OperatorDegraded, osConfigv1.ConditionFalse)(t)
+			f.AssertOperatorConditionFunc(osConfigv1.OperatorProgressing, osConfigv1.ConditionFalse)(t)
+			f.AssertOperatorConditionFunc(osConfigv1.OperatorAvailable, osConfigv1.ConditionTrue)(t)
 
 			remoteWriteCheckMetrics(ctx, t, prometheusReceiveClient, tc.expected)
 

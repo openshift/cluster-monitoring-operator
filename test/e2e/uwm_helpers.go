@@ -38,10 +38,10 @@ func setupUserWorkloadAssets(t *testing.T, f *framework.Framework) {
 	t.Helper()
 
 	f.MustCreateOrUpdateConfigMap(t, getUserWorkloadEnabledConfigMap(t, f))
-	f.AssertDeploymentExists("prometheus-operator", f.UserWorkloadMonitoringNs)(t)
-	f.AssertStatefulSetExistsAndRollout("prometheus-user-workload", f.UserWorkloadMonitoringNs)(t)
-	f.AssertPrometheusExists("user-workload", f.UserWorkloadMonitoringNs)(t)
-	f.AssertStatefulSetExistsAndRollout("thanos-ruler-user-workload", f.UserWorkloadMonitoringNs)(t)
+	f.AssertDeploymentExistsFunc("prometheus-operator", f.UserWorkloadMonitoringNs)(t)
+	f.AssertStatefulSetExistsAndRolloutFunc("prometheus-user-workload", f.UserWorkloadMonitoringNs)(t)
+	f.AssertPrometheusExistsFunc("user-workload", f.UserWorkloadMonitoringNs)(t)
+	f.AssertStatefulSetExistsAndRolloutFunc("thanos-ruler-user-workload", f.UserWorkloadMonitoringNs)(t)
 }
 
 // setupUserWorkloadAssetsWithTeardownHook enables UWM via the config map and asserts resources are up and running
@@ -63,8 +63,8 @@ func tearDownUserWorkloadAssets(t *testing.T, f *framework.Framework) {
 		t.Fatal(err)
 	}
 
-	f.AssertDeploymentDoesNotExist("prometheus-operator", f.UserWorkloadMonitoringNs)(t)
-	f.AssertStatefulsetDoesNotExist("prometheus-user-workload", f.UserWorkloadMonitoringNs)(t)
+	f.AssertDeploymentDoesNotExistFunc("prometheus-operator", f.UserWorkloadMonitoringNs)(t)
+	f.AssertStatefulsetDoesNotExistFunc("prometheus-user-workload", f.UserWorkloadMonitoringNs)(t)
 }
 
 func createNamespaceIfNotExist(f *framework.Framework, ns string) error {

@@ -43,8 +43,8 @@ func TestClusterMonitoringOperatorConfiguration(t *testing.T) {
 	defer tearDownUserWorkloadAssets(t, f)
 
 	t.Log("asserting that CMO is healthy")
-	f.AssertOperatorCondition(configv1.OperatorDegraded, configv1.ConditionFalse)(t)
-	f.AssertOperatorCondition(configv1.OperatorAvailable, configv1.ConditionTrue)(t)
+	f.AssertOperatorConditionFunc(configv1.OperatorDegraded, configv1.ConditionFalse)(t)
+	f.AssertOperatorConditionFunc(configv1.OperatorAvailable, configv1.ConditionTrue)(t)
 
 	// Push an invalid configuration.
 	cm := &v1.ConfigMap{
@@ -69,24 +69,24 @@ func TestClusterMonitoringOperatorConfiguration(t *testing.T) {
 	f.MustCreateOrUpdateConfigMap(t, cm)
 
 	t.Log("asserting that CMO goes degraded after an invalid configuration is pushed")
-	f.AssertOperatorCondition(configv1.OperatorDegraded, configv1.ConditionTrue)(t)
-	f.AssertOperatorCondition(configv1.OperatorAvailable, configv1.ConditionFalse)(t)
+	f.AssertOperatorConditionFunc(configv1.OperatorDegraded, configv1.ConditionTrue)(t)
+	f.AssertOperatorConditionFunc(configv1.OperatorAvailable, configv1.ConditionFalse)(t)
 	// operator should stay upgradeable even when a malformed config was
 	// rejected
-	f.AssertOperatorCondition(configv1.OperatorUpgradeable, configv1.ConditionTrue)(t)
-	f.AssertOperatorConditionReason(configv1.OperatorDegraded, "InvalidConfiguration")
-	f.AssertOperatorConditionReason(configv1.OperatorAvailable, "InvalidConfiguration")
+	f.AssertOperatorConditionFunc(configv1.OperatorUpgradeable, configv1.ConditionTrue)(t)
+	f.AssertOperatorConditionReasonFunc(configv1.OperatorDegraded, "InvalidConfiguration")(t)
+	f.AssertOperatorConditionReasonFunc(configv1.OperatorAvailable, "InvalidConfiguration")(t)
 	// Check that the previous setup hasn't been reverted
-	f.AssertStatefulsetExists("prometheus-user-workload", f.UserWorkloadMonitoringNs)(t)
+	f.AssertStatefulsetExistsFunc("prometheus-user-workload", f.UserWorkloadMonitoringNs)(t)
 
 	// Restore the first configuration.
 	f.MustCreateOrUpdateConfigMap(t, getUserWorkloadEnabledConfigMap(t, f))
 	t.Log("asserting that CMO goes back healthy after the configuration is fixed")
-	f.AssertOperatorCondition(configv1.OperatorDegraded, configv1.ConditionFalse)(t)
-	f.AssertOperatorCondition(configv1.OperatorAvailable, configv1.ConditionTrue)(t)
-	f.AssertOperatorCondition(configv1.OperatorUpgradeable, configv1.ConditionTrue)(t)
-	f.AssertOperatorConditionReason(configv1.OperatorUpgradeable, "")(t)
-	f.AssertOperatorConditionMessage(configv1.OperatorUpgradeable, "")(t)
+	f.AssertOperatorConditionFunc(configv1.OperatorDegraded, configv1.ConditionFalse)(t)
+	f.AssertOperatorConditionFunc(configv1.OperatorAvailable, configv1.ConditionTrue)(t)
+	f.AssertOperatorConditionFunc(configv1.OperatorUpgradeable, configv1.ConditionTrue)(t)
+	f.AssertOperatorConditionReasonFunc(configv1.OperatorUpgradeable, "")(t)
+	f.AssertOperatorConditionMessageFunc(configv1.OperatorUpgradeable, "")(t)
 }
 
 func TestClusterMonitoringStatus(t *testing.T) {
@@ -104,10 +104,10 @@ func TestClusterMonitoringStatus(t *testing.T) {
 			config:             "",
 			userWorkloadConfig: "",
 			assertion: func(t *testing.T) {
-				f.AssertOperatorCondition(configv1.OperatorAvailable, configv1.ConditionTrue)(t)
-				f.AssertOperatorCondition(configv1.OperatorDegraded, configv1.ConditionFalse)(t)
-				f.AssertOperatorConditionReason(configv1.OperatorDegraded, client.StorageNotConfiguredReason)
-				f.AssertOperatorConditionMessageContains(configv1.OperatorDegraded, client.StorageNotConfiguredMessage)
+				f.AssertOperatorConditionFunc(configv1.OperatorAvailable, configv1.ConditionTrue)(t)
+				f.AssertOperatorConditionFunc(configv1.OperatorDegraded, configv1.ConditionFalse)(t)
+				f.AssertOperatorConditionReasonFunc(configv1.OperatorDegraded, client.StorageNotConfiguredReason)(t)
+				f.AssertOperatorConditionMessageContainsFunc(configv1.OperatorDegraded, client.StorageNotConfiguredMessage)(t)
 			},
 		},
 		{
@@ -124,10 +124,10 @@ prometheusK8s:
 `, storage),
 			userWorkloadConfig: "",
 			assertion: func(t *testing.T) {
-				f.AssertOperatorCondition(configv1.OperatorAvailable, configv1.ConditionTrue)(t)
-				f.AssertOperatorCondition(configv1.OperatorDegraded, configv1.ConditionFalse)(t)
-				f.AssertOperatorConditionReason(configv1.OperatorDegraded, "")
-				f.AssertOperatorConditionMessage(configv1.OperatorDegraded, "")
+				f.AssertOperatorConditionFunc(configv1.OperatorAvailable, configv1.ConditionTrue)(t)
+				f.AssertOperatorConditionFunc(configv1.OperatorDegraded, configv1.ConditionFalse)(t)
+				f.AssertOperatorConditionReasonFunc(configv1.OperatorDegraded, "")(t)
+				f.AssertOperatorConditionMessageFunc(configv1.OperatorDegraded, "")(t)
 			},
 		},
 		{
@@ -141,10 +141,10 @@ prometheusK8s:
 `, storage),
 			userWorkloadConfig: "",
 			assertion: func(t *testing.T) {
-				f.AssertOperatorCondition(configv1.OperatorAvailable, configv1.ConditionTrue)(t)
-				f.AssertOperatorCondition(configv1.OperatorDegraded, configv1.ConditionFalse)(t)
-				f.AssertOperatorConditionReason(configv1.OperatorDegraded, "")
-				f.AssertOperatorConditionMessage(configv1.OperatorDegraded, "")
+				f.AssertOperatorConditionFunc(configv1.OperatorAvailable, configv1.ConditionTrue)(t)
+				f.AssertOperatorConditionFunc(configv1.OperatorDegraded, configv1.ConditionFalse)(t)
+				f.AssertOperatorConditionReasonFunc(configv1.OperatorDegraded, "")(t)
+				f.AssertOperatorConditionMessageFunc(configv1.OperatorDegraded, "")(t)
 			},
 		},
 		{
@@ -163,10 +163,10 @@ prometheusK8s:
   enabled: true
 `,
 			assertion: func(t *testing.T) {
-				f.AssertOperatorCondition(configv1.OperatorAvailable, configv1.ConditionTrue)(t)
-				f.AssertOperatorCondition(configv1.OperatorDegraded, configv1.ConditionFalse)(t)
-				f.AssertOperatorConditionReason(configv1.OperatorDegraded, client.UserAlermanagerConfigMisconfiguredReason)
-				f.AssertOperatorConditionMessage(configv1.OperatorDegraded, client.UserAlermanagerConfigMisconfiguredMessage)
+				f.AssertOperatorConditionFunc(configv1.OperatorAvailable, configv1.ConditionTrue)(t)
+				f.AssertOperatorConditionFunc(configv1.OperatorDegraded, configv1.ConditionFalse)(t)
+				f.AssertOperatorConditionReasonFunc(configv1.OperatorDegraded, client.UserAlermanagerConfigMisconfiguredReason)(t)
+				f.AssertOperatorConditionMessageFunc(configv1.OperatorDegraded, client.UserAlermanagerConfigMisconfiguredMessage)(t)
 			},
 		},
 		{
@@ -186,10 +186,10 @@ prometheusK8s:
   enableAlertmanagerConfig: true
 `,
 			assertion: func(t *testing.T) {
-				f.AssertOperatorCondition(configv1.OperatorAvailable, configv1.ConditionTrue)(t)
-				f.AssertOperatorCondition(configv1.OperatorDegraded, configv1.ConditionFalse)(t)
-				f.AssertOperatorConditionReason(configv1.OperatorDegraded, "")
-				f.AssertOperatorConditionMessage(configv1.OperatorDegraded, "")
+				f.AssertOperatorConditionFunc(configv1.OperatorAvailable, configv1.ConditionTrue)(t)
+				f.AssertOperatorConditionFunc(configv1.OperatorDegraded, configv1.ConditionFalse)(t)
+				f.AssertOperatorConditionReasonFunc(configv1.OperatorDegraded, "")(t)
+				f.AssertOperatorConditionMessageFunc(configv1.OperatorDegraded, "")(t)
 			},
 		},
 	} {
@@ -220,7 +220,7 @@ func TestClusterMonitorPrometheusOperatorConfig(t *testing.T) {
 		{
 
 			name: "assert pod configuration is as expected",
-			assertion: f.AssertPodConfiguration(
+			assertion: f.AssertPodConfigurationFunc(
 				f.Ns,
 				"app.kubernetes.io/name=prometheus-operator",
 				[]framework.PodAssertion{
@@ -274,15 +274,15 @@ func TestClusterMonitorPrometheusK8Config(t *testing.T) {
 	for _, tc := range []scenario{
 		{
 			name:      "assert pvc was created",
-			assertion: f.AssertPersistentVolumeClaimsExist(pvcClaimName, f.Ns),
+			assertion: f.AssertPersistentVolumeClaimsExistFunc(pvcClaimName, f.Ns),
 		},
 		{
 			name:      "assert ss exists and rolled out",
-			assertion: f.AssertStatefulSetExistsAndRollout(statefulsetName, f.Ns),
+			assertion: f.AssertStatefulSetExistsAndRolloutFunc(statefulsetName, f.Ns),
 		},
 		{
 			name: "assert pod configuration is as expected",
-			assertion: f.AssertPodConfiguration(
+			assertion: f.AssertPodConfigurationFunc(
 				f.Ns,
 				labelSelector,
 				[]framework.PodAssertion{
@@ -312,7 +312,7 @@ func TestClusterMonitorPrometheusK8Config(t *testing.T) {
 		},
 		{
 			name:      "assert rule for Thanos sidecar exists",
-			assertion: f.AssertPrometheusRuleExists(thanosRule, f.Ns),
+			assertion: f.AssertPrometheusRuleExistsFunc(thanosRule, f.Ns),
 		},
 	} {
 		t.Run(tc.name, tc.assertion)
@@ -349,15 +349,15 @@ func TestClusterMonitorAlertManagerConfig(t *testing.T) {
 	for _, tc := range []scenario{
 		{
 			name:      "assert that PVC is created",
-			assertion: f.AssertPersistentVolumeClaimsExist(pvcClaimName, f.Ns),
+			assertion: f.AssertPersistentVolumeClaimsExistFunc(pvcClaimName, f.Ns),
 		},
 		{
 			name:      "assert that ss is created and rolled out",
-			assertion: f.AssertStatefulSetExistsAndRollout(statefulsetName, f.Ns),
+			assertion: f.AssertStatefulSetExistsAndRolloutFunc(statefulsetName, f.Ns),
 		},
 		{
 			name: "assert pod configuration is as expected",
-			assertion: f.AssertPodConfiguration(
+			assertion: f.AssertPodConfigurationFunc(
 				f.Ns,
 				labelSelector,
 				[]framework.PodAssertion{
@@ -385,11 +385,11 @@ func TestClusterMonitorKSMConfig(t *testing.T) {
 	for _, tc := range []scenario{
 		{
 			name:      "test the kube-state-metrics deployment is rolled out",
-			assertion: f.AssertDeploymentExistsAndRollout(deploymentName, f.Ns),
+			assertion: f.AssertDeploymentExistsAndRolloutFunc(deploymentName, f.Ns),
 		},
 		{
 			name: "assert pod configuration is as expected",
-			assertion: f.AssertPodConfiguration(
+			assertion: f.AssertPodConfigurationFunc(
 				f.Ns,
 				"app.kubernetes.io/name=kube-state-metrics",
 				[]framework.PodAssertion{
@@ -416,11 +416,11 @@ func TestClusterMonitorOSMConfig(t *testing.T) {
 	for _, tc := range []scenario{
 		{
 			name:      "test the openshift-state-metrics deployment is rolled out",
-			assertion: f.AssertDeploymentExistsAndRollout(deploymentName, f.Ns),
+			assertion: f.AssertDeploymentExistsAndRolloutFunc(deploymentName, f.Ns),
 		},
 		{
 			name: "assert pod configuration is as expected",
-			assertion: f.AssertPodConfiguration(
+			assertion: f.AssertPodConfigurationFunc(
 				f.Ns,
 				"app.kubernetes.io/name=openshift-state-metrics",
 				[]framework.PodAssertion{
@@ -447,11 +447,11 @@ func TestClusterMonitorTelemeterClientConfig(t *testing.T) {
 	for _, tc := range []scenario{
 		{
 			name:      "test the telemeter-client deployment is rolled out",
-			assertion: f.AssertDeploymentExistsAndRollout(deploymentName, f.Ns),
+			assertion: f.AssertDeploymentExistsAndRolloutFunc(deploymentName, f.Ns),
 		},
 		{
 			name: "assert pod configuration is as expected",
-			assertion: f.AssertPodConfiguration(
+			assertion: f.AssertPodConfigurationFunc(
 				f.Ns,
 				"app.kubernetes.io/name=telemeter-client",
 				[]framework.PodAssertion{
@@ -500,12 +500,12 @@ func TestTelemeterClientSecret(t *testing.T) {
 			oldS := f.MustGetSecret(t, "telemeter-client", f.Ns)
 			f.MustCreateOrUpdateConfigMap(t, f.BuildCMOConfigMap(t, tc.newC))
 			if tc.tokenChanged {
-				f.AssertValueInSecretNotEquals(oldS.GetName(), oldS.GetNamespace(), "token", string(oldS.Data["token"]))
-				f.AssertValueInSecretNotEquals(oldS.GetName(), oldS.GetNamespace(), "salt", string(oldS.Data["salt"]))
+				f.AssertValueInSecretNotEqualsFunc(oldS.GetName(), oldS.GetNamespace(), "token", string(oldS.Data["token"]))
+				f.AssertValueInSecretNotEqualsFunc(oldS.GetName(), oldS.GetNamespace(), "salt", string(oldS.Data["salt"]))
 				return
 			}
-			f.AssertValueInSecretEquals(oldS.GetName(), oldS.GetNamespace(), "token", string(oldS.Data["token"]))
-			f.AssertValueInSecretEquals(oldS.GetName(), oldS.GetNamespace(), "salt", string(oldS.Data["salt"]))
+			f.AssertValueInSecretEqualsFunc(oldS.GetName(), oldS.GetNamespace(), "token", string(oldS.Data["token"]))
+			f.AssertValueInSecretEqualsFunc(oldS.GetName(), oldS.GetNamespace(), "salt", string(oldS.Data["salt"]))
 		})
 	}
 }
@@ -532,11 +532,11 @@ func TestClusterMonitorThanosQuerierConfig(t *testing.T) {
 	for _, test := range []scenario{
 		{
 			name:      "test the thanos-querier deployment is rolled out",
-			assertion: f.AssertDeploymentExistsAndRollout(deploymentName, f.Ns),
+			assertion: f.AssertDeploymentExistsAndRolloutFunc(deploymentName, f.Ns),
 		},
 		{
 			name: "assert pod configuration is as expected",
-			assertion: f.AssertPodConfiguration(
+			assertion: f.AssertPodConfigurationFunc(
 				f.Ns,
 				"app.kubernetes.io/name=thanos-query",
 				[]framework.PodAssertion{
@@ -570,7 +570,7 @@ func TestUserWorkloadMonitorPromOperatorConfig(t *testing.T) {
 	for _, test := range []scenario{
 		{
 			name: "assert pod configuration is as expected",
-			assertion: f.AssertPodConfiguration(
+			assertion: f.AssertPodConfigurationFunc(
 				f.UserWorkloadMonitoringNs,
 				"app.kubernetes.io/name=prometheus-operator",
 				[]framework.PodAssertion{
@@ -633,15 +633,15 @@ func TestUserWorkloadMonitorPrometheusK8Config(t *testing.T) {
 	for _, tc := range []scenario{
 		{
 			name:      "assert pvc was created",
-			assertion: f.AssertPersistentVolumeClaimsExist(pvcClaimName, f.UserWorkloadMonitoringNs),
+			assertion: f.AssertPersistentVolumeClaimsExistFunc(pvcClaimName, f.UserWorkloadMonitoringNs),
 		},
 		{
 			name:      "assert ss exists and rolled out",
-			assertion: f.AssertStatefulSetExistsAndRollout(statefulsetName, f.UserWorkloadMonitoringNs),
+			assertion: f.AssertStatefulSetExistsAndRolloutFunc(statefulsetName, f.UserWorkloadMonitoringNs),
 		},
 		{
 			name: "assert pod configuration is as expected",
-			assertion: f.AssertPodConfiguration(
+			assertion: f.AssertPodConfigurationFunc(
 				f.UserWorkloadMonitoringNs,
 				labelSelector,
 				[]framework.PodAssertion{
@@ -736,15 +736,15 @@ func TestUserWorkloadMonitorThanosRulerConfig(t *testing.T) {
 	for _, tc := range []scenario{
 		{
 			name:      "assert pvc was created",
-			assertion: f.AssertPersistentVolumeClaimsExist(pvcClaimName, f.UserWorkloadMonitoringNs),
+			assertion: f.AssertPersistentVolumeClaimsExistFunc(pvcClaimName, f.UserWorkloadMonitoringNs),
 		},
 		{
 			name:      "assert ss exists and rolled out",
-			assertion: f.AssertStatefulSetExistsAndRollout(statefulsetName, f.UserWorkloadMonitoringNs),
+			assertion: f.AssertStatefulSetExistsAndRolloutFunc(statefulsetName, f.UserWorkloadMonitoringNs),
 		},
 		{
 			name: "assert pod configuration is as expected",
-			assertion: f.AssertPodConfiguration(
+			assertion: f.AssertPodConfigurationFunc(
 				f.UserWorkloadMonitoringNs,
 				"app.kubernetes.io/name=thanos-ruler",
 				[]framework.PodAssertion{
@@ -839,7 +839,7 @@ func TestClusterMonitorConsolePlugin(t *testing.T) {
 	)
 
 	// ensure console-plugin is running and reachable before the change
-	f.AssertDeploymentExistsAndRollout(deploymentName, f.Ns)(t)
+	f.AssertDeploymentExistsAndRolloutFunc(deploymentName, f.Ns)(t)
 	checkMonitorConsolePluginReachable(t, deploymentName)
 
 	data := fmt.Sprintf(`
@@ -857,11 +857,11 @@ monitoringPlugin:
 	for _, tc := range []scenario{
 		{
 			name:      "assert that deployment is created and rolled out",
-			assertion: f.AssertDeploymentExistsAndRollout(deploymentName, f.Ns),
+			assertion: f.AssertDeploymentExistsAndRolloutFunc(deploymentName, f.Ns),
 		},
 		{
 			name: "assert pod configuration is as expected",
-			assertion: f.AssertPodConfiguration(
+			assertion: f.AssertPodConfigurationFunc(
 				f.Ns,
 				labelSelector,
 				[]framework.PodAssertion{
@@ -904,14 +904,14 @@ k8sPrometheusAdapter:
     profile: Request`
 	f.MustCreateOrUpdateConfigMap(t, f.BuildCMOConfigMap(t, data))
 	checkMetricValue(1)
-	f.AssertOperatorCondition(configv1.OperatorUpgradeable, configv1.ConditionFalse)(t)
+	f.AssertOperatorConditionFunc(configv1.OperatorUpgradeable, configv1.ConditionFalse)(t)
 
 	// The metric should be reset to 0.
 	data = `
 k8sPrometheusAdapter:`
 	f.MustCreateOrUpdateConfigMap(t, f.BuildCMOConfigMap(t, data))
 	checkMetricValue(0)
-	f.AssertOperatorCondition(configv1.OperatorUpgradeable, configv1.ConditionTrue)(t)
+	f.AssertOperatorConditionFunc(configv1.OperatorUpgradeable, configv1.ConditionTrue)(t)
 }
 
 // checks that the toleration is present
