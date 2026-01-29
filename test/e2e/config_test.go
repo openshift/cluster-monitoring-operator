@@ -148,7 +148,7 @@ prometheusK8s:
 			},
 		},
 		{
-			name: "default config with presistent storage but with UserAlermanagerConfig missconfiguration",
+			name: "default config with presistent storage but with UserAlermanagerConfig missconfiguration (case 1)",
 			config: fmt.Sprintf(`enableUserWorkload: true
 alertmanagerMain:
   enableUserAlertmanagerConfig: true
@@ -170,7 +170,7 @@ prometheusK8s:
 			},
 		},
 		{
-			name: "default config with presistent storage but with UserAlermanagerConfig missconfiguration",
+			name: "default config with presistent storage but with UserAlermanagerConfig missconfiguration (case 2)",
 			config: fmt.Sprintf(`enableUserWorkload: true
 alertmanagerMain:
   enableUserAlertmanagerConfig: true
@@ -188,8 +188,8 @@ prometheusK8s:
 			assertion: func(t *testing.T) {
 				f.AssertOperatorConditionFunc(configv1.OperatorAvailable, configv1.ConditionTrue)(t)
 				f.AssertOperatorConditionFunc(configv1.OperatorDegraded, configv1.ConditionFalse)(t)
-				f.AssertOperatorConditionReasonFunc(configv1.OperatorDegraded, "")(t)
-				f.AssertOperatorConditionMessageFunc(configv1.OperatorDegraded, "")(t)
+				f.AssertOperatorConditionReasonFunc(configv1.OperatorDegraded, client.UserAlermanagerConfigMisconfiguredReason)(t)
+				f.AssertOperatorConditionMessageFunc(configv1.OperatorDegraded, client.UserAlermanagerConfigMisconfiguredMessage)(t)
 			},
 		},
 	} {
