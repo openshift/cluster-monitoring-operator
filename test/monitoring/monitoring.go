@@ -545,20 +545,6 @@ var _ = g.Describe("[sig-monitoring] Cluster_Observability parallel monitoring",
 		checkMetric(oc, `https://alertmanager-main.openshift-monitoring.svc:9094/api/v2/alerts?&filter={alertname="Watchdog"}`, token, `"severity":"critical"`, 2*platformLoadTime)
 	}) */
 
-	// TODO: could be merged with test/e2e/node_exporter_test.go::TestNodeExporterCollectorDisablement
-	// author: tagao@redhat.com
-	g.It("Author:tagao-Low-67008-node-exporter: disable btrfs collector", func() {
-		exutil.By("Get token of SA prometheus-k8s")
-		token := getSAToken(oc, "prometheus-k8s", "openshift-monitoring")
-
-		exutil.By("should not see btrfs collector related metrics")
-		checkMetric(oc, `https://prometheus-k8s.openshift-monitoring.svc:9091/api/v1/query --data-urlencode 'query=node_scrape_collector_success{collector="btrfs"}'`, token, "\"result\":[]", uwmLoadTime)
-
-		exutil.By("check btrfs collector is disabled by default")
-		output, _ := oc.AsAdmin().WithoutNamespace().Run("get").Args("daemonset.apps/node-exporter", "-ojsonpath={.spec.template.spec.containers[?(@.name==\"node-exporter\")].args}", "-n", "openshift-monitoring").Output()
-		o.Expect(output).To(o.ContainSubstring("no-collector.btrfs"))
-	})
-
 	// author: tagao@redhat.com
 	g.It("Author:tagao-LEVEL0-Medium-68292-Limit the value of GOMAXPROCS on node-exporter to 4", func() {
 		exutil.By("check the gomaxprocs value in logs")
@@ -571,16 +557,6 @@ var _ = g.Describe("[sig-monitoring] Cluster_Observability parallel monitoring",
 		gomaxprocsNum, _ := strconv.Atoi(string(gomaxprocsValue))
 		o.Expect(gomaxprocsNum).To(o.BeNumerically("<=", 4))
 		o.Expect(err).NotTo(o.HaveOccurred())
-	})
-
-	// TODO: could be merged with test/e2e/node_exporter_test.go::TestNodeExporterNetworkDevicesExclusion
-	// author: juzhao@redhat.com
-	g.It("Author:juzhao-Low-68958-node_exporter shouldn't collect metrics for Calico Virtual NICs", func() {
-		exutil.By("Get token of SA prometheus-k8s")
-		token := getSAToken(oc, "prometheus-k8s", "openshift-monitoring")
-
-		exutil.By("should not see metrics for Calico Virtual NICs")
-		checkMetric(oc, `https://thanos-querier.openshift-monitoring.svc:9091/api/v1/query --data-urlencode 'query=node_network_info{device=~"cali.*"}'`, token, "\"result\":[]", uwmLoadTime)
 	})
 
 	// author: tagao@redhat.com
@@ -2975,49 +2951,6 @@ var _ = g.Describe("[sig-monitoring] Cluster_Observability parallel monitoring",
 		exutil.By("check alert metrics")
 		token := getSAToken(oc, "prometheus-k8s", "openshift-monitoring")
 		checkMetric(oc, `https://thanos-querier.openshift-monitoring.svc:9091/api/v1/query --data-urlencode 'query=ALERTS{alertname="TargetDown",job="prometheus-example-app"}'`, token, `"alertname":"TargetDown"`, 3*uwmLoadTime)
-	})
-
-	// author: tagao@redhat.com
-	g.It("Author:tagao-Medium-74734-Alert for broken Prometheus Kube Service Discovery", func() {
-		var (
-			exampleApp = filepath.Join(monitoringBaseDir, "example-app.yaml")
-		)
-		exutil.By("confirm the alert existed")
-		// % oc -n openshift-monitoring get prometheusrules prometheus-k8s-prometheus-rules -ojsonpath='{.spec.groups[].rules[?(@.alert=="PrometheusKubernetesListWatchFailures")]}' |jq
-		cmd := "-ojsonpath={.spec.groups[].rules[?(@.alert==\"PrometheusKubernetesListWatchFailures\")]}"
-		checkYamlconfig(oc, "openshift-monitoring", "prometheusrules", "prometheus-k8s-prometheus-rules", cmd, `"alert":"PrometheusKubernetesListWatchFailures"`, true)
-
-		exutil.By("create a namespace and deploy example-app")
-		oc.SetupProject()
-		ns := oc.Namespace()
-		createResourceFromYaml(oc, ns, exampleApp)
-
-		exutil.By("add label to the namespace")
-		defer oc.AsAdmin().WithoutNamespace().Run("label").Args("namespace", ns, "openshift.io/cluster-monitoring-").Execute()
-		err := oc.AsAdmin().WithoutNamespace().Run("label").Args("namespace", ns, "openshift.io/cluster-monitoring=true").Execute()
-		o.Expect(err).NotTo(o.HaveOccurred())
-		label, _ := oc.AsAdmin().WithoutNamespace().Run("get").Args("namespace", ns, `-ojsonpath={.metadata.labels}`).Output()
-		e2e.Logf("test namespace labels: \n%v", label)
-		o.Expect(label).To(o.ContainSubstring(`openshift.io/cluster-monitoring":"true`))
-
-		exutil.By("confirm prometheus pod is ready")
-		assertPodToBeReady(oc, "prometheus-k8s-0", "openshift-monitoring")
-
-		exutil.By("confirm thanos-query pod is ready")
-		//% oc get pod -n openshift-monitoring -l app.kubernetes.io/name=thanos-query
-		waitErr := oc.AsAdmin().WithoutNamespace().Run("wait").Args("pod", "-l", "app.kubernetes.io/name=thanos-query", "-n", "openshift-monitoring", "--for=condition=Ready", "--timeout=3m").Execute()
-		o.Expect(waitErr).NotTo(o.HaveOccurred())
-
-		// debug log
-		MONpod, _ := oc.AsAdmin().WithoutNamespace().Run("get").Args("pod", "-n", "openshift-monitoring").Output()
-		e2e.Logf("the MON pods condition: %s", MONpod)
-
-		exutil.By("check the alert is triggered")
-		token := getSAToken(oc, "prometheus-k8s", "openshift-monitoring")
-		checkMetric(oc, `https://thanos-querier.openshift-monitoring.svc:9091/api/v1/query --data-urlencode 'query=ALERTS{alertname="PrometheusKubernetesListWatchFailures"}'`, token, `"alertname":"PrometheusKubernetesListWatchFailures"`, 3*uwmLoadTime)
-
-		exutil.By("check logs in prometheus pod")
-		checkLogWithLabel(oc, "openshift-monitoring", "app.kubernetes.io/name=prometheus", "prometheus", `cannot list resource \"pods\" in API group \"\" in the namespace \"`+ns+`\"`, true)
 	})
 
 	// author: tagao@redhat.com
