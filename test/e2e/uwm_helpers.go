@@ -41,6 +41,7 @@ func setupUserWorkloadAssets(t *testing.T, f *framework.Framework) {
 	f.AssertDeploymentExists("prometheus-operator", f.UserWorkloadMonitoringNs)(t)
 	f.AssertStatefulSetExistsAndRollout("prometheus-user-workload", f.UserWorkloadMonitoringNs)(t)
 	f.AssertPrometheusExists("user-workload", f.UserWorkloadMonitoringNs)(t)
+	f.AssertStatefulSetExistsAndRollout("thanos-ruler-user-workload", f.UserWorkloadMonitoringNs)(t)
 }
 
 // setupUserWorkloadAssetsWithTeardownHook enables UWM via the config map and asserts resources are up and running

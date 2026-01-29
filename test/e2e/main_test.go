@@ -212,7 +212,7 @@ func TestNetworkPolicy(t *testing.T) {
 	t.Run("check in-cluster monitoring NetworkPolicies", func(t *testing.T) {
 		for _, name := range networkPolicyNames {
 			t.Run(fmt.Sprintf("assert %s networkpolicy exists", name), func(t *testing.T) {
-				f.AssertNetworkPolicyExists(name, f.Ns)
+				f.AssertNetworkPolicyExistsFunc(name, f.Ns)(t)
 			})
 		}
 	})

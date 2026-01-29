@@ -65,7 +65,7 @@ func TestUserWorkloadWithAlertmanager(t *testing.T) {
 			f: func(t *testing.T) {
 				for _, netpol := range networkPolicyNames {
 					t.Run(fmt.Sprintf("assert %s networkpolicy exists", netpol), func(t *testing.T) {
-						f.AssertNetworkPolicyExists(netpol, f.UserWorkloadMonitoringNs)
+						f.AssertNetworkPolicyExistsFunc(netpol, f.UserWorkloadMonitoringNs)(t)
 					})
 				}
 			},
