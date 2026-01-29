@@ -339,15 +339,7 @@ nodeExporter:
 				)
 			} else {
 				absentQuery := fmt.Sprintf(`absent(%s)`, q)
-				f.PrometheusK8sClient.WaitForQueryReturn(
-					t, 5*time.Minute, absentQuery,
-					func(v float64) error {
-						if v == 1 {
-							return nil
-						}
-						return fmt.Errorf(`expecting absent query for '%s' to return 1, but got %v`, q, v)
-					},
-				)
+				f.PrometheusK8sClient.WaitForQueryReturnOne(t, 5*time.Minute, absentQuery)
 			}
 		})
 	}
