@@ -641,5 +641,27 @@ function(params) {
         },
       ],
     },
+    {
+      // PTAL at https://github.com/openshift/console/blob/release-4.21/frontend/packages/console-app/console-extensions.json#L1781-L1814 for more context on the origin of these rules.
+      name: 'openshift-control-plane-health.rules',
+      rules: [
+        {
+          expr: '(sum(up{job="apiserver",namespace="default"} == 1) / count(kube_pod_labels{label_app="openshift-kube-apiserver",label_apiserver="true",namespace="openshift-kube-apiserver"}))',
+          record: 'openshift:apiservers_up:ratio',
+        },
+        {
+          expr: '(sum(up{job="kube-controller-manager",namespace="openshift-kube-controller-manager"} == 1) / count(up{job="kube-controller-manager",namespace="openshift-kube-controller-manager"}))',
+          record: 'openshift:controller_managers_up:ratio',
+        },
+        {
+          expr: '(sum(up{job="scheduler",namespace="openshift-kube-scheduler"} == 1) / count(up{job="scheduler",namespace="openshift-kube-scheduler"}))',
+          record: 'openshift:schedulers_up:ratio',
+        },
+        {
+          expr: '(1 - (sum(rate(apiserver_request_total{code=~"5.."}[5m])) or vector(0)) / sum(rate(apiserver_request_total[5m])))',
+          record: 'openshift:apiserver_non5xx_requests:rate5m',
+        },
+      ],
+    },
   ],
 }
