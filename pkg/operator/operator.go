@@ -46,6 +46,7 @@ import (
 	"k8s.io/client-go/util/workqueue"
 	"k8s.io/klog/v2"
 	"k8s.io/utils/clock"
+	"k8s.io/utils/ptr"
 
 	"github.com/openshift/cluster-monitoring-operator/pkg/alert"
 	"github.com/openshift/cluster-monitoring-operator/pkg/client"
@@ -1029,6 +1030,13 @@ func (o *Operator) Config(ctx context.Context, key string) (*manifests.Config, [
 		return nil, warnings, err
 	}
 
+	// Merge ClusterMonitoring CRD configuration if feature gate is enabled
+	if o.ClusterMonitoringConfigEnabled {
+		if err := o.mergeClusterMonitoringCRD(ctx, c); err != nil {
+			return nil, warnings, fmt.Errorf("failed to merge ClusterMonitoring CRD: %w", err)
+		}
+	}
+
 	// Only use User Workload Monitoring ConfigMap from user ns and populate if
 	// it's enabled by admin via Cluster Monitoring ConfigMap.  The above
 	// loadConfig() already initializes the structs with nil values for
@@ -1065,6 +1073,42 @@ func (o *Operator) Config(ctx context.Context, key string) (*manifests.Config, [
 		}
 	}
 	return c, warnings, nil
+}
+
+func (o *Operator) mergeClusterMonitoringCRD(ctx context.Context, c *manifests.Config) error {
+	// Try to get the ClusterMonitoring CRD
+	crd, err := o.client.GetClusterMonitoring(ctx, "cluster")
+	if err != nil {
+		if apierrors.IsNotFound(err) {
+			// CRD doesn't exist, nothing to merge
+			return nil
+		}
+		return fmt.Errorf("failed to get ClusterMonitoring CRD: %w", err)
+	}
+
+	// Merge UserDefined configuration
+	if crd.Spec.UserDefined.Mode != "" {
+		if err := o.mergeUserDefinedMonitoring(c, &crd.Spec.UserDefined); err != nil {
+			return fmt.Errorf("failed to merge UserDefined: %w", err)
+		}
+	}
+
+	return nil
+}
+
+func (o *Operator) mergeUserDefinedMonitoring(c *manifests.Config, udm *configv1alpha1.UserDefinedMonitoring) error {
+	if c.ClusterMonitoringConfiguration == nil {
+		c.ClusterMonitoringConfiguration = &manifests.ClusterMonitoringConfiguration{}
+	}
+
+	switch udm.Mode {
+	case configv1alpha1.UserDefinedDisabled:
+		c.ClusterMonitoringConfiguration.UserWorkloadEnabled = ptr.To(false)
+	case configv1alpha1.UserDefinedNamespaceIsolated:
+		c.ClusterMonitoringConfiguration.UserWorkloadEnabled = ptr.To(true)
+	}
+
+	return nil
 }
 
 // storageNotConfiguredMessage returns the message to be set if a pvc has not
