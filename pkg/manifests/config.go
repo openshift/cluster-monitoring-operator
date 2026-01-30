@@ -451,11 +451,13 @@ func (c *Config) applyDefaults() {
 		// * OVN virtual interfaces `ovn-k8s-mp[0-9]*`
 		// * virtual tunnels and bridges: `tun[0-9]*|br[0-9]*|br-ex|br-int|br-ext`
 		// * Calico Virtual NICs `cali[a-f0-9]*`
+		// * bond devices
 		//
 		// Refer to:
 		// https://issues.redhat.com/browse/OCPBUGS-1321
 		// https://issues.redhat.com/browse/OCPBUGS-2729
 		// https://issues.redhat.com/browse/OCPBUGS-7282
+		// https://issues.redhat.com/browse/OCPBUGS-74347
 		c.ClusterMonitoringConfiguration.NodeExporterConfig.IgnoredNetworkDevices = ptr.To([]string{
 			"veth.*",
 			"[a-f0-9]{15}",
@@ -467,6 +469,7 @@ func (c *Config) applyDefaults() {
 			"br[0-9]*",
 			"tun[0-9]*",
 			"cali[a-f0-9]*",
+			"bond.*",
 		})
 	}
 }
