@@ -32,6 +32,7 @@ import (
 	"github.com/openshift/library-go/pkg/operator/configobserver/featuregates"
 	"github.com/openshift/library-go/pkg/operator/csr"
 	"github.com/openshift/library-go/pkg/operator/events"
+	monv1 "github.com/prometheus-operator/prometheus-operator/pkg/apis/monitoring/v1"
 	certapiv1 "k8s.io/api/certificates/v1"
 	v1 "k8s.io/api/core/v1"
 	apierrors "k8s.io/apimachinery/pkg/api/errors"
@@ -1029,6 +1030,13 @@ func (o *Operator) Config(ctx context.Context, key string) (*manifests.Config, [
 		return nil, warnings, err
 	}
 
+	// Merge ClusterMonitoring CRD configuration if feature gate is enabled
+	if o.ClusterMonitoringConfigEnabled {
+		if err := o.mergeClusterMonitoringCRD(ctx, c); err != nil {
+			return nil, warnings, fmt.Errorf("failed to merge ClusterMonitoring CRD: %w", err)
+		}
+	}
+
 	// Only use User Workload Monitoring ConfigMap from user ns and populate if
 	// it's enabled by admin via Cluster Monitoring ConfigMap.  The above
 	// loadConfig() already initializes the structs with nil values for
@@ -1065,6 +1073,100 @@ func (o *Operator) Config(ctx context.Context, key string) (*manifests.Config, [
 		}
 	}
 	return c, warnings, nil
+}
+
+func (o *Operator) mergeClusterMonitoringCRD(ctx context.Context, c *manifests.Config) error {
+	crd, err := o.client.GetClusterMonitoring(ctx, clusterResourceName)
+	if err != nil {
+		if apierrors.IsNotFound(err) {
+			return nil
+		}
+		return fmt.Errorf("failed to get ClusterMonitoring CRD: %w", err)
+	}
+
+	if crd.Spec.AlertmanagerConfig.DeploymentMode != "" {
+		if err := o.mergeAlertmanagerConfig(c, &crd.Spec.AlertmanagerConfig); err != nil {
+			return fmt.Errorf("failed to merge AlertmanagerConfig: %w", err)
+		}
+	}
+
+	return nil
+}
+
+func (o *Operator) mergeAlertmanagerConfig(c *manifests.Config, amConfig *configv1alpha1.AlertmanagerConfig) error {
+	if amConfig.DeploymentMode == configv1alpha1.AlertManagerDeployModeDisabled {
+		enabled := false
+		c.ClusterMonitoringConfiguration.AlertmanagerMainConfig.Enabled = &enabled
+		return nil
+	}
+
+	if c.ClusterMonitoringConfiguration.AlertmanagerMainConfig == nil {
+		c.ClusterMonitoringConfiguration.AlertmanagerMainConfig = &manifests.AlertmanagerMainConfig{}
+	}
+
+	if amConfig.DeploymentMode == configv1alpha1.AlertManagerDeployModeDefaultConfig {
+		enabled := true
+		c.ClusterMonitoringConfiguration.AlertmanagerMainConfig.Enabled = &enabled
+		return nil
+	}
+
+	if amConfig.DeploymentMode == configv1alpha1.AlertManagerDeployModeCustomConfig {
+		enabled := true
+		c.ClusterMonitoringConfiguration.AlertmanagerMainConfig.Enabled = &enabled
+
+		cfg := &amConfig.CustomConfig
+
+		if cfg.LogLevel != "" {
+			c.ClusterMonitoringConfiguration.AlertmanagerMainConfig.LogLevel = strings.ToLower(string(cfg.LogLevel))
+		} else {
+			// API default for CustomConfig is Info when omitted.
+			c.ClusterMonitoringConfiguration.AlertmanagerMainConfig.LogLevel = "info"
+		}
+
+		if len(cfg.NodeSelector) > 0 {
+			c.ClusterMonitoringConfiguration.AlertmanagerMainConfig.NodeSelector = cfg.NodeSelector
+		}
+
+		if len(cfg.Resources) > 0 {
+			resources := &v1.ResourceRequirements{
+				Requests: v1.ResourceList{},
+				Limits:   v1.ResourceList{},
+			}
+			for _, res := range cfg.Resources {
+				if !res.Request.IsZero() {
+					resources.Requests[v1.ResourceName(res.Name)] = res.Request
+				}
+				if !res.Limit.IsZero() {
+					resources.Limits[v1.ResourceName(res.Name)] = res.Limit
+				}
+			}
+			c.ClusterMonitoringConfiguration.AlertmanagerMainConfig.Resources = resources
+		}
+
+		if len(cfg.Secrets) > 0 {
+			secrets := make([]string, len(cfg.Secrets))
+			for i, s := range cfg.Secrets {
+				secrets[i] = string(s)
+			}
+			c.ClusterMonitoringConfiguration.AlertmanagerMainConfig.Secrets = secrets
+		}
+
+		if len(cfg.Tolerations) > 0 {
+			c.ClusterMonitoringConfiguration.AlertmanagerMainConfig.Tolerations = cfg.Tolerations
+		}
+
+		if len(cfg.TopologySpreadConstraints) > 0 {
+			c.ClusterMonitoringConfiguration.AlertmanagerMainConfig.TopologySpreadConstraints = cfg.TopologySpreadConstraints
+		}
+
+		if cfg.VolumeClaimTemplate != nil {
+			c.ClusterMonitoringConfiguration.AlertmanagerMainConfig.VolumeClaimTemplate = &monv1.EmbeddedPersistentVolumeClaim{
+				Spec: cfg.VolumeClaimTemplate.Spec,
+			}
+		}
+	}
+
+	return nil
 }
 
 // storageNotConfiguredMessage returns the message to be set if a pvc has not
