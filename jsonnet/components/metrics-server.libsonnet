@@ -173,6 +173,21 @@ function(params) {
         },
         spec: {
           affinity: {
+            nodeAffinity: {
+              preferredDuringSchedulingIgnoredDuringExecution: [
+                {
+                  weight: 100,
+                  preference: {
+                    matchExpressions: [
+                      {
+                        key: 'node-role.kubernetes.io/control-plane',
+                        operator: 'Exists',
+                      },
+                    ],
+                  },
+                },
+              ],
+            },
             podAntiAffinity: {
               requiredDuringSchedulingIgnoredDuringExecution: [
                 {
@@ -274,6 +289,12 @@ function(params) {
             'kubernetes.io/os': 'linux',
           },
           priorityClassName: 'system-cluster-critical',
+          tolerations: [
+            {
+              key: 'node-role.kubernetes.io/master',
+              effect: 'NoSchedule',
+            },
+          ],
           serviceAccountName: 'metrics-server',
           terminationGracePeriodSeconds: 170,
           volumes: [
