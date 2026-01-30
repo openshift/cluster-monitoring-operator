@@ -2,19 +2,22 @@ package framework
 
 import (
 	"context"
-	apiextv1 "k8s.io/apiextensions-apiserver/pkg/apis/apiextensions/v1"
-	"k8s.io/apimachinery/pkg/runtime"
-	"k8s.io/apimachinery/pkg/runtime/serializer"
-	"k8s.io/client-go/kubernetes/scheme"
 	"os"
 	"path/filepath"
 	"testing"
 	"time"
 
+	apiextv1 "k8s.io/apiextensions-apiserver/pkg/apis/apiextensions/v1"
+	"k8s.io/apimachinery/pkg/runtime"
+	"k8s.io/apimachinery/pkg/runtime/serializer"
+	"k8s.io/client-go/kubernetes/scheme"
+
 	configv1 "github.com/openshift/api/config/v1"
+	configv1alpha1 "github.com/openshift/api/config/v1alpha1"
 	"gopkg.in/yaml.v2"
 	appsv1 "k8s.io/api/apps/v1"
 	v1 "k8s.io/api/core/v1"
+	apierrors "k8s.io/apimachinery/pkg/api/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/util/wait"
 )
@@ -27,6 +30,42 @@ const (
 	E2eTestLabelValue = "cmo-e2e-test"
 	E2eTestLabel      = E2eTestLabelName + ": " + E2eTestLabelValue
 )
+
+// MustCreateOrUpdateClusterMonitoring creates or updates a ClusterMonitoring CR or fails the test.
+func (f *Framework) MustCreateOrUpdateClusterMonitoring(t *testing.T, cm *configv1alpha1.ClusterMonitoring) {
+	t.Helper()
+
+	ctx := context.Background()
+	clusterMonitorings := f.OpenShiftConfigClient.ConfigV1alpha1().ClusterMonitorings()
+
+	_, err := clusterMonitorings.Create(ctx, cm, metav1.CreateOptions{})
+	if err != nil {
+		if !apierrors.IsAlreadyExists(err) {
+			t.Fatalf("failed to create ClusterMonitoring: %v", err)
+		}
+		// If it exists, update it
+		existingCM, err := clusterMonitorings.Get(ctx, cm.Name, metav1.GetOptions{})
+		if err != nil {
+			t.Fatalf("failed to get existing ClusterMonitoring: %v", err)
+		}
+		existingCM.Spec = cm.Spec
+		_, err = clusterMonitorings.Update(ctx, existingCM, metav1.UpdateOptions{})
+		if err != nil {
+			t.Fatalf("failed to update ClusterMonitoring: %v", err)
+		}
+	}
+}
+
+// MustDeleteClusterMonitoring deletes a ClusterMonitoring CR or fails the test.
+func (f *Framework) MustDeleteClusterMonitoring(t *testing.T, cm *configv1alpha1.ClusterMonitoring) {
+	t.Helper()
+
+	ctx := context.Background()
+	err := f.OpenShiftConfigClient.ConfigV1alpha1().ClusterMonitorings().Delete(ctx, cm.Name, metav1.DeleteOptions{})
+	if err != nil && !apierrors.IsNotFound(err) {
+		t.Fatalf("failed to delete ClusterMonitoring: %v", err)
+	}
+}
 
 // BuildCMOConfigMap returns a ConfigMap holding the provided Cluster
 // Monitoring Operator's config.
