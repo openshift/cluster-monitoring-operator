@@ -178,7 +178,7 @@ local inCluster =
         mixin+: {
           ruleLabels: $.values.common.ruleLabels,
           _config+: {
-            diskDeviceSelector: 'device=~"mmcblk.p.+|nvme.+|sd.+|vd.+|xvd.+|dm-.+|dasd.+"',
+            diskDeviceSelector: 'device=~"mmcblk.p.+|nvme.+|sd.+|vd.+|xvd.+|dm-.+|md.+|dasd.+"',
             rateInterval: '1m',  // adjust the rate interval value to be 4 x the node_exporter's scrape interval (15s).
             fsMountpointSelector: 'mountpoint!~"/var/lib/ibmc-s3fs.*"',
           },
