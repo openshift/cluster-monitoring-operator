@@ -129,9 +129,10 @@ func TestNodeExporterCollectorDisablement(t *testing.T) {
 	})
 
 	tests := []struct {
-		nameCollector string
-		config        string
-		metrics       []string
+		nameCollector     string
+		disabledByDefault bool
+		config            string
+		metrics           []string
 	}{
 		{
 			nameCollector: "netdev",
@@ -185,22 +186,29 @@ nodeExporter:
 				"node_network_up",
 			},
 		},
+		{
+			nameCollector:     "btrfs",
+			disabledByDefault: true,
+			config:            ``,
+		},
 	}
 
 	for _, test := range tests {
-		t.Run("Disable Collector: "+test.nameCollector, func(st *testing.T) {
-			f.PrometheusK8sClient.WaitForQueryReturn(
-				t, 5*time.Minute, fmt.Sprintf(`min(node_scrape_collector_success{collector="%s"})`, test.nameCollector),
-				func(v float64) error {
-					if v == 1 {
-						return nil
-					}
-					return fmt.Errorf(`expecting min(node_scrape_collector_success{collector="%s"}) = 1 but got %v.`, test.nameCollector, v)
-				},
-			)
+		t.Run("collector: "+test.nameCollector, func(st *testing.T) {
+			if !test.disabledByDefault {
+				f.PrometheusK8sClient.WaitForQueryReturn(
+					t, 5*time.Minute, fmt.Sprintf(`min(node_scrape_collector_success{collector="%s"})`, test.nameCollector),
+					func(v float64) error {
+						if v == 1 {
+							return nil
+						}
+						return fmt.Errorf(`expecting min(node_scrape_collector_success{collector="%s"}) = 1 but got %v.`, test.nameCollector, v)
+					},
+				)
 
-			for _, metric := range test.metrics {
-				f.PrometheusK8sClient.WaitForQueryReturnEmpty(t, 5*time.Minute, fmt.Sprintf(`absent(%s)`, metric))
+				for _, metric := range test.metrics {
+					f.PrometheusK8sClient.WaitForQueryReturnEmpty(t, 5*time.Minute, fmt.Sprintf(`absent(%s)`, metric))
+				}
 			}
 
 			f.MustCreateOrUpdateConfigMap(t, f.BuildCMOConfigMap(t, test.config))
@@ -300,6 +308,11 @@ func TestNodeExporterNetworkDevicesExclusion(t *testing.T) {
 			mustExist: true,
 		},
 		{
+			name:      "default devices exclude 'cali.*'",
+			filter:    `device=~"cali.*"`,
+			mustExist: false,
+		},
+		{
 			name: "excluding 'lo'",
 			config: `
 nodeExporter:
@@ -333,7 +346,8 @@ nodeExporter:
 					},
 				)
 			} else {
-				f.PrometheusK8sClient.WaitForQueryReturnEmpty(t, 5*time.Minute, fmt.Sprintf(`absent(%s)`, q))
+				absentQuery := fmt.Sprintf(`absent(%s)`, q)
+				f.PrometheusK8sClient.WaitForQueryReturnOne(t, 5*time.Minute, absentQuery)
 			}
 		})
 	}
