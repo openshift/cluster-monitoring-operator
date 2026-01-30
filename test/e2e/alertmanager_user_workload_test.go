@@ -37,8 +37,8 @@ func TestUserWorkloadWithAlertmanager(t *testing.T) {
 	f.MustCreateOrUpdateConfigMap(t, uwmCM)
 	defer f.MustDeleteConfigMap(t, uwmCM)
 
-	f.AssertStatefulSetExistsAndRollout("alertmanager-user-workload", f.UserWorkloadMonitoringNs)(t)
-	f.AssertServiceExists("alertmanager-user-workload", f.UserWorkloadMonitoringNs)(t)
+	f.AssertStatefulSetExistsAndRolloutFunc("alertmanager-user-workload", f.UserWorkloadMonitoringNs)(t)
+	f.AssertServiceExistsFunc("alertmanager-user-workload", f.UserWorkloadMonitoringNs)(t)
 
 	// since this func enabled User Workload Alertmanager, check all NetworkPolicies are deployed
 	// under UWM project and the total deployed NetworkPolicies count matches with the required
