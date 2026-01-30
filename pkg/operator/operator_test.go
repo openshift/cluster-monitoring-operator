@@ -21,12 +21,14 @@ import (
 	"testing"
 
 	configv1 "github.com/openshift/api/config/v1"
+	configv1alpha1 "github.com/openshift/api/config/v1alpha1"
 	"github.com/stretchr/testify/require"
 	apiutilerrors "k8s.io/apimachinery/pkg/util/errors"
 
 	"github.com/openshift/cluster-monitoring-operator/pkg/client"
 	"github.com/openshift/cluster-monitoring-operator/pkg/manifests"
 	"github.com/openshift/cluster-monitoring-operator/pkg/tasks"
+	"k8s.io/utils/ptr"
 )
 
 func TestNewInfrastructureConfig(t *testing.T) {
@@ -555,6 +557,139 @@ func TestGenerateRunReportFromTaskErrors(t *testing.T) {
 	for _, tc := range tt {
 		t.Run(tc.name, func(t *testing.T) {
 			require.Equal(t, tc.expectedReport, generateRunReportFromTaskErrors(tc.taskGroupErrors))
+		})
+	}
+}
+
+func TestApplyUserDefinedMode(t *testing.T) {
+	for _, tc := range []struct {
+		name     string
+		udm      configv1alpha1.UserDefinedMonitoring
+		expected *bool
+	}{
+		{
+			name:     "Disabled",
+			udm:      configv1alpha1.UserDefinedMonitoring{Mode: configv1alpha1.UserDefinedDisabled},
+			expected: ptr.To(false),
+		},
+		{
+			name:     "NamespaceIsolated",
+			udm:      configv1alpha1.UserDefinedMonitoring{Mode: configv1alpha1.UserDefinedNamespaceIsolated},
+			expected: ptr.To(true),
+		},
+		{
+			name:     "empty mode",
+			udm:      configv1alpha1.UserDefinedMonitoring{},
+			expected: nil,
+		},
+		{
+			name:     "unknown mode",
+			udm:      configv1alpha1.UserDefinedMonitoring{Mode: "Unknown"},
+			expected: nil,
+		},
+	} {
+		t.Run(tc.name, func(t *testing.T) {
+			got := applyUserDefinedMode(tc.udm)
+			if tc.expected == nil {
+				require.Nil(t, got)
+				return
+			}
+			require.NotNil(t, got)
+			require.Equal(t, *tc.expected, *got)
+		})
+	}
+}
+
+func TestMergeClusterMonitoringCRD(t *testing.T) {
+	ptrFalse := ptr.To(false)
+	ptrTrue := ptr.To(true)
+
+	for _, tc := range []struct {
+		name        string
+		c           *manifests.Config
+		cm          *configv1alpha1.ClusterMonitoring
+		expectErr   bool
+		expectValue *bool // expected UserWorkloadEnabled after merge (nil = no check)
+	}{
+		{
+			name:      "cm nil returns config unchanged",
+			c:         &manifests.Config{},
+			cm:        nil,
+			expectErr: false,
+		},
+		{
+			name: "cm with empty Mode returns config unchanged",
+			c:    &manifests.Config{},
+			cm: &configv1alpha1.ClusterMonitoring{
+				Spec: configv1alpha1.ClusterMonitoringSpec{
+					UserDefined: configv1alpha1.UserDefinedMonitoring{Mode: ""},
+				},
+			},
+			expectErr: false,
+		},
+		{
+			name: "UserDefinedDisabled sets UserWorkloadEnabled to false",
+			c:    &manifests.Config{},
+			cm: &configv1alpha1.ClusterMonitoring{
+				Spec: configv1alpha1.ClusterMonitoringSpec{
+					UserDefined: configv1alpha1.UserDefinedMonitoring{Mode: configv1alpha1.UserDefinedDisabled},
+				},
+			},
+			expectErr:   false,
+			expectValue: ptrFalse,
+		},
+		{
+			name: "UserDefinedNamespaceIsolated sets UserWorkloadEnabled to true",
+			c:    &manifests.Config{},
+			cm: &configv1alpha1.ClusterMonitoring{
+				Spec: configv1alpha1.ClusterMonitoringSpec{
+					UserDefined: configv1alpha1.UserDefinedMonitoring{Mode: configv1alpha1.UserDefinedNamespaceIsolated},
+				},
+			},
+			expectErr:   false,
+			expectValue: ptrTrue,
+		},
+		{
+			name: "creates ClusterMonitoringConfiguration when nil",
+			c:    &manifests.Config{},
+			cm: &configv1alpha1.ClusterMonitoring{
+				Spec: configv1alpha1.ClusterMonitoringSpec{
+					UserDefined: configv1alpha1.UserDefinedMonitoring{Mode: configv1alpha1.UserDefinedDisabled},
+				},
+			},
+			expectErr:   false,
+			expectValue: ptrFalse,
+		},
+		{
+			name: "keeps ConfigMap UserWorkloadEnabled when set (ConfigMap wins over CRD)",
+			c: &manifests.Config{
+				ClusterMonitoringConfiguration: &manifests.ClusterMonitoringConfiguration{
+					UserWorkloadEnabled: ptrTrue,
+				},
+			},
+			cm: &configv1alpha1.ClusterMonitoring{
+				Spec: configv1alpha1.ClusterMonitoringSpec{
+					UserDefined: configv1alpha1.UserDefinedMonitoring{Mode: configv1alpha1.UserDefinedDisabled},
+				},
+			},
+			expectErr:   false,
+			expectValue: ptrTrue,
+		},
+	} {
+		t.Run(tc.name, func(t *testing.T) {
+			o := &Operator{}
+			out, err := o.mergeClusterMonitoringCRD(tc.c, tc.cm)
+			if tc.expectErr {
+				require.Error(t, err)
+				return
+			}
+			require.NoError(t, err)
+			require.Same(t, tc.c, out)
+			if tc.expectValue != nil {
+				require.NotNil(t, out.ClusterMonitoringConfiguration)
+				require.NotNil(t, out.ClusterMonitoringConfiguration.UserWorkloadEnabled)
+				require.Equal(t, *tc.expectValue, *out.ClusterMonitoringConfiguration.UserWorkloadEnabled)
+			}
 		})
 	}
 }

@@ -395,9 +395,9 @@ func (c *Config) applyDefaults() {
 		c.ClusterMonitoringConfiguration.AlertmanagerMainConfig = &AlertmanagerMainConfig{}
 	}
 
-	if c.ClusterMonitoringConfiguration.UserWorkloadEnabled == nil {
-		c.ClusterMonitoringConfiguration.UserWorkloadEnabled = ptr.To(false)
-	}
+	// UserWorkloadEnabled is left nil when not set by ConfigMap so the operator can
+	// apply ClusterMonitoring CRD merge (UserDefined mode) when the feature gate is on.
+	// The operator defaults it to false after merge when still nil.
 
 	if c.ClusterMonitoringConfiguration.UserWorkload == nil {
 		c.ClusterMonitoringConfiguration.UserWorkload = &UserWorkloadConfig{}

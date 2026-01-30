@@ -20,6 +20,7 @@ import (
 	"flag"
 	"fmt"
 	"log"
+	"os"
 	"testing"
 	"time"
 
@@ -45,10 +46,14 @@ func TestMain(m *testing.M) {
 // http://blog.englund.nu/golang,/testing/2017/03/12/using-defer-in-testmain.html
 func testMain(m *testing.M) error {
 	ctx := context.Background()
+	defaultKubeConfig := clientcmd.RecommendedHomeFile
+	if v := os.Getenv("KUBECONFIG"); v != "" {
+		defaultKubeConfig = v
+	}
 	kubeConfigPath := flag.String(
 		"kubeconfig",
-		clientcmd.RecommendedHomeFile,
-		"kube config path, default: $HOME/.kube/config",
+		defaultKubeConfig,
+		"kube config path, default: $KUBECONFIG or $HOME/.kube/config",
 	)
 
 	flag.Parse()
