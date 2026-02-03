@@ -171,7 +171,7 @@ local patchedRules = [
           min by (namespace,service, integration) (
             rate(alertmanager_notifications_failed_total{job=~"alertmanager-main|alertmanager-user-workload", integration=~`.*`}[15m])
           /
-            ignoring (reason) group_left rate(alertmanager_notifications_total{job=~"alertmanager-main|alertmanager-user-workload", integration=~`.*`}[15m])
+            ignoring (reason) group_left rate(alertmanager_notifications_total{job=~"alertmanager-main|alertmanager-user-workload", integration=~`.*`}[15m]) > 0
           )
           > 0.01
         |||,
