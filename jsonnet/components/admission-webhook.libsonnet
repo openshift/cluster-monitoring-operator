@@ -34,6 +34,13 @@ function(params)
             // enforce client authentication.
             securityContext: {},
             priorityClassName: 'system-cluster-critical',
+            tolerations: [
+              {
+                key: 'node-role.kubernetes.io/master',
+                effect: 'NoSchedule',
+                operator: 'Exists',
+              },
+            ],
             containers:
               std.map(
                 function(c)
