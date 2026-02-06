@@ -1080,20 +1080,25 @@ func (o *Operator) Config(ctx context.Context, key string) (*manifests.Config, [
 	return c, warnings, nil
 }
 
+// mergeClusterMonitoringCRD merges ClusterMonitoring CRD spec into the ConfigMap-derived config.
+// Phase 1 merge rule for top-level fields: if a field is nil in the ConfigMap, use the CRD value;
+// otherwise keep the ConfigMap value.
 func (o *Operator) mergeClusterMonitoringCRD(c *manifests.Config, cm *configv1alpha1.ClusterMonitoring) (*manifests.Config, error) {
-	if cm == nil || cm.Spec.UserDefined.Mode == "" {
-		return c, nil
-	}
-
-	userWorkloadEnabled := applyUserDefinedMode(cm.Spec.UserDefined)
-	if userWorkloadEnabled == nil {
+	if cm == nil {
 		return c, nil
 	}
 
 	if c.ClusterMonitoringConfiguration == nil {
 		c.ClusterMonitoringConfiguration = &manifests.ClusterMonitoringConfiguration{}
 	}
-	c.ClusterMonitoringConfiguration.UserWorkloadEnabled = userWorkloadEnabled
+
+	// UserDefined (CRD) -> UserWorkloadEnabled (ConfigMap): only set from CRD when ConfigMap has no opinion.
+	if c.ClusterMonitoringConfiguration.UserWorkloadEnabled == nil && cm.Spec.UserDefined.Mode != "" {
+		if userWorkloadEnabled := applyUserDefinedMode(cm.Spec.UserDefined); userWorkloadEnabled != nil {
+			c.ClusterMonitoringConfiguration.UserWorkloadEnabled = userWorkloadEnabled
+		}
+	}
+
 	return c, nil
 }
 

@@ -661,7 +661,7 @@ func TestMergeClusterMonitoringCRD(t *testing.T) {
 			expectValue: ptrFalse,
 		},
 		{
-			name: "overrides existing UserWorkloadEnabled",
+			name: "keeps ConfigMap UserWorkloadEnabled when set (ConfigMap wins over CRD)",
 			c: &manifests.Config{
 				ClusterMonitoringConfiguration: &manifests.ClusterMonitoringConfiguration{
 					UserWorkloadEnabled: ptrTrue,
@@ -673,7 +673,7 @@ func TestMergeClusterMonitoringCRD(t *testing.T) {
 				},
 			},
 			expectErr:   false,
-			expectValue: ptrFalse,
+			expectValue: ptrTrue,
 		},
 	} {
 		t.Run(tc.name, func(t *testing.T) {
