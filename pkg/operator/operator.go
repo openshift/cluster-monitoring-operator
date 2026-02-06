@@ -1032,7 +1032,12 @@ func (o *Operator) Config(ctx context.Context, key string) (*manifests.Config, [
 
 	// Merge ClusterMonitoring CRD configuration if feature gate is enabled
 	if o.ClusterMonitoringConfigEnabled {
-		if err := o.mergeClusterMonitoringCRD(ctx, c); err != nil {
+		cm, getErr := o.client.GetClusterMonitoring(ctx, "cluster")
+		if getErr != nil && !apierrors.IsNotFound(getErr) {
+			return nil, warnings, fmt.Errorf("failed to get ClusterMonitoring CRD: %w", getErr)
+		}
+		c, err = o.mergeClusterMonitoringCRD(c, cm)
+		if err != nil {
 			return nil, warnings, fmt.Errorf("failed to merge ClusterMonitoring CRD: %w", err)
 		}
 	}
@@ -1075,40 +1080,32 @@ func (o *Operator) Config(ctx context.Context, key string) (*manifests.Config, [
 	return c, warnings, nil
 }
 
-func (o *Operator) mergeClusterMonitoringCRD(ctx context.Context, c *manifests.Config) error {
-	// Try to get the ClusterMonitoring CRD
-	crd, err := o.client.GetClusterMonitoring(ctx, "cluster")
-	if err != nil {
-		if apierrors.IsNotFound(err) {
-			// CRD doesn't exist, nothing to merge
-			return nil
-		}
-		return fmt.Errorf("failed to get ClusterMonitoring CRD: %w", err)
+func (o *Operator) mergeClusterMonitoringCRD(c *manifests.Config, cm *configv1alpha1.ClusterMonitoring) (*manifests.Config, error) {
+	if cm == nil || cm.Spec.UserDefined.Mode == "" {
+		return c, nil
 	}
 
-	// Merge UserDefined configuration
-	if crd.Spec.UserDefined.Mode != "" {
-		if err := o.mergeUserDefinedMonitoring(c, &crd.Spec.UserDefined); err != nil {
-			return fmt.Errorf("failed to merge UserDefined: %w", err)
-		}
+	userWorkloadEnabled := applyUserDefinedMode(cm.Spec.UserDefined)
+	if userWorkloadEnabled == nil {
+		return c, nil
 	}
 
-	return nil
-}
-
-func (o *Operator) mergeUserDefinedMonitoring(c *manifests.Config, udm *configv1alpha1.UserDefinedMonitoring) error {
 	if c.ClusterMonitoringConfiguration == nil {
 		c.ClusterMonitoringConfiguration = &manifests.ClusterMonitoringConfiguration{}
 	}
+	c.ClusterMonitoringConfiguration.UserWorkloadEnabled = userWorkloadEnabled
+	return c, nil
+}
 
+func applyUserDefinedMode(udm configv1alpha1.UserDefinedMonitoring) *bool {
 	switch udm.Mode {
 	case configv1alpha1.UserDefinedDisabled:
-		c.ClusterMonitoringConfiguration.UserWorkloadEnabled = ptr.To(false)
+		return ptr.To(false)
 	case configv1alpha1.UserDefinedNamespaceIsolated:
-		c.ClusterMonitoringConfiguration.UserWorkloadEnabled = ptr.To(true)
+		return ptr.To(true)
+	default:
+		return nil
 	}
-
-	return nil
 }
 
 // storageNotConfiguredMessage returns the message to be set if a pvc has not
