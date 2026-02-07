@@ -39,6 +39,7 @@ import (
 	k8sruntime "k8s.io/apimachinery/pkg/runtime"
 	apiutilerrors "k8s.io/apimachinery/pkg/util/errors"
 	utilruntime "k8s.io/apimachinery/pkg/util/runtime"
+	auditv1 "k8s.io/apiserver/pkg/apis/audit/v1"
 	"k8s.io/client-go/informers"
 	"k8s.io/client-go/kubernetes"
 	"k8s.io/client-go/rest"
@@ -46,6 +47,7 @@ import (
 	"k8s.io/client-go/util/workqueue"
 	"k8s.io/klog/v2"
 	"k8s.io/utils/clock"
+	"k8s.io/utils/ptr"
 
 	"github.com/openshift/cluster-monitoring-operator/pkg/alert"
 	"github.com/openshift/cluster-monitoring-operator/pkg/client"
@@ -1029,6 +1031,13 @@ func (o *Operator) Config(ctx context.Context, key string) (*manifests.Config, [
 		return nil, warnings, err
 	}
 
+	// Merge ClusterMonitoring CRD configuration if feature gate is enabled
+	if o.ClusterMonitoringConfigEnabled {
+		if err := o.mergeClusterMonitoringCRD(ctx, c); err != nil {
+			return nil, warnings, fmt.Errorf("failed to merge ClusterMonitoring CRD: %w", err)
+		}
+	}
+
 	// Only use User Workload Monitoring ConfigMap from user ns and populate if
 	// it's enabled by admin via Cluster Monitoring ConfigMap.  The above
 	// loadConfig() already initializes the structs with nil values for
@@ -1065,6 +1074,105 @@ func (o *Operator) Config(ctx context.Context, key string) (*manifests.Config, [
 		}
 	}
 	return c, warnings, nil
+}
+
+func (o *Operator) mergeClusterMonitoringCRD(ctx context.Context, c *manifests.Config) error {
+	// Try to get the ClusterMonitoring CRD
+	crd, err := o.client.GetClusterMonitoring(ctx, "cluster")
+	if err != nil {
+		if apierrors.IsNotFound(err) {
+			// CRD doesn't exist, nothing to merge
+			return nil
+		}
+		return fmt.Errorf("failed to get ClusterMonitoring CRD: %w", err)
+	}
+
+	// Merge UserDefined configuration
+	if crd.Spec.UserDefined.Mode != "" {
+		if err := o.mergeUserDefinedMonitoring(c, &crd.Spec.UserDefined); err != nil {
+			return fmt.Errorf("failed to merge UserDefined: %w", err)
+		}
+	}
+
+	// Merge MetricsServerConfig from CR
+	if err := o.mergeMetricsServerConfig(c, &crd.Spec.MetricsServerConfig); err != nil {
+		return fmt.Errorf("failed to merge MetricsServerConfig: %w", err)
+	}
+
+	return nil
+}
+
+// verbosityLevelToNumeric maps ClusterMonitoring API VerbosityLevel to metrics-server --v=N (klog level).
+func verbosityLevelToNumeric(level configv1alpha1.VerbosityLevel) uint8 {
+	switch level {
+	case configv1alpha1.VerbosityLevelErrors:
+		return 0
+	case configv1alpha1.VerbosityLevelInfo:
+		return 2
+	case configv1alpha1.VerbosityLevelTrace:
+		return 3
+	case configv1alpha1.VerbosityLevelTraceAll:
+		return 4
+	default:
+		return 0
+	}
+}
+
+func (o *Operator) mergeMetricsServerConfig(c *manifests.Config, msc *configv1alpha1.MetricsServerConfig) error {
+	if c.ClusterMonitoringConfiguration.MetricsServerConfig == nil {
+		c.ClusterMonitoringConfiguration.MetricsServerConfig = &manifests.MetricsServerConfig{}
+	}
+	cfg := c.ClusterMonitoringConfiguration.MetricsServerConfig
+
+	if msc.Verbosity != "" {
+		cfg.Verbosity = verbosityLevelToNumeric(msc.Verbosity)
+	}
+	if len(msc.NodeSelector) > 0 {
+		cfg.NodeSelector = msc.NodeSelector
+	}
+	if len(msc.Tolerations) > 0 {
+		cfg.Tolerations = msc.Tolerations
+	}
+	if len(msc.Resources) > 0 {
+		resources := &v1.ResourceRequirements{
+			Requests: v1.ResourceList{},
+			Limits:   v1.ResourceList{},
+		}
+		for _, res := range msc.Resources {
+			if !res.Request.IsZero() {
+				resources.Requests[v1.ResourceName(res.Name)] = res.Request
+			}
+			if !res.Limit.IsZero() {
+				resources.Limits[v1.ResourceName(res.Name)] = res.Limit
+			}
+		}
+		cfg.Resources = resources
+	}
+	if msc.Audit.Profile != "" {
+		if cfg.Audit == nil {
+			cfg.Audit = &manifests.Audit{}
+		}
+		cfg.Audit.Profile = auditv1.Level(strings.ToLower(string(msc.Audit.Profile)))
+	}
+	if len(msc.TopologySpreadConstraints) > 0 {
+		cfg.TopologySpreadConstraints = msc.TopologySpreadConstraints
+	}
+	return nil
+}
+
+func (o *Operator) mergeUserDefinedMonitoring(c *manifests.Config, udm *configv1alpha1.UserDefinedMonitoring) error {
+	if c.ClusterMonitoringConfiguration == nil {
+		c.ClusterMonitoringConfiguration = &manifests.ClusterMonitoringConfiguration{}
+	}
+
+	switch udm.Mode {
+	case configv1alpha1.UserDefinedDisabled:
+		c.ClusterMonitoringConfiguration.UserWorkloadEnabled = ptr.To(false)
+	case configv1alpha1.UserDefinedNamespaceIsolated:
+		c.ClusterMonitoringConfiguration.UserWorkloadEnabled = ptr.To(true)
+	}
+
+	return nil
 }
 
 // storageNotConfiguredMessage returns the message to be set if a pvc has not
