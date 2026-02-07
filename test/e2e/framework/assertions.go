@@ -22,7 +22,7 @@ var (
 
 type AssertionFunc func(t *testing.T)
 
-func (f *Framework) AssertStatefulsetExists(name string, namespace string) func(t *testing.T) {
+func (f *Framework) AssertStatefulsetExistsFunc(name string, namespace string) func(t *testing.T) {
 	return func(t *testing.T) {
 		assertResourceExists(t, func() (metav1.Object, error) {
 			return f.KubeClient.AppsV1().StatefulSets(namespace).Get(ctx, name, metav1.GetOptions{})
@@ -30,7 +30,7 @@ func (f *Framework) AssertStatefulsetExists(name string, namespace string) func(
 	}
 }
 
-func (f *Framework) AssertStatefulsetDoesNotExist(name string, namespace string) func(t *testing.T) {
+func (f *Framework) AssertStatefulsetDoesNotExistFunc(name string, namespace string) func(t *testing.T) {
 	return func(t *testing.T) {
 		assertResourceDoesNotExists(t, func() (metav1.Object, error) {
 			return f.KubeClient.AppsV1().StatefulSets(namespace).Get(ctx, name, metav1.GetOptions{})
@@ -38,7 +38,7 @@ func (f *Framework) AssertStatefulsetDoesNotExist(name string, namespace string)
 	}
 }
 
-func (f *Framework) AssertRouteExists(name string, namespace string) func(t *testing.T) {
+func (f *Framework) AssertRouteExistsFunc(name string, namespace string) func(t *testing.T) {
 	return func(t *testing.T) {
 		assertResourceExists(t, func() (metav1.Object, error) {
 			return f.OpenShiftRouteClient.Routes(namespace).Get(ctx, name, metav1.GetOptions{})
@@ -46,7 +46,7 @@ func (f *Framework) AssertRouteExists(name string, namespace string) func(t *tes
 	}
 }
 
-func (f *Framework) AssertRouteDoesNotExist(name string, namespace string) func(t *testing.T) {
+func (f *Framework) AssertRouteDoesNotExistFunc(name string, namespace string) func(t *testing.T) {
 	return func(t *testing.T) {
 		assertResourceDoesNotExists(t, func() (metav1.Object, error) {
 			return f.OpenShiftRouteClient.Routes(namespace).Get(ctx, name, metav1.GetOptions{})
@@ -54,7 +54,7 @@ func (f *Framework) AssertRouteDoesNotExist(name string, namespace string) func(
 	}
 }
 
-func (f *Framework) AssertSecretExists(name string, namespace string) func(t *testing.T) {
+func (f *Framework) AssertSecretExistsFunc(name string, namespace string) func(t *testing.T) {
 	return func(t *testing.T) {
 		assertResourceExists(t, func() (metav1.Object, error) {
 			return f.KubeClient.CoreV1().Secrets(namespace).Get(ctx, name, metav1.GetOptions{})
@@ -62,7 +62,7 @@ func (f *Framework) AssertSecretExists(name string, namespace string) func(t *te
 	}
 }
 
-func (f *Framework) AssertSecretDoesNotExist(name string, namespace string) func(t *testing.T) {
+func (f *Framework) AssertSecretDoesNotExistFunc(name string, namespace string) func(t *testing.T) {
 	return func(t *testing.T) {
 		assertResourceDoesNotExists(t, func() (metav1.Object, error) {
 			return f.KubeClient.CoreV1().Secrets(namespace).Get(ctx, name, metav1.GetOptions{})
@@ -70,7 +70,7 @@ func (f *Framework) AssertSecretDoesNotExist(name string, namespace string) func
 	}
 }
 
-func (f *Framework) AssertServiceExists(name string, namespace string) func(t *testing.T) {
+func (f *Framework) AssertServiceExistsFunc(name string, namespace string) func(t *testing.T) {
 	return func(t *testing.T) {
 		assertResourceExists(t, func() (metav1.Object, error) {
 			return f.KubeClient.CoreV1().Services(namespace).Get(ctx, name, metav1.GetOptions{})
@@ -78,7 +78,7 @@ func (f *Framework) AssertServiceExists(name string, namespace string) func(t *t
 	}
 }
 
-func (f *Framework) AssertServiceDoesNotExist(name string, namespace string) func(t *testing.T) {
+func (f *Framework) AssertServiceDoesNotExistFunc(name string, namespace string) func(t *testing.T) {
 	return func(t *testing.T) {
 		assertResourceDoesNotExists(t, func() (metav1.Object, error) {
 			return f.KubeClient.CoreV1().Services(namespace).Get(ctx, name, metav1.GetOptions{})
@@ -86,7 +86,7 @@ func (f *Framework) AssertServiceDoesNotExist(name string, namespace string) fun
 	}
 }
 
-func (f *Framework) AssertConfigmapExists(name string, namespace string) func(t *testing.T) {
+func (f *Framework) AssertConfigmapExistsFunc(name string, namespace string) func(t *testing.T) {
 	return func(t *testing.T) {
 		assertResourceExists(t, func() (metav1.Object, error) {
 			return f.KubeClient.CoreV1().ConfigMaps(namespace).Get(ctx, name, metav1.GetOptions{})
@@ -94,7 +94,7 @@ func (f *Framework) AssertConfigmapExists(name string, namespace string) func(t 
 	}
 }
 
-func (f *Framework) AssertConfigmapDoesNotExist(name string, namespace string) func(t *testing.T) {
+func (f *Framework) AssertConfigmapDoesNotExistFunc(name string, namespace string) func(t *testing.T) {
 	return func(t *testing.T) {
 		assertResourceDoesNotExists(t, func() (metav1.Object, error) {
 			return f.KubeClient.CoreV1().ConfigMaps(namespace).Get(ctx, name, metav1.GetOptions{})
@@ -102,7 +102,7 @@ func (f *Framework) AssertConfigmapDoesNotExist(name string, namespace string) f
 	}
 }
 
-func (f *Framework) AssertServiceAccountExists(name string, namespace string) func(t *testing.T) {
+func (f *Framework) AssertServiceAccountExistsFunc(name string, namespace string) func(t *testing.T) {
 	return func(t *testing.T) {
 		assertResourceExists(t, func() (metav1.Object, error) {
 			return f.KubeClient.CoreV1().ServiceAccounts(namespace).Get(ctx, name, metav1.GetOptions{})
@@ -110,7 +110,7 @@ func (f *Framework) AssertServiceAccountExists(name string, namespace string) fu
 	}
 }
 
-func (f *Framework) AssertServiceAccountDoesNotExist(name string, namespace string) func(t *testing.T) {
+func (f *Framework) AssertServiceAccountDoesNotExistFunc(name string, namespace string) func(t *testing.T) {
 	return func(t *testing.T) {
 		assertResourceDoesNotExists(t, func() (metav1.Object, error) {
 			return f.KubeClient.CoreV1().ServiceAccounts(namespace).Get(ctx, name, metav1.GetOptions{})
@@ -118,7 +118,7 @@ func (f *Framework) AssertServiceAccountDoesNotExist(name string, namespace stri
 	}
 }
 
-func (f *Framework) AssertRoleExists(name string, namespace string) func(t *testing.T) {
+func (f *Framework) AssertRoleExistsFunc(name string, namespace string) func(t *testing.T) {
 	return func(t *testing.T) {
 		assertResourceExists(t, func() (metav1.Object, error) {
 			return f.KubeClient.RbacV1().Roles(namespace).Get(ctx, name, metav1.GetOptions{})
@@ -126,7 +126,7 @@ func (f *Framework) AssertRoleExists(name string, namespace string) func(t *test
 	}
 }
 
-func (f *Framework) AssertRoleDoesNotExist(name string, namespace string) func(t *testing.T) {
+func (f *Framework) AssertRoleDoesNotExistFunc(name string, namespace string) func(t *testing.T) {
 	return func(t *testing.T) {
 		assertResourceDoesNotExists(t, func() (metav1.Object, error) {
 			return f.KubeClient.RbacV1().Roles(namespace).Get(ctx, name, metav1.GetOptions{})
@@ -134,7 +134,7 @@ func (f *Framework) AssertRoleDoesNotExist(name string, namespace string) func(t
 	}
 }
 
-func (f *Framework) AssertRoleBindingExists(name string, namespace string) func(t *testing.T) {
+func (f *Framework) AssertRoleBindingExistsFunc(name string, namespace string) func(t *testing.T) {
 	return func(t *testing.T) {
 		assertResourceExists(t, func() (metav1.Object, error) {
 			return f.KubeClient.RbacV1().RoleBindings(namespace).Get(ctx, name, metav1.GetOptions{})
@@ -142,7 +142,7 @@ func (f *Framework) AssertRoleBindingExists(name string, namespace string) func(
 	}
 }
 
-func (f *Framework) AssertRoleBindingDoesNotExist(name string, namespace string) func(t *testing.T) {
+func (f *Framework) AssertRoleBindingDoesNotExistFunc(name string, namespace string) func(t *testing.T) {
 	return func(t *testing.T) {
 		assertResourceDoesNotExists(t, func() (metav1.Object, error) {
 			return f.KubeClient.RbacV1().RoleBindings(namespace).Get(ctx, name, metav1.GetOptions{})
@@ -150,7 +150,7 @@ func (f *Framework) AssertRoleBindingDoesNotExist(name string, namespace string)
 	}
 }
 
-func (f *Framework) AssertClusterRoleExists(name string) func(t *testing.T) {
+func (f *Framework) AssertClusterRoleExistsFunc(name string) func(t *testing.T) {
 	return func(t *testing.T) {
 		assertResourceExists(t, func() (metav1.Object, error) {
 			return f.KubeClient.RbacV1().ClusterRoles().Get(ctx, name, metav1.GetOptions{})
@@ -158,7 +158,7 @@ func (f *Framework) AssertClusterRoleExists(name string) func(t *testing.T) {
 	}
 }
 
-func (f *Framework) AssertClusterRoleDoesNotExist(name string) func(t *testing.T) {
+func (f *Framework) AssertClusterRoleDoesNotExistFunc(name string) func(t *testing.T) {
 	return func(t *testing.T) {
 		assertResourceDoesNotExists(t, func() (metav1.Object, error) {
 			return f.KubeClient.RbacV1().ClusterRoles().Get(ctx, name, metav1.GetOptions{})
@@ -166,7 +166,7 @@ func (f *Framework) AssertClusterRoleDoesNotExist(name string) func(t *testing.T
 	}
 }
 
-func (f *Framework) AssertClusterRoleBindingExists(name string) func(t *testing.T) {
+func (f *Framework) AssertClusterRoleBindingExistsFunc(name string) func(t *testing.T) {
 	return func(t *testing.T) {
 		assertResourceExists(t, func() (metav1.Object, error) {
 			return f.KubeClient.RbacV1().ClusterRoleBindings().Get(ctx, name, metav1.GetOptions{})
@@ -174,7 +174,7 @@ func (f *Framework) AssertClusterRoleBindingExists(name string) func(t *testing.
 	}
 }
 
-func (f *Framework) AssertClusterRoleBindingDoesNotExist(name string) func(t *testing.T) {
+func (f *Framework) AssertClusterRoleBindingDoesNotExistFunc(name string) func(t *testing.T) {
 	return func(t *testing.T) {
 		assertResourceDoesNotExists(t, func() (metav1.Object, error) {
 			return f.KubeClient.RbacV1().ClusterRoleBindings().Get(ctx, name, metav1.GetOptions{})
@@ -182,7 +182,7 @@ func (f *Framework) AssertClusterRoleBindingDoesNotExist(name string) func(t *te
 	}
 }
 
-func (f *Framework) AssertNamespaceExists(name string) func(t *testing.T) {
+func (f *Framework) AssertNamespaceExistsFunc(name string) func(t *testing.T) {
 	return func(t *testing.T) {
 		assertResourceExists(t, func() (metav1.Object, error) {
 			return f.KubeClient.CoreV1().Namespaces().Get(ctx, name, metav1.GetOptions{})
@@ -190,7 +190,7 @@ func (f *Framework) AssertNamespaceExists(name string) func(t *testing.T) {
 	}
 }
 
-func (f *Framework) AssertNamespaceDoesNotExist(name string) func(t *testing.T) {
+func (f *Framework) AssertNamespaceDoesNotExistFunc(name string) func(t *testing.T) {
 	return func(t *testing.T) {
 		assertResourceDoesNotExists(t, func() (metav1.Object, error) {
 			return f.KubeClient.CoreV1().Namespaces().Get(ctx, name, metav1.GetOptions{})
@@ -206,7 +206,7 @@ func (f *Framework) AssertNetworkPolicyExistsFunc(name string, namespace string)
 	}
 }
 
-func (f *Framework) AssertNetworkPolicyDoesNotExist(name string, namespace string) func(t *testing.T) {
+func (f *Framework) AssertNetworkPolicyDoesNotExistFunc(name string, namespace string) func(t *testing.T) {
 	return func(t *testing.T) {
 		assertResourceDoesNotExists(t, func() (metav1.Object, error) {
 			return f.KubeClient.NetworkingV1().NetworkPolicies(namespace).Get(ctx, name, metav1.GetOptions{})
@@ -214,7 +214,7 @@ func (f *Framework) AssertNetworkPolicyDoesNotExist(name string, namespace strin
 	}
 }
 
-func (f *Framework) AssertPrometheusRuleExists(name string, namespace string) func(t *testing.T) {
+func (f *Framework) AssertPrometheusRuleExistsFunc(name string, namespace string) func(t *testing.T) {
 	return func(t *testing.T) {
 		assertResourceExists(t, func() (metav1.Object, error) {
 			return f.MonitoringClient.PrometheusRules(namespace).Get(ctx, name, metav1.GetOptions{})
@@ -222,7 +222,7 @@ func (f *Framework) AssertPrometheusRuleExists(name string, namespace string) fu
 	}
 }
 
-func (f *Framework) AssertPrometheusRuleDoesNotExist(name string, namespace string) func(t *testing.T) {
+func (f *Framework) AssertPrometheusRuleDoesNotExistFunc(name string, namespace string) func(t *testing.T) {
 	return func(t *testing.T) {
 		assertResourceDoesNotExists(t, func() (metav1.Object, error) {
 			return f.MonitoringClient.PrometheusRules(namespace).Get(ctx, name, metav1.GetOptions{})
@@ -230,7 +230,7 @@ func (f *Framework) AssertPrometheusRuleDoesNotExist(name string, namespace stri
 	}
 }
 
-func (f *Framework) AssertServiceMonitorExists(name string, namespace string) func(t *testing.T) {
+func (f *Framework) AssertServiceMonitorExistsFunc(name string, namespace string) func(t *testing.T) {
 	return func(t *testing.T) {
 		assertResourceExists(t, func() (metav1.Object, error) {
 			return f.MonitoringClient.ServiceMonitors(namespace).Get(ctx, name, metav1.GetOptions{})
@@ -238,7 +238,7 @@ func (f *Framework) AssertServiceMonitorExists(name string, namespace string) fu
 	}
 }
 
-func (f *Framework) AssertServiceMonitorDoesNotExist(name string, namespace string) func(t *testing.T) {
+func (f *Framework) AssertServiceMonitorDoesNotExistFunc(name string, namespace string) func(t *testing.T) {
 	return func(t *testing.T) {
 		assertResourceDoesNotExists(t, func() (metav1.Object, error) {
 			return f.MonitoringClient.ServiceMonitors(namespace).Get(ctx, name, metav1.GetOptions{})
@@ -246,7 +246,7 @@ func (f *Framework) AssertServiceMonitorDoesNotExist(name string, namespace stri
 	}
 }
 
-func (f *Framework) AssertDeploymentExists(name string, namespace string) func(t *testing.T) {
+func (f *Framework) AssertDeploymentExistsFunc(name string, namespace string) func(t *testing.T) {
 	return func(t *testing.T) {
 		assertResourceExists(t, func() (metav1.Object, error) {
 			return f.KubeClient.AppsV1().Deployments(namespace).Get(ctx, name, metav1.GetOptions{})
@@ -254,9 +254,9 @@ func (f *Framework) AssertDeploymentExists(name string, namespace string) func(t
 	}
 }
 
-func (f *Framework) AssertDeploymentExistsAndRollout(name, namespace string) func(*testing.T) {
+func (f *Framework) AssertDeploymentExistsAndRolloutFunc(name, namespace string) func(*testing.T) {
 	return func(t *testing.T) {
-		f.AssertDeploymentExists(name, namespace)(t)
+		f.AssertDeploymentExistsFunc(name, namespace)(t)
 		err := f.OperatorClient.WaitForDeploymentRollout(ctx, &appsv1.Deployment{
 			ObjectMeta: metav1.ObjectMeta{
 				Name:      name,
@@ -269,7 +269,7 @@ func (f *Framework) AssertDeploymentExistsAndRollout(name, namespace string) fun
 	}
 }
 
-func (f *Framework) AssertDeploymentDoesNotExist(name, namespace string) func(*testing.T) {
+func (f *Framework) AssertDeploymentDoesNotExistFunc(name, namespace string) func(*testing.T) {
 	return func(t *testing.T) {
 		assertResourceDoesNotExists(t, func() (metav1.Object, error) {
 			return f.KubeClient.AppsV1().Deployments(namespace).Get(ctx, name, metav1.GetOptions{})
@@ -277,7 +277,7 @@ func (f *Framework) AssertDeploymentDoesNotExist(name, namespace string) func(*t
 	}
 }
 
-func (f *Framework) AssertPersistentVolumeClaimsExist(name, namespace string) func(*testing.T) {
+func (f *Framework) AssertPersistentVolumeClaimsExistFunc(name, namespace string) func(*testing.T) {
 	return func(t *testing.T) {
 		assertResourceExists(t, func() (metav1.Object, error) {
 			return f.KubeClient.CoreV1().PersistentVolumeClaims(namespace).Get(ctx, name, metav1.GetOptions{})
@@ -285,9 +285,9 @@ func (f *Framework) AssertPersistentVolumeClaimsExist(name, namespace string) fu
 	}
 }
 
-func (f *Framework) AssertStatefulSetExistsAndRollout(name, namespace string) func(t *testing.T) {
+func (f *Framework) AssertStatefulSetExistsAndRolloutFunc(name, namespace string) func(t *testing.T) {
 	return func(t *testing.T) {
-		f.AssertStatefulsetExists(name, namespace)(t)
+		f.AssertStatefulsetExistsFunc(name, namespace)(t)
 		err := f.OperatorClient.WaitForStatefulsetRollout(ctx, &appsv1.StatefulSet{
 			ObjectMeta: metav1.ObjectMeta{
 				Name:      name,
@@ -301,7 +301,7 @@ func (f *Framework) AssertStatefulSetExistsAndRollout(name, namespace string) fu
 	}
 }
 
-func (f *Framework) AssertThanosRulerExists(name, namespace string) func(t *testing.T) {
+func (f *Framework) AssertThanosRulerExistsFunc(name, namespace string) func(t *testing.T) {
 	return func(t *testing.T) {
 		err := f.OperatorClient.WaitForThanosRuler(ctx, &monitoringv1.ThanosRuler{
 			ObjectMeta: metav1.ObjectMeta{
@@ -315,7 +315,7 @@ func (f *Framework) AssertThanosRulerExists(name, namespace string) func(t *test
 	}
 }
 
-func (f *Framework) AssertPrometheusExists(name, namespace string) func(t *testing.T) {
+func (f *Framework) AssertPrometheusExistsFunc(name, namespace string) func(t *testing.T) {
 	return func(t *testing.T) {
 		err := f.OperatorClient.ValidatePrometheus(ctx, types.NamespacedName{
 			Name:      name,
@@ -327,7 +327,7 @@ func (f *Framework) AssertPrometheusExists(name, namespace string) func(t *testi
 	}
 }
 
-func (f *Framework) AssertPrometheusAlertmanagerEndpointsEmpty(name, namespace string) func(t *testing.T) {
+func (f *Framework) AssertPrometheusAlertmanagerEndpointsEmptyFunc(name, namespace string) func(t *testing.T) {
 	return func(t *testing.T) {
 		err := Poll(time.Second, 5*time.Minute, func() error {
 			const prometheusConfigSecretName = "prometheus-k8s"
@@ -349,7 +349,7 @@ type PodAssertion func(pod v1.Pod) error
 
 // AssertPodConfiguration for each pod in the namespace that matches the label selector
 // Each pod in the returned list will be run through the list of provided assertions
-func (f *Framework) AssertPodConfiguration(namespace, labelSelector string, assertions []PodAssertion) func(*testing.T) {
+func (f *Framework) AssertPodConfigurationFunc(namespace, labelSelector string, assertions []PodAssertion) func(*testing.T) {
 	return func(t *testing.T) {
 		err := Poll(time.Second, 5*time.Minute, func() error {
 			pods, err := f.KubeClient.CoreV1().Pods(namespace).List(ctx, metav1.ListOptions{
@@ -381,7 +381,7 @@ func (f *Framework) AssertPodConfiguration(namespace, labelSelector string, asse
 	}
 }
 
-func (f *Framework) AssertOperatorCondition(conditionType configv1.ClusterStatusConditionType, conditionStatus configv1.ConditionStatus) func(t *testing.T) {
+func (f *Framework) AssertOperatorConditionFunc(conditionType configv1.ClusterStatusConditionType, conditionStatus configv1.ConditionStatus) func(t *testing.T) {
 	return func(t *testing.T) {
 		reporter := f.OperatorClient.StatusReporter()
 		err := Poll(time.Second, 5*time.Minute, func() error {
@@ -405,7 +405,7 @@ func (f *Framework) AssertOperatorCondition(conditionType configv1.ClusterStatus
 	}
 }
 
-func (f *Framework) AssertOperatorConditionReason(conditionType configv1.ClusterStatusConditionType, conditionReason string) func(t *testing.T) {
+func (f *Framework) AssertOperatorConditionReasonFunc(conditionType configv1.ClusterStatusConditionType, conditionReason string) func(t *testing.T) {
 	return func(t *testing.T) {
 		reporter := f.OperatorClient.StatusReporter()
 		err := Poll(time.Second, 5*time.Minute, func() error {
@@ -429,7 +429,7 @@ func (f *Framework) AssertOperatorConditionReason(conditionType configv1.Cluster
 	}
 }
 
-func (f *Framework) AssertOperatorConditionMessage(conditionType configv1.ClusterStatusConditionType, conditionMessage string) func(t *testing.T) {
+func (f *Framework) AssertOperatorConditionMessageFunc(conditionType configv1.ClusterStatusConditionType, conditionMessage string) func(t *testing.T) {
 	return func(t *testing.T) {
 		reporter := f.OperatorClient.StatusReporter()
 		err := Poll(time.Second, 5*time.Minute, func() error {
@@ -453,7 +453,7 @@ func (f *Framework) AssertOperatorConditionMessage(conditionType configv1.Cluste
 	}
 }
 
-func (f *Framework) AssertOperatorConditionMessageContains(conditionType configv1.ClusterStatusConditionType, conditionMessage string) func(t *testing.T) {
+func (f *Framework) AssertOperatorConditionMessageContainsFunc(conditionType configv1.ClusterStatusConditionType, conditionMessage string) func(t *testing.T) {
 	return func(t *testing.T) {
 		reporter := f.OperatorClient.StatusReporter()
 		err := Poll(time.Second, 5*time.Minute, func() error {
@@ -477,7 +477,7 @@ func (f *Framework) AssertOperatorConditionMessageContains(conditionType configv
 	}
 }
 
-func (f *Framework) AssertValueInConfigMapEquals(name, namespace, key, compareWith string) func(t *testing.T) {
+func (f *Framework) AssertValueInConfigMapEqualsFunc(name, namespace, key, compareWith string) func(t *testing.T) {
 	return func(t *testing.T) {
 		err := Poll(time.Second, time.Minute, func() error {
 			cm := f.MustGetConfigMap(t, name, namespace)
@@ -493,7 +493,7 @@ func (f *Framework) AssertValueInConfigMapEquals(name, namespace, key, compareWi
 	}
 }
 
-func (f *Framework) AssertValueInConfigMapNotEquals(name, namespace, key, compareWith string) func(t *testing.T) {
+func (f *Framework) AssertValueInConfigMapNotEqualsFunc(name, namespace, key, compareWith string) func(t *testing.T) {
 	return func(t *testing.T) {
 		cm := f.MustGetConfigMap(t, name, namespace)
 		if cm.Data[key] == compareWith {
@@ -502,7 +502,7 @@ func (f *Framework) AssertValueInConfigMapNotEquals(name, namespace, key, compar
 	}
 }
 
-func (f *Framework) AssertValueInSecretEquals(name, namespace, key, compareWith string) func(t *testing.T) {
+func (f *Framework) AssertValueInSecretEqualsFunc(name, namespace, key, compareWith string) func(t *testing.T) {
 	return func(t *testing.T) {
 		s := f.MustGetSecret(t, name, namespace)
 		if string(s.Data[key]) != compareWith {
@@ -511,7 +511,7 @@ func (f *Framework) AssertValueInSecretEquals(name, namespace, key, compareWith 
 	}
 }
 
-func (f *Framework) AssertValueInSecretNotEquals(name, namespace, key, compareWith string) func(t *testing.T) {
+func (f *Framework) AssertValueInSecretNotEqualsFunc(name, namespace, key, compareWith string) func(t *testing.T) {
 	return func(t *testing.T) {
 		s := f.MustGetSecret(t, name, namespace)
 		if string(s.Data[key]) == compareWith {

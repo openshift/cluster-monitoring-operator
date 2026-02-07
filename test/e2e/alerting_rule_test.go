@@ -70,8 +70,8 @@ func TestAlertingRule(t *testing.T) {
 	}
 
 	// The operator is healthy
-	f.AssertOperatorCondition(statusv1.OperatorDegraded, statusv1.ConditionFalse)(t)
-	f.AssertOperatorCondition(statusv1.OperatorAvailable, statusv1.ConditionTrue)(t)
+	f.AssertOperatorConditionFunc(statusv1.OperatorDegraded, statusv1.ConditionFalse)(t)
+	f.AssertOperatorConditionFunc(statusv1.OperatorAvailable, statusv1.ConditionTrue)(t)
 
 	initialPrCount := prometheusRuleCount(t)
 
@@ -125,13 +125,13 @@ func TestAlertingRule(t *testing.T) {
 	}
 	deleteAlertingRule(t, validArName)
 	// Make sure the corresponding PrometheusRule was deleted.
-	f.AssertPrometheusRuleDoesNotExist(pr.Name, pr.Namespace)(t)
+	f.AssertPrometheusRuleDoesNotExistFunc(pr.Name, pr.Namespace)(t)
 	// And still the invalid AlertingRule hasn't generated anything.
 	assertPrometheusRuleCount(t, initialPrCount)
 
 	// Even with an invalid AlertingRule, the operator is still healthy
-	f.AssertOperatorCondition(statusv1.OperatorDegraded, statusv1.ConditionFalse)(t)
-	f.AssertOperatorCondition(statusv1.OperatorAvailable, statusv1.ConditionTrue)(t)
+	f.AssertOperatorConditionFunc(statusv1.OperatorDegraded, statusv1.ConditionFalse)(t)
+	f.AssertOperatorConditionFunc(statusv1.OperatorAvailable, statusv1.ConditionTrue)(t)
 	// Delete the invalid AlertingRule
 	deleteAlertingRule(t, invalidArName)
 }

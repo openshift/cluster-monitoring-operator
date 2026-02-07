@@ -143,7 +143,7 @@ func TestTargetsUp(t *testing.T) {
 	}
 	err = f.KubeClient.CoreV1().Secrets(metricsClientCertSecret.Namespace).Delete(ctx, metricsClientCertSecret.Name, metav1.DeleteOptions{})
 
-	f.AssertSecretExists(metricsClientCertSecret.GetName(), f.Ns)(t)
+	f.AssertSecretExistsFunc(metricsClientCertSecret.GetName(), f.Ns)(t)
 
 	// We need to wait a bit before verifying that all targets are up because
 	// it will take some time for the kubelet to propagate the new certificate
@@ -233,7 +233,7 @@ func TestPodsLabels(t *testing.T) {
 	// Verify that all pods in the openshift-monitoring namespace have the
 	// app.kubernetes.io/part-of: openshift-monitoring label.
 	// This label is used among other things to limit the deny-all NP to CMO and its operands only.
-	f.AssertPodConfiguration(
+	f.AssertPodConfigurationFunc(
 		f.Ns,
 		"",
 		[]framework.PodAssertion{

@@ -233,19 +233,19 @@ func TestMetricsServerRollout(t *testing.T) {
 	for _, test := range []scenario{
 		{
 			name:      "assert metrics-server deployment is rolled out",
-			assertion: f.AssertDeploymentExistsAndRollout("metrics-server", f.Ns),
+			assertion: f.AssertDeploymentExistsAndRolloutFunc("metrics-server", f.Ns),
 		},
 		{
 			name:      "assert metrics-server service is created",
-			assertion: f.AssertServiceExists("metrics-server", f.Ns),
+			assertion: f.AssertServiceExistsFunc("metrics-server", f.Ns),
 		},
 		{
 			name:      "assert metrics-server service monitor is created",
-			assertion: f.AssertServiceMonitorExists("metrics-server", f.Ns),
+			assertion: f.AssertServiceMonitorExistsFunc("metrics-server", f.Ns),
 		},
 		{
 			name: "assert pod configuration is as expected",
-			assertion: f.AssertPodConfiguration(
+			assertion: f.AssertPodConfigurationFunc(
 				f.Ns,
 				"app.kubernetes.io/name=metrics-server,app.kubernetes.io/component=metrics-server",
 				[]framework.PodAssertion{

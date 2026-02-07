@@ -58,11 +58,11 @@ func TestMonitoringApiRoles(t *testing.T) {
 	for _, tc := range []scenario{
 		{
 			name:      fmt.Sprintf("assert %s role exists", roleNameTQ),
-			assertion: f.AssertRoleExists("cluster-monitoring-metrics-api", f.Ns),
+			assertion: f.AssertRoleExistsFunc("cluster-monitoring-metrics-api", f.Ns),
 		},
 		{
 			name:      fmt.Sprintf("assert %s cluster role exists", clusterRoleNameTQ),
-			assertion: f.AssertClusterRoleExists(clusterRoleNameTQ),
+			assertion: f.AssertClusterRoleExistsFunc(clusterRoleNameTQ),
 		},
 		{
 			name:      fmt.Sprintf("thanos querier API is accessible by role %s", roleNameTQ),
