@@ -45,7 +45,6 @@ local cmoMonitors = o.cmoMonitors;
 // # [markers]
 // - `rule`
 local generateTelemetryWhitelistFromEntries(entries) =
-  local tab = '    ';
   local matches = std.join('\n', std.flatMap(
     function(entry)
       local rule = entry.rule;
@@ -59,28 +58,28 @@ local generateTelemetryWhitelistFromEntries(entries) =
       []
       +  // owners and description
       [
-        tab + '#',
-        tab + '# owners: (%s)' % std.join(', ', owners),
-        tab + '#',
-        tab + '# ' + description,
+        '#',
+        '# owners: (%s)' % std.join(', ', owners),
+        '#',
+        '# ' + description,
       ]
       +  // labels
       (if std.length(std.objectFields(label_values)) == 0 then
          []
        else
          [
-           tab + '#',
-           tab + '# Expected labels:',
+           '#',
+           '# Expected labels:',
          ]
          +
          std.flatMap(
-           function(key) std.map(function(v) tab + '# - %s: %s' % [key, v], label_values[key]),
+           function(key) std.map(function(v) '# - %s: %s' % [key, v], label_values[key]),
            std.objectFields(label_values)
          ))
       +  // source monitors and metrics information
       [
-        tab + '#',
-        tab + '# This rule sources metrics from the following monitors:',
+        '#',
+        '# This rule sources metrics from the following monitors:',
       ]
       +
       std.flatMap(
@@ -88,18 +87,18 @@ local generateTelemetryWhitelistFromEntries(entries) =
           local metrics = monitor_metrics[k];
           if k == '' then
             std.map(
-              function(m) tab + '# - <unknown>: %s' % m,
+              function(m) '# - <unknown>: %s' % m,
               metrics
             )
           else
-            [tab + '# - %s: %s' % [k, std.join(', ', metrics)]],
+            ['# - %s: %s' % [k, std.join(', ', metrics)]],
         monitor_keys
       )
       +  // consumers
       (if std.length(consumers) > 0 then
          [
-           tab + '#',
-           tab + '# consumers: (%s)' % std.join(', ', consumers),
+           '#',
+           '# consumers: (%s)' % std.join(', ', consumers),
          ]
        else [])
       +  // marker comments to provide additional context
@@ -126,26 +125,26 @@ local generateTelemetryWhitelistFromEntries(entries) =
           std.length(monitor_metrics[monitor_keys[0]]) == 1 &&
           ruleName != null &&
           monitor_metrics[monitor_keys[0]][0] == ruleName;
-        [tab + '#']
+        ['#']
         +
         (if isMetricAsRule then
-           [tab + '#' + marker + 'isMetricAsRule']
+           ['#' + marker + 'isMetricAsRule']
          else
            [])
         +
         (if hasCMOMonitors && !hasExternalMonitors then
-           [tab + '#' + marker + 'reliesExclusivelyOnCMOmonitors']
+           ['#' + marker + 'reliesExclusivelyOnCMOmonitors']
          else if hasCMOMonitors && hasExternalMonitors then
-           [tab + '#' + marker + 'reliesPartiallyOnCMOmonitors']
+           ['#' + marker + 'reliesPartiallyOnCMOmonitors']
          else if hasExternalMonitors then
-           [tab + '#' + marker + 'reliesExclusivelyOnExternalMonitors']
+           ['#' + marker + 'reliesExclusivelyOnExternalMonitors']
          else
            [])
       )
       +  // rule
       [
-        tab + '#',
-        tab + "- '%s'" % rule,
+        '#',
+        "- '%s'" % rule,
       ],
     entries
   ));

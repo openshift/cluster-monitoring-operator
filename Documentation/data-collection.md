@@ -10,2767 +10,2767 @@ apiVersion: v1
 data:
   metrics.yaml: |-
     matches:
-        #
-        # owners: (@openshift/openshift-team-monitoring, @smarterclayton)
-        #
-        # cluster:cpu_usage_cores:sum is the current amount of CPU used by the whole cluster.
-        #
-        # This rule sources metrics from the following monitors:
-        # - openshift-monitoring/kube-state-metrics-telemetry: kube_pod_info
-        # - openshift-monitoring/node-exporter-telemetry: node_cpu_seconds_total
-        #
-        # consumers: (@openshift/openshift-team-olm, @openshift/openshift-team-cluster-manager)
-        #
-        #marker:reliesExclusivelyOnCMOmonitors
-        #
-        - '{__name__="cluster:cpu_usage_cores:sum"}'
-        #
-        # owners: (@openshift/openshift-team-monitoring)
-        #
-        # ALERTS metric contains all firing alerts with their severity levels.
-        #
-        # Expected labels:
-        # - alertstate: firing
-        # - severity: critical
-        # - severity: warning
-        # - severity: info
-        # - severity: none
-        #
-        # This rule sources metrics from the following monitors:
-        # - openshift-monitoring/prometheus-k8s-telemetry: ALERTS
-        #
-        # consumers: (@openshift/openshift-team-cluster-manager)
-        #
-        #marker:isMetricAsRule
-        #marker:reliesExclusivelyOnCMOmonitors
-        #
-        - '{__name__="ALERTS",alertstate="firing",severity=~"critical|warning|info|none"}'
-        #
-        # owners: (@openshift/openshift-team-monitoring)
-        #
-        # cluster:alertmanager_integrations:max tracks the number of alertmanager integrations configured.
-        #
-        # This rule sources metrics from the following monitors:
-        # - openshift-monitoring/alertmanager-main-telemetry: alertmanager_integrations
-        #
-        # consumers: (@openshift/openshift-team-cluster-manager)
-        #
-        #marker:reliesExclusivelyOnCMOmonitors
-        #
-        - '{__name__="cluster:alertmanager_integrations:max"}'
-        #
-        # owners: (@openshift/openshift-team-monitoring)
-        #
-        # cluster:capacity_cpu_cores:sum is the total CPU capacity of the cluster in cores.
-        #
-        # This rule sources metrics from the following monitors:
-        # - openshift-monitoring/kube-state-metrics-telemetry: kube_node_status_capacity, kube_node_labels
-        #
-        # consumers: (@openshift/openshift-team-cluster-manager)
-        #
-        #marker:reliesExclusivelyOnCMOmonitors
-        #
-        - '{__name__="cluster:capacity_cpu_cores:sum"}'
-        #
-        # owners: (@openshift/openshift-team-monitoring)
-        #
-        # cluster:capacity_memory_bytes:sum is the total memory capacity of the cluster in bytes.
-        #
-        # This rule sources metrics from the following monitors:
-        # - openshift-monitoring/kube-state-metrics-telemetry: kube_node_status_capacity, kube_node_labels
-        #
-        # consumers: (@openshift/openshift-team-cluster-manager)
-        #
-        #marker:reliesExclusivelyOnCMOmonitors
-        #
-        - '{__name__="cluster:capacity_memory_bytes:sum"}'
-        #
-        # owners: (@openshift/openshift-team-monitoring)
-        #
-        # cluster:memory_usage_bytes:sum is the current amount of memory used by the whole cluster.
-        #
-        # This rule sources metrics from the following monitors:
-        # - openshift-monitoring/node-exporter-telemetry: node_memory_MemTotal_bytes, node_memory_MemAvailable_bytes
-        #
-        # consumers: (@openshift/openshift-team-cluster-manager)
-        #
-        #marker:reliesExclusivelyOnCMOmonitors
-        #
-        - '{__name__="cluster:memory_usage_bytes:sum"}'
-        #
-        # owners: (@openshift/openshift-team-monitoring)
-        #
-        # cluster:node_instance_type_count:sum counts nodes by instance type, role, architecture, and OS.
-        #
-        # This rule sources metrics from the following monitors:
-        # - openshift-monitoring/kube-state-metrics-telemetry: kube_node_labels
-        #
-        # consumers: (@openshift/openshift-team-cluster-manager)
-        #
-        #marker:reliesExclusivelyOnCMOmonitors
-        #
-        - '{__name__="cluster:node_instance_type_count:sum"}'
-        #
-        # owners: (@openshift/openshift-team-monitoring)
-        #
-        # cluster:telemetry_selected_series:count is the number of series selected for telemetry after filtering.
-        #
-        # This rule sources metrics from the following monitors:
-        # - openshift-monitoring/telemeter-client-telemetry: federate_samples, federate_filtered_samples
-        #
-        # consumers: (@openshift/openshift-team-cluster-manager)
-        #
-        #marker:reliesExclusivelyOnCMOmonitors
-        #
-        - '{__name__="cluster:telemetry_selected_series:count"}'
-        #
-        # owners: (@openshift/openshift-team-monitoring)
-        #
-        # cluster:virt_platform_nodes:sum counts nodes by virtualization platform type.
-        #
-        # This rule sources metrics from the following monitors:
-        # - openshift-monitoring/node-exporter-telemetry: virt_platform
-        #
-        # consumers: (@openshift/openshift-team-cluster-manager)
-        #
-        #marker:reliesExclusivelyOnCMOmonitors
-        #
-        - '{__name__="cluster:virt_platform_nodes:sum"}'
-        #
-        # owners: (@openshift/openshift-team-monitoring)
-        #
-        # count:up0 counts the number of targets that are down.
-        #
-        # This rule sources metrics from the following monitors:
-        # - openshift-monitoring/prometheus-k8s-telemetry: up
-        #
-        # consumers: (@openshift/openshift-team-cluster-manager)
-        #
-        #marker:reliesExclusivelyOnCMOmonitors
-        #
-        - '{__name__="count:up0"}'
-        #
-        # owners: (@openshift/openshift-team-monitoring)
-        #
-        # count:up1 counts the number of targets that are up.
-        #
-        # This rule sources metrics from the following monitors:
-        # - openshift-monitoring/prometheus-k8s-telemetry: up
-        #
-        # consumers: (@openshift/openshift-team-cluster-manager)
-        #
-        #marker:reliesExclusivelyOnCMOmonitors
-        #
-        - '{__name__="count:up1"}'
-        #
-        # owners: (@openshift/openshift-team-monitoring)
-        #
-        # monitoring:container_memory_working_set_bytes:sum is the memory working set of monitoring stack containers.
-        #
-        # This rule sources metrics from the following monitors:
-        # - openshift-monitoring/kubelet-telemetry: container_memory_working_set_bytes
-        #
-        # consumers: (@openshift/openshift-team-cluster-manager)
-        #
-        #marker:reliesExclusivelyOnCMOmonitors
-        #
-        - '{__name__="monitoring:container_memory_working_set_bytes:sum"}'
-        #
-        # owners: (@openshift/openshift-team-monitoring)
-        #
-        # namespace_job:scrape_samples_post_metric_relabeling:topk3 tracks top 3 namespace/job pairs by scrape sample count after metric relabeling.
-        #
-        # This rule sources metrics from the following monitors:
-        # - openshift-monitoring/prometheus-k8s-telemetry: scrape_samples_post_metric_relabeling
-        #
-        # consumers: (@openshift/openshift-team-cluster-manager)
-        #
-        #marker:reliesExclusivelyOnCMOmonitors
-        #
-        - '{__name__="namespace_job:scrape_samples_post_metric_relabeling:topk3"}'
-        #
-        # owners: (@openshift/openshift-team-monitoring)
-        #
-        # namespace_job:scrape_series_added:topk3_sum1h tracks top 3 namespace/job pairs by series added over 1 hour.
-        #
-        # This rule sources metrics from the following monitors:
-        # - openshift-monitoring/prometheus-k8s-telemetry: scrape_series_added
-        #
-        # consumers: (@openshift/openshift-team-cluster-manager)
-        #
-        #marker:reliesExclusivelyOnCMOmonitors
-        #
-        - '{__name__="namespace_job:scrape_series_added:topk3_sum1h"}'
-        #
-        # owners: (@openshift/openshift-team-monitoring)
-        #
-        # node_role_os_version_machine:cpu_capacity_cores:sum aggregates CPU capacity by node role, OS, architecture, and hyperthread status.
-        #
-        # This rule sources metrics from the following monitors:
-        # - openshift-monitoring/kube-state-metrics-telemetry: kube_node_labels
-        # - openshift-monitoring/node-exporter-telemetry: node_cpu_info
-        #
-        # consumers: (@openshift/openshift-team-cluster-manager)
-        #
-        #marker:reliesExclusivelyOnCMOmonitors
-        #
-        - '{__name__="node_role_os_version_machine:cpu_capacity_cores:sum"}'
-        #
-        # owners: (@openshift/openshift-team-monitoring)
-        #
-        # node_role_os_version_machine:cpu_capacity_sockets:sum aggregates CPU socket count by node role, OS, architecture, and hyperthread status.
-        #
-        # This rule sources metrics from the following monitors:
-        # - openshift-monitoring/kube-state-metrics-telemetry: kube_node_labels
-        # - openshift-monitoring/node-exporter-telemetry: node_cpu_info
-        #
-        # consumers: (@openshift/openshift-team-cluster-manager)
-        #
-        #marker:reliesExclusivelyOnCMOmonitors
-        #
-        - '{__name__="node_role_os_version_machine:cpu_capacity_sockets:sum"}'
-        #
-        # owners: (@openshift/openshift-team-monitoring)
-        #
-        # openshift:cpu_usage_cores:sum is the current amount of CPU used by OpenShift infrastructure.
-        #
-        # This rule sources metrics from the following monitors:
-        # - openshift-monitoring/kube-state-metrics-telemetry: kube_pod_info
-        # - openshift-monitoring/kubelet-telemetry: container_cpu_usage_seconds_total
-        # - openshift-monitoring/node-exporter-telemetry: node_cpu_seconds_total
-        #
-        # consumers: (@openshift/openshift-team-cluster-manager)
-        #
-        #marker:reliesExclusivelyOnCMOmonitors
-        #
-        - '{__name__="openshift:cpu_usage_cores:sum"}'
-        #
-        # owners: (@openshift/openshift-team-monitoring)
-        #
-        # openshift:memory_usage_bytes:sum is the current amount of memory used by OpenShift infrastructure.
-        #
-        # This rule sources metrics from the following monitors:
-        # - openshift-monitoring/kubelet-telemetry: container_memory_working_set_bytes
-        # - openshift-monitoring/node-exporter-telemetry: node_memory_MemTotal_bytes, node_memory_MemAvailable_bytes
-        #
-        # consumers: (@openshift/openshift-team-cluster-manager)
-        #
-        #marker:reliesExclusivelyOnCMOmonitors
-        #
-        - '{__name__="openshift:memory_usage_bytes:sum"}'
-        #
-        # owners: (@openshift/openshift-team-monitoring)
-        #
-        # openshift:prometheus_tsdb_head_samples_appended_total:sum tracks the rate of samples appended to Prometheus TSDB.
-        #
-        # This rule sources metrics from the following monitors:
-        # - openshift-monitoring/prometheus-k8s-telemetry: prometheus_tsdb_head_samples_appended_total
-        #
-        # consumers: (@openshift/openshift-team-cluster-manager)
-        #
-        #marker:reliesExclusivelyOnCMOmonitors
-        #
-        - '{__name__="openshift:prometheus_tsdb_head_samples_appended_total:sum"}'
-        #
-        # owners: (@openshift/openshift-team-monitoring)
-        #
-        # openshift:prometheus_tsdb_head_series:sum tracks the total number of series in Prometheus TSDB head.
-        #
-        # This rule sources metrics from the following monitors:
-        # - openshift-monitoring/prometheus-k8s-telemetry: prometheus_tsdb_head_series
-        #
-        # consumers: (@openshift/openshift-team-cluster-manager)
-        #
-        #marker:reliesExclusivelyOnCMOmonitors
-        #
-        - '{__name__="openshift:prometheus_tsdb_head_series:sum"}'
-        #
-        # owners: (@openshift/openshift-team-monitoring)
-        #
-        # profile:cluster_monitoring_operator_collection_profile:max identifies the active monitoring collection profile.
-        #
-        # This rule sources metrics from the following monitors:
-        # - openshift-monitoring/cluster-monitoring-operator-telemetry: cluster_monitoring_operator_collection_profile
-        #
-        # consumers: (@openshift/openshift-team-cluster-manager)
-        #
-        #marker:reliesExclusivelyOnCMOmonitors
-        #
-        - '{__name__="profile:cluster_monitoring_operator_collection_profile:max"}'
-        #
-        # owners: (@openshift/openshift-team-monitoring)
-        #
-        # vendor_model:node_accelerator_cards:sum counts accelerator cards by vendor and model.
-        #
-        # Expected labels:
-        # - vendor: NVIDIA
-        # - vendor: AMD
-        # - vendor: GAUDI
-        # - vendor: INTEL
-        # - vendor: QUALCOMM
-        # - vendor: Marvell
-        # - vendor: Mellanox
-        #
-        # This rule sources metrics from the following monitors:
-        # - openshift-monitoring/node-exporter-telemetry: node_accelerator_card_info
-        #
-        # consumers: (@openshift/openshift-team-cluster-manager)
-        #
-        #marker:reliesExclusivelyOnCMOmonitors
-        #
-        - '{__name__="vendor_model:node_accelerator_cards:sum",vendor=~"NVIDIA|AMD|GAUDI|INTEL|QUALCOMM|Marvell|Mellanox"}'
-        #
-        # owners: (@openshift/openshift-team-monitoring)
-        #
-        # workload:cpu_usage_cores:sum is the current amount of CPU used by user workloads.
-        #
-        # This rule sources metrics from the following monitors:
-        # - openshift-monitoring/kubelet-telemetry: container_cpu_usage_seconds_total
-        #
-        # consumers: (@openshift/openshift-team-cluster-manager)
-        #
-        #marker:reliesExclusivelyOnCMOmonitors
-        #
-        - '{__name__="workload:cpu_usage_cores:sum"}'
-        #
-        # owners: (@openshift/openshift-team-monitoring)
-        #
-        # workload:memory_usage_bytes:sum is the current amount of memory used by user workloads.
-        #
-        # This rule sources metrics from the following monitors:
-        # - openshift-monitoring/kubelet-telemetry: container_memory_working_set_bytes
-        #
-        # consumers: (@openshift/openshift-team-cluster-manager)
-        #
-        #marker:reliesExclusivelyOnCMOmonitors
-        #
-        - '{__name__="workload:memory_usage_bytes:sum"}'
-        #
-        # owners: (@openshift/openshift-team-monitoring)
-        #
-        # cluster:usage:.* captures various cluster usage metrics for capacity planning and telemetry.
-        #
-        # This rule sources metrics from the following monitors:
-        # - openshift-monitoring/kube-state-metrics-telemetry: kube_node_labels, kube_node_spec_unschedulable, kube_node_status_condition, kube_pod_restart_policy, kube_running_pod_ready
-        # - openshift-monitoring/kubelet-telemetry: apiserver_storage_objects, kubelet_containers_per_pod_count_sum
-        #
-        # consumers: (@openshift/openshift-team-cluster-manager)
-        #
-        #marker:reliesExclusivelyOnCMOmonitors
-        #
-        - '{__name__=~"cluster:usage:.*"}'
-        #
-        # owners: (@openshift/openshift-team-monitoring)
-        #
-        # monitoring:haproxy_server_http_responses_total:sum tracks HTTP response codes from monitoring stack HAProxy.
-        #
-        # This rule sources metrics from the following monitors:
-        # - <unknown>: haproxy_server_http_responses_total
-        #
-        # consumers: (@openshift/openshift-team-cluster-manager)
-        #
-        #marker:reliesExclusivelyOnExternalMonitors
-        #
-        - '{__name__="monitoring:haproxy_server_http_responses_total:sum"}'
-        #
-        # owners: (@openshift/openshift-team-cluster-lifecycle)
-        #
-        # cluster_version reports the cluster version information.
-        #
-        # This rule sources metrics from the following monitors:
-        #
-        # consumers: (@openshift/openshift-team-cluster-manager)
-        #
-        #marker:reliesExclusivelyOnExternalMonitors
-        #
-        - '{__name__="cluster_version"}'
-        #
-        # owners: (@openshift/openshift-team-cluster-lifecycle)
-        #
-        # cluster_version_available_updates reports available cluster updates.
-        #
-        # This rule sources metrics from the following monitors:
-        #
-        # consumers: (@openshift/openshift-team-cluster-manager)
-        #
-        #marker:reliesExclusivelyOnExternalMonitors
-        #
-        - '{__name__="cluster_version_available_updates"}'
-        #
-        # owners: (@openshift/openshift-team-cluster-lifecycle)
-        #
-        # cluster_version_capability reports enabled cluster capabilities.
-        #
-        # This rule sources metrics from the following monitors:
-        #
-        # consumers: (@openshift/openshift-team-cluster-manager)
-        #
-        #marker:reliesExclusivelyOnExternalMonitors
-        #
-        - '{__name__="cluster_version_capability"}'
-        #
-        # owners: (@openshift/openshift-team-cluster-lifecycle)
-        #
-        # cluster_operator_up reports whether cluster operators are running.
-        #
-        # This rule sources metrics from the following monitors:
-        #
-        # consumers: (@openshift/openshift-team-cluster-manager)
-        #
-        #marker:reliesExclusivelyOnExternalMonitors
-        #
-        - '{__name__="cluster_operator_up"}'
-        #
-        # owners: (@openshift/openshift-team-cluster-lifecycle)
-        #
-        # cluster_operator_conditions reports cluster operator condition status.
-        #
-        # This rule sources metrics from the following monitors:
-        #
-        # consumers: (@openshift/openshift-team-cluster-manager)
-        #
-        #marker:reliesExclusivelyOnExternalMonitors
-        #
-        - '{__name__="cluster_operator_conditions"}'
-        #
-        # owners: (@openshift/openshift-team-cluster-lifecycle)
-        #
-        # cluster_version_payload reports the cluster version payload information.
-        #
-        # This rule sources metrics from the following monitors:
-        #
-        # consumers: (@openshift/openshift-team-cluster-manager)
-        #
-        #marker:reliesExclusivelyOnExternalMonitors
-        #
-        - '{__name__="cluster_version_payload"}'
-        #
-        # owners: (@openshift/openshift-team-cluster-lifecycle)
-        #
-        # cluster_installer reports the installer used to deploy the cluster.
-        #
-        # This rule sources metrics from the following monitors:
-        #
-        # consumers: (@openshift/openshift-team-cluster-manager)
-        #
-        #marker:reliesExclusivelyOnExternalMonitors
-        #
-        - '{__name__="cluster_installer"}'
-        #
-        # owners: (@openshift/openshift-team-cluster-lifecycle)
-        #
-        # cluster_infrastructure_provider reports the infrastructure provider for the cluster.
-        #
-        # This rule sources metrics from the following monitors:
-        #
-        # consumers: (@openshift/openshift-team-cluster-manager)
-        #
-        #marker:reliesExclusivelyOnExternalMonitors
-        #
-        - '{__name__="cluster_infrastructure_provider"}'
-        #
-        # owners: (@openshift/openshift-team-cluster-lifecycle)
-        #
-        # cluster_feature_set reports the enabled feature set for the cluster.
-        #
-        # This rule sources metrics from the following monitors:
-        #
-        # consumers: (@openshift/openshift-team-cluster-manager)
-        #
-        #marker:reliesExclusivelyOnExternalMonitors
-        #
-        - '{__name__="cluster_feature_set"}'
-        #
-        # owners: (@openshift/openshift-team-etcd)
-        #
-        # instance:etcd_object_counts:sum reports the number of objects stored in etcd.
-        #
-        # This rule sources metrics from the following monitors:
-        # - openshift-monitoring/kubelet-telemetry: apiserver_storage_objects
-        #
-        # consumers: (@openshift/openshift-team-cluster-manager)
-        #
-        #marker:reliesExclusivelyOnCMOmonitors
-        #
-        - '{__name__="instance:etcd_object_counts:sum"}'
-        #
-        # owners: (@openshift/openshift-team-apiserver)
-        #
-        # code:apiserver_request_total:rate:sum tracks API server request rates by HTTP status code.
-        #
-        # This rule sources metrics from the following monitors:
-        # - openshift-monitoring/kubelet-telemetry: apiserver_request_total
-        #
-        # consumers: (@openshift/openshift-team-cluster-manager)
-        #
-        #marker:reliesExclusivelyOnCMOmonitors
-        #
-        - '{__name__="code:apiserver_request_total:rate:sum"}'
-        #
-        # owners: (@openshift/openshift-team-virtualization)
-        #
-        # cnv:vmi_status_running:count counts running virtual machine instances.
-        #
-        # This rule sources metrics from the following monitors:
-        # - <unknown>: kubevirt_vmi_phase_count
-        #
-        # consumers: (@openshift/openshift-team-cluster-manager)
-        #
-        #marker:reliesExclusivelyOnExternalMonitors
-        #
-        - '{__name__="cnv:vmi_status_running:count"}'
-        #
-        # owners: (@openshift/openshift-team-virtualization)
-        #
-        # cnv_abnormal reports abnormal memory conditions for virtual machines.
-        #
-        # Expected labels:
-        # - reason: memory_working_set_delta_from_request
-        # - reason: memory_rss_delta_from_request
-        #
-        # This rule sources metrics from the following monitors:
-        #
-        # consumers: (@openshift/openshift-team-cluster-manager)
-        #
-        #marker:reliesExclusivelyOnExternalMonitors
-        #
-        - '{__name__="cnv_abnormal", reason=~"memory_working_set_delta_from_request|memory_rss_delta_from_request"}'
-        #
-        # owners: (@openshift/openshift-team-virtualization)
-        #
-        # cluster:vmi_request_cpu_cores:sum reports total CPU requested by virtual machines.
-        #
-        # This rule sources metrics from the following monitors:
-        # - openshift-monitoring/kube-state-metrics-telemetry: kube_pod_container_resource_requests, kube_pod_status_phase, kube_pod_labels
-        #
-        # consumers: (@openshift/openshift-team-cluster-manager)
-        #
-        #marker:reliesExclusivelyOnCMOmonitors
-        #
-        - '{__name__="cluster:vmi_request_cpu_cores:sum"}'
-        #
-        # owners: (@openshift/openshift-team-olm)
-        #
-        # subscription_sync_total reports the number of operator subscription syncs.
-        #
-        # This rule sources metrics from the following monitors:
-        #
-        # consumers: (@openshift/openshift-team-cluster-manager)
-        #
-        #marker:reliesExclusivelyOnExternalMonitors
-        #
-        - '{__name__="subscription_sync_total"}'
-        #
-        # owners: (@openshift/openshift-team-olm)
-        #
-        # olm_resolution_duration_seconds reports OLM dependency resolution duration.
-        #
-        # This rule sources metrics from the following monitors:
-        #
-        # consumers: (@openshift/openshift-team-cluster-manager)
-        #
-        #marker:reliesExclusivelyOnExternalMonitors
-        #
-        - '{__name__="olm_resolution_duration_seconds"}'
-        #
-        # owners: (@openshift/openshift-team-olm)
-        #
-        # csv_succeeded reports successful CSV installations.
-        #
-        # This rule sources metrics from the following monitors:
-        #
-        # consumers: (@openshift/openshift-team-cluster-manager)
-        #
-        #marker:reliesExclusivelyOnExternalMonitors
-        #
-        - '{__name__="csv_succeeded"}'
-        #
-        # owners: (@openshift/openshift-team-olm)
-        #
-        # csv_abnormal reports abnormal CSV states.
-        #
-        # This rule sources metrics from the following monitors:
-        #
-        # consumers: (@openshift/openshift-team-cluster-manager)
-        #
-        #marker:reliesExclusivelyOnExternalMonitors
-        #
-        - '{__name__="csv_abnormal"}'
-        #
-        # owners: (@openshift/openshift-team-storage)
-        #
-        # cluster:kube_persistentvolumeclaim_resource_requests_storage_bytes:provisioner:sum aggregates PVC storage requests by provisioner.
-        #
-        # This rule sources metrics from the following monitors:
-        # - openshift-monitoring/kube-state-metrics-telemetry: kube_persistentvolumeclaim_resource_requests_storage_bytes, kube_persistentvolumeclaim_info, kube_storageclass_info
-        #
-        # consumers: (@openshift/openshift-team-cluster-manager)
-        #
-        #marker:reliesExclusivelyOnCMOmonitors
-        #
-        - '{__name__="cluster:kube_persistentvolumeclaim_resource_requests_storage_bytes:provisioner:sum"}'
-        #
-        # owners: (@openshift/openshift-team-storage)
-        #
-        # cluster:kubelet_volume_stats_used_bytes:provisioner:sum aggregates volume usage by provisioner.
-        #
-        # This rule sources metrics from the following monitors:
-        # - openshift-monitoring/kube-state-metrics-telemetry: kube_persistentvolumeclaim_info, kube_storageclass_info
-        # - openshift-monitoring/kubelet-telemetry: kubelet_volume_stats_used_bytes
-        #
-        # consumers: (@openshift/openshift-team-cluster-manager)
-        #
-        #marker:reliesExclusivelyOnCMOmonitors
-        #
-        - '{__name__="cluster:kubelet_volume_stats_used_bytes:provisioner:sum"}'
-        #
-        # owners: (@openshift/openshift-team-ocs)
-        #
-        # ceph_cluster_total_bytes reports total Ceph cluster capacity.
-        #
-        # This rule sources metrics from the following monitors:
-        #
-        # consumers: (@openshift/openshift-team-cluster-manager)
-        #
-        #marker:reliesExclusivelyOnExternalMonitors
-        #
-        - '{__name__="ceph_cluster_total_bytes"}'
-        #
-        # owners: (@openshift/openshift-team-ocs)
-        #
-        # ceph_cluster_total_used_raw_bytes reports raw storage used in Ceph cluster.
-        #
-        # This rule sources metrics from the following monitors:
-        #
-        # consumers: (@openshift/openshift-team-cluster-manager)
-        #
-        #marker:reliesExclusivelyOnExternalMonitors
-        #
-        - '{__name__="ceph_cluster_total_used_raw_bytes"}'
-        #
-        # owners: (@openshift/openshift-team-ocs)
-        #
-        # ceph_health_status reports Ceph cluster health status.
-        #
-        # This rule sources metrics from the following monitors:
-        #
-        # consumers: (@openshift/openshift-team-cluster-manager)
-        #
-        #marker:reliesExclusivelyOnExternalMonitors
-        #
-        - '{__name__="ceph_health_status"}'
-        #
-        # owners: (@openshift/openshift-team-ocs)
-        #
-        # odf_system_raw_capacity_total_bytes reports total ODF system raw capacity.
-        #
-        # This rule sources metrics from the following monitors:
-        #
-        # consumers: (@openshift/openshift-team-cluster-manager)
-        #
-        #marker:reliesExclusivelyOnExternalMonitors
-        #
-        - '{__name__="odf_system_raw_capacity_total_bytes"}'
-        #
-        # owners: (@openshift/openshift-team-ocs)
-        #
-        # odf_system_raw_capacity_used_bytes reports used ODF system raw capacity.
-        #
-        # This rule sources metrics from the following monitors:
-        #
-        # consumers: (@openshift/openshift-team-cluster-manager)
-        #
-        #marker:reliesExclusivelyOnExternalMonitors
-        #
-        - '{__name__="odf_system_raw_capacity_used_bytes"}'
-        #
-        # owners: (@openshift/openshift-team-ocs)
-        #
-        # odf_system_health_status reports ODF system health status.
-        #
-        # This rule sources metrics from the following monitors:
-        #
-        # consumers: (@openshift/openshift-team-cluster-manager)
-        #
-        #marker:reliesExclusivelyOnExternalMonitors
-        #
-        - '{__name__="odf_system_health_status"}'
-        #
-        # owners: (@openshift/openshift-team-ocs)
-        #
-        # job:ceph_osd_metadata:count counts Ceph OSD instances.
-        #
-        # This rule sources metrics from the following monitors:
-        # - <unknown>: ceph_osd_metadata
-        #
-        # consumers: (@openshift/openshift-team-cluster-manager)
-        #
-        #marker:reliesExclusivelyOnExternalMonitors
-        #
-        - '{__name__="job:ceph_osd_metadata:count"}'
-        #
-        # owners: (@openshift/openshift-team-ocs)
-        #
-        # job:kube_pv:count counts persistent volumes.
-        #
-        # This rule sources metrics from the following monitors:
-        # - openshift-monitoring/kube-state-metrics-telemetry: kube_persistentvolume_info, kube_storageclass_info
-        #
-        # consumers: (@openshift/openshift-team-cluster-manager)
-        #
-        #marker:reliesExclusivelyOnCMOmonitors
-        #
-        - '{__name__="job:kube_pv:count"}'
-        #
-        # owners: (@openshift/openshift-team-ocs)
-        #
-        # job:odf_system_pvs:count counts ODF system persistent volumes.
-        #
-        # This rule sources metrics from the following monitors:
-        # - openshift-monitoring/kube-state-metrics-telemetry: kube_persistentvolume_info, kube_storageclass_info
-        #
-        # consumers: (@openshift/openshift-team-cluster-manager)
-        #
-        #marker:reliesExclusivelyOnCMOmonitors
-        #
-        - '{__name__="job:odf_system_pvs:count"}'
-        #
-        # owners: (@openshift/openshift-team-ocs)
-        #
-        # job:ceph_pools_iops:total reports total IOPS across Ceph pools.
-        #
-        # This rule sources metrics from the following monitors:
-        # - <unknown>: ceph_pool_rd
-        # - <unknown>: ceph_pool_wr
-        #
-        # consumers: (@openshift/openshift-team-cluster-manager)
-        #
-        #marker:reliesExclusivelyOnExternalMonitors
-        #
-        - '{__name__="job:ceph_pools_iops:total"}'
-        #
-        # owners: (@openshift/openshift-team-ocs)
-        #
-        # job:ceph_pools_iops_bytes:total reports total IOPS bytes across Ceph pools.
-        #
-        # This rule sources metrics from the following monitors:
-        # - <unknown>: ceph_pool_rd_bytes
-        # - <unknown>: ceph_pool_wr_bytes
-        #
-        # consumers: (@openshift/openshift-team-cluster-manager)
-        #
-        #marker:reliesExclusivelyOnExternalMonitors
-        #
-        - '{__name__="job:ceph_pools_iops_bytes:total"}'
-        #
-        # owners: (@openshift/openshift-team-ocs)
-        #
-        # job:ceph_versions_running:count counts running Ceph component versions.
-        #
-        # This rule sources metrics from the following monitors:
-        # - <unknown>: ceph_mon_metadata
-        # - <unknown>: ceph_osd_metadata
-        # - <unknown>: ceph_rgw_metadata
-        # - <unknown>: ceph_mds_metadata
-        #
-        # consumers: (@openshift/openshift-team-cluster-manager)
-        #
-        #marker:reliesExclusivelyOnExternalMonitors
-        #
-        - '{__name__="job:ceph_versions_running:count"}'
-        #
-        # owners: (@openshift/openshift-team-ocs)
-        #
-        # job:noobaa_total_unhealthy_buckets:sum counts total unhealthy NooBaa buckets.
-        #
-        # This rule sources metrics from the following monitors:
-        # - <unknown>: NooBaa_num_unhealthy_buckets
-        # - <unknown>: NooBaa_num_unhealthy_bucket_claims
-        #
-        # consumers: (@openshift/openshift-team-cluster-manager)
-        #
-        #marker:reliesExclusivelyOnExternalMonitors
-        #
-        - '{__name__="job:noobaa_total_unhealthy_buckets:sum"}'
-        #
-        # owners: (@openshift/openshift-team-ocs)
-        #
-        # job:noobaa_bucket_count:sum counts total NooBaa buckets.
-        #
-        # This rule sources metrics from the following monitors:
-        # - <unknown>: NooBaa_num_buckets
-        # - <unknown>: NooBaa_num_buckets_claims
-        #
-        # consumers: (@openshift/openshift-team-cluster-manager)
-        #
-        #marker:reliesExclusivelyOnExternalMonitors
-        #
-        - '{__name__="job:noobaa_bucket_count:sum"}'
-        #
-        # owners: (@openshift/openshift-team-ocs)
-        #
-        # job:noobaa_total_object_count:sum counts total NooBaa objects.
-        #
-        # This rule sources metrics from the following monitors:
-        # - <unknown>: NooBaa_num_objects
-        # - <unknown>: NooBaa_num_objects_buckets_claims
-        #
-        # consumers: (@openshift/openshift-team-cluster-manager)
-        #
-        #marker:reliesExclusivelyOnExternalMonitors
-        #
-        - '{__name__="job:noobaa_total_object_count:sum"}'
-        #
-        # owners: (@openshift/openshift-team-ocs)
-        #
-        # odf_system_bucket_count reports ODF system bucket count for OCS.
-        #
-        # Expected labels:
-        # - system_type: OCS
-        # - system_vendor: Red Hat
-        #
-        # This rule sources metrics from the following monitors:
-        #
-        # consumers: (@openshift/openshift-team-cluster-manager)
-        #
-        #marker:reliesExclusivelyOnExternalMonitors
-        #
-        - '{__name__="odf_system_bucket_count", system_type="OCS", system_vendor="Red Hat"}'
-        #
-        # owners: (@openshift/openshift-team-ocs)
-        #
-        # odf_system_objects_total reports total objects in ODF system for OCS.
-        #
-        # Expected labels:
-        # - system_type: OCS
-        # - system_vendor: Red Hat
-        #
-        # This rule sources metrics from the following monitors:
-        #
-        # consumers: (@openshift/openshift-team-cluster-manager)
-        #
-        #marker:reliesExclusivelyOnExternalMonitors
-        #
-        - '{__name__="odf_system_objects_total", system_type="OCS", system_vendor="Red Hat"}'
-        #
-        # owners: (@openshift/openshift-team-ocs)
-        #
-        # noobaa_accounts_num reports number of NooBaa accounts.
-        #
-        # This rule sources metrics from the following monitors:
-        #
-        # consumers: (@openshift/openshift-team-cluster-manager)
-        #
-        #marker:reliesExclusivelyOnExternalMonitors
-        #
-        - '{__name__="noobaa_accounts_num"}'
-        #
-        # owners: (@openshift/openshift-team-ocs)
-        #
-        # noobaa_total_usage reports total NooBaa storage usage.
-        #
-        # This rule sources metrics from the following monitors:
-        #
-        # consumers: (@openshift/openshift-team-cluster-manager)
-        #
-        #marker:reliesExclusivelyOnExternalMonitors
-        #
-        - '{__name__="noobaa_total_usage"}'
-        #
-        # owners: (@openshift/openshift-team-console)
-        #
-        # console_url reports the console URL.
-        #
-        # This rule sources metrics from the following monitors:
-        #
-        # consumers: (@openshift/openshift-team-cluster-manager)
-        #
-        #marker:reliesExclusivelyOnExternalMonitors
-        #
-        - '{__name__="console_url"}'
-        #
-        # owners: (@openshift/openshift-team-console)
-        #
-        # cluster:console_auth_login_requests_total:sum reports total console login requests.
-        #
-        # This rule sources metrics from the following monitors:
-        # - <unknown>: console_auth_login_requests_total
-        #
-        # consumers: (@openshift/openshift-team-cluster-manager)
-        #
-        #marker:reliesExclusivelyOnExternalMonitors
-        #
-        - '{__name__="cluster:console_auth_login_requests_total:sum"}'
-        #
-        # owners: (@openshift/openshift-team-console)
-        #
-        # cluster:console_auth_login_successes_total:sum reports total successful console logins.
-        #
-        # This rule sources metrics from the following monitors:
-        # - <unknown>: console_auth_login_successes_total
-        #
-        # consumers: (@openshift/openshift-team-cluster-manager)
-        #
-        #marker:reliesExclusivelyOnExternalMonitors
-        #
-        - '{__name__="cluster:console_auth_login_successes_total:sum"}'
-        #
-        # owners: (@openshift/openshift-team-console)
-        #
-        # cluster:console_auth_login_failures_total:sum reports total failed console logins.
-        #
-        # This rule sources metrics from the following monitors:
-        # - <unknown>: console_auth_login_failures_total
-        #
-        # consumers: (@openshift/openshift-team-cluster-manager)
-        #
-        #marker:reliesExclusivelyOnExternalMonitors
-        #
-        - '{__name__="cluster:console_auth_login_failures_total:sum"}'
-        #
-        # owners: (@openshift/openshift-team-console)
-        #
-        # cluster:console_auth_logout_requests_total:sum reports total console logout requests.
-        #
-        # This rule sources metrics from the following monitors:
-        # - <unknown>: console_auth_logout_requests_total
-        #
-        # consumers: (@openshift/openshift-team-cluster-manager)
-        #
-        #marker:reliesExclusivelyOnExternalMonitors
-        #
-        - '{__name__="cluster:console_auth_logout_requests_total:sum"}'
-        #
-        # owners: (@openshift/openshift-team-console)
-        #
-        # cluster:console_usage_users:max reports maximum active console users.
-        #
-        # This rule sources metrics from the following monitors:
-        # - <unknown>: console_usage_users
-        #
-        # consumers: (@openshift/openshift-team-cluster-manager)
-        #
-        #marker:reliesExclusivelyOnExternalMonitors
-        #
-        - '{__name__="cluster:console_usage_users:max"}'
-        #
-        # owners: (@openshift/openshift-team-console)
-        #
-        # cluster:console_plugins_info:max reports console plugin information.
-        #
-        # This rule sources metrics from the following monitors:
-        # - <unknown>: console_plugins_info
-        #
-        # consumers: (@openshift/openshift-team-cluster-manager)
-        #
-        #marker:reliesExclusivelyOnExternalMonitors
-        #
-        - '{__name__="cluster:console_plugins_info:max"}'
-        #
-        # owners: (@openshift/openshift-team-console)
-        #
-        # cluster:console_customization_perspectives_info:max reports console customization perspective info.
-        #
-        # This rule sources metrics from the following monitors:
-        # - <unknown>: console_customization_perspectives_info
-        #
-        # consumers: (@openshift/openshift-team-cluster-manager)
-        #
-        #marker:reliesExclusivelyOnExternalMonitors
-        #
-        - '{__name__="cluster:console_customization_perspectives_info:max"}'
-        #
-        # owners: (@openshift/openshift-team-networking)
-        #
-        # cluster:ovnkube_controller_egress_routing_via_host:max reports egress routing via host.
-        #
-        # This rule sources metrics from the following monitors:
-        # - <unknown>: ovnkube_controller_egress_routing_via_host
-        #
-        # consumers: (@openshift/openshift-team-cluster-manager)
-        #
-        #marker:reliesExclusivelyOnExternalMonitors
-        #
-        - '{__name__="cluster:ovnkube_controller_egress_routing_via_host:max"}'
-        #
-        # owners: (@openshift/openshift-team-networking)
-        #
-        # cluster:ovnkube_controller_admin_network_policies_db_objects:max reports admin network policies database objects.
-        #
-        # Expected labels:
-        # - table_name: ACL
-        # - table_name: Address_Set
-        #
-        # This rule sources metrics from the following monitors:
-        # - <unknown>: ovnkube_controller_admin_network_policies_db_objects
-        #
-        # consumers: (@openshift/openshift-team-cluster-manager)
-        #
-        #marker:reliesExclusivelyOnExternalMonitors
-        #
-        - '{__name__="cluster:ovnkube_controller_admin_network_policies_db_objects:max",table_name=~"ACL|Address_Set"}'
-        #
-        # owners: (@openshift/openshift-team-networking)
-        #
-        # cluster:ovnkube_controller_baseline_admin_network_policies_db_objects:max reports baseline admin network policies database objects.
-        #
-        # Expected labels:
-        # - table_name: ACL
-        # - table_name: Address_Set
-        #
-        # This rule sources metrics from the following monitors:
-        # - <unknown>: ovnkube_controller_baseline_admin_network_policies_db_objects
-        #
-        # consumers: (@openshift/openshift-team-cluster-manager)
-        #
-        #marker:reliesExclusivelyOnExternalMonitors
-        #
-        - '{__name__="cluster:ovnkube_controller_baseline_admin_network_policies_db_objects:max",table_name=~"ACL|Address_Set"}'
-        #
-        # owners: (@openshift/openshift-team-networking)
-        #
-        # cluster:ovnkube_controller_admin_network_policies_rules:max reports admin network policies rules.
-        #
-        # Expected labels:
-        # - action: Pass
-        # - action: Allow
-        # - action: Deny
-        # - direction: Ingress
-        # - direction: Egress
-        #
-        # This rule sources metrics from the following monitors:
-        # - <unknown>: ovnkube_controller_admin_network_policies_rules
-        #
-        # consumers: (@openshift/openshift-team-cluster-manager)
-        #
-        #marker:reliesExclusivelyOnExternalMonitors
-        #
-        - '{__name__="cluster:ovnkube_controller_admin_network_policies_rules:max",direction=~"Ingress|Egress",action=~"Pass|Allow|Deny"}'
-        #
-        # owners: (@openshift/openshift-team-networking)
-        #
-        # cluster:ovnkube_controller_baseline_admin_network_policies_rules:max reports baseline admin network policies rules.
-        #
-        # Expected labels:
-        # - action: Allow
-        # - action: Deny
-        # - direction: Ingress
-        # - direction: Egress
-        #
-        # This rule sources metrics from the following monitors:
-        # - <unknown>: ovnkube_controller_baseline_admin_network_policies_rules
-        #
-        # consumers: (@openshift/openshift-team-cluster-manager)
-        #
-        #marker:reliesExclusivelyOnExternalMonitors
-        #
-        - '{__name__="cluster:ovnkube_controller_baseline_admin_network_policies_rules:max",direction=~"Ingress|Egress",action=~"Allow|Deny"}'
-        #
-        # owners: (@openshift/openshift-team-networking)
-        #
-        # cluster:network_attachment_definition_instances:max reports network attachment definition instances.
-        #
-        # This rule sources metrics from the following monitors:
-        # - <unknown>: network_attachment_definition_instances
-        #
-        # consumers: (@openshift/openshift-team-cluster-manager)
-        #
-        #marker:reliesExclusivelyOnExternalMonitors
-        #
-        - '{__name__="cluster:network_attachment_definition_instances:max"}'
-        #
-        # owners: (@openshift/openshift-team-networking)
-        #
-        # cluster:network_attachment_definition_enabled_instance_up:max reports enabled network attachment definition instances that are up.
-        #
-        # This rule sources metrics from the following monitors:
-        # - <unknown>: network_attachment_definition_enabled_instance_up
-        #
-        # consumers: (@openshift/openshift-team-cluster-manager)
-        #
-        #marker:reliesExclusivelyOnExternalMonitors
-        #
-        - '{__name__="cluster:network_attachment_definition_enabled_instance_up:max"}'
-        #
-        # owners: (@openshift/openshift-team-networking)
-        #
-        # cluster:ingress_controller_aws_nlb_active:sum reports active AWS NLB ingress controllers.
-        #
-        # This rule sources metrics from the following monitors:
-        # - <unknown>: ingress_controller_aws_nlb_active
-        #
-        # consumers: (@openshift/openshift-team-cluster-manager)
-        #
-        #marker:reliesExclusivelyOnExternalMonitors
-        #
-        - '{__name__="cluster:ingress_controller_aws_nlb_active:sum"}'
-        #
-        # owners: (@openshift/openshift-team-networking)
-        #
-        # cluster:route_metrics_controller_routes_per_shard:min reports minimum routes per shard.
-        #
-        # This rule sources metrics from the following monitors:
-        # - <unknown>: route_metrics_controller_routes_per_shard
-        #
-        # consumers: (@openshift/openshift-team-cluster-manager)
-        #
-        #marker:reliesExclusivelyOnExternalMonitors
-        #
-        - '{__name__="cluster:route_metrics_controller_routes_per_shard:min"}'
-        #
-        # owners: (@openshift/openshift-team-networking)
-        #
-        # cluster:route_metrics_controller_routes_per_shard:max reports maximum routes per shard.
-        #
-        # This rule sources metrics from the following monitors:
-        # - <unknown>: route_metrics_controller_routes_per_shard
-        #
-        # consumers: (@openshift/openshift-team-cluster-manager)
-        #
-        #marker:reliesExclusivelyOnExternalMonitors
-        #
-        - '{__name__="cluster:route_metrics_controller_routes_per_shard:max"}'
-        #
-        # owners: (@openshift/openshift-team-networking)
-        #
-        # cluster:route_metrics_controller_routes_per_shard:avg reports average routes per shard.
-        #
-        # This rule sources metrics from the following monitors:
-        # - <unknown>: route_metrics_controller_routes_per_shard
-        #
-        # consumers: (@openshift/openshift-team-cluster-manager)
-        #
-        #marker:reliesExclusivelyOnExternalMonitors
-        #
-        - '{__name__="cluster:route_metrics_controller_routes_per_shard:avg"}'
-        #
-        # owners: (@openshift/openshift-team-networking)
-        #
-        # cluster:route_metrics_controller_routes_per_shard:median reports median routes per shard.
-        #
-        # This rule sources metrics from the following monitors:
-        # - <unknown>: route_metrics_controller_routes_per_shard
-        #
-        # consumers: (@openshift/openshift-team-cluster-manager)
-        #
-        #marker:reliesExclusivelyOnExternalMonitors
-        #
-        - '{__name__="cluster:route_metrics_controller_routes_per_shard:median"}'
-        #
-        # owners: (@openshift/openshift-team-networking)
-        #
-        # cluster:openshift_route_info:tls_termination:sum aggregates route info by TLS termination type.
-        #
-        # This rule sources metrics from the following monitors:
-        # - openshift-monitoring/openshift-state-metrics-telemetry: openshift_route_info
-        #
-        # consumers: (@openshift/openshift-team-cluster-manager)
-        #
-        #marker:reliesExclusivelyOnCMOmonitors
-        #
-        - '{__name__="cluster:openshift_route_info:tls_termination:sum"}'
-        #
-        # owners: (@openshift/openshift-team-cluster-observability)
-        #
-        # insightsclient_request_send_total reports total insights client requests sent.
-        #
-        # This rule sources metrics from the following monitors:
-        #
-        # consumers: (@openshift/openshift-team-cluster-manager)
-        #
-        #marker:reliesExclusivelyOnExternalMonitors
-        #
-        - '{__name__="insightsclient_request_send_total"}'
-        #
-        # owners: (@openshift/openshift-team-migration)
-        #
-        # cam_app_workload_migrations reports application workload migrations.
-        #
-        # This rule sources metrics from the following monitors:
-        #
-        # consumers: (@openshift/openshift-team-cluster-manager)
-        #
-        #marker:reliesExclusivelyOnExternalMonitors
-        #
-        - '{__name__="cam_app_workload_migrations"}'
-        #
-        # owners: (@openshift/openshift-team-apiserver)
-        #
-        # cluster:apiserver_current_inflight_requests:sum:max_over_time:2m reports maximum inflight API server requests over 2 minutes.
-        #
-        # This rule sources metrics from the following monitors:
-        # - openshift-monitoring/kubelet-telemetry: apiserver_current_inflight_requests
-        #
-        # consumers: (@openshift/openshift-team-cluster-manager)
-        #
-        #marker:reliesExclusivelyOnCMOmonitors
-        #
-        - '{__name__="cluster:apiserver_current_inflight_requests:sum:max_over_time:2m"}'
-        #
-        # owners: (https://github.com/integr8ly)
-        #
-        # rhmi_status reports RHMI installation status.
-        #
-        # This rule sources metrics from the following monitors:
-        #
-        # consumers: (@openshift/openshift-team-cluster-manager)
-        #
-        #marker:reliesExclusivelyOnExternalMonitors
-        #
-        - '{__name__="rhmi_status"}'
-        #
-        # owners: (https://github.com/integr8ly, @boomatang)
-        #
-        # state:rhoam_critical_alerts:max reports maximum critical RHOAM alerts.
-        #
-        # This rule sources metrics from the following monitors:
-        # - <unknown>: rhoam_critical_alerts
-        #
-        # consumers: (@openshift/openshift-team-cluster-manager)
-        #
-        #marker:reliesExclusivelyOnExternalMonitors
-        #
-        - '{__name__="state:rhoam_critical_alerts:max"}'
-        #
-        # owners: (https://github.com/integr8ly, @boomatang)
-        #
-        # state:rhoam_warning_alerts:max reports maximum warning RHOAM alerts.
-        #
-        # This rule sources metrics from the following monitors:
-        # - <unknown>: rhoam_warning_alerts
-        #
-        # consumers: (@openshift/openshift-team-cluster-manager)
-        #
-        #marker:reliesExclusivelyOnExternalMonitors
-        #
-        - '{__name__="state:rhoam_warning_alerts:max"}'
-        #
-        # owners: (https://github.com/integr8ly, @boomatang)
-        #
-        # rhoam_7d_slo_percentile:max reports RHOAM 7-day SLO percentile.
-        #
-        # This rule sources metrics from the following monitors:
-        # - <unknown>: rhoam_7d_slo_percentile
-        #
-        # consumers: (@openshift/openshift-team-cluster-manager)
-        #
-        #marker:reliesExclusivelyOnExternalMonitors
-        #
-        - '{__name__="rhoam_7d_slo_percentile:max"}'
-        #
-        # owners: (https://github.com/integr8ly, @boomatang)
-        #
-        # rhoam_7d_slo_remaining_error_budget:max reports RHOAM 7-day remaining error budget.
-        #
-        # This rule sources metrics from the following monitors:
-        # - <unknown>: rhoam_7d_slo_remaining_error_budget
-        #
-        # consumers: (@openshift/openshift-team-cluster-manager)
-        #
-        #marker:reliesExclusivelyOnExternalMonitors
-        #
-        - '{__name__="rhoam_7d_slo_remaining_error_budget:max"}'
-        #
-        # owners: (@openshift/openshift-team-cluster-lifecycle)
-        #
-        # cluster_legacy_scheduler_policy reports whether legacy scheduler policy is configured.
-        #
-        # This rule sources metrics from the following monitors:
-        #
-        # consumers: (@openshift/openshift-team-cluster-manager)
-        #
-        #marker:reliesExclusivelyOnExternalMonitors
-        #
-        - '{__name__="cluster_legacy_scheduler_policy"}'
-        #
-        # owners: (@openshift/openshift-team-cluster-lifecycle)
-        #
-        # cluster_master_schedulable reports whether master nodes are schedulable.
-        #
-        # This rule sources metrics from the following monitors:
-        #
-        # consumers: (@openshift/openshift-team-cluster-manager)
-        #
-        #marker:reliesExclusivelyOnExternalMonitors
-        #
-        - '{__name__="cluster_master_schedulable"}'
-        #
-        # owners: (@openshift/openshift-team-devtools)
-        #
-        # che_workspace_status reports Che workspace status.
-        #
-        # This rule sources metrics from the following monitors:
-        #
-        # consumers: (@openshift/openshift-team-cluster-manager)
-        #
-        #marker:reliesExclusivelyOnExternalMonitors
-        #
-        - '{__name__="che_workspace_status"}'
-        #
-        # owners: (@openshift/openshift-team-devtools)
-        #
-        # che_workspace_started_total reports total Che workspaces started.
-        #
-        # This rule sources metrics from the following monitors:
-        #
-        # consumers: (@openshift/openshift-team-cluster-manager)
-        #
-        #marker:reliesExclusivelyOnExternalMonitors
-        #
-        - '{__name__="che_workspace_started_total"}'
-        #
-        # owners: (@openshift/openshift-team-devtools)
-        #
-        # che_workspace_failure_total reports total Che workspace failures.
-        #
-        # This rule sources metrics from the following monitors:
-        #
-        # consumers: (@openshift/openshift-team-cluster-manager)
-        #
-        #marker:reliesExclusivelyOnExternalMonitors
-        #
-        - '{__name__="che_workspace_failure_total"}'
-        #
-        # owners: (@openshift/openshift-team-devtools)
-        #
-        # che_workspace_start_time_seconds_sum reports sum of Che workspace start times.
-        #
-        # This rule sources metrics from the following monitors:
-        #
-        # consumers: (@openshift/openshift-team-cluster-manager)
-        #
-        #marker:reliesExclusivelyOnExternalMonitors
-        #
-        - '{__name__="che_workspace_start_time_seconds_sum"}'
-        #
-        # owners: (@openshift/openshift-team-devtools)
-        #
-        # che_workspace_start_time_seconds_count reports count of Che workspace starts.
-        #
-        # This rule sources metrics from the following monitors:
-        #
-        # consumers: (@openshift/openshift-team-cluster-manager)
-        #
-        #marker:reliesExclusivelyOnExternalMonitors
-        #
-        - '{__name__="che_workspace_start_time_seconds_count"}'
-        #
-        # owners: (@openshift/openshift-team-cloud-credential-operator)
-        #
-        # cco_credentials_mode reports CCO credentials mode.
-        #
-        # This rule sources metrics from the following monitors:
-        #
-        # consumers: (@openshift/openshift-team-cluster-manager)
-        #
-        #marker:reliesExclusivelyOnExternalMonitors
-        #
-        - '{__name__="cco_credentials_mode"}'
-        #
-        # owners: (@openshift/openshift-team-storage)
-        #
-        # cluster:kube_persistentvolume_plugin_type_counts:sum counts persistent volumes by plugin type.
-        #
-        # This rule sources metrics from the following monitors:
-        # - openshift-monitoring/kubelet-telemetry: pv_collector_total_pv_count
-        #
-        # consumers: (@openshift/openshift-team-cluster-manager)
-        #
-        #marker:reliesExclusivelyOnCMOmonitors
-        #
-        - '{__name__="cluster:kube_persistentvolume_plugin_type_counts:sum"}'
-        #
-        # owners: (@openshift/openshift-team-acm)
-        #
-        # acm_managed_cluster_info reports ACM managed cluster information.
-        #
-        # This rule sources metrics from the following monitors:
-        #
-        # consumers: (@openshift/openshift-team-cluster-manager)
-        #
-        #marker:reliesExclusivelyOnExternalMonitors
-        #
-        - '{__name__="acm_managed_cluster_info"}'
-        #
-        # owners: (@openshift/openshift-team-acm)
-        #
-        # acm_managed_cluster_worker_cores:max reports maximum worker cores in ACM managed clusters.
-        #
-        # This rule sources metrics from the following monitors:
-        # - <unknown>: acm_managed_cluster_worker_cores
-        #
-        # consumers: (@openshift/openshift-team-cluster-manager)
-        #
-        #marker:reliesExclusivelyOnExternalMonitors
-        #
-        - '{__name__="acm_managed_cluster_worker_cores:max"}'
-        #
-        # owners: (@openshift/openshift-team-acm)
-        #
-        # acm_console_page_count:sum counts ACM console page views by page type.
-        #
-        # Expected labels:
-        # - page: overview-classic
-        # - page: overview-fleet
-        # - page: search
-        # - page: search-details
-        # - page: clusters
-        # - page: application
-        # - page: governance
-        #
-        # This rule sources metrics from the following monitors:
-        # - <unknown>: acm_console_page_count
-        #
-        # consumers: (@openshift/openshift-team-cluster-manager)
-        #
-        #marker:reliesExclusivelyOnExternalMonitors
-        #
-        - '{__name__="acm_console_page_count:sum", page=~"overview-classic|overview-fleet|search|search-details|clusters|application|governance"}'
-        #
-        # owners: (@openshift/openshift-team-vsphere)
-        #
-        # cluster:vsphere_vcenter_info:sum reports vSphere vCenter information.
-        #
-        # This rule sources metrics from the following monitors:
-        # - <unknown>: vsphere_vcenter_info
-        #
-        # consumers: (@openshift/openshift-team-cluster-manager)
-        #
-        #marker:reliesExclusivelyOnExternalMonitors
-        #
-        - '{__name__="cluster:vsphere_vcenter_info:sum"}'
-        #
-        # owners: (@openshift/openshift-team-vsphere)
-        #
-        # cluster:vsphere_esxi_version_total:sum reports vSphere ESXi version counts.
-        #
-        # This rule sources metrics from the following monitors:
-        # - <unknown>: vsphere_esxi_version_total
-        #
-        # consumers: (@openshift/openshift-team-cluster-manager)
-        #
-        #marker:reliesExclusivelyOnExternalMonitors
-        #
-        - '{__name__="cluster:vsphere_esxi_version_total:sum"}'
-        #
-        # owners: (@openshift/openshift-team-vsphere)
-        #
-        # cluster:vsphere_node_hw_version_total:sum reports vSphere node hardware version counts.
-        #
-        # This rule sources metrics from the following monitors:
-        # - <unknown>: vsphere_node_hw_version_total
-        #
-        # consumers: (@openshift/openshift-team-cluster-manager)
-        #
-        #marker:reliesExclusivelyOnExternalMonitors
-        #
-        - '{__name__="cluster:vsphere_node_hw_version_total:sum"}'
-        #
-        # owners: (@openshift/openshift-team-builds)
-        #
-        # openshift:build_by_strategy:sum aggregates builds by strategy.
-        #
-        # This rule sources metrics from the following monitors:
-        # - openshift-monitoring/openshift-state-metrics-telemetry: openshift_build_status_phase_total
-        #
-        # consumers: (@openshift/openshift-team-cluster-manager)
-        #
-        #marker:reliesExclusivelyOnCMOmonitors
-        #
-        - '{__name__="openshift:build_by_strategy:sum"}'
-        #
-        # owners: (@openshift/openshift-team-data-science)
-        #
-        # rhods_aggregate_availability reports RHODS aggregate availability.
-        #
-        # This rule sources metrics from the following monitors:
-        #
-        # consumers: (@openshift/openshift-team-cluster-manager)
-        #
-        #marker:reliesExclusivelyOnExternalMonitors
-        #
-        - '{__name__="rhods_aggregate_availability"}'
-        #
-        # owners: (@openshift/openshift-team-data-science)
-        #
-        # rhods_total_users reports total RHODS users.
-        #
-        # This rule sources metrics from the following monitors:
-        #
-        # consumers: (@openshift/openshift-team-cluster-manager)
-        #
-        #marker:reliesExclusivelyOnExternalMonitors
-        #
-        - '{__name__="rhods_total_users"}'
-        #
-        # owners: (@openshift/openshift-team-etcd)
-        #
-        # instance:etcd_disk_wal_fsync_duration_seconds:histogram_quantile reports etcd WAL fsync duration 99th percentile.
-        #
-        # Expected labels:
-        # - quantile: 0.99
-        #
-        # This rule sources metrics from the following monitors:
-        # - <unknown>: etcd_disk_wal_fsync_duration_seconds_bucket
-        #
-        # consumers: (@openshift/openshift-team-cluster-manager)
-        #
-        #marker:reliesExclusivelyOnExternalMonitors
-        #
-        - '{__name__="instance:etcd_disk_wal_fsync_duration_seconds:histogram_quantile",quantile="0.99"}'
-        #
-        # owners: (@openshift/openshift-team-etcd)
-        #
-        # instance:etcd_mvcc_db_total_size_in_bytes:sum reports total etcd database size.
-        #
-        # This rule sources metrics from the following monitors:
-        # - <unknown>: etcd_mvcc_db_total_size_in_bytes
-        #
-        # consumers: (@openshift/openshift-team-cluster-manager)
-        #
-        #marker:reliesExclusivelyOnExternalMonitors
-        #
-        - '{__name__="instance:etcd_mvcc_db_total_size_in_bytes:sum"}'
-        #
-        # owners: (@openshift/openshift-team-etcd)
-        #
-        # instance:etcd_network_peer_round_trip_time_seconds:histogram_quantile reports etcd network peer RTT 99th percentile.
-        #
-        # Expected labels:
-        # - quantile: 0.99
-        #
-        # This rule sources metrics from the following monitors:
-        # - <unknown>: etcd_network_peer_round_trip_time_seconds_bucket
-        #
-        # consumers: (@openshift/openshift-team-cluster-manager)
-        #
-        #marker:reliesExclusivelyOnExternalMonitors
-        #
-        - '{__name__="instance:etcd_network_peer_round_trip_time_seconds:histogram_quantile",quantile="0.99"}'
-        #
-        # owners: (@openshift/openshift-team-etcd)
-        #
-        # instance:etcd_mvcc_db_total_size_in_use_in_bytes:sum reports etcd database size in use.
-        #
-        # This rule sources metrics from the following monitors:
-        # - <unknown>: etcd_mvcc_db_total_size_in_use_in_bytes
-        #
-        # consumers: (@openshift/openshift-team-cluster-manager)
-        #
-        #marker:reliesExclusivelyOnExternalMonitors
-        #
-        - '{__name__="instance:etcd_mvcc_db_total_size_in_use_in_bytes:sum"}'
-        #
-        # owners: (@openshift/openshift-team-etcd)
-        #
-        # instance:etcd_disk_backend_commit_duration_seconds:histogram_quantile reports etcd backend commit duration 99th percentile.
-        #
-        # Expected labels:
-        # - quantile: 0.99
-        #
-        # This rule sources metrics from the following monitors:
-        # - <unknown>: etcd_disk_backend_commit_duration_seconds_bucket
-        #
-        # consumers: (@openshift/openshift-team-cluster-manager)
-        #
-        #marker:reliesExclusivelyOnExternalMonitors
-        #
-        - '{__name__="instance:etcd_disk_backend_commit_duration_seconds:histogram_quantile",quantile="0.99"}'
-        #
-        # owners: (@openshift/openshift-team-observability)
-        #
-        # jaeger_operator_instances_storage_types reports Jaeger operator instance storage types.
-        #
-        # This rule sources metrics from the following monitors:
-        #
-        # consumers: (@openshift/openshift-team-cluster-manager)
-        #
-        #marker:reliesExclusivelyOnExternalMonitors
-        #
-        - '{__name__="jaeger_operator_instances_storage_types"}'
-        #
-        # owners: (@openshift/openshift-team-observability)
-        #
-        # jaeger_operator_instances_strategies reports Jaeger operator instance strategies.
-        #
-        # This rule sources metrics from the following monitors:
-        #
-        # consumers: (@openshift/openshift-team-cluster-manager)
-        #
-        #marker:reliesExclusivelyOnExternalMonitors
-        #
-        - '{__name__="jaeger_operator_instances_strategies"}'
-        #
-        # owners: (@openshift/openshift-team-observability)
-        #
-        # jaeger_operator_instances_agent_strategies reports Jaeger operator instance agent strategies.
-        #
-        # This rule sources metrics from the following monitors:
-        #
-        # consumers: (@openshift/openshift-team-cluster-manager)
-        #
-        #marker:reliesExclusivelyOnExternalMonitors
-        #
-        - '{__name__="jaeger_operator_instances_agent_strategies"}'
-        #
-        # owners: (@openshift/openshift-team-observability)
-        #
-        # type:tempo_operator_tempostack_storage_backend:sum reports Tempo operator storage backend types.
-        #
-        # Expected labels:
-        # - type: azure
-        # - type: gcs
-        # - type: s3
-        #
-        # This rule sources metrics from the following monitors:
-        # - <unknown>: tempo_operator_tempostack_storage_backend
-        #
-        # consumers: (@openshift/openshift-team-cluster-manager)
-        #
-        #marker:reliesExclusivelyOnExternalMonitors
-        #
-        - '{__name__="type:tempo_operator_tempostack_storage_backend:sum",type=~"azure|gcs|s3"}'
-        #
-        # owners: (@openshift/openshift-team-observability)
-        #
-        # state:tempo_operator_tempostack_managed:sum reports Tempo operator managed state.
-        #
-        # Expected labels:
-        # - state: Managed
-        # - state: Unmanaged
-        #
-        # This rule sources metrics from the following monitors:
-        # - <unknown>: tempo_operator_tempostack_managed
-        #
-        # consumers: (@openshift/openshift-team-cluster-manager)
-        #
-        #marker:reliesExclusivelyOnExternalMonitors
-        #
-        - '{__name__="state:tempo_operator_tempostack_managed:sum",state=~"Managed|Unmanaged"}'
-        #
-        # owners: (@openshift/openshift-team-observability)
-        #
-        # type:tempo_operator_tempostack_multi_tenancy:sum reports Tempo operator multi-tenancy types.
-        #
-        # Expected labels:
-        # - type: static
-        # - type: openshift
-        # - type: disabled
-        #
-        # This rule sources metrics from the following monitors:
-        # - <unknown>: tempo_operator_tempostack_multi_tenancy
-        #
-        # consumers: (@openshift/openshift-team-cluster-manager)
-        #
-        #marker:reliesExclusivelyOnExternalMonitors
-        #
-        - '{__name__="type:tempo_operator_tempostack_multi_tenancy:sum",type=~"static|openshift|disabled"}'
-        #
-        # owners: (@openshift/openshift-team-observability)
-        #
-        # enabled:tempo_operator_tempostack_jaeger_ui:sum reports Tempo operator Jaeger UI enabled status.
-        #
-        # Expected labels:
-        # - enabled: true
-        # - enabled: false
-        #
-        # This rule sources metrics from the following monitors:
-        # - <unknown>: tempo_operator_tempostack_jaeger_ui
-        #
-        # consumers: (@openshift/openshift-team-cluster-manager)
-        #
-        #marker:reliesExclusivelyOnExternalMonitors
-        #
-        - '{__name__="enabled:tempo_operator_tempostack_jaeger_ui:sum",enabled=~"true|false"}'
-        #
-        # owners: (@openshift/openshift-team-observability)
-        #
-        # type:opentelemetry_collector_receivers:sum reports OpenTelemetry collector receiver types.
-        #
-        # Expected labels:
-        # - type: jaeger
-        # - type: hostmetrics
-        # - type: opencensus
-        # - type: prometheus
-        # - type: zipkin
-        # - type: kafka
-        # - type: filelog
-        # - type: journald
-        # - type: k8sevents
-        # - type: kubeletstats
-        # - type: k8scluster
-        # - type: k8sobjects
-        # - type: otlp
-        #
-        # This rule sources metrics from the following monitors:
-        # - <unknown>: opentelemetry_collector_receivers
-        #
-        # consumers: (@openshift/openshift-team-cluster-manager)
-        #
-        #marker:reliesExclusivelyOnExternalMonitors
-        #
-        - '{__name__="type:opentelemetry_collector_receivers:sum",type=~"jaeger|hostmetrics|opencensus|prometheus|zipkin|kafka|filelog|journald|k8sevents|kubeletstats|k8scluster|k8sobjects|otlp"}'
-        #
-        # owners: (@openshift/openshift-team-observability)
-        #
-        # type:opentelemetry_collector_exporters:sum reports OpenTelemetry collector exporter types.
-        #
-        # Expected labels:
-        # - type: debug
-        # - type: logging
-        # - type: otlp
-        # - type: otlphttp
-        # - type: prometheus
-        # - type: lokiexporter
-        # - type: kafka
-        # - type: awscloudwatchlogs
-        # - type: loadbalancing
-        #
-        # This rule sources metrics from the following monitors:
-        # - <unknown>: opentelemetry_collector_exporters
-        #
-        # consumers: (@openshift/openshift-team-cluster-manager)
-        #
-        #marker:reliesExclusivelyOnExternalMonitors
-        #
-        - '{__name__="type:opentelemetry_collector_exporters:sum",type=~"debug|logging|otlp|otlphttp|prometheus|lokiexporter|kafka|awscloudwatchlogs|loadbalancing"}'
-        #
-        # owners: (@openshift/openshift-team-observability)
-        #
-        # type:opentelemetry_collector_processors:sum reports OpenTelemetry collector processor types.
-        #
-        # Expected labels:
-        # - type: batch
-        # - type: memorylimiter
-        # - type: attributes
-        # - type: resource
-        # - type: span
-        # - type: k8sattributes
-        # - type: resourcedetection
-        # - type: filter
-        # - type: routing
-        # - type: cumulativetodelta
-        # - type: groupbyattrs
-        #
-        # This rule sources metrics from the following monitors:
-        # - <unknown>: opentelemetry_collector_processors
-        #
-        # consumers: (@openshift/openshift-team-cluster-manager)
-        #
-        #marker:reliesExclusivelyOnExternalMonitors
-        #
-        - '{__name__="type:opentelemetry_collector_processors:sum",type=~"batch|memorylimiter|attributes|resource|span|k8sattributes|resourcedetection|filter|routing|cumulativetodelta|groupbyattrs"}'
-        #
-        # owners: (@openshift/openshift-team-observability)
-        #
-        # type:opentelemetry_collector_extensions:sum reports OpenTelemetry collector extension types.
-        #
-        # Expected labels:
-        # - type: zpages
-        # - type: ballast
-        # - type: memorylimiter
-        # - type: jaegerremotesampling
-        # - type: healthcheck
-        # - type: pprof
-        # - type: oauth2clientauth
-        # - type: oidcauth
-        # - type: bearertokenauth
-        # - type: filestorage
-        #
-        # This rule sources metrics from the following monitors:
-        # - <unknown>: opentelemetry_collector_extensions
-        #
-        # consumers: (@openshift/openshift-team-cluster-manager)
-        #
-        #marker:reliesExclusivelyOnExternalMonitors
-        #
-        - '{__name__="type:opentelemetry_collector_extensions:sum",type=~"zpages|ballast|memorylimiter|jaegerremotesampling|healthcheck|pprof|oauth2clientauth|oidcauth|bearertokenauth|filestorage"}'
-        #
-        # owners: (@openshift/openshift-team-observability)
-        #
-        # type:opentelemetry_collector_connectors:sum reports OpenTelemetry collector connector types.
-        #
-        # Expected labels:
-        # - type: spanmetrics
-        # - type: forward
-        #
-        # This rule sources metrics from the following monitors:
-        # - <unknown>: opentelemetry_collector_connectors
-        #
-        # consumers: (@openshift/openshift-team-cluster-manager)
-        #
-        #marker:reliesExclusivelyOnExternalMonitors
-        #
-        - '{__name__="type:opentelemetry_collector_connectors:sum",type=~"spanmetrics|forward"}'
-        #
-        # owners: (@openshift/openshift-team-observability)
-        #
-        # type:opentelemetry_collector_info:sum reports OpenTelemetry collector deployment types.
-        #
-        # Expected labels:
-        # - type: deployment
-        # - type: daemonset
-        # - type: sidecar
-        # - type: statefulset
-        #
-        # This rule sources metrics from the following monitors:
-        # - <unknown>: opentelemetry_collector_info
-        #
-        # consumers: (@openshift/openshift-team-cluster-manager)
-        #
-        #marker:reliesExclusivelyOnExternalMonitors
-        #
-        - '{__name__="type:opentelemetry_collector_info:sum",type=~"deployment|daemonset|sidecar|statefulset"}'
-        #
-        # owners: (@openshift/openshift-team-app-services)
-        #
-        # appsvcs:cores_by_product:sum reports application services CPU cores by product.
-        #
-        # This rule sources metrics from the following monitors:
-        # - <unknown>: appsvcs_cpu_usage_cores
-        #
-        # consumers: (@openshift/openshift-team-cluster-manager)
-        #
-        #marker:reliesExclusivelyOnExternalMonitors
-        #
-        - '{__name__="appsvcs:cores_by_product:sum"}'
-        #
-        # owners: (@openshift/openshift-team-node-tuning-operator)
-        #
-        # nto_custom_profiles:count counts custom Node Tuning Operator profiles.
-        #
-        # This rule sources metrics from the following monitors:
-        # - <unknown>: nto_profile_calculated_total
-        #
-        # consumers: (@openshift/openshift-team-cluster-manager)
-        #
-        #marker:reliesExclusivelyOnExternalMonitors
-        #
-        - '{__name__="nto_custom_profiles:count"}'
-        #
-        # owners: (@openshift/openshift-team-storage)
-        #
-        # openshift_csi_share_configmap reports CSI share configmap usage.
-        #
-        # This rule sources metrics from the following monitors:
-        #
-        # consumers: (@openshift/openshift-team-cluster-manager)
-        #
-        #marker:reliesExclusivelyOnExternalMonitors
-        #
-        - '{__name__="openshift_csi_share_configmap"}'
-        #
-        # owners: (@openshift/openshift-team-storage)
-        #
-        # openshift_csi_share_secret reports CSI share secret usage.
-        #
-        # This rule sources metrics from the following monitors:
-        #
-        # consumers: (@openshift/openshift-team-cluster-manager)
-        #
-        #marker:reliesExclusivelyOnExternalMonitors
-        #
-        - '{__name__="openshift_csi_share_secret"}'
-        #
-        # owners: (@openshift/openshift-team-storage)
-        #
-        # openshift_csi_share_mount_failures_total reports total CSI share mount failures.
-        #
-        # This rule sources metrics from the following monitors:
-        #
-        # consumers: (@openshift/openshift-team-cluster-manager)
-        #
-        #marker:reliesExclusivelyOnExternalMonitors
-        #
-        - '{__name__="openshift_csi_share_mount_failures_total"}'
-        #
-        # owners: (@openshift/openshift-team-storage)
-        #
-        # openshift_csi_share_mount_requests_total reports total CSI share mount requests.
-        #
-        # This rule sources metrics from the following monitors:
-        #
-        # consumers: (@openshift/openshift-team-cluster-manager)
-        #
-        #marker:reliesExclusivelyOnExternalMonitors
-        #
-        - '{__name__="openshift_csi_share_mount_requests_total"}'
-        #
-        # owners: (@openshift/openshift-team-logging)
-        #
-        # eo_es_storage_info reports Elasticsearch storage information.
-        #
-        # This rule sources metrics from the following monitors:
-        #
-        # consumers: (@openshift/openshift-team-cluster-manager)
-        #
-        #marker:reliesExclusivelyOnExternalMonitors
-        #
-        - '{__name__="eo_es_storage_info"}'
-        #
-        # owners: (@openshift/openshift-team-logging)
-        #
-        # eo_es_redundancy_policy_info reports Elasticsearch redundancy policy information.
-        #
-        # This rule sources metrics from the following monitors:
-        #
-        # consumers: (@openshift/openshift-team-cluster-manager)
-        #
-        #marker:reliesExclusivelyOnExternalMonitors
-        #
-        - '{__name__="eo_es_redundancy_policy_info"}'
-        #
-        # owners: (@openshift/openshift-team-logging)
-        #
-        # eo_es_defined_delete_namespaces_total reports total defined delete namespaces in Elasticsearch.
-        #
-        # This rule sources metrics from the following monitors:
-        #
-        # consumers: (@openshift/openshift-team-cluster-manager)
-        #
-        #marker:reliesExclusivelyOnExternalMonitors
-        #
-        - '{__name__="eo_es_defined_delete_namespaces_total"}'
-        #
-        # owners: (@openshift/openshift-team-logging)
-        #
-        # eo_es_misconfigured_memory_resources_info reports Elasticsearch misconfigured memory resources.
-        #
-        # This rule sources metrics from the following monitors:
-        #
-        # consumers: (@openshift/openshift-team-cluster-manager)
-        #
-        #marker:reliesExclusivelyOnExternalMonitors
-        #
-        - '{__name__="eo_es_misconfigured_memory_resources_info"}'
-        #
-        # owners: (@openshift/openshift-team-logging)
-        #
-        # cluster:eo_es_data_nodes_total:max reports maximum Elasticsearch data nodes.
-        #
-        # This rule sources metrics from the following monitors:
-        #
-        # consumers: (@openshift/openshift-team-cluster-manager)
-        #
-        #marker:reliesExclusivelyOnExternalMonitors
-        #
-        - '{__name__="cluster:eo_es_data_nodes_total:max"}'
-        #
-        # owners: (@openshift/openshift-team-logging)
-        #
-        # cluster:eo_es_documents_created_total:sum reports total Elasticsearch documents created.
-        #
-        # This rule sources metrics from the following monitors:
-        # - <unknown>: es_indices_doc_number
-        #
-        # consumers: (@openshift/openshift-team-cluster-manager)
-        #
-        #marker:reliesExclusivelyOnExternalMonitors
-        #
-        - '{__name__="cluster:eo_es_documents_created_total:sum"}'
-        #
-        # owners: (@openshift/openshift-team-logging)
-        #
-        # cluster:eo_es_documents_deleted_total:sum reports total Elasticsearch documents deleted.
-        #
-        # This rule sources metrics from the following monitors:
-        # - <unknown>: es_indices_doc_deleted_number
-        #
-        # consumers: (@openshift/openshift-team-cluster-manager)
-        #
-        #marker:reliesExclusivelyOnExternalMonitors
-        #
-        - '{__name__="cluster:eo_es_documents_deleted_total:sum"}'
-        #
-        # owners: (@openshift/openshift-team-logging)
-        #
-        # pod:eo_es_shards_total:max reports maximum Elasticsearch shards per pod.
-        #
-        # This rule sources metrics from the following monitors:
-        # - <unknown>: es_cluster_shards_number
-        #
-        # consumers: (@openshift/openshift-team-cluster-manager)
-        #
-        #marker:reliesExclusivelyOnExternalMonitors
-        #
-        - '{__name__="pod:eo_es_shards_total:max"}'
-        #
-        # owners: (@openshift/openshift-team-logging)
-        #
-        # eo_es_cluster_management_state_info reports Elasticsearch cluster management state.
-        #
-        # This rule sources metrics from the following monitors:
-        #
-        # consumers: (@openshift/openshift-team-cluster-manager)
-        #
-        #marker:reliesExclusivelyOnExternalMonitors
-        #
-        - '{__name__="eo_es_cluster_management_state_info"}'
-        #
-        # owners: (@openshift/openshift-team-image-registry)
-        #
-        # imageregistry:imagestreamtags_count:sum reports total image stream tags.
-        #
-        # This rule sources metrics from the following monitors:
-        # - <unknown>: image_registry_image_stream_tags_total
-        #
-        # consumers: (@openshift/openshift-team-cluster-manager)
-        #
-        #marker:reliesExclusivelyOnExternalMonitors
-        #
-        - '{__name__="imageregistry:imagestreamtags_count:sum"}'
-        #
-        # owners: (@openshift/openshift-team-image-registry)
-        #
-        # imageregistry:operations_count:sum reports total image registry operations.
-        #
-        # This rule sources metrics from the following monitors:
-        # - <unknown>: imageregistry_request_duration_seconds_count
-        #
-        # consumers: (@openshift/openshift-team-cluster-manager)
-        #
-        #marker:reliesExclusivelyOnExternalMonitors
-        #
-        - '{__name__="imageregistry:operations_count:sum"}'
-        #
-        # owners: (@openshift/openshift-team-logging)
-        #
-        # log_logging_info reports logging configuration information.
-        #
-        # This rule sources metrics from the following monitors:
-        #
-        # consumers: (@openshift/openshift-team-cluster-manager)
-        #
-        #marker:reliesExclusivelyOnExternalMonitors
-        #
-        - '{__name__="log_logging_info"}'
-        #
-        # owners: (@openshift/openshift-team-logging)
-        #
-        # log_collector_error_count_total reports total log collector errors.
-        #
-        # This rule sources metrics from the following monitors:
-        #
-        # consumers: (@openshift/openshift-team-cluster-manager)
-        #
-        #marker:reliesExclusivelyOnExternalMonitors
-        #
-        - '{__name__="log_collector_error_count_total"}'
-        #
-        # owners: (@openshift/openshift-team-logging)
-        #
-        # log_forwarder_pipeline_info reports log forwarder pipeline information.
-        #
-        # This rule sources metrics from the following monitors:
-        #
-        # consumers: (@openshift/openshift-team-cluster-manager)
-        #
-        #marker:reliesExclusivelyOnExternalMonitors
-        #
-        - '{__name__="log_forwarder_pipeline_info"}'
-        #
-        # owners: (@openshift/openshift-team-logging)
-        #
-        # log_forwarder_input_info reports log forwarder input information.
-        #
-        # This rule sources metrics from the following monitors:
-        #
-        # consumers: (@openshift/openshift-team-cluster-manager)
-        #
-        #marker:reliesExclusivelyOnExternalMonitors
-        #
-        - '{__name__="log_forwarder_input_info"}'
-        #
-        # owners: (@openshift/openshift-team-logging)
-        #
-        # log_forwarder_output_info reports log forwarder output information.
-        #
-        # This rule sources metrics from the following monitors:
-        #
-        # consumers: (@openshift/openshift-team-cluster-manager)
-        #
-        #marker:reliesExclusivelyOnExternalMonitors
-        #
-        - '{__name__="log_forwarder_output_info"}'
-        #
-        # owners: (@openshift/openshift-team-logging)
-        #
-        # cluster:log_collected_bytes_total:sum reports total bytes collected by logging.
-        #
-        # This rule sources metrics from the following monitors:
-        # - <unknown>: log_collected_bytes_total
-        #
-        # consumers: (@openshift/openshift-team-cluster-manager)
-        #
-        #marker:reliesExclusivelyOnExternalMonitors
-        #
-        - '{__name__="cluster:log_collected_bytes_total:sum"}'
-        #
-        # owners: (@openshift/openshift-team-logging)
-        #
-        # cluster:log_logged_bytes_total:sum reports total bytes logged.
-        #
-        # This rule sources metrics from the following monitors:
-        # - <unknown>: log_logged_bytes_total
-        #
-        # consumers: (@openshift/openshift-team-cluster-manager)
-        #
-        #marker:reliesExclusivelyOnExternalMonitors
-        #
-        - '{__name__="cluster:log_logged_bytes_total:sum"}'
-        #
-        # owners: (@openshift/openshift-team-logging)
-        #
-        # openshift_logging:log_forwarder_pipelines:sum reports total log forwarder pipelines.
-        #
-        # This rule sources metrics from the following monitors:
-        # - <unknown>: log_forwarder_pipelines
-        #
-        # consumers: (@openshift/openshift-team-cluster-manager)
-        #
-        #marker:reliesExclusivelyOnExternalMonitors
-        #
-        - '{__name__="openshift_logging:log_forwarder_pipelines:sum"}'
-        #
-        # owners: (@openshift/openshift-team-logging)
-        #
-        # openshift_logging:log_forwarders:sum reports total log forwarders.
-        #
-        # This rule sources metrics from the following monitors:
-        # - <unknown>: log_forwarder_pipelines
-        #
-        # consumers: (@openshift/openshift-team-cluster-manager)
-        #
-        #marker:reliesExclusivelyOnExternalMonitors
-        #
-        - '{__name__="openshift_logging:log_forwarders:sum"}'
-        #
-        # owners: (@openshift/openshift-team-logging)
-        #
-        # openshift_logging:log_forwarder_input_type:sum aggregates log forwarder inputs by type.
-        #
-        # This rule sources metrics from the following monitors:
-        # - <unknown>: log_forwarder_input_type
-        #
-        # consumers: (@openshift/openshift-team-cluster-manager)
-        #
-        #marker:reliesExclusivelyOnExternalMonitors
-        #
-        - '{__name__="openshift_logging:log_forwarder_input_type:sum"}'
-        #
-        # owners: (@openshift/openshift-team-logging)
-        #
-        # openshift_logging:log_forwarder_output_type:sum aggregates log forwarder outputs by type.
-        #
-        # This rule sources metrics from the following monitors:
-        # - <unknown>: log_forwarder_output_type
-        #
-        # consumers: (@openshift/openshift-team-cluster-manager)
-        #
-        #marker:reliesExclusivelyOnExternalMonitors
-        #
-        - '{__name__="openshift_logging:log_forwarder_output_type:sum"}'
-        #
-        # owners: (@openshift/openshift-team-logging)
-        #
-        # openshift_logging:vector_component_received_bytes_total:rate5m reports Vector component received bytes rate.
-        #
-        # This rule sources metrics from the following monitors:
-        # - <unknown>: vector_component_received_bytes_total
-        #
-        # consumers: (@openshift/openshift-team-cluster-manager)
-        #
-        #marker:reliesExclusivelyOnExternalMonitors
-        #
-        - '{__name__="openshift_logging:vector_component_received_bytes_total:rate5m"}'
-        #
-        # owners: (@openshift/openshift-team-sandboxed-containers)
-        #
-        # cluster:kata_monitor_running_shim_count:sum reports total running Kata shims.
-        #
-        # This rule sources metrics from the following monitors:
-        # - <unknown>: kata_monitor_running_shim_count
-        #
-        # consumers: (@openshift/openshift-team-cluster-manager)
-        #
-        #marker:reliesExclusivelyOnExternalMonitors
-        #
-        - '{__name__="cluster:kata_monitor_running_shim_count:sum"}'
-        #
-        # owners: (@openshift/openshift-team-hypershift)
-        #
-        # platform:hypershift_hostedclusters:max reports maximum HyperShift hosted clusters.
-        #
-        # This rule sources metrics from the following monitors:
-        # - <unknown>: hypershift_hostedclusters
-        #
-        # consumers: (@openshift/openshift-team-cluster-manager)
-        #
-        #marker:reliesExclusivelyOnExternalMonitors
-        #
-        - '{__name__="platform:hypershift_hostedclusters:max"}'
-        #
-        # owners: (@openshift/openshift-team-hypershift)
-        #
-        # platform:hypershift_nodepools:max reports maximum HyperShift node pools.
-        #
-        # This rule sources metrics from the following monitors:
-        # - <unknown>: hypershift_nodepools
-        #
-        # consumers: (@openshift/openshift-team-cluster-manager)
-        #
-        #marker:reliesExclusivelyOnExternalMonitors
-        #
-        - '{__name__="platform:hypershift_nodepools:max"}'
-        #
-        # owners: (@openshift/openshift-team-hypershift)
-        #
-        # cluster_name:hypershift_nodepools_size:sum reports HyperShift node pool size by cluster.
-        #
-        # This rule sources metrics from the following monitors:
-        # - <unknown>: hypershift_nodepools_size
-        #
-        # consumers: (@openshift/openshift-team-cluster-manager)
-        #
-        #marker:reliesExclusivelyOnExternalMonitors
-        #
-        - '{__name__="cluster_name:hypershift_nodepools_size:sum"}'
-        #
-        # owners: (@openshift/openshift-team-hypershift)
-        #
-        # cluster_name:hypershift_nodepools_available_replicas:sum reports HyperShift node pool available replicas by cluster.
-        #
-        # This rule sources metrics from the following monitors:
-        # - <unknown>: hypershift_nodepools_available_replicas
-        #
-        # consumers: (@openshift/openshift-team-cluster-manager)
-        #
-        #marker:reliesExclusivelyOnExternalMonitors
-        #
-        - '{__name__="cluster_name:hypershift_nodepools_available_replicas:sum"}'
-        #
-        # owners: (@openshift/openshift-team-ocs)
-        #
-        # namespace:noobaa_unhealthy_bucket_claims:max reports maximum unhealthy NooBaa bucket claims by namespace.
-        #
-        # This rule sources metrics from the following monitors:
-        # - <unknown>: NooBaa_num_unhealthy_bucket_claims
-        #
-        # consumers: (@openshift/openshift-team-cluster-manager)
-        #
-        #marker:reliesExclusivelyOnExternalMonitors
-        #
-        - '{__name__="namespace:noobaa_unhealthy_bucket_claims:max"}'
-        #
-        # owners: (@openshift/openshift-team-ocs)
-        #
-        # namespace:noobaa_buckets_claims:max reports maximum NooBaa bucket claims by namespace.
-        #
-        # This rule sources metrics from the following monitors:
-        # - <unknown>: NooBaa_num_buckets_claims
-        #
-        # consumers: (@openshift/openshift-team-cluster-manager)
-        #
-        #marker:reliesExclusivelyOnExternalMonitors
-        #
-        - '{__name__="namespace:noobaa_buckets_claims:max"}'
-        #
-        # owners: (@openshift/openshift-team-ocs)
-        #
-        # namespace:noobaa_unhealthy_namespace_resources:max reports maximum unhealthy NooBaa namespace resources by namespace.
-        #
-        # This rule sources metrics from the following monitors:
-        # - <unknown>: NooBaa_num_unhealthy_namespace_resources
-        #
-        # consumers: (@openshift/openshift-team-cluster-manager)
-        #
-        #marker:reliesExclusivelyOnExternalMonitors
-        #
-        - '{__name__="namespace:noobaa_unhealthy_namespace_resources:max"}'
-        #
-        # owners: (@openshift/openshift-team-ocs)
-        #
-        # namespace:noobaa_namespace_resources:max reports maximum NooBaa namespace resources by namespace.
-        #
-        # This rule sources metrics from the following monitors:
-        # - <unknown>: NooBaa_num_namespace_resources
-        #
-        # consumers: (@openshift/openshift-team-cluster-manager)
-        #
-        #marker:reliesExclusivelyOnExternalMonitors
-        #
-        - '{__name__="namespace:noobaa_namespace_resources:max"}'
-        #
-        # owners: (@openshift/openshift-team-ocs)
-        #
-        # namespace:noobaa_unhealthy_namespace_buckets:max reports maximum unhealthy NooBaa namespace buckets by namespace.
-        #
-        # This rule sources metrics from the following monitors:
-        # - <unknown>: NooBaa_num_unhealthy_namespace_buckets
-        #
-        # consumers: (@openshift/openshift-team-cluster-manager)
-        #
-        #marker:reliesExclusivelyOnExternalMonitors
-        #
-        - '{__name__="namespace:noobaa_unhealthy_namespace_buckets:max"}'
-        #
-        # owners: (@openshift/openshift-team-ocs)
-        #
-        # namespace:noobaa_namespace_buckets:max reports maximum NooBaa namespace buckets by namespace.
-        #
-        # This rule sources metrics from the following monitors:
-        # - <unknown>: NooBaa_num_namespace_buckets
-        #
-        # consumers: (@openshift/openshift-team-cluster-manager)
-        #
-        #marker:reliesExclusivelyOnExternalMonitors
-        #
-        - '{__name__="namespace:noobaa_namespace_buckets:max"}'
-        #
-        # owners: (@openshift/openshift-team-ocs)
-        #
-        # namespace:noobaa_accounts:max reports maximum NooBaa accounts by namespace.
-        #
-        # This rule sources metrics from the following monitors:
-        # - <unknown>: NooBaa_accounts_num
-        #
-        # consumers: (@openshift/openshift-team-cluster-manager)
-        #
-        #marker:reliesExclusivelyOnExternalMonitors
-        #
-        - '{__name__="namespace:noobaa_accounts:max"}'
-        #
-        # owners: (@openshift/openshift-team-ocs)
-        #
-        # namespace:noobaa_usage:max reports maximum NooBaa usage by namespace.
-        #
-        # This rule sources metrics from the following monitors:
-        # - <unknown>: NooBaa_total_usage
-        #
-        # consumers: (@openshift/openshift-team-cluster-manager)
-        #
-        #marker:reliesExclusivelyOnExternalMonitors
-        #
-        - '{__name__="namespace:noobaa_usage:max"}'
-        #
-        # owners: (@openshift/openshift-team-ocs)
-        #
-        # namespace:noobaa_system_health_status:max reports NooBaa system health status by namespace.
-        #
-        # This rule sources metrics from the following monitors:
-        # - <unknown>: NooBaa_odf_health_status
-        #
-        # consumers: (@openshift/openshift-team-cluster-manager)
-        #
-        #marker:reliesExclusivelyOnExternalMonitors
-        #
-        - '{__name__="namespace:noobaa_system_health_status:max"}'
-        #
-        # owners: (@openshift/openshift-team-ocs)
-        #
-        # ocs_advanced_feature_usage reports OCS advanced feature usage.
-        #
-        # This rule sources metrics from the following monitors:
-        #
-        # consumers: (@openshift/openshift-team-cluster-manager)
-        #
-        #marker:reliesExclusivelyOnExternalMonitors
-        #
-        - '{__name__="ocs_advanced_feature_usage"}'
-        #
-        # owners: (@openshift/openshift-team-machine-config-operator)
-        #
-        # os_image_url_override:sum reports OS image URL override usage.
-        #
-        # This rule sources metrics from the following monitors:
-        # - <unknown>: os_image_url_override
-        #
-        # consumers: (@openshift/openshift-team-cluster-manager)
-        #
-        #marker:reliesExclusivelyOnExternalMonitors
-        #
-        - '{__name__="os_image_url_override:sum"}'
-        #
-        # owners: (@openshift/openshift-team-machine-config-operator)
-        #
-        # cluster:mcd_nodes_with_unsupported_packages:count counts nodes with unsupported packages.
-        #
-        # This rule sources metrics from the following monitors:
-        # - <unknown>: mcd_local_unsupported_packages
-        #
-        # consumers: (@openshift/openshift-team-cluster-manager)
-        #
-        #marker:reliesExclusivelyOnExternalMonitors
-        #
-        - '{__name__="cluster:mcd_nodes_with_unsupported_packages:count"}'
-        #
-        # owners: (@openshift/openshift-team-machine-config-operator)
-        #
-        # cluster:mcd_total_unsupported_packages:sum reports total unsupported packages across all nodes.
-        #
-        # This rule sources metrics from the following monitors:
-        # - <unknown>: mcd_local_unsupported_packages
-        #
-        # consumers: (@openshift/openshift-team-cluster-manager)
-        #
-        #marker:reliesExclusivelyOnExternalMonitors
-        #
-        - '{__name__="cluster:mcd_total_unsupported_packages:sum"}'
-        #
-        # owners: (@openshift/openshift-team-vsphere)
-        #
-        # cluster:vsphere_topology_tags:max reports vSphere topology tags usage.
-        #
-        # This rule sources metrics from the following monitors:
-        # - <unknown>: vsphere_topology_tags
-        #
-        # consumers: (@openshift/openshift-team-cluster-manager)
-        #
-        #marker:reliesExclusivelyOnExternalMonitors
-        #
-        - '{__name__="cluster:vsphere_topology_tags:max"}'
-        #
-        # owners: (@openshift/openshift-team-vsphere)
-        #
-        # cluster:vsphere_infrastructure_failure_domains:max reports vSphere infrastructure failure domains.
-        #
-        # This rule sources metrics from the following monitors:
-        # - <unknown>: vsphere_infrastructure_failure_domains
-        #
-        # consumers: (@openshift/openshift-team-cluster-manager)
-        #
-        #marker:reliesExclusivelyOnExternalMonitors
-        #
-        - '{__name__="cluster:vsphere_infrastructure_failure_domains:max"}'
-        #
-        # owners: (@openshift/openshift-team-apiserver)
-        #
-        # apiserver_list_watch_request_success_total:rate:sum reports API server list/watch request success rate.
-        #
-        # Expected labels:
-        # - verb: LIST
-        # - verb: WATCH
-        #
-        # This rule sources metrics from the following monitors:
-        # - openshift-monitoring/kubelet-telemetry: apiserver_request_total
-        #
-        # consumers: (@openshift/openshift-team-cluster-manager)
-        #
-        #marker:reliesExclusivelyOnCMOmonitors
-        #
-        - '{__name__="apiserver_list_watch_request_success_total:rate:sum", verb=~"LIST|WATCH"}'
-        #
-        # owners: (@openshift/openshift-team-acs)
-        #
-        # rhacs:telemetry:rox_central_info reports RHACS central information.
-        #
-        # This rule sources metrics from the following monitors:
-        # - <unknown>: rox_central_info
-        #
-        # consumers: (@openshift/openshift-team-cluster-manager)
-        #
-        #marker:reliesExclusivelyOnExternalMonitors
-        #
-        - '{__name__="rhacs:telemetry:rox_central_info"}'
-        #
-        # owners: (@openshift/openshift-team-acs)
-        #
-        # rhacs:telemetry:rox_central_secured_clusters reports RHACS secured cluster count.
-        #
-        # This rule sources metrics from the following monitors:
-        # - <unknown>: rox_central_secured_clusters
-        #
-        # consumers: (@openshift/openshift-team-cluster-manager)
-        #
-        #marker:reliesExclusivelyOnExternalMonitors
-        #
-        - '{__name__="rhacs:telemetry:rox_central_secured_clusters"}'
-        #
-        # owners: (@openshift/openshift-team-acs)
-        #
-        # rhacs:telemetry:rox_central_secured_nodes reports RHACS secured node count.
-        #
-        # This rule sources metrics from the following monitors:
-        # - <unknown>: rox_central_secured_nodes
-        #
-        # consumers: (@openshift/openshift-team-cluster-manager)
-        #
-        #marker:reliesExclusivelyOnExternalMonitors
-        #
-        - '{__name__="rhacs:telemetry:rox_central_secured_nodes"}'
-        #
-        # owners: (@openshift/openshift-team-acs)
-        #
-        # rhacs:telemetry:rox_central_secured_vcpus reports RHACS secured vCPU count.
-        #
-        # This rule sources metrics from the following monitors:
-        # - <unknown>: rox_central_secured_vcpus
-        #
-        # consumers: (@openshift/openshift-team-cluster-manager)
-        #
-        #marker:reliesExclusivelyOnExternalMonitors
-        #
-        - '{__name__="rhacs:telemetry:rox_central_secured_vcpus"}'
-        #
-        # owners: (@openshift/openshift-team-acs)
-        #
-        # rhacs:telemetry:rox_sensor_info reports RHACS sensor information.
-        #
-        # This rule sources metrics from the following monitors:
-        # - <unknown>: rox_sensor_info
-        #
-        # consumers: (@openshift/openshift-team-cluster-manager)
-        #
-        #marker:reliesExclusivelyOnExternalMonitors
-        #
-        - '{__name__="rhacs:telemetry:rox_sensor_info"}'
-        #
-        # owners: (@openshift/openshift-team-storage)
-        #
-        # cluster:volume_manager_selinux_pod_context_mismatch_total reports total SELinux pod context mismatches.
-        #
-        # This rule sources metrics from the following monitors:
-        # - openshift-monitoring/kubelet-telemetry: volume_manager_selinux_pod_context_mismatch_warnings_total, volume_manager_selinux_pod_context_mismatch_errors_total
-        #
-        # consumers: (@openshift/openshift-team-cluster-manager)
-        #
-        #marker:reliesExclusivelyOnCMOmonitors
-        #
-        - '{__name__="cluster:volume_manager_selinux_pod_context_mismatch_total"}'
-        #
-        # owners: (@openshift/openshift-team-storage)
-        #
-        # cluster:volume_manager_selinux_volume_context_mismatch_warnings_total reports total SELinux volume context mismatch warnings.
-        #
-        # This rule sources metrics from the following monitors:
-        # - openshift-monitoring/kubelet-telemetry: volume_manager_selinux_volume_context_mismatch_warnings_total
-        #
-        # consumers: (@openshift/openshift-team-cluster-manager)
-        #
-        #marker:reliesExclusivelyOnCMOmonitors
-        #
-        - '{__name__="cluster:volume_manager_selinux_volume_context_mismatch_warnings_total"}'
-        #
-        # owners: (@openshift/openshift-team-storage)
-        #
-        # cluster:volume_manager_selinux_volume_context_mismatch_errors_total reports total SELinux volume context mismatch errors.
-        #
-        # This rule sources metrics from the following monitors:
-        # - openshift-monitoring/kubelet-telemetry: volume_manager_selinux_volume_context_mismatch_errors_total
-        #
-        # consumers: (@openshift/openshift-team-cluster-manager)
-        #
-        #marker:reliesExclusivelyOnCMOmonitors
-        #
-        - '{__name__="cluster:volume_manager_selinux_volume_context_mismatch_errors_total"}'
-        #
-        # owners: (@openshift/openshift-team-storage)
-        #
-        # cluster:volume_manager_selinux_volumes_admitted_total reports total SELinux volumes admitted.
-        #
-        # This rule sources metrics from the following monitors:
-        # - openshift-monitoring/kubelet-telemetry: volume_manager_selinux_volumes_admitted_total
-        #
-        # consumers: (@openshift/openshift-team-cluster-manager)
-        #
-        #marker:reliesExclusivelyOnCMOmonitors
-        #
-        - '{__name__="cluster:volume_manager_selinux_volumes_admitted_total"}'
-        #
-        # owners: (@openshift/openshift-team-lightspeed)
-        #
-        # ols:provider_model_configuration reports OpenShift Lightspeed provider model configuration.
-        #
-        # This rule sources metrics from the following monitors:
-        # - <unknown>: ols_provider_model_configuration
-        #
-        # consumers: (@openshift/openshift-team-cluster-manager)
-        #
-        #marker:reliesExclusivelyOnExternalMonitors
-        #
-        - '{__name__="ols:provider_model_configuration"}'
-        #
-        # owners: (@openshift/openshift-team-lightspeed)
-        #
-        # ols:rest_api_query_calls_total:2xx reports OpenShift Lightspeed API 2xx responses.
-        #
-        # This rule sources metrics from the following monitors:
-        # - <unknown>: ols_rest_api_calls_total
-        #
-        # consumers: (@openshift/openshift-team-cluster-manager)
-        #
-        #marker:reliesExclusivelyOnExternalMonitors
-        #
-        - '{__name__="ols:rest_api_query_calls_total:2xx"}'
-        #
-        # owners: (@openshift/openshift-team-lightspeed)
-        #
-        # ols:rest_api_query_calls_total:4xx reports OpenShift Lightspeed API 4xx responses.
-        #
-        # This rule sources metrics from the following monitors:
-        # - <unknown>: ols_rest_api_calls_total
-        #
-        # consumers: (@openshift/openshift-team-cluster-manager)
-        #
-        #marker:reliesExclusivelyOnExternalMonitors
-        #
-        - '{__name__="ols:rest_api_query_calls_total:4xx"}'
-        #
-        # owners: (@openshift/openshift-team-lightspeed)
-        #
-        # ols:rest_api_query_calls_total:5xx reports OpenShift Lightspeed API 5xx responses.
-        #
-        # This rule sources metrics from the following monitors:
-        # - <unknown>: ols_rest_api_calls_total
-        #
-        # consumers: (@openshift/openshift-team-cluster-manager)
-        #
-        #marker:reliesExclusivelyOnExternalMonitors
-        #
-        - '{__name__="ols:rest_api_query_calls_total:5xx"}'
-        #
-        # owners: (@openshift/openshift-team-networking)
-        #
-        # openshift:openshift_network_operator_ipsec_state:info reports OpenShift network operator IPsec state.
-        #
-        # This rule sources metrics from the following monitors:
-        # - <unknown>: openshift_network_operator_ipsec_state
-        #
-        # consumers: (@openshift/openshift-team-cluster-manager)
-        #
-        #marker:reliesExclusivelyOnExternalMonitors
-        #
-        - '{__name__="openshift:openshift_network_operator_ipsec_state:info"}'
-        #
-        # owners: (@openshift/openshift-team-monitoring)
-        #
-        # cluster:health:group_severity:count reports cluster health issues by severity.
-        #
-        # Expected labels:
-        # - severity: critical
-        # - severity: warning
-        # - severity: info
-        # - severity: none
-        #
-        # This rule sources metrics from the following monitors:
-        #
-        # consumers: (@openshift/openshift-team-cluster-manager)
-        #
-        #marker:reliesExclusivelyOnExternalMonitors
-        #
-        - '{__name__="cluster:health:group_severity:count", severity=~"critical|warning|info|none"}'
-        #
-        # owners: (@openshift/openshift-team-cluster-lifecycle)
-        #
-        # cluster:controlplane_topology:info reports control plane topology mode.
-        #
-        # Expected labels:
-        # - mode: HighlyAvailable
-        # - mode: HighlyAvailableArbiter
-        # - mode: SingleReplica
-        # - mode: DualReplica
-        # - mode: External
-        #
-        # This rule sources metrics from the following monitors:
-        # - <unknown>: cluster_controlplane_topology
-        #
-        # consumers: (@openshift/openshift-team-cluster-manager)
-        #
-        #marker:reliesExclusivelyOnExternalMonitors
-        #
-        - '{__name__="cluster:controlplane_topology:info", mode=~"HighlyAvailable|HighlyAvailableArbiter|SingleReplica|DualReplica|External"}'
-        #
-        # owners: (@openshift/openshift-team-cluster-lifecycle)
-        #
-        # cluster:infrastructure_topology:info reports infrastructure topology mode.
-        #
-        # Expected labels:
-        # - mode: HighlyAvailable
-        # - mode: SingleReplica
-        #
-        # This rule sources metrics from the following monitors:
-        # - <unknown>: cluster_infrastructure_topology
-        #
-        # consumers: (@openshift/openshift-team-cluster-manager)
-        #
-        #marker:reliesExclusivelyOnExternalMonitors
-        #
-        - '{__name__="cluster:infrastructure_topology:info", mode=~"HighlyAvailable|SingleReplica"}'
-        #
-        # owners: (@openshift/openshift-team-storage)
-        #
-        # cluster:selinux_warning_controller_selinux_volume_conflict:count counts SELinux volume conflicts.
-        #
-        # This rule sources metrics from the following monitors:
-        # - openshift-monitoring/kubelet-telemetry: selinux_warning_controller_selinux_volume_conflict
-        #
-        # consumers: (@openshift/openshift-team-cluster-manager)
-        #
-        #marker:reliesExclusivelyOnCMOmonitors
-        #
-        - '{__name__="cluster:selinux_warning_controller_selinux_volume_conflict:count"}'
-        #
-        # owners: (@openshift/network-edge)
-        #
-        # openshift:gateway_api_usage:count tracks the amount of gateway resources created in the cluster aggregated by Gateway class type.
-        #
-        # Expected labels:
-        # - gateway_class_type: openshift
-        # - gateway_class_type: not-openshift
-        #
-        # This rule sources metrics from the following monitors:
-        # - <unknown>: gateway_api_usage
-        #
-        #marker:reliesExclusivelyOnExternalMonitors
-        #
-        - '{__name__="openshift:gateway_api_usage:count",gateway_class_type=~"openshift|not-openshift"}'
-        #
-        # owners: (https://github.com/kubev2v/forklift)
-        #
-        # cluster:mtv_migrations_status_total:sum is the total number of VM migrations running on the cluster, labeled with status, provider, mode, and target.
-        #
-        # Expected labels:
-        # - mode: Cold
-        # - mode: Warm
-        # - mode: RCM
-        # - provider: ova
-        # - provider: vsphere
-        # - provider: openstack
-        # - provider: openshift
-        # - provider: ovirt
-        # - provider: awsec2
-        # - status: Succeeded
-        # - status: Failed
-        # - status: Canceled
-        # - target: Local
-        # - target: Remote
-        #
-        # This rule sources metrics from the following monitors:
-        # - <unknown>: mtv_migrations_status_total
-        #
-        #marker:reliesExclusivelyOnExternalMonitors
-        #
-        - '{__name__="cluster:mtv_migrations_status_total:sum", provider=~"ova|vsphere|openstack|openshift|ovirt|awsec2", target=~"Local|Remote", mode=~"Cold|Warm|RCM", status=~"Succeeded|Failed|Canceled"}'
-        #
-        # owners: (https://github.com/integr8ly, @boomatang)
-        #
-        # rhoam_state captures the currently installed/upgrading RHOAM versions. This metric is used by cs-SRE to gain insights into RHOAM version.
-        #
-        # Expected labels:
-        # - status: in_progress
-        # - status: complete
-        # - upgrading: true
-        # - upgrading: false
-        # - version: x.y.z
-        #
-        # This rule sources metrics from the following monitors:
-        # - <unknown>: rhoam_state
-        #
-        # consumers: (@openshift/openshift-team-cluster-manager)
-        #
-        #marker:reliesExclusivelyOnExternalMonitors
-        #
-        - '{__name__="status:upgrading:version:rhoam_state:max"}'
+    #
+    # owners: (@openshift/openshift-team-monitoring, @smarterclayton)
+    #
+    # cluster:cpu_usage_cores:sum is the current amount of CPU used by the whole cluster.
+    #
+    # This rule sources metrics from the following monitors:
+    # - openshift-monitoring/kube-state-metrics-telemetry: kube_pod_info
+    # - openshift-monitoring/node-exporter-telemetry: node_cpu_seconds_total
+    #
+    # consumers: (@openshift/openshift-team-olm, @openshift/openshift-team-cluster-manager)
+    #
+    #marker:reliesExclusivelyOnCMOmonitors
+    #
+    - '{__name__="cluster:cpu_usage_cores:sum"}'
+    #
+    # owners: (@openshift/openshift-team-monitoring)
+    #
+    # ALERTS metric contains all firing alerts with their severity levels.
+    #
+    # Expected labels:
+    # - alertstate: firing
+    # - severity: critical
+    # - severity: warning
+    # - severity: info
+    # - severity: none
+    #
+    # This rule sources metrics from the following monitors:
+    # - openshift-monitoring/prometheus-k8s-telemetry: ALERTS
+    #
+    # consumers: (@openshift/openshift-team-cluster-manager)
+    #
+    #marker:isMetricAsRule
+    #marker:reliesExclusivelyOnCMOmonitors
+    #
+    - '{__name__="ALERTS",alertstate="firing",severity=~"critical|warning|info|none"}'
+    #
+    # owners: (@openshift/openshift-team-monitoring)
+    #
+    # cluster:alertmanager_integrations:max tracks the number of alertmanager integrations configured.
+    #
+    # This rule sources metrics from the following monitors:
+    # - openshift-monitoring/alertmanager-main-telemetry: alertmanager_integrations
+    #
+    # consumers: (@openshift/openshift-team-cluster-manager)
+    #
+    #marker:reliesExclusivelyOnCMOmonitors
+    #
+    - '{__name__="cluster:alertmanager_integrations:max"}'
+    #
+    # owners: (@openshift/openshift-team-monitoring)
+    #
+    # cluster:capacity_cpu_cores:sum is the total CPU capacity of the cluster in cores.
+    #
+    # This rule sources metrics from the following monitors:
+    # - openshift-monitoring/kube-state-metrics-telemetry: kube_node_status_capacity, kube_node_labels
+    #
+    # consumers: (@openshift/openshift-team-cluster-manager)
+    #
+    #marker:reliesExclusivelyOnCMOmonitors
+    #
+    - '{__name__="cluster:capacity_cpu_cores:sum"}'
+    #
+    # owners: (@openshift/openshift-team-monitoring)
+    #
+    # cluster:capacity_memory_bytes:sum is the total memory capacity of the cluster in bytes.
+    #
+    # This rule sources metrics from the following monitors:
+    # - openshift-monitoring/kube-state-metrics-telemetry: kube_node_status_capacity, kube_node_labels
+    #
+    # consumers: (@openshift/openshift-team-cluster-manager)
+    #
+    #marker:reliesExclusivelyOnCMOmonitors
+    #
+    - '{__name__="cluster:capacity_memory_bytes:sum"}'
+    #
+    # owners: (@openshift/openshift-team-monitoring)
+    #
+    # cluster:memory_usage_bytes:sum is the current amount of memory used by the whole cluster.
+    #
+    # This rule sources metrics from the following monitors:
+    # - openshift-monitoring/node-exporter-telemetry: node_memory_MemTotal_bytes, node_memory_MemAvailable_bytes
+    #
+    # consumers: (@openshift/openshift-team-cluster-manager)
+    #
+    #marker:reliesExclusivelyOnCMOmonitors
+    #
+    - '{__name__="cluster:memory_usage_bytes:sum"}'
+    #
+    # owners: (@openshift/openshift-team-monitoring)
+    #
+    # cluster:node_instance_type_count:sum counts nodes by instance type, role, architecture, and OS.
+    #
+    # This rule sources metrics from the following monitors:
+    # - openshift-monitoring/kube-state-metrics-telemetry: kube_node_labels
+    #
+    # consumers: (@openshift/openshift-team-cluster-manager)
+    #
+    #marker:reliesExclusivelyOnCMOmonitors
+    #
+    - '{__name__="cluster:node_instance_type_count:sum"}'
+    #
+    # owners: (@openshift/openshift-team-monitoring)
+    #
+    # cluster:telemetry_selected_series:count is the number of series selected for telemetry after filtering.
+    #
+    # This rule sources metrics from the following monitors:
+    # - openshift-monitoring/telemeter-client-telemetry: federate_samples, federate_filtered_samples
+    #
+    # consumers: (@openshift/openshift-team-cluster-manager)
+    #
+    #marker:reliesExclusivelyOnCMOmonitors
+    #
+    - '{__name__="cluster:telemetry_selected_series:count"}'
+    #
+    # owners: (@openshift/openshift-team-monitoring)
+    #
+    # cluster:virt_platform_nodes:sum counts nodes by virtualization platform type.
+    #
+    # This rule sources metrics from the following monitors:
+    # - openshift-monitoring/node-exporter-telemetry: virt_platform
+    #
+    # consumers: (@openshift/openshift-team-cluster-manager)
+    #
+    #marker:reliesExclusivelyOnCMOmonitors
+    #
+    - '{__name__="cluster:virt_platform_nodes:sum"}'
+    #
+    # owners: (@openshift/openshift-team-monitoring)
+    #
+    # count:up0 counts the number of targets that are down.
+    #
+    # This rule sources metrics from the following monitors:
+    # - openshift-monitoring/prometheus-k8s-telemetry: up
+    #
+    # consumers: (@openshift/openshift-team-cluster-manager)
+    #
+    #marker:reliesExclusivelyOnCMOmonitors
+    #
+    - '{__name__="count:up0"}'
+    #
+    # owners: (@openshift/openshift-team-monitoring)
+    #
+    # count:up1 counts the number of targets that are up.
+    #
+    # This rule sources metrics from the following monitors:
+    # - openshift-monitoring/prometheus-k8s-telemetry: up
+    #
+    # consumers: (@openshift/openshift-team-cluster-manager)
+    #
+    #marker:reliesExclusivelyOnCMOmonitors
+    #
+    - '{__name__="count:up1"}'
+    #
+    # owners: (@openshift/openshift-team-monitoring)
+    #
+    # monitoring:container_memory_working_set_bytes:sum is the memory working set of monitoring stack containers.
+    #
+    # This rule sources metrics from the following monitors:
+    # - openshift-monitoring/kubelet-telemetry: container_memory_working_set_bytes
+    #
+    # consumers: (@openshift/openshift-team-cluster-manager)
+    #
+    #marker:reliesExclusivelyOnCMOmonitors
+    #
+    - '{__name__="monitoring:container_memory_working_set_bytes:sum"}'
+    #
+    # owners: (@openshift/openshift-team-monitoring)
+    #
+    # namespace_job:scrape_samples_post_metric_relabeling:topk3 tracks top 3 namespace/job pairs by scrape sample count after metric relabeling.
+    #
+    # This rule sources metrics from the following monitors:
+    # - openshift-monitoring/prometheus-k8s-telemetry: scrape_samples_post_metric_relabeling
+    #
+    # consumers: (@openshift/openshift-team-cluster-manager)
+    #
+    #marker:reliesExclusivelyOnCMOmonitors
+    #
+    - '{__name__="namespace_job:scrape_samples_post_metric_relabeling:topk3"}'
+    #
+    # owners: (@openshift/openshift-team-monitoring)
+    #
+    # namespace_job:scrape_series_added:topk3_sum1h tracks top 3 namespace/job pairs by series added over 1 hour.
+    #
+    # This rule sources metrics from the following monitors:
+    # - openshift-monitoring/prometheus-k8s-telemetry: scrape_series_added
+    #
+    # consumers: (@openshift/openshift-team-cluster-manager)
+    #
+    #marker:reliesExclusivelyOnCMOmonitors
+    #
+    - '{__name__="namespace_job:scrape_series_added:topk3_sum1h"}'
+    #
+    # owners: (@openshift/openshift-team-monitoring)
+    #
+    # node_role_os_version_machine:cpu_capacity_cores:sum aggregates CPU capacity by node role, OS, architecture, and hyperthread status.
+    #
+    # This rule sources metrics from the following monitors:
+    # - openshift-monitoring/kube-state-metrics-telemetry: kube_node_labels
+    # - openshift-monitoring/node-exporter-telemetry: node_cpu_info
+    #
+    # consumers: (@openshift/openshift-team-cluster-manager)
+    #
+    #marker:reliesExclusivelyOnCMOmonitors
+    #
+    - '{__name__="node_role_os_version_machine:cpu_capacity_cores:sum"}'
+    #
+    # owners: (@openshift/openshift-team-monitoring)
+    #
+    # node_role_os_version_machine:cpu_capacity_sockets:sum aggregates CPU socket count by node role, OS, architecture, and hyperthread status.
+    #
+    # This rule sources metrics from the following monitors:
+    # - openshift-monitoring/kube-state-metrics-telemetry: kube_node_labels
+    # - openshift-monitoring/node-exporter-telemetry: node_cpu_info
+    #
+    # consumers: (@openshift/openshift-team-cluster-manager)
+    #
+    #marker:reliesExclusivelyOnCMOmonitors
+    #
+    - '{__name__="node_role_os_version_machine:cpu_capacity_sockets:sum"}'
+    #
+    # owners: (@openshift/openshift-team-monitoring)
+    #
+    # openshift:cpu_usage_cores:sum is the current amount of CPU used by OpenShift infrastructure.
+    #
+    # This rule sources metrics from the following monitors:
+    # - openshift-monitoring/kube-state-metrics-telemetry: kube_pod_info
+    # - openshift-monitoring/kubelet-telemetry: container_cpu_usage_seconds_total
+    # - openshift-monitoring/node-exporter-telemetry: node_cpu_seconds_total
+    #
+    # consumers: (@openshift/openshift-team-cluster-manager)
+    #
+    #marker:reliesExclusivelyOnCMOmonitors
+    #
+    - '{__name__="openshift:cpu_usage_cores:sum"}'
+    #
+    # owners: (@openshift/openshift-team-monitoring)
+    #
+    # openshift:memory_usage_bytes:sum is the current amount of memory used by OpenShift infrastructure.
+    #
+    # This rule sources metrics from the following monitors:
+    # - openshift-monitoring/kubelet-telemetry: container_memory_working_set_bytes
+    # - openshift-monitoring/node-exporter-telemetry: node_memory_MemTotal_bytes, node_memory_MemAvailable_bytes
+    #
+    # consumers: (@openshift/openshift-team-cluster-manager)
+    #
+    #marker:reliesExclusivelyOnCMOmonitors
+    #
+    - '{__name__="openshift:memory_usage_bytes:sum"}'
+    #
+    # owners: (@openshift/openshift-team-monitoring)
+    #
+    # openshift:prometheus_tsdb_head_samples_appended_total:sum tracks the rate of samples appended to Prometheus TSDB.
+    #
+    # This rule sources metrics from the following monitors:
+    # - openshift-monitoring/prometheus-k8s-telemetry: prometheus_tsdb_head_samples_appended_total
+    #
+    # consumers: (@openshift/openshift-team-cluster-manager)
+    #
+    #marker:reliesExclusivelyOnCMOmonitors
+    #
+    - '{__name__="openshift:prometheus_tsdb_head_samples_appended_total:sum"}'
+    #
+    # owners: (@openshift/openshift-team-monitoring)
+    #
+    # openshift:prometheus_tsdb_head_series:sum tracks the total number of series in Prometheus TSDB head.
+    #
+    # This rule sources metrics from the following monitors:
+    # - openshift-monitoring/prometheus-k8s-telemetry: prometheus_tsdb_head_series
+    #
+    # consumers: (@openshift/openshift-team-cluster-manager)
+    #
+    #marker:reliesExclusivelyOnCMOmonitors
+    #
+    - '{__name__="openshift:prometheus_tsdb_head_series:sum"}'
+    #
+    # owners: (@openshift/openshift-team-monitoring)
+    #
+    # profile:cluster_monitoring_operator_collection_profile:max identifies the active monitoring collection profile.
+    #
+    # This rule sources metrics from the following monitors:
+    # - openshift-monitoring/cluster-monitoring-operator-telemetry: cluster_monitoring_operator_collection_profile
+    #
+    # consumers: (@openshift/openshift-team-cluster-manager)
+    #
+    #marker:reliesExclusivelyOnCMOmonitors
+    #
+    - '{__name__="profile:cluster_monitoring_operator_collection_profile:max"}'
+    #
+    # owners: (@openshift/openshift-team-monitoring)
+    #
+    # vendor_model:node_accelerator_cards:sum counts accelerator cards by vendor and model.
+    #
+    # Expected labels:
+    # - vendor: NVIDIA
+    # - vendor: AMD
+    # - vendor: GAUDI
+    # - vendor: INTEL
+    # - vendor: QUALCOMM
+    # - vendor: Marvell
+    # - vendor: Mellanox
+    #
+    # This rule sources metrics from the following monitors:
+    # - openshift-monitoring/node-exporter-telemetry: node_accelerator_card_info
+    #
+    # consumers: (@openshift/openshift-team-cluster-manager)
+    #
+    #marker:reliesExclusivelyOnCMOmonitors
+    #
+    - '{__name__="vendor_model:node_accelerator_cards:sum",vendor=~"NVIDIA|AMD|GAUDI|INTEL|QUALCOMM|Marvell|Mellanox"}'
+    #
+    # owners: (@openshift/openshift-team-monitoring)
+    #
+    # workload:cpu_usage_cores:sum is the current amount of CPU used by user workloads.
+    #
+    # This rule sources metrics from the following monitors:
+    # - openshift-monitoring/kubelet-telemetry: container_cpu_usage_seconds_total
+    #
+    # consumers: (@openshift/openshift-team-cluster-manager)
+    #
+    #marker:reliesExclusivelyOnCMOmonitors
+    #
+    - '{__name__="workload:cpu_usage_cores:sum"}'
+    #
+    # owners: (@openshift/openshift-team-monitoring)
+    #
+    # workload:memory_usage_bytes:sum is the current amount of memory used by user workloads.
+    #
+    # This rule sources metrics from the following monitors:
+    # - openshift-monitoring/kubelet-telemetry: container_memory_working_set_bytes
+    #
+    # consumers: (@openshift/openshift-team-cluster-manager)
+    #
+    #marker:reliesExclusivelyOnCMOmonitors
+    #
+    - '{__name__="workload:memory_usage_bytes:sum"}'
+    #
+    # owners: (@openshift/openshift-team-monitoring)
+    #
+    # cluster:usage:.* captures various cluster usage metrics for capacity planning and telemetry.
+    #
+    # This rule sources metrics from the following monitors:
+    # - openshift-monitoring/kube-state-metrics-telemetry: kube_node_labels, kube_node_spec_unschedulable, kube_node_status_condition, kube_pod_restart_policy, kube_running_pod_ready
+    # - openshift-monitoring/kubelet-telemetry: apiserver_storage_objects, kubelet_containers_per_pod_count_sum
+    #
+    # consumers: (@openshift/openshift-team-cluster-manager)
+    #
+    #marker:reliesExclusivelyOnCMOmonitors
+    #
+    - '{__name__=~"cluster:usage:.*"}'
+    #
+    # owners: (@openshift/openshift-team-monitoring)
+    #
+    # monitoring:haproxy_server_http_responses_total:sum tracks HTTP response codes from monitoring stack HAProxy.
+    #
+    # This rule sources metrics from the following monitors:
+    # - <unknown>: haproxy_server_http_responses_total
+    #
+    # consumers: (@openshift/openshift-team-cluster-manager)
+    #
+    #marker:reliesExclusivelyOnExternalMonitors
+    #
+    - '{__name__="monitoring:haproxy_server_http_responses_total:sum"}'
+    #
+    # owners: (@openshift/openshift-team-cluster-lifecycle)
+    #
+    # cluster_version reports the cluster version information.
+    #
+    # This rule sources metrics from the following monitors:
+    #
+    # consumers: (@openshift/openshift-team-cluster-manager)
+    #
+    #marker:reliesExclusivelyOnExternalMonitors
+    #
+    - '{__name__="cluster_version"}'
+    #
+    # owners: (@openshift/openshift-team-cluster-lifecycle)
+    #
+    # cluster_version_available_updates reports available cluster updates.
+    #
+    # This rule sources metrics from the following monitors:
+    #
+    # consumers: (@openshift/openshift-team-cluster-manager)
+    #
+    #marker:reliesExclusivelyOnExternalMonitors
+    #
+    - '{__name__="cluster_version_available_updates"}'
+    #
+    # owners: (@openshift/openshift-team-cluster-lifecycle)
+    #
+    # cluster_version_capability reports enabled cluster capabilities.
+    #
+    # This rule sources metrics from the following monitors:
+    #
+    # consumers: (@openshift/openshift-team-cluster-manager)
+    #
+    #marker:reliesExclusivelyOnExternalMonitors
+    #
+    - '{__name__="cluster_version_capability"}'
+    #
+    # owners: (@openshift/openshift-team-cluster-lifecycle)
+    #
+    # cluster_operator_up reports whether cluster operators are running.
+    #
+    # This rule sources metrics from the following monitors:
+    #
+    # consumers: (@openshift/openshift-team-cluster-manager)
+    #
+    #marker:reliesExclusivelyOnExternalMonitors
+    #
+    - '{__name__="cluster_operator_up"}'
+    #
+    # owners: (@openshift/openshift-team-cluster-lifecycle)
+    #
+    # cluster_operator_conditions reports cluster operator condition status.
+    #
+    # This rule sources metrics from the following monitors:
+    #
+    # consumers: (@openshift/openshift-team-cluster-manager)
+    #
+    #marker:reliesExclusivelyOnExternalMonitors
+    #
+    - '{__name__="cluster_operator_conditions"}'
+    #
+    # owners: (@openshift/openshift-team-cluster-lifecycle)
+    #
+    # cluster_version_payload reports the cluster version payload information.
+    #
+    # This rule sources metrics from the following monitors:
+    #
+    # consumers: (@openshift/openshift-team-cluster-manager)
+    #
+    #marker:reliesExclusivelyOnExternalMonitors
+    #
+    - '{__name__="cluster_version_payload"}'
+    #
+    # owners: (@openshift/openshift-team-cluster-lifecycle)
+    #
+    # cluster_installer reports the installer used to deploy the cluster.
+    #
+    # This rule sources metrics from the following monitors:
+    #
+    # consumers: (@openshift/openshift-team-cluster-manager)
+    #
+    #marker:reliesExclusivelyOnExternalMonitors
+    #
+    - '{__name__="cluster_installer"}'
+    #
+    # owners: (@openshift/openshift-team-cluster-lifecycle)
+    #
+    # cluster_infrastructure_provider reports the infrastructure provider for the cluster.
+    #
+    # This rule sources metrics from the following monitors:
+    #
+    # consumers: (@openshift/openshift-team-cluster-manager)
+    #
+    #marker:reliesExclusivelyOnExternalMonitors
+    #
+    - '{__name__="cluster_infrastructure_provider"}'
+    #
+    # owners: (@openshift/openshift-team-cluster-lifecycle)
+    #
+    # cluster_feature_set reports the enabled feature set for the cluster.
+    #
+    # This rule sources metrics from the following monitors:
+    #
+    # consumers: (@openshift/openshift-team-cluster-manager)
+    #
+    #marker:reliesExclusivelyOnExternalMonitors
+    #
+    - '{__name__="cluster_feature_set"}'
+    #
+    # owners: (@openshift/openshift-team-etcd)
+    #
+    # instance:etcd_object_counts:sum reports the number of objects stored in etcd.
+    #
+    # This rule sources metrics from the following monitors:
+    # - openshift-monitoring/kubelet-telemetry: apiserver_storage_objects
+    #
+    # consumers: (@openshift/openshift-team-cluster-manager)
+    #
+    #marker:reliesExclusivelyOnCMOmonitors
+    #
+    - '{__name__="instance:etcd_object_counts:sum"}'
+    #
+    # owners: (@openshift/openshift-team-apiserver)
+    #
+    # code:apiserver_request_total:rate:sum tracks API server request rates by HTTP status code.
+    #
+    # This rule sources metrics from the following monitors:
+    # - openshift-monitoring/kubelet-telemetry: apiserver_request_total
+    #
+    # consumers: (@openshift/openshift-team-cluster-manager)
+    #
+    #marker:reliesExclusivelyOnCMOmonitors
+    #
+    - '{__name__="code:apiserver_request_total:rate:sum"}'
+    #
+    # owners: (@openshift/openshift-team-virtualization)
+    #
+    # cnv:vmi_status_running:count counts running virtual machine instances.
+    #
+    # This rule sources metrics from the following monitors:
+    # - <unknown>: kubevirt_vmi_phase_count
+    #
+    # consumers: (@openshift/openshift-team-cluster-manager)
+    #
+    #marker:reliesExclusivelyOnExternalMonitors
+    #
+    - '{__name__="cnv:vmi_status_running:count"}'
+    #
+    # owners: (@openshift/openshift-team-virtualization)
+    #
+    # cnv_abnormal reports abnormal memory conditions for virtual machines.
+    #
+    # Expected labels:
+    # - reason: memory_working_set_delta_from_request
+    # - reason: memory_rss_delta_from_request
+    #
+    # This rule sources metrics from the following monitors:
+    #
+    # consumers: (@openshift/openshift-team-cluster-manager)
+    #
+    #marker:reliesExclusivelyOnExternalMonitors
+    #
+    - '{__name__="cnv_abnormal", reason=~"memory_working_set_delta_from_request|memory_rss_delta_from_request"}'
+    #
+    # owners: (@openshift/openshift-team-virtualization)
+    #
+    # cluster:vmi_request_cpu_cores:sum reports total CPU requested by virtual machines.
+    #
+    # This rule sources metrics from the following monitors:
+    # - openshift-monitoring/kube-state-metrics-telemetry: kube_pod_container_resource_requests, kube_pod_status_phase, kube_pod_labels
+    #
+    # consumers: (@openshift/openshift-team-cluster-manager)
+    #
+    #marker:reliesExclusivelyOnCMOmonitors
+    #
+    - '{__name__="cluster:vmi_request_cpu_cores:sum"}'
+    #
+    # owners: (@openshift/openshift-team-olm)
+    #
+    # subscription_sync_total reports the number of operator subscription syncs.
+    #
+    # This rule sources metrics from the following monitors:
+    #
+    # consumers: (@openshift/openshift-team-cluster-manager)
+    #
+    #marker:reliesExclusivelyOnExternalMonitors
+    #
+    - '{__name__="subscription_sync_total"}'
+    #
+    # owners: (@openshift/openshift-team-olm)
+    #
+    # olm_resolution_duration_seconds reports OLM dependency resolution duration.
+    #
+    # This rule sources metrics from the following monitors:
+    #
+    # consumers: (@openshift/openshift-team-cluster-manager)
+    #
+    #marker:reliesExclusivelyOnExternalMonitors
+    #
+    - '{__name__="olm_resolution_duration_seconds"}'
+    #
+    # owners: (@openshift/openshift-team-olm)
+    #
+    # csv_succeeded reports successful CSV installations.
+    #
+    # This rule sources metrics from the following monitors:
+    #
+    # consumers: (@openshift/openshift-team-cluster-manager)
+    #
+    #marker:reliesExclusivelyOnExternalMonitors
+    #
+    - '{__name__="csv_succeeded"}'
+    #
+    # owners: (@openshift/openshift-team-olm)
+    #
+    # csv_abnormal reports abnormal CSV states.
+    #
+    # This rule sources metrics from the following monitors:
+    #
+    # consumers: (@openshift/openshift-team-cluster-manager)
+    #
+    #marker:reliesExclusivelyOnExternalMonitors
+    #
+    - '{__name__="csv_abnormal"}'
+    #
+    # owners: (@openshift/openshift-team-storage)
+    #
+    # cluster:kube_persistentvolumeclaim_resource_requests_storage_bytes:provisioner:sum aggregates PVC storage requests by provisioner.
+    #
+    # This rule sources metrics from the following monitors:
+    # - openshift-monitoring/kube-state-metrics-telemetry: kube_persistentvolumeclaim_resource_requests_storage_bytes, kube_persistentvolumeclaim_info, kube_storageclass_info
+    #
+    # consumers: (@openshift/openshift-team-cluster-manager)
+    #
+    #marker:reliesExclusivelyOnCMOmonitors
+    #
+    - '{__name__="cluster:kube_persistentvolumeclaim_resource_requests_storage_bytes:provisioner:sum"}'
+    #
+    # owners: (@openshift/openshift-team-storage)
+    #
+    # cluster:kubelet_volume_stats_used_bytes:provisioner:sum aggregates volume usage by provisioner.
+    #
+    # This rule sources metrics from the following monitors:
+    # - openshift-monitoring/kube-state-metrics-telemetry: kube_persistentvolumeclaim_info, kube_storageclass_info
+    # - openshift-monitoring/kubelet-telemetry: kubelet_volume_stats_used_bytes
+    #
+    # consumers: (@openshift/openshift-team-cluster-manager)
+    #
+    #marker:reliesExclusivelyOnCMOmonitors
+    #
+    - '{__name__="cluster:kubelet_volume_stats_used_bytes:provisioner:sum"}'
+    #
+    # owners: (@openshift/openshift-team-ocs)
+    #
+    # ceph_cluster_total_bytes reports total Ceph cluster capacity.
+    #
+    # This rule sources metrics from the following monitors:
+    #
+    # consumers: (@openshift/openshift-team-cluster-manager)
+    #
+    #marker:reliesExclusivelyOnExternalMonitors
+    #
+    - '{__name__="ceph_cluster_total_bytes"}'
+    #
+    # owners: (@openshift/openshift-team-ocs)
+    #
+    # ceph_cluster_total_used_raw_bytes reports raw storage used in Ceph cluster.
+    #
+    # This rule sources metrics from the following monitors:
+    #
+    # consumers: (@openshift/openshift-team-cluster-manager)
+    #
+    #marker:reliesExclusivelyOnExternalMonitors
+    #
+    - '{__name__="ceph_cluster_total_used_raw_bytes"}'
+    #
+    # owners: (@openshift/openshift-team-ocs)
+    #
+    # ceph_health_status reports Ceph cluster health status.
+    #
+    # This rule sources metrics from the following monitors:
+    #
+    # consumers: (@openshift/openshift-team-cluster-manager)
+    #
+    #marker:reliesExclusivelyOnExternalMonitors
+    #
+    - '{__name__="ceph_health_status"}'
+    #
+    # owners: (@openshift/openshift-team-ocs)
+    #
+    # odf_system_raw_capacity_total_bytes reports total ODF system raw capacity.
+    #
+    # This rule sources metrics from the following monitors:
+    #
+    # consumers: (@openshift/openshift-team-cluster-manager)
+    #
+    #marker:reliesExclusivelyOnExternalMonitors
+    #
+    - '{__name__="odf_system_raw_capacity_total_bytes"}'
+    #
+    # owners: (@openshift/openshift-team-ocs)
+    #
+    # odf_system_raw_capacity_used_bytes reports used ODF system raw capacity.
+    #
+    # This rule sources metrics from the following monitors:
+    #
+    # consumers: (@openshift/openshift-team-cluster-manager)
+    #
+    #marker:reliesExclusivelyOnExternalMonitors
+    #
+    - '{__name__="odf_system_raw_capacity_used_bytes"}'
+    #
+    # owners: (@openshift/openshift-team-ocs)
+    #
+    # odf_system_health_status reports ODF system health status.
+    #
+    # This rule sources metrics from the following monitors:
+    #
+    # consumers: (@openshift/openshift-team-cluster-manager)
+    #
+    #marker:reliesExclusivelyOnExternalMonitors
+    #
+    - '{__name__="odf_system_health_status"}'
+    #
+    # owners: (@openshift/openshift-team-ocs)
+    #
+    # job:ceph_osd_metadata:count counts Ceph OSD instances.
+    #
+    # This rule sources metrics from the following monitors:
+    # - <unknown>: ceph_osd_metadata
+    #
+    # consumers: (@openshift/openshift-team-cluster-manager)
+    #
+    #marker:reliesExclusivelyOnExternalMonitors
+    #
+    - '{__name__="job:ceph_osd_metadata:count"}'
+    #
+    # owners: (@openshift/openshift-team-ocs)
+    #
+    # job:kube_pv:count counts persistent volumes.
+    #
+    # This rule sources metrics from the following monitors:
+    # - openshift-monitoring/kube-state-metrics-telemetry: kube_persistentvolume_info, kube_storageclass_info
+    #
+    # consumers: (@openshift/openshift-team-cluster-manager)
+    #
+    #marker:reliesExclusivelyOnCMOmonitors
+    #
+    - '{__name__="job:kube_pv:count"}'
+    #
+    # owners: (@openshift/openshift-team-ocs)
+    #
+    # job:odf_system_pvs:count counts ODF system persistent volumes.
+    #
+    # This rule sources metrics from the following monitors:
+    # - openshift-monitoring/kube-state-metrics-telemetry: kube_persistentvolume_info, kube_storageclass_info
+    #
+    # consumers: (@openshift/openshift-team-cluster-manager)
+    #
+    #marker:reliesExclusivelyOnCMOmonitors
+    #
+    - '{__name__="job:odf_system_pvs:count"}'
+    #
+    # owners: (@openshift/openshift-team-ocs)
+    #
+    # job:ceph_pools_iops:total reports total IOPS across Ceph pools.
+    #
+    # This rule sources metrics from the following monitors:
+    # - <unknown>: ceph_pool_rd
+    # - <unknown>: ceph_pool_wr
+    #
+    # consumers: (@openshift/openshift-team-cluster-manager)
+    #
+    #marker:reliesExclusivelyOnExternalMonitors
+    #
+    - '{__name__="job:ceph_pools_iops:total"}'
+    #
+    # owners: (@openshift/openshift-team-ocs)
+    #
+    # job:ceph_pools_iops_bytes:total reports total IOPS bytes across Ceph pools.
+    #
+    # This rule sources metrics from the following monitors:
+    # - <unknown>: ceph_pool_rd_bytes
+    # - <unknown>: ceph_pool_wr_bytes
+    #
+    # consumers: (@openshift/openshift-team-cluster-manager)
+    #
+    #marker:reliesExclusivelyOnExternalMonitors
+    #
+    - '{__name__="job:ceph_pools_iops_bytes:total"}'
+    #
+    # owners: (@openshift/openshift-team-ocs)
+    #
+    # job:ceph_versions_running:count counts running Ceph component versions.
+    #
+    # This rule sources metrics from the following monitors:
+    # - <unknown>: ceph_mon_metadata
+    # - <unknown>: ceph_osd_metadata
+    # - <unknown>: ceph_rgw_metadata
+    # - <unknown>: ceph_mds_metadata
+    #
+    # consumers: (@openshift/openshift-team-cluster-manager)
+    #
+    #marker:reliesExclusivelyOnExternalMonitors
+    #
+    - '{__name__="job:ceph_versions_running:count"}'
+    #
+    # owners: (@openshift/openshift-team-ocs)
+    #
+    # job:noobaa_total_unhealthy_buckets:sum counts total unhealthy NooBaa buckets.
+    #
+    # This rule sources metrics from the following monitors:
+    # - <unknown>: NooBaa_num_unhealthy_buckets
+    # - <unknown>: NooBaa_num_unhealthy_bucket_claims
+    #
+    # consumers: (@openshift/openshift-team-cluster-manager)
+    #
+    #marker:reliesExclusivelyOnExternalMonitors
+    #
+    - '{__name__="job:noobaa_total_unhealthy_buckets:sum"}'
+    #
+    # owners: (@openshift/openshift-team-ocs)
+    #
+    # job:noobaa_bucket_count:sum counts total NooBaa buckets.
+    #
+    # This rule sources metrics from the following monitors:
+    # - <unknown>: NooBaa_num_buckets
+    # - <unknown>: NooBaa_num_buckets_claims
+    #
+    # consumers: (@openshift/openshift-team-cluster-manager)
+    #
+    #marker:reliesExclusivelyOnExternalMonitors
+    #
+    - '{__name__="job:noobaa_bucket_count:sum"}'
+    #
+    # owners: (@openshift/openshift-team-ocs)
+    #
+    # job:noobaa_total_object_count:sum counts total NooBaa objects.
+    #
+    # This rule sources metrics from the following monitors:
+    # - <unknown>: NooBaa_num_objects
+    # - <unknown>: NooBaa_num_objects_buckets_claims
+    #
+    # consumers: (@openshift/openshift-team-cluster-manager)
+    #
+    #marker:reliesExclusivelyOnExternalMonitors
+    #
+    - '{__name__="job:noobaa_total_object_count:sum"}'
+    #
+    # owners: (@openshift/openshift-team-ocs)
+    #
+    # odf_system_bucket_count reports ODF system bucket count for OCS.
+    #
+    # Expected labels:
+    # - system_type: OCS
+    # - system_vendor: Red Hat
+    #
+    # This rule sources metrics from the following monitors:
+    #
+    # consumers: (@openshift/openshift-team-cluster-manager)
+    #
+    #marker:reliesExclusivelyOnExternalMonitors
+    #
+    - '{__name__="odf_system_bucket_count", system_type="OCS", system_vendor="Red Hat"}'
+    #
+    # owners: (@openshift/openshift-team-ocs)
+    #
+    # odf_system_objects_total reports total objects in ODF system for OCS.
+    #
+    # Expected labels:
+    # - system_type: OCS
+    # - system_vendor: Red Hat
+    #
+    # This rule sources metrics from the following monitors:
+    #
+    # consumers: (@openshift/openshift-team-cluster-manager)
+    #
+    #marker:reliesExclusivelyOnExternalMonitors
+    #
+    - '{__name__="odf_system_objects_total", system_type="OCS", system_vendor="Red Hat"}'
+    #
+    # owners: (@openshift/openshift-team-ocs)
+    #
+    # noobaa_accounts_num reports number of NooBaa accounts.
+    #
+    # This rule sources metrics from the following monitors:
+    #
+    # consumers: (@openshift/openshift-team-cluster-manager)
+    #
+    #marker:reliesExclusivelyOnExternalMonitors
+    #
+    - '{__name__="noobaa_accounts_num"}'
+    #
+    # owners: (@openshift/openshift-team-ocs)
+    #
+    # noobaa_total_usage reports total NooBaa storage usage.
+    #
+    # This rule sources metrics from the following monitors:
+    #
+    # consumers: (@openshift/openshift-team-cluster-manager)
+    #
+    #marker:reliesExclusivelyOnExternalMonitors
+    #
+    - '{__name__="noobaa_total_usage"}'
+    #
+    # owners: (@openshift/openshift-team-console)
+    #
+    # console_url reports the console URL.
+    #
+    # This rule sources metrics from the following monitors:
+    #
+    # consumers: (@openshift/openshift-team-cluster-manager)
+    #
+    #marker:reliesExclusivelyOnExternalMonitors
+    #
+    - '{__name__="console_url"}'
+    #
+    # owners: (@openshift/openshift-team-console)
+    #
+    # cluster:console_auth_login_requests_total:sum reports total console login requests.
+    #
+    # This rule sources metrics from the following monitors:
+    # - <unknown>: console_auth_login_requests_total
+    #
+    # consumers: (@openshift/openshift-team-cluster-manager)
+    #
+    #marker:reliesExclusivelyOnExternalMonitors
+    #
+    - '{__name__="cluster:console_auth_login_requests_total:sum"}'
+    #
+    # owners: (@openshift/openshift-team-console)
+    #
+    # cluster:console_auth_login_successes_total:sum reports total successful console logins.
+    #
+    # This rule sources metrics from the following monitors:
+    # - <unknown>: console_auth_login_successes_total
+    #
+    # consumers: (@openshift/openshift-team-cluster-manager)
+    #
+    #marker:reliesExclusivelyOnExternalMonitors
+    #
+    - '{__name__="cluster:console_auth_login_successes_total:sum"}'
+    #
+    # owners: (@openshift/openshift-team-console)
+    #
+    # cluster:console_auth_login_failures_total:sum reports total failed console logins.
+    #
+    # This rule sources metrics from the following monitors:
+    # - <unknown>: console_auth_login_failures_total
+    #
+    # consumers: (@openshift/openshift-team-cluster-manager)
+    #
+    #marker:reliesExclusivelyOnExternalMonitors
+    #
+    - '{__name__="cluster:console_auth_login_failures_total:sum"}'
+    #
+    # owners: (@openshift/openshift-team-console)
+    #
+    # cluster:console_auth_logout_requests_total:sum reports total console logout requests.
+    #
+    # This rule sources metrics from the following monitors:
+    # - <unknown>: console_auth_logout_requests_total
+    #
+    # consumers: (@openshift/openshift-team-cluster-manager)
+    #
+    #marker:reliesExclusivelyOnExternalMonitors
+    #
+    - '{__name__="cluster:console_auth_logout_requests_total:sum"}'
+    #
+    # owners: (@openshift/openshift-team-console)
+    #
+    # cluster:console_usage_users:max reports maximum active console users.
+    #
+    # This rule sources metrics from the following monitors:
+    # - <unknown>: console_usage_users
+    #
+    # consumers: (@openshift/openshift-team-cluster-manager)
+    #
+    #marker:reliesExclusivelyOnExternalMonitors
+    #
+    - '{__name__="cluster:console_usage_users:max"}'
+    #
+    # owners: (@openshift/openshift-team-console)
+    #
+    # cluster:console_plugins_info:max reports console plugin information.
+    #
+    # This rule sources metrics from the following monitors:
+    # - <unknown>: console_plugins_info
+    #
+    # consumers: (@openshift/openshift-team-cluster-manager)
+    #
+    #marker:reliesExclusivelyOnExternalMonitors
+    #
+    - '{__name__="cluster:console_plugins_info:max"}'
+    #
+    # owners: (@openshift/openshift-team-console)
+    #
+    # cluster:console_customization_perspectives_info:max reports console customization perspective info.
+    #
+    # This rule sources metrics from the following monitors:
+    # - <unknown>: console_customization_perspectives_info
+    #
+    # consumers: (@openshift/openshift-team-cluster-manager)
+    #
+    #marker:reliesExclusivelyOnExternalMonitors
+    #
+    - '{__name__="cluster:console_customization_perspectives_info:max"}'
+    #
+    # owners: (@openshift/openshift-team-networking)
+    #
+    # cluster:ovnkube_controller_egress_routing_via_host:max reports egress routing via host.
+    #
+    # This rule sources metrics from the following monitors:
+    # - <unknown>: ovnkube_controller_egress_routing_via_host
+    #
+    # consumers: (@openshift/openshift-team-cluster-manager)
+    #
+    #marker:reliesExclusivelyOnExternalMonitors
+    #
+    - '{__name__="cluster:ovnkube_controller_egress_routing_via_host:max"}'
+    #
+    # owners: (@openshift/openshift-team-networking)
+    #
+    # cluster:ovnkube_controller_admin_network_policies_db_objects:max reports admin network policies database objects.
+    #
+    # Expected labels:
+    # - table_name: ACL
+    # - table_name: Address_Set
+    #
+    # This rule sources metrics from the following monitors:
+    # - <unknown>: ovnkube_controller_admin_network_policies_db_objects
+    #
+    # consumers: (@openshift/openshift-team-cluster-manager)
+    #
+    #marker:reliesExclusivelyOnExternalMonitors
+    #
+    - '{__name__="cluster:ovnkube_controller_admin_network_policies_db_objects:max",table_name=~"ACL|Address_Set"}'
+    #
+    # owners: (@openshift/openshift-team-networking)
+    #
+    # cluster:ovnkube_controller_baseline_admin_network_policies_db_objects:max reports baseline admin network policies database objects.
+    #
+    # Expected labels:
+    # - table_name: ACL
+    # - table_name: Address_Set
+    #
+    # This rule sources metrics from the following monitors:
+    # - <unknown>: ovnkube_controller_baseline_admin_network_policies_db_objects
+    #
+    # consumers: (@openshift/openshift-team-cluster-manager)
+    #
+    #marker:reliesExclusivelyOnExternalMonitors
+    #
+    - '{__name__="cluster:ovnkube_controller_baseline_admin_network_policies_db_objects:max",table_name=~"ACL|Address_Set"}'
+    #
+    # owners: (@openshift/openshift-team-networking)
+    #
+    # cluster:ovnkube_controller_admin_network_policies_rules:max reports admin network policies rules.
+    #
+    # Expected labels:
+    # - action: Pass
+    # - action: Allow
+    # - action: Deny
+    # - direction: Ingress
+    # - direction: Egress
+    #
+    # This rule sources metrics from the following monitors:
+    # - <unknown>: ovnkube_controller_admin_network_policies_rules
+    #
+    # consumers: (@openshift/openshift-team-cluster-manager)
+    #
+    #marker:reliesExclusivelyOnExternalMonitors
+    #
+    - '{__name__="cluster:ovnkube_controller_admin_network_policies_rules:max",direction=~"Ingress|Egress",action=~"Pass|Allow|Deny"}'
+    #
+    # owners: (@openshift/openshift-team-networking)
+    #
+    # cluster:ovnkube_controller_baseline_admin_network_policies_rules:max reports baseline admin network policies rules.
+    #
+    # Expected labels:
+    # - action: Allow
+    # - action: Deny
+    # - direction: Ingress
+    # - direction: Egress
+    #
+    # This rule sources metrics from the following monitors:
+    # - <unknown>: ovnkube_controller_baseline_admin_network_policies_rules
+    #
+    # consumers: (@openshift/openshift-team-cluster-manager)
+    #
+    #marker:reliesExclusivelyOnExternalMonitors
+    #
+    - '{__name__="cluster:ovnkube_controller_baseline_admin_network_policies_rules:max",direction=~"Ingress|Egress",action=~"Allow|Deny"}'
+    #
+    # owners: (@openshift/openshift-team-networking)
+    #
+    # cluster:network_attachment_definition_instances:max reports network attachment definition instances.
+    #
+    # This rule sources metrics from the following monitors:
+    # - <unknown>: network_attachment_definition_instances
+    #
+    # consumers: (@openshift/openshift-team-cluster-manager)
+    #
+    #marker:reliesExclusivelyOnExternalMonitors
+    #
+    - '{__name__="cluster:network_attachment_definition_instances:max"}'
+    #
+    # owners: (@openshift/openshift-team-networking)
+    #
+    # cluster:network_attachment_definition_enabled_instance_up:max reports enabled network attachment definition instances that are up.
+    #
+    # This rule sources metrics from the following monitors:
+    # - <unknown>: network_attachment_definition_enabled_instance_up
+    #
+    # consumers: (@openshift/openshift-team-cluster-manager)
+    #
+    #marker:reliesExclusivelyOnExternalMonitors
+    #
+    - '{__name__="cluster:network_attachment_definition_enabled_instance_up:max"}'
+    #
+    # owners: (@openshift/openshift-team-networking)
+    #
+    # cluster:ingress_controller_aws_nlb_active:sum reports active AWS NLB ingress controllers.
+    #
+    # This rule sources metrics from the following monitors:
+    # - <unknown>: ingress_controller_aws_nlb_active
+    #
+    # consumers: (@openshift/openshift-team-cluster-manager)
+    #
+    #marker:reliesExclusivelyOnExternalMonitors
+    #
+    - '{__name__="cluster:ingress_controller_aws_nlb_active:sum"}'
+    #
+    # owners: (@openshift/openshift-team-networking)
+    #
+    # cluster:route_metrics_controller_routes_per_shard:min reports minimum routes per shard.
+    #
+    # This rule sources metrics from the following monitors:
+    # - <unknown>: route_metrics_controller_routes_per_shard
+    #
+    # consumers: (@openshift/openshift-team-cluster-manager)
+    #
+    #marker:reliesExclusivelyOnExternalMonitors
+    #
+    - '{__name__="cluster:route_metrics_controller_routes_per_shard:min"}'
+    #
+    # owners: (@openshift/openshift-team-networking)
+    #
+    # cluster:route_metrics_controller_routes_per_shard:max reports maximum routes per shard.
+    #
+    # This rule sources metrics from the following monitors:
+    # - <unknown>: route_metrics_controller_routes_per_shard
+    #
+    # consumers: (@openshift/openshift-team-cluster-manager)
+    #
+    #marker:reliesExclusivelyOnExternalMonitors
+    #
+    - '{__name__="cluster:route_metrics_controller_routes_per_shard:max"}'
+    #
+    # owners: (@openshift/openshift-team-networking)
+    #
+    # cluster:route_metrics_controller_routes_per_shard:avg reports average routes per shard.
+    #
+    # This rule sources metrics from the following monitors:
+    # - <unknown>: route_metrics_controller_routes_per_shard
+    #
+    # consumers: (@openshift/openshift-team-cluster-manager)
+    #
+    #marker:reliesExclusivelyOnExternalMonitors
+    #
+    - '{__name__="cluster:route_metrics_controller_routes_per_shard:avg"}'
+    #
+    # owners: (@openshift/openshift-team-networking)
+    #
+    # cluster:route_metrics_controller_routes_per_shard:median reports median routes per shard.
+    #
+    # This rule sources metrics from the following monitors:
+    # - <unknown>: route_metrics_controller_routes_per_shard
+    #
+    # consumers: (@openshift/openshift-team-cluster-manager)
+    #
+    #marker:reliesExclusivelyOnExternalMonitors
+    #
+    - '{__name__="cluster:route_metrics_controller_routes_per_shard:median"}'
+    #
+    # owners: (@openshift/openshift-team-networking)
+    #
+    # cluster:openshift_route_info:tls_termination:sum aggregates route info by TLS termination type.
+    #
+    # This rule sources metrics from the following monitors:
+    # - openshift-monitoring/openshift-state-metrics-telemetry: openshift_route_info
+    #
+    # consumers: (@openshift/openshift-team-cluster-manager)
+    #
+    #marker:reliesExclusivelyOnCMOmonitors
+    #
+    - '{__name__="cluster:openshift_route_info:tls_termination:sum"}'
+    #
+    # owners: (@openshift/openshift-team-cluster-observability)
+    #
+    # insightsclient_request_send_total reports total insights client requests sent.
+    #
+    # This rule sources metrics from the following monitors:
+    #
+    # consumers: (@openshift/openshift-team-cluster-manager)
+    #
+    #marker:reliesExclusivelyOnExternalMonitors
+    #
+    - '{__name__="insightsclient_request_send_total"}'
+    #
+    # owners: (@openshift/openshift-team-migration)
+    #
+    # cam_app_workload_migrations reports application workload migrations.
+    #
+    # This rule sources metrics from the following monitors:
+    #
+    # consumers: (@openshift/openshift-team-cluster-manager)
+    #
+    #marker:reliesExclusivelyOnExternalMonitors
+    #
+    - '{__name__="cam_app_workload_migrations"}'
+    #
+    # owners: (@openshift/openshift-team-apiserver)
+    #
+    # cluster:apiserver_current_inflight_requests:sum:max_over_time:2m reports maximum inflight API server requests over 2 minutes.
+    #
+    # This rule sources metrics from the following monitors:
+    # - openshift-monitoring/kubelet-telemetry: apiserver_current_inflight_requests
+    #
+    # consumers: (@openshift/openshift-team-cluster-manager)
+    #
+    #marker:reliesExclusivelyOnCMOmonitors
+    #
+    - '{__name__="cluster:apiserver_current_inflight_requests:sum:max_over_time:2m"}'
+    #
+    # owners: (https://github.com/integr8ly)
+    #
+    # rhmi_status reports RHMI installation status.
+    #
+    # This rule sources metrics from the following monitors:
+    #
+    # consumers: (@openshift/openshift-team-cluster-manager)
+    #
+    #marker:reliesExclusivelyOnExternalMonitors
+    #
+    - '{__name__="rhmi_status"}'
+    #
+    # owners: (https://github.com/integr8ly, @boomatang)
+    #
+    # state:rhoam_critical_alerts:max reports maximum critical RHOAM alerts.
+    #
+    # This rule sources metrics from the following monitors:
+    # - <unknown>: rhoam_critical_alerts
+    #
+    # consumers: (@openshift/openshift-team-cluster-manager)
+    #
+    #marker:reliesExclusivelyOnExternalMonitors
+    #
+    - '{__name__="state:rhoam_critical_alerts:max"}'
+    #
+    # owners: (https://github.com/integr8ly, @boomatang)
+    #
+    # state:rhoam_warning_alerts:max reports maximum warning RHOAM alerts.
+    #
+    # This rule sources metrics from the following monitors:
+    # - <unknown>: rhoam_warning_alerts
+    #
+    # consumers: (@openshift/openshift-team-cluster-manager)
+    #
+    #marker:reliesExclusivelyOnExternalMonitors
+    #
+    - '{__name__="state:rhoam_warning_alerts:max"}'
+    #
+    # owners: (https://github.com/integr8ly, @boomatang)
+    #
+    # rhoam_7d_slo_percentile:max reports RHOAM 7-day SLO percentile.
+    #
+    # This rule sources metrics from the following monitors:
+    # - <unknown>: rhoam_7d_slo_percentile
+    #
+    # consumers: (@openshift/openshift-team-cluster-manager)
+    #
+    #marker:reliesExclusivelyOnExternalMonitors
+    #
+    - '{__name__="rhoam_7d_slo_percentile:max"}'
+    #
+    # owners: (https://github.com/integr8ly, @boomatang)
+    #
+    # rhoam_7d_slo_remaining_error_budget:max reports RHOAM 7-day remaining error budget.
+    #
+    # This rule sources metrics from the following monitors:
+    # - <unknown>: rhoam_7d_slo_remaining_error_budget
+    #
+    # consumers: (@openshift/openshift-team-cluster-manager)
+    #
+    #marker:reliesExclusivelyOnExternalMonitors
+    #
+    - '{__name__="rhoam_7d_slo_remaining_error_budget:max"}'
+    #
+    # owners: (@openshift/openshift-team-cluster-lifecycle)
+    #
+    # cluster_legacy_scheduler_policy reports whether legacy scheduler policy is configured.
+    #
+    # This rule sources metrics from the following monitors:
+    #
+    # consumers: (@openshift/openshift-team-cluster-manager)
+    #
+    #marker:reliesExclusivelyOnExternalMonitors
+    #
+    - '{__name__="cluster_legacy_scheduler_policy"}'
+    #
+    # owners: (@openshift/openshift-team-cluster-lifecycle)
+    #
+    # cluster_master_schedulable reports whether master nodes are schedulable.
+    #
+    # This rule sources metrics from the following monitors:
+    #
+    # consumers: (@openshift/openshift-team-cluster-manager)
+    #
+    #marker:reliesExclusivelyOnExternalMonitors
+    #
+    - '{__name__="cluster_master_schedulable"}'
+    #
+    # owners: (@openshift/openshift-team-devtools)
+    #
+    # che_workspace_status reports Che workspace status.
+    #
+    # This rule sources metrics from the following monitors:
+    #
+    # consumers: (@openshift/openshift-team-cluster-manager)
+    #
+    #marker:reliesExclusivelyOnExternalMonitors
+    #
+    - '{__name__="che_workspace_status"}'
+    #
+    # owners: (@openshift/openshift-team-devtools)
+    #
+    # che_workspace_started_total reports total Che workspaces started.
+    #
+    # This rule sources metrics from the following monitors:
+    #
+    # consumers: (@openshift/openshift-team-cluster-manager)
+    #
+    #marker:reliesExclusivelyOnExternalMonitors
+    #
+    - '{__name__="che_workspace_started_total"}'
+    #
+    # owners: (@openshift/openshift-team-devtools)
+    #
+    # che_workspace_failure_total reports total Che workspace failures.
+    #
+    # This rule sources metrics from the following monitors:
+    #
+    # consumers: (@openshift/openshift-team-cluster-manager)
+    #
+    #marker:reliesExclusivelyOnExternalMonitors
+    #
+    - '{__name__="che_workspace_failure_total"}'
+    #
+    # owners: (@openshift/openshift-team-devtools)
+    #
+    # che_workspace_start_time_seconds_sum reports sum of Che workspace start times.
+    #
+    # This rule sources metrics from the following monitors:
+    #
+    # consumers: (@openshift/openshift-team-cluster-manager)
+    #
+    #marker:reliesExclusivelyOnExternalMonitors
+    #
+    - '{__name__="che_workspace_start_time_seconds_sum"}'
+    #
+    # owners: (@openshift/openshift-team-devtools)
+    #
+    # che_workspace_start_time_seconds_count reports count of Che workspace starts.
+    #
+    # This rule sources metrics from the following monitors:
+    #
+    # consumers: (@openshift/openshift-team-cluster-manager)
+    #
+    #marker:reliesExclusivelyOnExternalMonitors
+    #
+    - '{__name__="che_workspace_start_time_seconds_count"}'
+    #
+    # owners: (@openshift/openshift-team-cloud-credential-operator)
+    #
+    # cco_credentials_mode reports CCO credentials mode.
+    #
+    # This rule sources metrics from the following monitors:
+    #
+    # consumers: (@openshift/openshift-team-cluster-manager)
+    #
+    #marker:reliesExclusivelyOnExternalMonitors
+    #
+    - '{__name__="cco_credentials_mode"}'
+    #
+    # owners: (@openshift/openshift-team-storage)
+    #
+    # cluster:kube_persistentvolume_plugin_type_counts:sum counts persistent volumes by plugin type.
+    #
+    # This rule sources metrics from the following monitors:
+    # - openshift-monitoring/kubelet-telemetry: pv_collector_total_pv_count
+    #
+    # consumers: (@openshift/openshift-team-cluster-manager)
+    #
+    #marker:reliesExclusivelyOnCMOmonitors
+    #
+    - '{__name__="cluster:kube_persistentvolume_plugin_type_counts:sum"}'
+    #
+    # owners: (@openshift/openshift-team-acm)
+    #
+    # acm_managed_cluster_info reports ACM managed cluster information.
+    #
+    # This rule sources metrics from the following monitors:
+    #
+    # consumers: (@openshift/openshift-team-cluster-manager)
+    #
+    #marker:reliesExclusivelyOnExternalMonitors
+    #
+    - '{__name__="acm_managed_cluster_info"}'
+    #
+    # owners: (@openshift/openshift-team-acm)
+    #
+    # acm_managed_cluster_worker_cores:max reports maximum worker cores in ACM managed clusters.
+    #
+    # This rule sources metrics from the following monitors:
+    # - <unknown>: acm_managed_cluster_worker_cores
+    #
+    # consumers: (@openshift/openshift-team-cluster-manager)
+    #
+    #marker:reliesExclusivelyOnExternalMonitors
+    #
+    - '{__name__="acm_managed_cluster_worker_cores:max"}'
+    #
+    # owners: (@openshift/openshift-team-acm)
+    #
+    # acm_console_page_count:sum counts ACM console page views by page type.
+    #
+    # Expected labels:
+    # - page: overview-classic
+    # - page: overview-fleet
+    # - page: search
+    # - page: search-details
+    # - page: clusters
+    # - page: application
+    # - page: governance
+    #
+    # This rule sources metrics from the following monitors:
+    # - <unknown>: acm_console_page_count
+    #
+    # consumers: (@openshift/openshift-team-cluster-manager)
+    #
+    #marker:reliesExclusivelyOnExternalMonitors
+    #
+    - '{__name__="acm_console_page_count:sum", page=~"overview-classic|overview-fleet|search|search-details|clusters|application|governance"}'
+    #
+    # owners: (@openshift/openshift-team-vsphere)
+    #
+    # cluster:vsphere_vcenter_info:sum reports vSphere vCenter information.
+    #
+    # This rule sources metrics from the following monitors:
+    # - <unknown>: vsphere_vcenter_info
+    #
+    # consumers: (@openshift/openshift-team-cluster-manager)
+    #
+    #marker:reliesExclusivelyOnExternalMonitors
+    #
+    - '{__name__="cluster:vsphere_vcenter_info:sum"}'
+    #
+    # owners: (@openshift/openshift-team-vsphere)
+    #
+    # cluster:vsphere_esxi_version_total:sum reports vSphere ESXi version counts.
+    #
+    # This rule sources metrics from the following monitors:
+    # - <unknown>: vsphere_esxi_version_total
+    #
+    # consumers: (@openshift/openshift-team-cluster-manager)
+    #
+    #marker:reliesExclusivelyOnExternalMonitors
+    #
+    - '{__name__="cluster:vsphere_esxi_version_total:sum"}'
+    #
+    # owners: (@openshift/openshift-team-vsphere)
+    #
+    # cluster:vsphere_node_hw_version_total:sum reports vSphere node hardware version counts.
+    #
+    # This rule sources metrics from the following monitors:
+    # - <unknown>: vsphere_node_hw_version_total
+    #
+    # consumers: (@openshift/openshift-team-cluster-manager)
+    #
+    #marker:reliesExclusivelyOnExternalMonitors
+    #
+    - '{__name__="cluster:vsphere_node_hw_version_total:sum"}'
+    #
+    # owners: (@openshift/openshift-team-builds)
+    #
+    # openshift:build_by_strategy:sum aggregates builds by strategy.
+    #
+    # This rule sources metrics from the following monitors:
+    # - openshift-monitoring/openshift-state-metrics-telemetry: openshift_build_status_phase_total
+    #
+    # consumers: (@openshift/openshift-team-cluster-manager)
+    #
+    #marker:reliesExclusivelyOnCMOmonitors
+    #
+    - '{__name__="openshift:build_by_strategy:sum"}'
+    #
+    # owners: (@openshift/openshift-team-data-science)
+    #
+    # rhods_aggregate_availability reports RHODS aggregate availability.
+    #
+    # This rule sources metrics from the following monitors:
+    #
+    # consumers: (@openshift/openshift-team-cluster-manager)
+    #
+    #marker:reliesExclusivelyOnExternalMonitors
+    #
+    - '{__name__="rhods_aggregate_availability"}'
+    #
+    # owners: (@openshift/openshift-team-data-science)
+    #
+    # rhods_total_users reports total RHODS users.
+    #
+    # This rule sources metrics from the following monitors:
+    #
+    # consumers: (@openshift/openshift-team-cluster-manager)
+    #
+    #marker:reliesExclusivelyOnExternalMonitors
+    #
+    - '{__name__="rhods_total_users"}'
+    #
+    # owners: (@openshift/openshift-team-etcd)
+    #
+    # instance:etcd_disk_wal_fsync_duration_seconds:histogram_quantile reports etcd WAL fsync duration 99th percentile.
+    #
+    # Expected labels:
+    # - quantile: 0.99
+    #
+    # This rule sources metrics from the following monitors:
+    # - <unknown>: etcd_disk_wal_fsync_duration_seconds_bucket
+    #
+    # consumers: (@openshift/openshift-team-cluster-manager)
+    #
+    #marker:reliesExclusivelyOnExternalMonitors
+    #
+    - '{__name__="instance:etcd_disk_wal_fsync_duration_seconds:histogram_quantile",quantile="0.99"}'
+    #
+    # owners: (@openshift/openshift-team-etcd)
+    #
+    # instance:etcd_mvcc_db_total_size_in_bytes:sum reports total etcd database size.
+    #
+    # This rule sources metrics from the following monitors:
+    # - <unknown>: etcd_mvcc_db_total_size_in_bytes
+    #
+    # consumers: (@openshift/openshift-team-cluster-manager)
+    #
+    #marker:reliesExclusivelyOnExternalMonitors
+    #
+    - '{__name__="instance:etcd_mvcc_db_total_size_in_bytes:sum"}'
+    #
+    # owners: (@openshift/openshift-team-etcd)
+    #
+    # instance:etcd_network_peer_round_trip_time_seconds:histogram_quantile reports etcd network peer RTT 99th percentile.
+    #
+    # Expected labels:
+    # - quantile: 0.99
+    #
+    # This rule sources metrics from the following monitors:
+    # - <unknown>: etcd_network_peer_round_trip_time_seconds_bucket
+    #
+    # consumers: (@openshift/openshift-team-cluster-manager)
+    #
+    #marker:reliesExclusivelyOnExternalMonitors
+    #
+    - '{__name__="instance:etcd_network_peer_round_trip_time_seconds:histogram_quantile",quantile="0.99"}'
+    #
+    # owners: (@openshift/openshift-team-etcd)
+    #
+    # instance:etcd_mvcc_db_total_size_in_use_in_bytes:sum reports etcd database size in use.
+    #
+    # This rule sources metrics from the following monitors:
+    # - <unknown>: etcd_mvcc_db_total_size_in_use_in_bytes
+    #
+    # consumers: (@openshift/openshift-team-cluster-manager)
+    #
+    #marker:reliesExclusivelyOnExternalMonitors
+    #
+    - '{__name__="instance:etcd_mvcc_db_total_size_in_use_in_bytes:sum"}'
+    #
+    # owners: (@openshift/openshift-team-etcd)
+    #
+    # instance:etcd_disk_backend_commit_duration_seconds:histogram_quantile reports etcd backend commit duration 99th percentile.
+    #
+    # Expected labels:
+    # - quantile: 0.99
+    #
+    # This rule sources metrics from the following monitors:
+    # - <unknown>: etcd_disk_backend_commit_duration_seconds_bucket
+    #
+    # consumers: (@openshift/openshift-team-cluster-manager)
+    #
+    #marker:reliesExclusivelyOnExternalMonitors
+    #
+    - '{__name__="instance:etcd_disk_backend_commit_duration_seconds:histogram_quantile",quantile="0.99"}'
+    #
+    # owners: (@openshift/openshift-team-observability)
+    #
+    # jaeger_operator_instances_storage_types reports Jaeger operator instance storage types.
+    #
+    # This rule sources metrics from the following monitors:
+    #
+    # consumers: (@openshift/openshift-team-cluster-manager)
+    #
+    #marker:reliesExclusivelyOnExternalMonitors
+    #
+    - '{__name__="jaeger_operator_instances_storage_types"}'
+    #
+    # owners: (@openshift/openshift-team-observability)
+    #
+    # jaeger_operator_instances_strategies reports Jaeger operator instance strategies.
+    #
+    # This rule sources metrics from the following monitors:
+    #
+    # consumers: (@openshift/openshift-team-cluster-manager)
+    #
+    #marker:reliesExclusivelyOnExternalMonitors
+    #
+    - '{__name__="jaeger_operator_instances_strategies"}'
+    #
+    # owners: (@openshift/openshift-team-observability)
+    #
+    # jaeger_operator_instances_agent_strategies reports Jaeger operator instance agent strategies.
+    #
+    # This rule sources metrics from the following monitors:
+    #
+    # consumers: (@openshift/openshift-team-cluster-manager)
+    #
+    #marker:reliesExclusivelyOnExternalMonitors
+    #
+    - '{__name__="jaeger_operator_instances_agent_strategies"}'
+    #
+    # owners: (@openshift/openshift-team-observability)
+    #
+    # type:tempo_operator_tempostack_storage_backend:sum reports Tempo operator storage backend types.
+    #
+    # Expected labels:
+    # - type: azure
+    # - type: gcs
+    # - type: s3
+    #
+    # This rule sources metrics from the following monitors:
+    # - <unknown>: tempo_operator_tempostack_storage_backend
+    #
+    # consumers: (@openshift/openshift-team-cluster-manager)
+    #
+    #marker:reliesExclusivelyOnExternalMonitors
+    #
+    - '{__name__="type:tempo_operator_tempostack_storage_backend:sum",type=~"azure|gcs|s3"}'
+    #
+    # owners: (@openshift/openshift-team-observability)
+    #
+    # state:tempo_operator_tempostack_managed:sum reports Tempo operator managed state.
+    #
+    # Expected labels:
+    # - state: Managed
+    # - state: Unmanaged
+    #
+    # This rule sources metrics from the following monitors:
+    # - <unknown>: tempo_operator_tempostack_managed
+    #
+    # consumers: (@openshift/openshift-team-cluster-manager)
+    #
+    #marker:reliesExclusivelyOnExternalMonitors
+    #
+    - '{__name__="state:tempo_operator_tempostack_managed:sum",state=~"Managed|Unmanaged"}'
+    #
+    # owners: (@openshift/openshift-team-observability)
+    #
+    # type:tempo_operator_tempostack_multi_tenancy:sum reports Tempo operator multi-tenancy types.
+    #
+    # Expected labels:
+    # - type: static
+    # - type: openshift
+    # - type: disabled
+    #
+    # This rule sources metrics from the following monitors:
+    # - <unknown>: tempo_operator_tempostack_multi_tenancy
+    #
+    # consumers: (@openshift/openshift-team-cluster-manager)
+    #
+    #marker:reliesExclusivelyOnExternalMonitors
+    #
+    - '{__name__="type:tempo_operator_tempostack_multi_tenancy:sum",type=~"static|openshift|disabled"}'
+    #
+    # owners: (@openshift/openshift-team-observability)
+    #
+    # enabled:tempo_operator_tempostack_jaeger_ui:sum reports Tempo operator Jaeger UI enabled status.
+    #
+    # Expected labels:
+    # - enabled: true
+    # - enabled: false
+    #
+    # This rule sources metrics from the following monitors:
+    # - <unknown>: tempo_operator_tempostack_jaeger_ui
+    #
+    # consumers: (@openshift/openshift-team-cluster-manager)
+    #
+    #marker:reliesExclusivelyOnExternalMonitors
+    #
+    - '{__name__="enabled:tempo_operator_tempostack_jaeger_ui:sum",enabled=~"true|false"}'
+    #
+    # owners: (@openshift/openshift-team-observability)
+    #
+    # type:opentelemetry_collector_receivers:sum reports OpenTelemetry collector receiver types.
+    #
+    # Expected labels:
+    # - type: jaeger
+    # - type: hostmetrics
+    # - type: opencensus
+    # - type: prometheus
+    # - type: zipkin
+    # - type: kafka
+    # - type: filelog
+    # - type: journald
+    # - type: k8sevents
+    # - type: kubeletstats
+    # - type: k8scluster
+    # - type: k8sobjects
+    # - type: otlp
+    #
+    # This rule sources metrics from the following monitors:
+    # - <unknown>: opentelemetry_collector_receivers
+    #
+    # consumers: (@openshift/openshift-team-cluster-manager)
+    #
+    #marker:reliesExclusivelyOnExternalMonitors
+    #
+    - '{__name__="type:opentelemetry_collector_receivers:sum",type=~"jaeger|hostmetrics|opencensus|prometheus|zipkin|kafka|filelog|journald|k8sevents|kubeletstats|k8scluster|k8sobjects|otlp"}'
+    #
+    # owners: (@openshift/openshift-team-observability)
+    #
+    # type:opentelemetry_collector_exporters:sum reports OpenTelemetry collector exporter types.
+    #
+    # Expected labels:
+    # - type: debug
+    # - type: logging
+    # - type: otlp
+    # - type: otlphttp
+    # - type: prometheus
+    # - type: lokiexporter
+    # - type: kafka
+    # - type: awscloudwatchlogs
+    # - type: loadbalancing
+    #
+    # This rule sources metrics from the following monitors:
+    # - <unknown>: opentelemetry_collector_exporters
+    #
+    # consumers: (@openshift/openshift-team-cluster-manager)
+    #
+    #marker:reliesExclusivelyOnExternalMonitors
+    #
+    - '{__name__="type:opentelemetry_collector_exporters:sum",type=~"debug|logging|otlp|otlphttp|prometheus|lokiexporter|kafka|awscloudwatchlogs|loadbalancing"}'
+    #
+    # owners: (@openshift/openshift-team-observability)
+    #
+    # type:opentelemetry_collector_processors:sum reports OpenTelemetry collector processor types.
+    #
+    # Expected labels:
+    # - type: batch
+    # - type: memorylimiter
+    # - type: attributes
+    # - type: resource
+    # - type: span
+    # - type: k8sattributes
+    # - type: resourcedetection
+    # - type: filter
+    # - type: routing
+    # - type: cumulativetodelta
+    # - type: groupbyattrs
+    #
+    # This rule sources metrics from the following monitors:
+    # - <unknown>: opentelemetry_collector_processors
+    #
+    # consumers: (@openshift/openshift-team-cluster-manager)
+    #
+    #marker:reliesExclusivelyOnExternalMonitors
+    #
+    - '{__name__="type:opentelemetry_collector_processors:sum",type=~"batch|memorylimiter|attributes|resource|span|k8sattributes|resourcedetection|filter|routing|cumulativetodelta|groupbyattrs"}'
+    #
+    # owners: (@openshift/openshift-team-observability)
+    #
+    # type:opentelemetry_collector_extensions:sum reports OpenTelemetry collector extension types.
+    #
+    # Expected labels:
+    # - type: zpages
+    # - type: ballast
+    # - type: memorylimiter
+    # - type: jaegerremotesampling
+    # - type: healthcheck
+    # - type: pprof
+    # - type: oauth2clientauth
+    # - type: oidcauth
+    # - type: bearertokenauth
+    # - type: filestorage
+    #
+    # This rule sources metrics from the following monitors:
+    # - <unknown>: opentelemetry_collector_extensions
+    #
+    # consumers: (@openshift/openshift-team-cluster-manager)
+    #
+    #marker:reliesExclusivelyOnExternalMonitors
+    #
+    - '{__name__="type:opentelemetry_collector_extensions:sum",type=~"zpages|ballast|memorylimiter|jaegerremotesampling|healthcheck|pprof|oauth2clientauth|oidcauth|bearertokenauth|filestorage"}'
+    #
+    # owners: (@openshift/openshift-team-observability)
+    #
+    # type:opentelemetry_collector_connectors:sum reports OpenTelemetry collector connector types.
+    #
+    # Expected labels:
+    # - type: spanmetrics
+    # - type: forward
+    #
+    # This rule sources metrics from the following monitors:
+    # - <unknown>: opentelemetry_collector_connectors
+    #
+    # consumers: (@openshift/openshift-team-cluster-manager)
+    #
+    #marker:reliesExclusivelyOnExternalMonitors
+    #
+    - '{__name__="type:opentelemetry_collector_connectors:sum",type=~"spanmetrics|forward"}'
+    #
+    # owners: (@openshift/openshift-team-observability)
+    #
+    # type:opentelemetry_collector_info:sum reports OpenTelemetry collector deployment types.
+    #
+    # Expected labels:
+    # - type: deployment
+    # - type: daemonset
+    # - type: sidecar
+    # - type: statefulset
+    #
+    # This rule sources metrics from the following monitors:
+    # - <unknown>: opentelemetry_collector_info
+    #
+    # consumers: (@openshift/openshift-team-cluster-manager)
+    #
+    #marker:reliesExclusivelyOnExternalMonitors
+    #
+    - '{__name__="type:opentelemetry_collector_info:sum",type=~"deployment|daemonset|sidecar|statefulset"}'
+    #
+    # owners: (@openshift/openshift-team-app-services)
+    #
+    # appsvcs:cores_by_product:sum reports application services CPU cores by product.
+    #
+    # This rule sources metrics from the following monitors:
+    # - <unknown>: appsvcs_cpu_usage_cores
+    #
+    # consumers: (@openshift/openshift-team-cluster-manager)
+    #
+    #marker:reliesExclusivelyOnExternalMonitors
+    #
+    - '{__name__="appsvcs:cores_by_product:sum"}'
+    #
+    # owners: (@openshift/openshift-team-node-tuning-operator)
+    #
+    # nto_custom_profiles:count counts custom Node Tuning Operator profiles.
+    #
+    # This rule sources metrics from the following monitors:
+    # - <unknown>: nto_profile_calculated_total
+    #
+    # consumers: (@openshift/openshift-team-cluster-manager)
+    #
+    #marker:reliesExclusivelyOnExternalMonitors
+    #
+    - '{__name__="nto_custom_profiles:count"}'
+    #
+    # owners: (@openshift/openshift-team-storage)
+    #
+    # openshift_csi_share_configmap reports CSI share configmap usage.
+    #
+    # This rule sources metrics from the following monitors:
+    #
+    # consumers: (@openshift/openshift-team-cluster-manager)
+    #
+    #marker:reliesExclusivelyOnExternalMonitors
+    #
+    - '{__name__="openshift_csi_share_configmap"}'
+    #
+    # owners: (@openshift/openshift-team-storage)
+    #
+    # openshift_csi_share_secret reports CSI share secret usage.
+    #
+    # This rule sources metrics from the following monitors:
+    #
+    # consumers: (@openshift/openshift-team-cluster-manager)
+    #
+    #marker:reliesExclusivelyOnExternalMonitors
+    #
+    - '{__name__="openshift_csi_share_secret"}'
+    #
+    # owners: (@openshift/openshift-team-storage)
+    #
+    # openshift_csi_share_mount_failures_total reports total CSI share mount failures.
+    #
+    # This rule sources metrics from the following monitors:
+    #
+    # consumers: (@openshift/openshift-team-cluster-manager)
+    #
+    #marker:reliesExclusivelyOnExternalMonitors
+    #
+    - '{__name__="openshift_csi_share_mount_failures_total"}'
+    #
+    # owners: (@openshift/openshift-team-storage)
+    #
+    # openshift_csi_share_mount_requests_total reports total CSI share mount requests.
+    #
+    # This rule sources metrics from the following monitors:
+    #
+    # consumers: (@openshift/openshift-team-cluster-manager)
+    #
+    #marker:reliesExclusivelyOnExternalMonitors
+    #
+    - '{__name__="openshift_csi_share_mount_requests_total"}'
+    #
+    # owners: (@openshift/openshift-team-logging)
+    #
+    # eo_es_storage_info reports Elasticsearch storage information.
+    #
+    # This rule sources metrics from the following monitors:
+    #
+    # consumers: (@openshift/openshift-team-cluster-manager)
+    #
+    #marker:reliesExclusivelyOnExternalMonitors
+    #
+    - '{__name__="eo_es_storage_info"}'
+    #
+    # owners: (@openshift/openshift-team-logging)
+    #
+    # eo_es_redundancy_policy_info reports Elasticsearch redundancy policy information.
+    #
+    # This rule sources metrics from the following monitors:
+    #
+    # consumers: (@openshift/openshift-team-cluster-manager)
+    #
+    #marker:reliesExclusivelyOnExternalMonitors
+    #
+    - '{__name__="eo_es_redundancy_policy_info"}'
+    #
+    # owners: (@openshift/openshift-team-logging)
+    #
+    # eo_es_defined_delete_namespaces_total reports total defined delete namespaces in Elasticsearch.
+    #
+    # This rule sources metrics from the following monitors:
+    #
+    # consumers: (@openshift/openshift-team-cluster-manager)
+    #
+    #marker:reliesExclusivelyOnExternalMonitors
+    #
+    - '{__name__="eo_es_defined_delete_namespaces_total"}'
+    #
+    # owners: (@openshift/openshift-team-logging)
+    #
+    # eo_es_misconfigured_memory_resources_info reports Elasticsearch misconfigured memory resources.
+    #
+    # This rule sources metrics from the following monitors:
+    #
+    # consumers: (@openshift/openshift-team-cluster-manager)
+    #
+    #marker:reliesExclusivelyOnExternalMonitors
+    #
+    - '{__name__="eo_es_misconfigured_memory_resources_info"}'
+    #
+    # owners: (@openshift/openshift-team-logging)
+    #
+    # cluster:eo_es_data_nodes_total:max reports maximum Elasticsearch data nodes.
+    #
+    # This rule sources metrics from the following monitors:
+    #
+    # consumers: (@openshift/openshift-team-cluster-manager)
+    #
+    #marker:reliesExclusivelyOnExternalMonitors
+    #
+    - '{__name__="cluster:eo_es_data_nodes_total:max"}'
+    #
+    # owners: (@openshift/openshift-team-logging)
+    #
+    # cluster:eo_es_documents_created_total:sum reports total Elasticsearch documents created.
+    #
+    # This rule sources metrics from the following monitors:
+    # - <unknown>: es_indices_doc_number
+    #
+    # consumers: (@openshift/openshift-team-cluster-manager)
+    #
+    #marker:reliesExclusivelyOnExternalMonitors
+    #
+    - '{__name__="cluster:eo_es_documents_created_total:sum"}'
+    #
+    # owners: (@openshift/openshift-team-logging)
+    #
+    # cluster:eo_es_documents_deleted_total:sum reports total Elasticsearch documents deleted.
+    #
+    # This rule sources metrics from the following monitors:
+    # - <unknown>: es_indices_doc_deleted_number
+    #
+    # consumers: (@openshift/openshift-team-cluster-manager)
+    #
+    #marker:reliesExclusivelyOnExternalMonitors
+    #
+    - '{__name__="cluster:eo_es_documents_deleted_total:sum"}'
+    #
+    # owners: (@openshift/openshift-team-logging)
+    #
+    # pod:eo_es_shards_total:max reports maximum Elasticsearch shards per pod.
+    #
+    # This rule sources metrics from the following monitors:
+    # - <unknown>: es_cluster_shards_number
+    #
+    # consumers: (@openshift/openshift-team-cluster-manager)
+    #
+    #marker:reliesExclusivelyOnExternalMonitors
+    #
+    - '{__name__="pod:eo_es_shards_total:max"}'
+    #
+    # owners: (@openshift/openshift-team-logging)
+    #
+    # eo_es_cluster_management_state_info reports Elasticsearch cluster management state.
+    #
+    # This rule sources metrics from the following monitors:
+    #
+    # consumers: (@openshift/openshift-team-cluster-manager)
+    #
+    #marker:reliesExclusivelyOnExternalMonitors
+    #
+    - '{__name__="eo_es_cluster_management_state_info"}'
+    #
+    # owners: (@openshift/openshift-team-image-registry)
+    #
+    # imageregistry:imagestreamtags_count:sum reports total image stream tags.
+    #
+    # This rule sources metrics from the following monitors:
+    # - <unknown>: image_registry_image_stream_tags_total
+    #
+    # consumers: (@openshift/openshift-team-cluster-manager)
+    #
+    #marker:reliesExclusivelyOnExternalMonitors
+    #
+    - '{__name__="imageregistry:imagestreamtags_count:sum"}'
+    #
+    # owners: (@openshift/openshift-team-image-registry)
+    #
+    # imageregistry:operations_count:sum reports total image registry operations.
+    #
+    # This rule sources metrics from the following monitors:
+    # - <unknown>: imageregistry_request_duration_seconds_count
+    #
+    # consumers: (@openshift/openshift-team-cluster-manager)
+    #
+    #marker:reliesExclusivelyOnExternalMonitors
+    #
+    - '{__name__="imageregistry:operations_count:sum"}'
+    #
+    # owners: (@openshift/openshift-team-logging)
+    #
+    # log_logging_info reports logging configuration information.
+    #
+    # This rule sources metrics from the following monitors:
+    #
+    # consumers: (@openshift/openshift-team-cluster-manager)
+    #
+    #marker:reliesExclusivelyOnExternalMonitors
+    #
+    - '{__name__="log_logging_info"}'
+    #
+    # owners: (@openshift/openshift-team-logging)
+    #
+    # log_collector_error_count_total reports total log collector errors.
+    #
+    # This rule sources metrics from the following monitors:
+    #
+    # consumers: (@openshift/openshift-team-cluster-manager)
+    #
+    #marker:reliesExclusivelyOnExternalMonitors
+    #
+    - '{__name__="log_collector_error_count_total"}'
+    #
+    # owners: (@openshift/openshift-team-logging)
+    #
+    # log_forwarder_pipeline_info reports log forwarder pipeline information.
+    #
+    # This rule sources metrics from the following monitors:
+    #
+    # consumers: (@openshift/openshift-team-cluster-manager)
+    #
+    #marker:reliesExclusivelyOnExternalMonitors
+    #
+    - '{__name__="log_forwarder_pipeline_info"}'
+    #
+    # owners: (@openshift/openshift-team-logging)
+    #
+    # log_forwarder_input_info reports log forwarder input information.
+    #
+    # This rule sources metrics from the following monitors:
+    #
+    # consumers: (@openshift/openshift-team-cluster-manager)
+    #
+    #marker:reliesExclusivelyOnExternalMonitors
+    #
+    - '{__name__="log_forwarder_input_info"}'
+    #
+    # owners: (@openshift/openshift-team-logging)
+    #
+    # log_forwarder_output_info reports log forwarder output information.
+    #
+    # This rule sources metrics from the following monitors:
+    #
+    # consumers: (@openshift/openshift-team-cluster-manager)
+    #
+    #marker:reliesExclusivelyOnExternalMonitors
+    #
+    - '{__name__="log_forwarder_output_info"}'
+    #
+    # owners: (@openshift/openshift-team-logging)
+    #
+    # cluster:log_collected_bytes_total:sum reports total bytes collected by logging.
+    #
+    # This rule sources metrics from the following monitors:
+    # - <unknown>: log_collected_bytes_total
+    #
+    # consumers: (@openshift/openshift-team-cluster-manager)
+    #
+    #marker:reliesExclusivelyOnExternalMonitors
+    #
+    - '{__name__="cluster:log_collected_bytes_total:sum"}'
+    #
+    # owners: (@openshift/openshift-team-logging)
+    #
+    # cluster:log_logged_bytes_total:sum reports total bytes logged.
+    #
+    # This rule sources metrics from the following monitors:
+    # - <unknown>: log_logged_bytes_total
+    #
+    # consumers: (@openshift/openshift-team-cluster-manager)
+    #
+    #marker:reliesExclusivelyOnExternalMonitors
+    #
+    - '{__name__="cluster:log_logged_bytes_total:sum"}'
+    #
+    # owners: (@openshift/openshift-team-logging)
+    #
+    # openshift_logging:log_forwarder_pipelines:sum reports total log forwarder pipelines.
+    #
+    # This rule sources metrics from the following monitors:
+    # - <unknown>: log_forwarder_pipelines
+    #
+    # consumers: (@openshift/openshift-team-cluster-manager)
+    #
+    #marker:reliesExclusivelyOnExternalMonitors
+    #
+    - '{__name__="openshift_logging:log_forwarder_pipelines:sum"}'
+    #
+    # owners: (@openshift/openshift-team-logging)
+    #
+    # openshift_logging:log_forwarders:sum reports total log forwarders.
+    #
+    # This rule sources metrics from the following monitors:
+    # - <unknown>: log_forwarder_pipelines
+    #
+    # consumers: (@openshift/openshift-team-cluster-manager)
+    #
+    #marker:reliesExclusivelyOnExternalMonitors
+    #
+    - '{__name__="openshift_logging:log_forwarders:sum"}'
+    #
+    # owners: (@openshift/openshift-team-logging)
+    #
+    # openshift_logging:log_forwarder_input_type:sum aggregates log forwarder inputs by type.
+    #
+    # This rule sources metrics from the following monitors:
+    # - <unknown>: log_forwarder_input_type
+    #
+    # consumers: (@openshift/openshift-team-cluster-manager)
+    #
+    #marker:reliesExclusivelyOnExternalMonitors
+    #
+    - '{__name__="openshift_logging:log_forwarder_input_type:sum"}'
+    #
+    # owners: (@openshift/openshift-team-logging)
+    #
+    # openshift_logging:log_forwarder_output_type:sum aggregates log forwarder outputs by type.
+    #
+    # This rule sources metrics from the following monitors:
+    # - <unknown>: log_forwarder_output_type
+    #
+    # consumers: (@openshift/openshift-team-cluster-manager)
+    #
+    #marker:reliesExclusivelyOnExternalMonitors
+    #
+    - '{__name__="openshift_logging:log_forwarder_output_type:sum"}'
+    #
+    # owners: (@openshift/openshift-team-logging)
+    #
+    # openshift_logging:vector_component_received_bytes_total:rate5m reports Vector component received bytes rate.
+    #
+    # This rule sources metrics from the following monitors:
+    # - <unknown>: vector_component_received_bytes_total
+    #
+    # consumers: (@openshift/openshift-team-cluster-manager)
+    #
+    #marker:reliesExclusivelyOnExternalMonitors
+    #
+    - '{__name__="openshift_logging:vector_component_received_bytes_total:rate5m"}'
+    #
+    # owners: (@openshift/openshift-team-sandboxed-containers)
+    #
+    # cluster:kata_monitor_running_shim_count:sum reports total running Kata shims.
+    #
+    # This rule sources metrics from the following monitors:
+    # - <unknown>: kata_monitor_running_shim_count
+    #
+    # consumers: (@openshift/openshift-team-cluster-manager)
+    #
+    #marker:reliesExclusivelyOnExternalMonitors
+    #
+    - '{__name__="cluster:kata_monitor_running_shim_count:sum"}'
+    #
+    # owners: (@openshift/openshift-team-hypershift)
+    #
+    # platform:hypershift_hostedclusters:max reports maximum HyperShift hosted clusters.
+    #
+    # This rule sources metrics from the following monitors:
+    # - <unknown>: hypershift_hostedclusters
+    #
+    # consumers: (@openshift/openshift-team-cluster-manager)
+    #
+    #marker:reliesExclusivelyOnExternalMonitors
+    #
+    - '{__name__="platform:hypershift_hostedclusters:max"}'
+    #
+    # owners: (@openshift/openshift-team-hypershift)
+    #
+    # platform:hypershift_nodepools:max reports maximum HyperShift node pools.
+    #
+    # This rule sources metrics from the following monitors:
+    # - <unknown>: hypershift_nodepools
+    #
+    # consumers: (@openshift/openshift-team-cluster-manager)
+    #
+    #marker:reliesExclusivelyOnExternalMonitors
+    #
+    - '{__name__="platform:hypershift_nodepools:max"}'
+    #
+    # owners: (@openshift/openshift-team-hypershift)
+    #
+    # cluster_name:hypershift_nodepools_size:sum reports HyperShift node pool size by cluster.
+    #
+    # This rule sources metrics from the following monitors:
+    # - <unknown>: hypershift_nodepools_size
+    #
+    # consumers: (@openshift/openshift-team-cluster-manager)
+    #
+    #marker:reliesExclusivelyOnExternalMonitors
+    #
+    - '{__name__="cluster_name:hypershift_nodepools_size:sum"}'
+    #
+    # owners: (@openshift/openshift-team-hypershift)
+    #
+    # cluster_name:hypershift_nodepools_available_replicas:sum reports HyperShift node pool available replicas by cluster.
+    #
+    # This rule sources metrics from the following monitors:
+    # - <unknown>: hypershift_nodepools_available_replicas
+    #
+    # consumers: (@openshift/openshift-team-cluster-manager)
+    #
+    #marker:reliesExclusivelyOnExternalMonitors
+    #
+    - '{__name__="cluster_name:hypershift_nodepools_available_replicas:sum"}'
+    #
+    # owners: (@openshift/openshift-team-ocs)
+    #
+    # namespace:noobaa_unhealthy_bucket_claims:max reports maximum unhealthy NooBaa bucket claims by namespace.
+    #
+    # This rule sources metrics from the following monitors:
+    # - <unknown>: NooBaa_num_unhealthy_bucket_claims
+    #
+    # consumers: (@openshift/openshift-team-cluster-manager)
+    #
+    #marker:reliesExclusivelyOnExternalMonitors
+    #
+    - '{__name__="namespace:noobaa_unhealthy_bucket_claims:max"}'
+    #
+    # owners: (@openshift/openshift-team-ocs)
+    #
+    # namespace:noobaa_buckets_claims:max reports maximum NooBaa bucket claims by namespace.
+    #
+    # This rule sources metrics from the following monitors:
+    # - <unknown>: NooBaa_num_buckets_claims
+    #
+    # consumers: (@openshift/openshift-team-cluster-manager)
+    #
+    #marker:reliesExclusivelyOnExternalMonitors
+    #
+    - '{__name__="namespace:noobaa_buckets_claims:max"}'
+    #
+    # owners: (@openshift/openshift-team-ocs)
+    #
+    # namespace:noobaa_unhealthy_namespace_resources:max reports maximum unhealthy NooBaa namespace resources by namespace.
+    #
+    # This rule sources metrics from the following monitors:
+    # - <unknown>: NooBaa_num_unhealthy_namespace_resources
+    #
+    # consumers: (@openshift/openshift-team-cluster-manager)
+    #
+    #marker:reliesExclusivelyOnExternalMonitors
+    #
+    - '{__name__="namespace:noobaa_unhealthy_namespace_resources:max"}'
+    #
+    # owners: (@openshift/openshift-team-ocs)
+    #
+    # namespace:noobaa_namespace_resources:max reports maximum NooBaa namespace resources by namespace.
+    #
+    # This rule sources metrics from the following monitors:
+    # - <unknown>: NooBaa_num_namespace_resources
+    #
+    # consumers: (@openshift/openshift-team-cluster-manager)
+    #
+    #marker:reliesExclusivelyOnExternalMonitors
+    #
+    - '{__name__="namespace:noobaa_namespace_resources:max"}'
+    #
+    # owners: (@openshift/openshift-team-ocs)
+    #
+    # namespace:noobaa_unhealthy_namespace_buckets:max reports maximum unhealthy NooBaa namespace buckets by namespace.
+    #
+    # This rule sources metrics from the following monitors:
+    # - <unknown>: NooBaa_num_unhealthy_namespace_buckets
+    #
+    # consumers: (@openshift/openshift-team-cluster-manager)
+    #
+    #marker:reliesExclusivelyOnExternalMonitors
+    #
+    - '{__name__="namespace:noobaa_unhealthy_namespace_buckets:max"}'
+    #
+    # owners: (@openshift/openshift-team-ocs)
+    #
+    # namespace:noobaa_namespace_buckets:max reports maximum NooBaa namespace buckets by namespace.
+    #
+    # This rule sources metrics from the following monitors:
+    # - <unknown>: NooBaa_num_namespace_buckets
+    #
+    # consumers: (@openshift/openshift-team-cluster-manager)
+    #
+    #marker:reliesExclusivelyOnExternalMonitors
+    #
+    - '{__name__="namespace:noobaa_namespace_buckets:max"}'
+    #
+    # owners: (@openshift/openshift-team-ocs)
+    #
+    # namespace:noobaa_accounts:max reports maximum NooBaa accounts by namespace.
+    #
+    # This rule sources metrics from the following monitors:
+    # - <unknown>: NooBaa_accounts_num
+    #
+    # consumers: (@openshift/openshift-team-cluster-manager)
+    #
+    #marker:reliesExclusivelyOnExternalMonitors
+    #
+    - '{__name__="namespace:noobaa_accounts:max"}'
+    #
+    # owners: (@openshift/openshift-team-ocs)
+    #
+    # namespace:noobaa_usage:max reports maximum NooBaa usage by namespace.
+    #
+    # This rule sources metrics from the following monitors:
+    # - <unknown>: NooBaa_total_usage
+    #
+    # consumers: (@openshift/openshift-team-cluster-manager)
+    #
+    #marker:reliesExclusivelyOnExternalMonitors
+    #
+    - '{__name__="namespace:noobaa_usage:max"}'
+    #
+    # owners: (@openshift/openshift-team-ocs)
+    #
+    # namespace:noobaa_system_health_status:max reports NooBaa system health status by namespace.
+    #
+    # This rule sources metrics from the following monitors:
+    # - <unknown>: NooBaa_odf_health_status
+    #
+    # consumers: (@openshift/openshift-team-cluster-manager)
+    #
+    #marker:reliesExclusivelyOnExternalMonitors
+    #
+    - '{__name__="namespace:noobaa_system_health_status:max"}'
+    #
+    # owners: (@openshift/openshift-team-ocs)
+    #
+    # ocs_advanced_feature_usage reports OCS advanced feature usage.
+    #
+    # This rule sources metrics from the following monitors:
+    #
+    # consumers: (@openshift/openshift-team-cluster-manager)
+    #
+    #marker:reliesExclusivelyOnExternalMonitors
+    #
+    - '{__name__="ocs_advanced_feature_usage"}'
+    #
+    # owners: (@openshift/openshift-team-machine-config-operator)
+    #
+    # os_image_url_override:sum reports OS image URL override usage.
+    #
+    # This rule sources metrics from the following monitors:
+    # - <unknown>: os_image_url_override
+    #
+    # consumers: (@openshift/openshift-team-cluster-manager)
+    #
+    #marker:reliesExclusivelyOnExternalMonitors
+    #
+    - '{__name__="os_image_url_override:sum"}'
+    #
+    # owners: (@openshift/openshift-team-machine-config-operator)
+    #
+    # cluster:mcd_nodes_with_unsupported_packages:count counts nodes with unsupported packages.
+    #
+    # This rule sources metrics from the following monitors:
+    # - <unknown>: mcd_local_unsupported_packages
+    #
+    # consumers: (@openshift/openshift-team-cluster-manager)
+    #
+    #marker:reliesExclusivelyOnExternalMonitors
+    #
+    - '{__name__="cluster:mcd_nodes_with_unsupported_packages:count"}'
+    #
+    # owners: (@openshift/openshift-team-machine-config-operator)
+    #
+    # cluster:mcd_total_unsupported_packages:sum reports total unsupported packages across all nodes.
+    #
+    # This rule sources metrics from the following monitors:
+    # - <unknown>: mcd_local_unsupported_packages
+    #
+    # consumers: (@openshift/openshift-team-cluster-manager)
+    #
+    #marker:reliesExclusivelyOnExternalMonitors
+    #
+    - '{__name__="cluster:mcd_total_unsupported_packages:sum"}'
+    #
+    # owners: (@openshift/openshift-team-vsphere)
+    #
+    # cluster:vsphere_topology_tags:max reports vSphere topology tags usage.
+    #
+    # This rule sources metrics from the following monitors:
+    # - <unknown>: vsphere_topology_tags
+    #
+    # consumers: (@openshift/openshift-team-cluster-manager)
+    #
+    #marker:reliesExclusivelyOnExternalMonitors
+    #
+    - '{__name__="cluster:vsphere_topology_tags:max"}'
+    #
+    # owners: (@openshift/openshift-team-vsphere)
+    #
+    # cluster:vsphere_infrastructure_failure_domains:max reports vSphere infrastructure failure domains.
+    #
+    # This rule sources metrics from the following monitors:
+    # - <unknown>: vsphere_infrastructure_failure_domains
+    #
+    # consumers: (@openshift/openshift-team-cluster-manager)
+    #
+    #marker:reliesExclusivelyOnExternalMonitors
+    #
+    - '{__name__="cluster:vsphere_infrastructure_failure_domains:max"}'
+    #
+    # owners: (@openshift/openshift-team-apiserver)
+    #
+    # apiserver_list_watch_request_success_total:rate:sum reports API server list/watch request success rate.
+    #
+    # Expected labels:
+    # - verb: LIST
+    # - verb: WATCH
+    #
+    # This rule sources metrics from the following monitors:
+    # - openshift-monitoring/kubelet-telemetry: apiserver_request_total
+    #
+    # consumers: (@openshift/openshift-team-cluster-manager)
+    #
+    #marker:reliesExclusivelyOnCMOmonitors
+    #
+    - '{__name__="apiserver_list_watch_request_success_total:rate:sum", verb=~"LIST|WATCH"}'
+    #
+    # owners: (@openshift/openshift-team-acs)
+    #
+    # rhacs:telemetry:rox_central_info reports RHACS central information.
+    #
+    # This rule sources metrics from the following monitors:
+    # - <unknown>: rox_central_info
+    #
+    # consumers: (@openshift/openshift-team-cluster-manager)
+    #
+    #marker:reliesExclusivelyOnExternalMonitors
+    #
+    - '{__name__="rhacs:telemetry:rox_central_info"}'
+    #
+    # owners: (@openshift/openshift-team-acs)
+    #
+    # rhacs:telemetry:rox_central_secured_clusters reports RHACS secured cluster count.
+    #
+    # This rule sources metrics from the following monitors:
+    # - <unknown>: rox_central_secured_clusters
+    #
+    # consumers: (@openshift/openshift-team-cluster-manager)
+    #
+    #marker:reliesExclusivelyOnExternalMonitors
+    #
+    - '{__name__="rhacs:telemetry:rox_central_secured_clusters"}'
+    #
+    # owners: (@openshift/openshift-team-acs)
+    #
+    # rhacs:telemetry:rox_central_secured_nodes reports RHACS secured node count.
+    #
+    # This rule sources metrics from the following monitors:
+    # - <unknown>: rox_central_secured_nodes
+    #
+    # consumers: (@openshift/openshift-team-cluster-manager)
+    #
+    #marker:reliesExclusivelyOnExternalMonitors
+    #
+    - '{__name__="rhacs:telemetry:rox_central_secured_nodes"}'
+    #
+    # owners: (@openshift/openshift-team-acs)
+    #
+    # rhacs:telemetry:rox_central_secured_vcpus reports RHACS secured vCPU count.
+    #
+    # This rule sources metrics from the following monitors:
+    # - <unknown>: rox_central_secured_vcpus
+    #
+    # consumers: (@openshift/openshift-team-cluster-manager)
+    #
+    #marker:reliesExclusivelyOnExternalMonitors
+    #
+    - '{__name__="rhacs:telemetry:rox_central_secured_vcpus"}'
+    #
+    # owners: (@openshift/openshift-team-acs)
+    #
+    # rhacs:telemetry:rox_sensor_info reports RHACS sensor information.
+    #
+    # This rule sources metrics from the following monitors:
+    # - <unknown>: rox_sensor_info
+    #
+    # consumers: (@openshift/openshift-team-cluster-manager)
+    #
+    #marker:reliesExclusivelyOnExternalMonitors
+    #
+    - '{__name__="rhacs:telemetry:rox_sensor_info"}'
+    #
+    # owners: (@openshift/openshift-team-storage)
+    #
+    # cluster:volume_manager_selinux_pod_context_mismatch_total reports total SELinux pod context mismatches.
+    #
+    # This rule sources metrics from the following monitors:
+    # - openshift-monitoring/kubelet-telemetry: volume_manager_selinux_pod_context_mismatch_warnings_total, volume_manager_selinux_pod_context_mismatch_errors_total
+    #
+    # consumers: (@openshift/openshift-team-cluster-manager)
+    #
+    #marker:reliesExclusivelyOnCMOmonitors
+    #
+    - '{__name__="cluster:volume_manager_selinux_pod_context_mismatch_total"}'
+    #
+    # owners: (@openshift/openshift-team-storage)
+    #
+    # cluster:volume_manager_selinux_volume_context_mismatch_warnings_total reports total SELinux volume context mismatch warnings.
+    #
+    # This rule sources metrics from the following monitors:
+    # - openshift-monitoring/kubelet-telemetry: volume_manager_selinux_volume_context_mismatch_warnings_total
+    #
+    # consumers: (@openshift/openshift-team-cluster-manager)
+    #
+    #marker:reliesExclusivelyOnCMOmonitors
+    #
+    - '{__name__="cluster:volume_manager_selinux_volume_context_mismatch_warnings_total"}'
+    #
+    # owners: (@openshift/openshift-team-storage)
+    #
+    # cluster:volume_manager_selinux_volume_context_mismatch_errors_total reports total SELinux volume context mismatch errors.
+    #
+    # This rule sources metrics from the following monitors:
+    # - openshift-monitoring/kubelet-telemetry: volume_manager_selinux_volume_context_mismatch_errors_total
+    #
+    # consumers: (@openshift/openshift-team-cluster-manager)
+    #
+    #marker:reliesExclusivelyOnCMOmonitors
+    #
+    - '{__name__="cluster:volume_manager_selinux_volume_context_mismatch_errors_total"}'
+    #
+    # owners: (@openshift/openshift-team-storage)
+    #
+    # cluster:volume_manager_selinux_volumes_admitted_total reports total SELinux volumes admitted.
+    #
+    # This rule sources metrics from the following monitors:
+    # - openshift-monitoring/kubelet-telemetry: volume_manager_selinux_volumes_admitted_total
+    #
+    # consumers: (@openshift/openshift-team-cluster-manager)
+    #
+    #marker:reliesExclusivelyOnCMOmonitors
+    #
+    - '{__name__="cluster:volume_manager_selinux_volumes_admitted_total"}'
+    #
+    # owners: (@openshift/openshift-team-lightspeed)
+    #
+    # ols:provider_model_configuration reports OpenShift Lightspeed provider model configuration.
+    #
+    # This rule sources metrics from the following monitors:
+    # - <unknown>: ols_provider_model_configuration
+    #
+    # consumers: (@openshift/openshift-team-cluster-manager)
+    #
+    #marker:reliesExclusivelyOnExternalMonitors
+    #
+    - '{__name__="ols:provider_model_configuration"}'
+    #
+    # owners: (@openshift/openshift-team-lightspeed)
+    #
+    # ols:rest_api_query_calls_total:2xx reports OpenShift Lightspeed API 2xx responses.
+    #
+    # This rule sources metrics from the following monitors:
+    # - <unknown>: ols_rest_api_calls_total
+    #
+    # consumers: (@openshift/openshift-team-cluster-manager)
+    #
+    #marker:reliesExclusivelyOnExternalMonitors
+    #
+    - '{__name__="ols:rest_api_query_calls_total:2xx"}'
+    #
+    # owners: (@openshift/openshift-team-lightspeed)
+    #
+    # ols:rest_api_query_calls_total:4xx reports OpenShift Lightspeed API 4xx responses.
+    #
+    # This rule sources metrics from the following monitors:
+    # - <unknown>: ols_rest_api_calls_total
+    #
+    # consumers: (@openshift/openshift-team-cluster-manager)
+    #
+    #marker:reliesExclusivelyOnExternalMonitors
+    #
+    - '{__name__="ols:rest_api_query_calls_total:4xx"}'
+    #
+    # owners: (@openshift/openshift-team-lightspeed)
+    #
+    # ols:rest_api_query_calls_total:5xx reports OpenShift Lightspeed API 5xx responses.
+    #
+    # This rule sources metrics from the following monitors:
+    # - <unknown>: ols_rest_api_calls_total
+    #
+    # consumers: (@openshift/openshift-team-cluster-manager)
+    #
+    #marker:reliesExclusivelyOnExternalMonitors
+    #
+    - '{__name__="ols:rest_api_query_calls_total:5xx"}'
+    #
+    # owners: (@openshift/openshift-team-networking)
+    #
+    # openshift:openshift_network_operator_ipsec_state:info reports OpenShift network operator IPsec state.
+    #
+    # This rule sources metrics from the following monitors:
+    # - <unknown>: openshift_network_operator_ipsec_state
+    #
+    # consumers: (@openshift/openshift-team-cluster-manager)
+    #
+    #marker:reliesExclusivelyOnExternalMonitors
+    #
+    - '{__name__="openshift:openshift_network_operator_ipsec_state:info"}'
+    #
+    # owners: (@openshift/openshift-team-monitoring)
+    #
+    # cluster:health:group_severity:count reports cluster health issues by severity.
+    #
+    # Expected labels:
+    # - severity: critical
+    # - severity: warning
+    # - severity: info
+    # - severity: none
+    #
+    # This rule sources metrics from the following monitors:
+    #
+    # consumers: (@openshift/openshift-team-cluster-manager)
+    #
+    #marker:reliesExclusivelyOnExternalMonitors
+    #
+    - '{__name__="cluster:health:group_severity:count", severity=~"critical|warning|info|none"}'
+    #
+    # owners: (@openshift/openshift-team-cluster-lifecycle)
+    #
+    # cluster:controlplane_topology:info reports control plane topology mode.
+    #
+    # Expected labels:
+    # - mode: HighlyAvailable
+    # - mode: HighlyAvailableArbiter
+    # - mode: SingleReplica
+    # - mode: DualReplica
+    # - mode: External
+    #
+    # This rule sources metrics from the following monitors:
+    # - <unknown>: cluster_controlplane_topology
+    #
+    # consumers: (@openshift/openshift-team-cluster-manager)
+    #
+    #marker:reliesExclusivelyOnExternalMonitors
+    #
+    - '{__name__="cluster:controlplane_topology:info", mode=~"HighlyAvailable|HighlyAvailableArbiter|SingleReplica|DualReplica|External"}'
+    #
+    # owners: (@openshift/openshift-team-cluster-lifecycle)
+    #
+    # cluster:infrastructure_topology:info reports infrastructure topology mode.
+    #
+    # Expected labels:
+    # - mode: HighlyAvailable
+    # - mode: SingleReplica
+    #
+    # This rule sources metrics from the following monitors:
+    # - <unknown>: cluster_infrastructure_topology
+    #
+    # consumers: (@openshift/openshift-team-cluster-manager)
+    #
+    #marker:reliesExclusivelyOnExternalMonitors
+    #
+    - '{__name__="cluster:infrastructure_topology:info", mode=~"HighlyAvailable|SingleReplica"}'
+    #
+    # owners: (@openshift/openshift-team-storage)
+    #
+    # cluster:selinux_warning_controller_selinux_volume_conflict:count counts SELinux volume conflicts.
+    #
+    # This rule sources metrics from the following monitors:
+    # - openshift-monitoring/kubelet-telemetry: selinux_warning_controller_selinux_volume_conflict
+    #
+    # consumers: (@openshift/openshift-team-cluster-manager)
+    #
+    #marker:reliesExclusivelyOnCMOmonitors
+    #
+    - '{__name__="cluster:selinux_warning_controller_selinux_volume_conflict:count"}'
+    #
+    # owners: (@openshift/network-edge)
+    #
+    # openshift:gateway_api_usage:count tracks the amount of gateway resources created in the cluster aggregated by Gateway class type.
+    #
+    # Expected labels:
+    # - gateway_class_type: openshift
+    # - gateway_class_type: not-openshift
+    #
+    # This rule sources metrics from the following monitors:
+    # - <unknown>: gateway_api_usage
+    #
+    #marker:reliesExclusivelyOnExternalMonitors
+    #
+    - '{__name__="openshift:gateway_api_usage:count",gateway_class_type=~"openshift|not-openshift"}'
+    #
+    # owners: (https://github.com/kubev2v/forklift)
+    #
+    # cluster:mtv_migrations_status_total:sum is the total number of VM migrations running on the cluster, labeled with status, provider, mode, and target.
+    #
+    # Expected labels:
+    # - mode: Cold
+    # - mode: Warm
+    # - mode: RCM
+    # - provider: ova
+    # - provider: vsphere
+    # - provider: openstack
+    # - provider: openshift
+    # - provider: ovirt
+    # - provider: awsec2
+    # - status: Succeeded
+    # - status: Failed
+    # - status: Canceled
+    # - target: Local
+    # - target: Remote
+    #
+    # This rule sources metrics from the following monitors:
+    # - <unknown>: mtv_migrations_status_total
+    #
+    #marker:reliesExclusivelyOnExternalMonitors
+    #
+    - '{__name__="cluster:mtv_migrations_status_total:sum", provider=~"ova|vsphere|openstack|openshift|ovirt|awsec2", target=~"Local|Remote", mode=~"Cold|Warm|RCM", status=~"Succeeded|Failed|Canceled"}'
+    #
+    # owners: (https://github.com/integr8ly, @boomatang)
+    #
+    # rhoam_state captures the currently installed/upgrading RHOAM versions. This metric is used by cs-SRE to gain insights into RHOAM version.
+    #
+    # Expected labels:
+    # - status: in_progress
+    # - status: complete
+    # - upgrading: true
+    # - upgrading: false
+    # - version: x.y.z
+    #
+    # This rule sources metrics from the following monitors:
+    # - <unknown>: rhoam_state
+    #
+    # consumers: (@openshift/openshift-team-cluster-manager)
+    #
+    #marker:reliesExclusivelyOnExternalMonitors
+    #
+    - '{__name__="status:upgrading:version:rhoam_state:max"}'
 kind: ConfigMap
 metadata:
   annotations:
