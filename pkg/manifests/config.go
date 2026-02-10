@@ -67,9 +67,8 @@ func (e *InvalidConfigWarning) Warning() string {
 var errPrometheusAdapterDeprecated = errors.New("k8sPrometheusAdapter is deprecated and usage should be removed, use metricsServer instead")
 
 type Config struct {
-	Images                               *Images `json:"-"`
-	RemoteWrite                          bool    `json:"-"`
-	CollectionProfilesFeatureGateEnabled bool    `json:"-"`
+	Images      *Images `json:"-"`
+	RemoteWrite bool    `json:"-"`
 
 	ClusterMonitoringConfiguration *ClusterMonitoringConfiguration `json:"-"`
 	UserWorkloadConfiguration      *UserWorkloadConfiguration      `json:"-"`
@@ -337,8 +336,8 @@ func UnmarshalStrict(data []byte, v interface{}) error {
 	}
 }
 
-func newConfig(content []byte, collectionProfilesFeatureGateEnabled bool) (*Config, error) {
-	c := Config{CollectionProfilesFeatureGateEnabled: collectionProfilesFeatureGateEnabled}
+func newConfig(content []byte) (*Config, error) {
+	c := Config{}
 
 	cmc := defaultClusterMonitoringConfiguration()
 	err := UnmarshalStrict(content, &cmc)
@@ -590,22 +589,16 @@ func (c *Config) LoadEnforcedBodySizeLimit(pcr PodCapacityReader, ctx context.Co
 }
 
 func (c *Config) Precheck() (*InvalidConfigWarning, error) {
-	if c.ClusterMonitoringConfiguration.PrometheusK8sConfig.CollectionProfile != FullCollectionProfile && !c.CollectionProfilesFeatureGateEnabled {
-		return nil, fmt.Errorf("%w: collectionProfiles is currently a TechPreview feature behind the \"MetricsCollectionProfiles\" feature-gate, to be able to use a profile different from the default (\"full\") please enable it first", ErrConfigValidation)
+	// Validate the configured collection profile.
+	for _, profile := range SupportedCollectionProfiles {
+		var v float64
+		if profile == c.ClusterMonitoringConfiguration.PrometheusK8sConfig.CollectionProfile {
+			v = 1
+		}
+		metrics.CollectionProfile.WithLabelValues(string(profile)).Set(v)
 	}
-
-	// Validate the configured collection profile iff tech preview is enabled, even if the default profile is set.
-	if c.CollectionProfilesFeatureGateEnabled {
-		for _, profile := range SupportedCollectionProfiles {
-			var v float64
-			if profile == c.ClusterMonitoringConfiguration.PrometheusK8sConfig.CollectionProfile {
-				v = 1
-			}
-			metrics.CollectionProfile.WithLabelValues(string(profile)).Set(v)
-		}
-		if !slices.Contains(SupportedCollectionProfiles, c.ClusterMonitoringConfiguration.PrometheusK8sConfig.CollectionProfile) {
-			return nil, fmt.Errorf(`%q is not supported, supported collection profiles are: %q: %w`, c.ClusterMonitoringConfiguration.PrometheusK8sConfig.CollectionProfile, SupportedCollectionProfiles.String(), ErrConfigValidation)
-		}
+	if !slices.Contains(SupportedCollectionProfiles, c.ClusterMonitoringConfiguration.PrometheusK8sConfig.CollectionProfile) {
+		return nil, fmt.Errorf(`%q is not supported, supported collection profiles are: %q: %w`, c.ClusterMonitoringConfiguration.PrometheusK8sConfig.CollectionProfile, SupportedCollectionProfiles.String(), ErrConfigValidation)
 	}
 
 	// Highlight deprecated config fields.
@@ -640,22 +633,22 @@ func calculateBodySizeLimit(podCapacity int) string {
 // structure that facilitates programmatical checks of that configuration. The
 // content of the data structure might change if TechPreview is enabled (tp), as
 // some features are only meant for TechPreview.
-func NewConfigFromString(content string, collectionProfilesFeatureGateEnabled bool) (*Config, error) {
+func NewConfigFromString(content string) (*Config, error) {
 	if content == "" {
 		return NewDefaultConfig(), nil
 	}
 
-	return newConfig([]byte(content), collectionProfilesFeatureGateEnabled)
+	return newConfig([]byte(content))
 }
 
-func NewConfigFromConfigMap(c *v1.ConfigMap, collectionProfilesFeatureGateEnabled bool) (*Config, error) {
+func NewConfigFromConfigMap(c *v1.ConfigMap) (*Config, error) {
 	configContent, found := c.Data[configKey]
 
 	if !found {
 		return nil, fmt.Errorf("%q key not found in the configmap", configKey)
 	}
 
-	cParsed, err := NewConfigFromString(configContent, collectionProfilesFeatureGateEnabled)
+	cParsed, err := NewConfigFromString(configContent)
 	if err != nil {
 		return nil, fmt.Errorf("failed to parse data at key %q: %w", configKey, err)
 	}

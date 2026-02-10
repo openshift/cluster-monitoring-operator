@@ -140,7 +140,7 @@ metricsServer:
 
 	for _, tc := range tcs {
 		t.Run(tc.name, func(t *testing.T) {
-			c, err := NewConfigFromString(tc.configString(), false)
+			c, err := NewConfigFromString(tc.configString())
 			if tc.err != "" {
 				require.ErrorContains(t, err, tc.err)
 				return
@@ -419,7 +419,7 @@ func TestHttpProxyConfig(t *testing.T) {
   noProxy: https://example.com
 `
 
-	c, err := NewConfigFromString(conf, false)
+	c, err := NewConfigFromString(conf)
 	if err != nil {
 		t.Errorf("expected no error parsing config - %v", err)
 	}
@@ -530,7 +530,7 @@ func TestLoadEnforcedBodySizeLimit(t *testing.T) {
 		},
 	} {
 		t.Run(tt.name, func(t *testing.T) {
-			c, err := NewConfigFromString(tt.config, false)
+			c, err := NewConfigFromString(tt.config)
 			if err != nil {
 				t.Fatalf("config parsing error")
 			}
@@ -745,7 +745,7 @@ func TestCollectionProfilePreCheck(t *testing.T) {
 		},
 	} {
 		t.Run(tc.name, func(t *testing.T) {
-			c, err := NewConfigFromString(tc.config, true)
+			c, err := NewConfigFromString(tc.config)
 			require.NoError(t, err)
 			_, err = c.Precheck()
 			if err != nil && tc.expectedError {
@@ -788,7 +788,7 @@ func TestDeprecatedConfig(t *testing.T) {
 		},
 	} {
 		t.Run(tc.name, func(t *testing.T) {
-			c, err := NewConfigFromString(tc.config, true)
+			c, err := NewConfigFromString(tc.config)
 			require.NoError(t, err)
 			warning, err := c.Precheck()
 			if tc.warning != "" {
