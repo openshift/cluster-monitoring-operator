@@ -161,6 +161,8 @@ function(params) {
     },
   },
 
+  minimalServiceMonitor: generateServiceMonitor.minimal(self.telemetryServiceMonitor, null),
+
   telemetryServiceMonitor: generateServiceMonitor.telemetry(
     self.serviceMonitor, std.join(
       '|',

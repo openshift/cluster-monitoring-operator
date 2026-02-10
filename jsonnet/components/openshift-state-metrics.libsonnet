@@ -99,6 +99,7 @@ function(params) {
     },
   },
   serviceMonitor: osm.openshiftStateMetrics.serviceMonitor,
+  minimalServiceMonitor: generateServiceMonitor.minimal(self.telemetryServiceMonitor, null),
   telemetryServiceMonitor: generateServiceMonitor.telemetry(
     self.serviceMonitor, std.join(
       '|',

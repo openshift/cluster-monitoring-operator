@@ -97,6 +97,7 @@ var (
 	AlertmanagerPrometheusRule          = "alertmanager/prometheus-rule.yaml"
 	AlertmanagerPodDisruptionBudget     = "alertmanager/pod-disruption-budget.yaml"
 	AlertmanagerNetworkPolicy           = "alertmanager/network-policy-downstream.yaml"
+	AlertmanagerMinimalServiceMonitor   = "alertmanager/minimal-service-monitor.yaml"
 	AlertmanagerTelemetryServiceMonitor = "alertmanager/telemetry-service-monitor.yaml"
 
 	AlertmanagerUserWorkloadSecret                 = "alertmanager-user-workload/secret.yaml"
@@ -132,6 +133,7 @@ var (
 	OpenShiftStateMetricsServiceAccount          = "openshift-state-metrics/service-account.yaml"
 	OpenShiftStateMetricsService                 = "openshift-state-metrics/service.yaml"
 	OpenShiftStateMetricsServiceMonitor          = "openshift-state-metrics/service-monitor.yaml"
+	OpenShiftStateMetricsMinimalServiceMonitor   = "openshift-state-metrics/minimal-service-monitor.yaml"
 	OpenShiftStateMetricsTelemetryServiceMonitor = "openshift-state-metrics/telemetry-service-monitor.yaml"
 	OpenShiftStateMetricsKubeRbacProxySecret     = "openshift-state-metrics/kube-rbac-proxy-secret.yaml"
 	OpenShiftStateMetricsNetworkPolicy           = "openshift-state-metrics/network-policy-downstream.yaml"
@@ -160,6 +162,7 @@ var (
 	PrometheusK8sServiceAccount                    = "prometheus-k8s/service-account.yaml"
 	PrometheusK8s                                  = "prometheus-k8s/prometheus.yaml"
 	PrometheusK8sPrometheusServiceMonitor          = "prometheus-k8s/service-monitor.yaml"
+	PrometheusK8sPrometheusMinimalServiceMonitor   = "prometheus-k8s/minimal-service-monitor.yaml"
 	PrometheusK8sPrometheusTelemetryServiceMonitor = "prometheus-k8s/telemetry-service-monitor.yaml"
 	PrometheusK8sService                           = "prometheus-k8s/service.yaml"
 	PrometheusK8sServiceThanosSidecar              = "prometheus-k8s/service-thanos-sidecar.yaml"
@@ -241,6 +244,7 @@ var (
 	PrometheusOperatorUserWorkloadKubeRbacProxySecret = "prometheus-operator-user-workload/kube-rbac-proxy-secret.yaml"
 	PrometheusOperatorUserWorkloadNetworkPolicy       = "prometheus-operator-user-workload/network-policy-downstream.yaml"
 
+	ClusterMonitoringOperatorMinimalServiceMonitor         = "cluster-monitoring-operator/minimal-service-monitor.yaml"
 	ClusterMonitoringOperatorTelemetryServiceMonitor       = "cluster-monitoring-operator/telemetry-service-monitor.yaml"
 	ClusterMonitoringOperatorServiceMonitor                = "cluster-monitoring-operator/service-monitor.yaml"
 	ClusterMonitoringClusterRoleView                       = "cluster-monitoring-operator/cluster-role-view.yaml"
@@ -272,6 +276,7 @@ var (
 	TelemeterClientService                 = "telemeter-client/service.yaml"
 	TelemeterClientServiceAccount          = "telemeter-client/service-account.yaml"
 	TelemeterClientServiceMonitor          = "telemeter-client/service-monitor.yaml"
+	TelemeterClientMinimalServiceMonitor   = "telemeter-client/minimal-service-monitor.yaml"
 	TelemeterClientTelemetryServiceMonitor = "telemeter-client/telemetry-service-monitor.yaml"
 	TelemeterClientServingCertsCABundle    = "telemeter-client/serving-certs-ca-bundle.yaml"
 	TelemeterClientKubeRbacProxySecret     = "telemeter-client/kube-rbac-proxy-secret.yaml"
@@ -447,13 +452,17 @@ func (f *Factory) AlertmanagerUserWorkloadClusterRole() (*rbacv1.ClusterRole, er
 func (f *Factory) AlertmanagerServiceMonitors() ([]*monv1.ServiceMonitor, error) {
 	return serviceMonitors(
 		f.AlertmanagerServiceMonitor,
-		nil,
+		f.AlertmanagerMinimalServiceMonitor,
 		f.AlertmanagerTelemetryServiceMonitor,
 	)
 }
 
 func (f *Factory) AlertmanagerServiceMonitor() (*monv1.ServiceMonitor, error) {
 	return f.NewServiceMonitor(f.assets.MustNewAssetSlice(AlertmanagerServiceMonitor))
+}
+
+func (f *Factory) AlertmanagerMinimalServiceMonitor() (*monv1.ServiceMonitor, error) {
+	return f.NewServiceMonitor(f.assets.MustNewAssetSlice(AlertmanagerMinimalServiceMonitor))
 }
 
 func (f *Factory) AlertmanagerTelemetryServiceMonitor() (*monv1.ServiceMonitor, error) {
@@ -869,13 +878,17 @@ func (f *Factory) OpenShiftStateMetricsClusterRole() (*rbacv1.ClusterRole, error
 func (f *Factory) OpenShiftStateMetricsServiceMonitors() ([]*monv1.ServiceMonitor, error) {
 	return serviceMonitors(
 		f.OpenShiftStateMetricsServiceMonitor,
-		nil,
+		f.OpenShiftStateMetricsMinimalServiceMonitor,
 		f.OpenShiftStateMetricsTelemetryServiceMonitor,
 	)
 }
 
 func (f *Factory) OpenShiftStateMetricsServiceMonitor() (*monv1.ServiceMonitor, error) {
 	return f.NewServiceMonitor(f.assets.MustNewAssetSlice(OpenShiftStateMetricsServiceMonitor))
+}
+
+func (f *Factory) OpenShiftStateMetricsMinimalServiceMonitor() (*monv1.ServiceMonitor, error) {
+	return f.NewServiceMonitor(f.assets.MustNewAssetSlice(OpenShiftStateMetricsMinimalServiceMonitor))
 }
 
 func (f *Factory) OpenShiftStateMetricsTelemetryServiceMonitor() (*monv1.ServiceMonitor, error) {
@@ -1953,13 +1966,17 @@ func (f *Factory) excludedFromEnforcement() []monv1.ObjectReference {
 func (f *Factory) PrometheusK8sPrometheusServiceMonitors() ([]*monv1.ServiceMonitor, error) {
 	return serviceMonitors(
 		f.PrometheusK8sPrometheusServiceMonitor,
-		nil,
+		f.PrometheusK8sPrometheusMinimalServiceMonitor,
 		f.PrometheusK8sPrometheusTelemetryServiceMonitor,
 	)
 }
 
 func (f *Factory) PrometheusK8sPrometheusServiceMonitor() (*monv1.ServiceMonitor, error) {
 	return f.NewServiceMonitor(f.assets.MustNewAssetSlice(PrometheusK8sPrometheusServiceMonitor))
+}
+
+func (f *Factory) PrometheusK8sPrometheusMinimalServiceMonitor() (*monv1.ServiceMonitor, error) {
+	return f.NewServiceMonitor(f.assets.MustNewAssetSlice(PrometheusK8sPrometheusMinimalServiceMonitor))
 }
 
 func (f *Factory) PrometheusK8sPrometheusTelemetryServiceMonitor() (*monv1.ServiceMonitor, error) {
@@ -2604,13 +2621,17 @@ func (f *Factory) ClusterMonitoringApiReaderRole() (*rbacv1.Role, error) {
 func (f *Factory) ClusterMonitoringOperatorServiceMonitors() ([]*monv1.ServiceMonitor, error) {
 	return serviceMonitors(
 		f.ClusterMonitoringOperatorServiceMonitor,
-		nil,
+		f.ClusterMonitoringOperatorMinimalServiceMonitor,
 		f.ClusterMonitoringOperatorTelemetryServiceMonitor,
 	)
 }
 
 func (f *Factory) ClusterMonitoringOperatorServiceMonitor() (*monv1.ServiceMonitor, error) {
 	return f.NewServiceMonitor(f.assets.MustNewAssetSlice(ClusterMonitoringOperatorServiceMonitor))
+}
+
+func (f *Factory) ClusterMonitoringOperatorMinimalServiceMonitor() (*monv1.ServiceMonitor, error) {
+	return f.NewServiceMonitor(f.assets.MustNewAssetSlice(ClusterMonitoringOperatorMinimalServiceMonitor))
 }
 
 func (f *Factory) ClusterMonitoringOperatorTelemetryServiceMonitor() (*monv1.ServiceMonitor, error) {
@@ -3160,7 +3181,7 @@ func (f *Factory) TelemeterClientClusterRoleBindingView() (*rbacv1.ClusterRoleBi
 func (f *Factory) TelemeterClientServiceMonitors() ([]*monv1.ServiceMonitor, error) {
 	return serviceMonitors(
 		f.TelemeterClientServiceMonitor,
-		nil,
+		f.TelemeterClientMinimalServiceMonitor,
 		f.TelemeterClientTelemetryServiceMonitor,
 	)
 }
@@ -3168,6 +3189,10 @@ func (f *Factory) TelemeterClientServiceMonitors() ([]*monv1.ServiceMonitor, err
 // TelemeterClientServiceMonitor generates a new ServiceMonitor for Telemeter client.
 func (f *Factory) TelemeterClientServiceMonitor() (*monv1.ServiceMonitor, error) {
 	return f.NewServiceMonitor(f.assets.MustNewAssetSlice(TelemeterClientServiceMonitor))
+}
+
+func (f *Factory) TelemeterClientMinimalServiceMonitor() (*monv1.ServiceMonitor, error) {
+	return f.NewServiceMonitor(f.assets.MustNewAssetSlice(TelemeterClientMinimalServiceMonitor))
 }
 
 func (f *Factory) TelemeterClientTelemetryServiceMonitor() (*monv1.ServiceMonitor, error) {
