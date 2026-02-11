@@ -1,0 +1,50 @@
+rule_files:
+  - rules.yaml
+
+evaluation_interval: 1m
+
+tests:
+  - interval: 1m
+    input_series:
+      - series: 'node_md_disks{state="failed",job="node-exporter",device="md127",instance="node1"}'
+        values: 1x40
+    alert_rule_test:
+      - eval_time: 1m
+        alertname: NodeRAIDDiskFailure
+        exp_alerts:
+        - exp_labels:
+            severity: warning
+            device: md127
+            instance: node1
+            job: node-exporter
+            state: failed
+          exp_annotations:
+            description: At least one device in RAID array at node1 failed. Array 'md127' needs attention and possibly a disk swap.
+            summary: Failed device in RAID array.
+
+  - interval: 1m
+    input_series:
+      - series: 'node_md_disks_required{job="node-exporter",device="md127",instance="node1"}'
+        values: '4x40'
+      - series: 'node_md_disks{state="active",job="node-exporter",device="md127",instance="node1"}'
+        values: '3x40'
+      - series: 'node_md_disks{state="failed",job="node-exporter",device="md127",instance="node1"}'
+        values: '1x40'
+      - series: 'node_md_disks{state="spare",job="node-exporter",device="md127",instance="node1"}'
+        values: '0x40'
+    alert_rule_test:
+      - eval_time: 14m
+        alertname: NodeRAIDDegraded
+        exp_alerts:
+      - eval_time: 15m
+        alertname: NodeRAIDDegraded
+        exp_alerts:
+        - exp_labels:
+            severity: critical
+            device: md127
+            instance: node1
+            job: node-exporter
+          exp_annotations:
+            description: RAID array 'md127' at node1 is in degraded state due to one or more disks failures. Number of spare drives is insufficient to fix issue automatically.
+            runbook_url: https://github.com/openshift/runbooks/blob/master/alerts/cluster-monitoring-operator/NodeRAIDDegraded.md
+            summary: RAID Array is degraded.
