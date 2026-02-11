@@ -208,7 +208,7 @@ func Main() int {
 		fmt.Fprint(os.Stderr, err)
 		return 1
 	}
-	wg.Go(func() error { return srv.Run(ctx, o.CollectionProfilesEnabled) })
+	wg.Go(func() error { return srv.Run(ctx) })
 
 	term := make(chan os.Signal, 1)
 	signal.Notify(term, os.Interrupt, syscall.SIGTERM)
