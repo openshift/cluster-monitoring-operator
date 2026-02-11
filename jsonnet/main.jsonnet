@@ -215,7 +215,6 @@ local inCluster =
           $.values.common.namespaceUserWorkload,
         ],
         namespaceSelector: $.values.common.clusterMonitoringNamespaceSelector,
-        serviceDiscoveryRole: 'Endpoints',
         mixin+: {
           ruleLabels: $.values.common.ruleLabels,
           _config+: {
@@ -472,7 +471,6 @@ local userWorkload =
         thanos: inCluster.values.prometheus.thanos,
         tlsCipherSuites: $.values.common.tlsCipherSuites,
         kubeRbacProxyImage: $.values.common.images.kubeRbacProxy,
-        serviceDiscoveryRole: 'Endpoints',
       },
       prometheusOperator: {
         namespace: $.values.common.namespace,
