@@ -55,7 +55,7 @@ func setupWebhookReceiver(t *testing.T, f *framework.Framework, namespace string
 		return nil, err
 	}
 
-	f.AssertNamespaceExists(namespace)(t)
+	f.AssertNamespaceExistsFunc(namespace)(t)
 
 	if err := f.OperatorClient.CreateOrUpdateService(ctx, &v1.Service{
 		ObjectMeta: metav1.ObjectMeta{
@@ -191,5 +191,5 @@ func (wr *webhookReceiver) tearDown(t *testing.T, f *framework.Framework) {
 		t.Fatal(err)
 	}
 
-	f.AssertNamespaceDoesNotExist(wr.namespace)(t)
+	f.AssertNamespaceDoesNotExistFunc(wr.namespace)(t)
 }

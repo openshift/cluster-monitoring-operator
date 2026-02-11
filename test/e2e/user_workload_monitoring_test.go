@@ -78,28 +78,28 @@ func TestUserWorkloadMonitoringInvalidConfig(t *testing.T) {
 	defer f.MustDeleteConfigMap(t, cm)
 
 	t.Log("invalid UWM configuration with malformed YAML/JSON")
-	f.AssertOperatorCondition(configv1.OperatorDegraded, configv1.ConditionTrue)(t)
-	f.AssertOperatorCondition(configv1.OperatorAvailable, configv1.ConditionFalse)(t)
+	f.AssertOperatorConditionFunc(configv1.OperatorDegraded, configv1.ConditionTrue)(t)
+	f.AssertOperatorConditionFunc(configv1.OperatorAvailable, configv1.ConditionFalse)(t)
 	// operator should stay upgradeable even when a malformed config was
 	// rejected
-	f.AssertOperatorCondition(configv1.OperatorUpgradeable, configv1.ConditionTrue)(t)
-	f.AssertOperatorConditionReason(configv1.OperatorDegraded, "UserWorkloadInvalidConfiguration")
-	f.AssertOperatorConditionReason(configv1.OperatorAvailable, "UserWorkloadInvalidConfiguration")
+	f.AssertOperatorConditionFunc(configv1.OperatorUpgradeable, configv1.ConditionTrue)(t)
+	f.AssertOperatorConditionReasonFunc(configv1.OperatorDegraded, "UserWorkloadInvalidConfiguration")(t)
+	f.AssertOperatorConditionReasonFunc(configv1.OperatorAvailable, "UserWorkloadInvalidConfiguration")(t)
 
 	t.Log("restoring the initial configurations")
 	uwmCM.Data["config.yaml"] = ``
 	f.MustCreateOrUpdateConfigMap(t, uwmCM)
-	f.AssertOperatorCondition(configv1.OperatorDegraded, configv1.ConditionFalse)(t)
-	f.AssertOperatorCondition(configv1.OperatorAvailable, configv1.ConditionTrue)(t)
-	f.AssertOperatorCondition(configv1.OperatorUpgradeable, configv1.ConditionTrue)(t)
-	f.AssertOperatorConditionReason(configv1.OperatorUpgradeable, "")(t)
-	f.AssertOperatorConditionMessage(configv1.OperatorUpgradeable, "")(t)
+	f.AssertOperatorConditionFunc(configv1.OperatorDegraded, configv1.ConditionFalse)(t)
+	f.AssertOperatorConditionFunc(configv1.OperatorAvailable, configv1.ConditionTrue)(t)
+	f.AssertOperatorConditionFunc(configv1.OperatorUpgradeable, configv1.ConditionTrue)(t)
+	f.AssertOperatorConditionReasonFunc(configv1.OperatorUpgradeable, "")(t)
+	f.AssertOperatorConditionMessageFunc(configv1.OperatorUpgradeable, "")(t)
 }
 
 func TestUserWorkloadMonitoringMetrics(t *testing.T) {
 	setupUserWorkloadAssetsWithTeardownHook(t, f)
 
-	f.AssertStatefulSetExistsAndRollout("prometheus-user-workload", f.UserWorkloadMonitoringNs)(t)
+	f.AssertStatefulSetExistsAndRolloutFunc("prometheus-user-workload", f.UserWorkloadMonitoringNs)(t)
 	if err := deployUserApplication(f); err != nil {
 		t.Fatal(err)
 	}
@@ -126,11 +126,11 @@ func TestUserWorkloadMonitoringMetrics(t *testing.T) {
 		},
 		{
 			name: "assert prometheus is not deployed in user namespace",
-			f:    f.AssertStatefulsetDoesNotExist("prometheus-not-to-be-reconciled", userWorkloadTestNs),
+			f:    f.AssertStatefulsetDoesNotExistFunc("prometheus-not-to-be-reconciled", userWorkloadTestNs),
 		},
 		{
 			name: "assert alertmanager is not deployed in user namespace",
-			f:    f.AssertStatefulsetDoesNotExist("alertmanager-not-to-be-reconciled", userWorkloadTestNs),
+			f:    f.AssertStatefulsetDoesNotExistFunc("alertmanager-not-to-be-reconciled", userWorkloadTestNs),
 		},
 
 		{
@@ -154,7 +154,7 @@ namespacesWithoutLabelEnforcement:
 	f.MustCreateOrUpdateConfigMap(t, uwmCM)
 	defer f.MustDeleteConfigMap(t, uwmCM)
 
-	f.AssertStatefulSetExistsAndRollout("prometheus-user-workload", f.UserWorkloadMonitoringNs)(t)
+	f.AssertStatefulSetExistsAndRolloutFunc("prometheus-user-workload", f.UserWorkloadMonitoringNs)(t)
 
 	if err := deployUserApplication(f); err != nil {
 		t.Fatal(err)
@@ -186,11 +186,11 @@ namespacesWithoutLabelEnforcement:
 		},
 		{
 			name: "assert prometheus is not deployed in user namespace",
-			f:    f.AssertStatefulsetDoesNotExist("prometheus-not-to-be-reconciled", userWorkloadTestNs),
+			f:    f.AssertStatefulsetDoesNotExistFunc("prometheus-not-to-be-reconciled", userWorkloadTestNs),
 		},
 		{
 			name: "assert alertmanager is not deployed in user namespace",
-			f:    f.AssertStatefulsetDoesNotExist("alertmanager-not-to-be-reconciled", userWorkloadTestNs),
+			f:    f.AssertStatefulsetDoesNotExistFunc("alertmanager-not-to-be-reconciled", userWorkloadTestNs),
 		},
 	} {
 		t.Run(scenario.name, scenario.f)
@@ -207,7 +207,7 @@ userWorkload:
 func TestUserWorkloadMonitoringOptOut(t *testing.T) {
 	setupUserWorkloadAssetsWithTeardownHook(t, f)
 
-	f.AssertStatefulSetExistsAndRollout("prometheus-user-workload", f.UserWorkloadMonitoringNs)(t)
+	f.AssertStatefulSetExistsAndRolloutFunc("prometheus-user-workload", f.UserWorkloadMonitoringNs)(t)
 	if err := deployUserApplication(f); err != nil {
 		t.Fatal(err)
 	}
@@ -266,7 +266,7 @@ func TestUserWorkloadMonitoringWithAdditionalAlertmanagerConfigs(t *testing.T) {
 	f.MustCreateOrUpdateConfigMap(t, uwmCM)
 	defer f.MustDeleteConfigMap(t, uwmCM)
 
-	f.AssertStatefulSetExistsAndRollout("prometheus-user-workload", f.UserWorkloadMonitoringNs)(t)
+	f.AssertStatefulSetExistsAndRolloutFunc("prometheus-user-workload", f.UserWorkloadMonitoringNs)(t)
 
 	scenarios := []scenario{
 		{"assert 4 alertmanagers are discovered (2 built-in and 2 from the additional configs)", assertAlertmanagerInstancesDiscovered(4)},
@@ -1577,7 +1577,7 @@ func TestPrometheusUserWorkloadEndpointSliceDiscovery(t *testing.T) {
 	ctx := context.Background()
 	setupUserWorkloadAssetsWithTeardownHook(t, f)
 
-	f.AssertStatefulSetExistsAndRollout("prometheus-user-workload", f.UserWorkloadMonitoringNs)(t)
+	f.AssertStatefulSetExistsAndRolloutFunc("prometheus-user-workload", f.UserWorkloadMonitoringNs)(t)
 
 	testNs := "endpointslice-test"
 	appName := "endpointslice-test-app"
@@ -1733,7 +1733,7 @@ func TestUserWorkloadPodsLabels(t *testing.T) {
 	// app.kubernetes.io/part-of: openshift-monitoring label.
 	// This label is used among other things to limit the deny-all NP to User Workload Pods only.
 	setupUserWorkloadAssetsWithTeardownHook(t, f)
-	f.AssertPodConfiguration(
+	f.AssertPodConfigurationFunc(
 		f.UserWorkloadMonitoringNs,
 		"",
 		[]framework.PodAssertion{
