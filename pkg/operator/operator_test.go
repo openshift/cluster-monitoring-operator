@@ -608,14 +608,12 @@ func TestMergeClusterMonitoringCRD(t *testing.T) {
 		name        string
 		c           *manifests.Config
 		cm          *configv1alpha1.ClusterMonitoring
-		expectErr   bool
 		expectValue *bool // expected UserWorkloadEnabled after merge (nil = no check)
 	}{
 		{
-			name:      "cm nil returns config unchanged",
-			c:         &manifests.Config{},
-			cm:        nil,
-			expectErr: false,
+			name: "cm nil returns config unchanged",
+			c:    &manifests.Config{},
+			cm:   nil,
 		},
 		{
 			name: "cm with empty Mode returns config unchanged",
@@ -625,7 +623,6 @@ func TestMergeClusterMonitoringCRD(t *testing.T) {
 					UserDefined: configv1alpha1.UserDefinedMonitoring{Mode: ""},
 				},
 			},
-			expectErr: false,
 		},
 		{
 			name: "UserDefinedDisabled sets UserWorkloadEnabled to false",
@@ -635,7 +632,6 @@ func TestMergeClusterMonitoringCRD(t *testing.T) {
 					UserDefined: configv1alpha1.UserDefinedMonitoring{Mode: configv1alpha1.UserDefinedDisabled},
 				},
 			},
-			expectErr:   false,
 			expectValue: ptrFalse,
 		},
 		{
@@ -646,19 +642,7 @@ func TestMergeClusterMonitoringCRD(t *testing.T) {
 					UserDefined: configv1alpha1.UserDefinedMonitoring{Mode: configv1alpha1.UserDefinedNamespaceIsolated},
 				},
 			},
-			expectErr:   false,
 			expectValue: ptrTrue,
-		},
-		{
-			name: "creates ClusterMonitoringConfiguration when nil",
-			c:    &manifests.Config{},
-			cm: &configv1alpha1.ClusterMonitoring{
-				Spec: configv1alpha1.ClusterMonitoringSpec{
-					UserDefined: configv1alpha1.UserDefinedMonitoring{Mode: configv1alpha1.UserDefinedDisabled},
-				},
-			},
-			expectErr:   false,
-			expectValue: ptrFalse,
 		},
 		{
 			name: "keeps ConfigMap UserWorkloadEnabled when set (ConfigMap wins over CRD)",
@@ -672,17 +656,12 @@ func TestMergeClusterMonitoringCRD(t *testing.T) {
 					UserDefined: configv1alpha1.UserDefinedMonitoring{Mode: configv1alpha1.UserDefinedDisabled},
 				},
 			},
-			expectErr:   false,
 			expectValue: ptrTrue,
 		},
 	} {
 		t.Run(tc.name, func(t *testing.T) {
 			o := &Operator{}
 			out, err := o.mergeClusterMonitoringCRD(tc.c, tc.cm)
-			if tc.expectErr {
-				require.Error(t, err)
-				return
-			}
 			require.NoError(t, err)
 			require.Same(t, tc.c, out)
 			if tc.expectValue != nil {

@@ -155,7 +155,7 @@ func TestClusterMonitoringUserDefined(t *testing.T) {
 		t.Skipf("prometheus-user-workload did not appear after 5m - cluster CMO may not support ClusterMonitoring CRD UserDefined (need ClusterMonitoringConfig feature gate and CMO with merge logic): %v", err)
 	}
 	// Wait for statefulset rollout
-	f.AssertStatefulSetExistsAndRollout("prometheus-user-workload", f.UserWorkloadMonitoringNs)(t)
+	f.AssertStatefulSetExistsAndRolloutFunc("prometheus-user-workload", f.UserWorkloadMonitoringNs)(t)
 }
 
 // TestConfigMapEnableUserWorkloadOverridesCRD verifies that when enableUserWorkload is set in the
