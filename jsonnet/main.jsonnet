@@ -26,6 +26,7 @@ local thanosQuerier = import './components/thanos-querier.libsonnet';
 
 local openshiftStateMetrics = import './components/openshift-state-metrics.libsonnet';
 local telemeterClient = import './components/telemeter-client.libsonnet';
+local telemetryLib = import './utils/telemetry-allowlist-and-monitors.libsonnet';
 
 // Common configuration
 local commonConfig = {
@@ -403,6 +404,11 @@ local inCluster =
     telemeterClient: telemeterClient($.values.telemeterClient),
     monitoringPlugin: monitoringPlugin($.values.monitoringPlugin),
     openshiftStateMetrics: openshiftStateMetrics($.values.openshiftStateMetrics),
+
+    // Replace the telemetry whitelist manifest with the generated one.
+    manifests: {
+      '0000_50_cluster-monitoring-operator_04-config': telemetryLib.whitelist,
+    },
   } +
   (import './utils/anti-affinity.libsonnet') +
   (import 'github.com/prometheus-operator/kube-prometheus/jsonnet/kube-prometheus/addons/ksm-lite.libsonnet') +

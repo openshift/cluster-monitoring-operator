@@ -1,0 +1,29 @@
+apiVersion: monitoring.coreos.com/v1
+kind: ServiceMonitor
+metadata:
+  labels:
+    app.kubernetes.io/managed-by: cluster-monitoring-operator
+    app.kubernetes.io/part-of: openshift-monitoring
+    k8s-app: telemeter-client
+    monitoring.openshift.io/collection-profile: minimal
+  name: telemeter-client-minimal
+  namespace: openshift-monitoring
+spec:
+  endpoints:
+  - bearerTokenFile: ""
+    interval: 30s
+    metricRelabelings:
+    - action: keep
+      regex: (federate_filtered_samples|federate_samples)
+      sourceLabels:
+      - __name__
+    port: https
+    scheme: https
+    tlsConfig:
+      insecureSkipVerify: false
+      serverName: telemeter-client.openshift-monitoring.svc
+  jobLabel: k8s-app
+  scrapeClass: tls-client-certificate-auth
+  selector:
+    matchLabels:
+      k8s-app: telemeter-client

@@ -1,4 +1,5 @@
 local generateServiceMonitor = import '../utils/generate-service-monitors.libsonnet';
+local telemetryGen = import '../utils/telemetry-allowlist-and-monitors.libsonnet';
 local controlPlane = import 'github.com/prometheus-operator/kube-prometheus/jsonnet/kube-prometheus/components/k8s-control-plane.libsonnet';
 
 function(params)
@@ -125,48 +126,56 @@ function(params)
     },
 
     minimalServiceMonitorKubelet: generateServiceMonitor.minimal(
-      self.serviceMonitorKubelet, std.join('|',
-                                           [
-                                             'apiserver_audit_event_total',
-                                             'container_cpu_cfs_periods_total',
-                                             'container_cpu_cfs_throttled_periods_total',
-                                             'container_cpu_usage_seconds_total',
-                                             'container_fs_reads_bytes_total',
-                                             'container_fs_reads_total',
-                                             'container_fs_usage_bytes',
-                                             'container_fs_writes_bytes_total',
-                                             'container_fs_writes_total',
-                                             'container_memory_cache',
-                                             'container_memory_rss',
-                                             'container_memory_swap',
-                                             'container_memory_usage_bytes',
-                                             'container_memory_working_set_bytes',
-                                             'container_network_receive_bytes_total',
-                                             'container_network_receive_packets_dropped_total',
-                                             'container_network_receive_packets_total',
-                                             'container_network_transmit_bytes_total',
-                                             'container_network_transmit_packets_dropped_total',
-                                             'container_network_transmit_packets_total',
-                                             'container_spec_cpu_shares',
-                                             'kubelet_certificate_manager_client_expiration_renew_errors',
-                                             'kubelet_containers_per_pod_count_sum',
-                                             'kubelet_node_name',
-                                             'kubelet_pleg_relist_duration_seconds_bucket',
-                                             'kubelet_pod_worker_duration_seconds_bucket',
-                                             'kubelet_server_expiration_renew_errors',
-                                             'kubelet_volume_stats_available_bytes',
-                                             'kubelet_volume_stats_capacity_bytes',
-                                             'kubelet_volume_stats_inodes',
-                                             'kubelet_volume_stats_inodes_free',
-                                             'kubelet_volume_stats_inodes_used',
-                                             'kubelet_volume_stats_used_bytes',
-                                             'machine_cpu_cores',
-                                             'machine_memory_bytes',
-                                             'process_start_time_seconds',
-                                             'rest_client_requests_total',
-                                             'storage_operation_duration_seconds_count',
-                                           ])
+      self.telemetryServiceMonitorKubelet, std.join('|',
+                                                    [
+                                                      'apiserver_audit_event_total',
+                                                      'container_cpu_cfs_periods_total',
+                                                      'container_cpu_cfs_throttled_periods_total',
+                                                      'container_cpu_usage_seconds_total',
+                                                      'container_fs_reads_bytes_total',
+                                                      'container_fs_reads_total',
+                                                      'container_fs_usage_bytes',
+                                                      'container_fs_writes_bytes_total',
+                                                      'container_fs_writes_total',
+                                                      'container_memory_cache',
+                                                      'container_memory_rss',
+                                                      'container_memory_swap',
+                                                      'container_memory_usage_bytes',
+                                                      'container_memory_working_set_bytes',
+                                                      'container_network_receive_bytes_total',
+                                                      'container_network_receive_packets_dropped_total',
+                                                      'container_network_receive_packets_total',
+                                                      'container_network_transmit_bytes_total',
+                                                      'container_network_transmit_packets_dropped_total',
+                                                      'container_network_transmit_packets_total',
+                                                      'container_spec_cpu_shares',
+                                                      'kubelet_certificate_manager_client_expiration_renew_errors',
+                                                      'kubelet_containers_per_pod_count_sum',
+                                                      'kubelet_node_name',
+                                                      'kubelet_pleg_relist_duration_seconds_bucket',
+                                                      'kubelet_pod_worker_duration_seconds_bucket',
+                                                      'kubelet_server_expiration_renew_errors',
+                                                      'kubelet_volume_stats_available_bytes',
+                                                      'kubelet_volume_stats_capacity_bytes',
+                                                      'kubelet_volume_stats_inodes',
+                                                      'kubelet_volume_stats_inodes_free',
+                                                      'kubelet_volume_stats_inodes_used',
+                                                      'kubelet_volume_stats_used_bytes',
+                                                      'machine_cpu_cores',
+                                                      'machine_memory_bytes',
+                                                      'process_start_time_seconds',
+                                                      'rest_client_requests_total',
+                                                      'storage_operation_duration_seconds_count',
+                                                    ])
     ),
+
+    telemetryServiceMonitorKubelet: generateServiceMonitor.telemetry(
+      self.serviceMonitorKubelet, std.join(
+        '|',
+        telemetryGen.monitorKeysToMetricsMap[cfg.namespace + '/' + 'kubelet-telemetry']
+      )
+    ),
+
 
     // This avoids creating service monitors which are already managed by the respective operators.
     serviceMonitorApiserver:: {},

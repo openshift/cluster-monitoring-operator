@@ -6,6 +6,8 @@ local prometheus = import 'github.com/prometheus-operator/kube-prometheus/jsonne
 local withDescription = (import '../utils/add-annotations.libsonnet').withDescription;
 local requiredClusterRoles = (import '../utils/add-annotations.libsonnet').requiredClusterRoles;
 local testFilePlaceholder = (import '../utils/add-annotations.libsonnet').testFilePlaceholder;
+local generateServiceMonitor = import '../utils/generate-service-monitors.libsonnet';
+local telemetryGen = import '../utils/telemetry-allowlist-and-monitors.libsonnet';
 
 function(params)
   local cfg = params;
@@ -296,6 +298,15 @@ function(params)
         ],
       },
     },
+
+    minimalServiceMonitor: generateServiceMonitor.minimal(self.telemetryServiceMonitor, null),
+
+    telemetryServiceMonitor: generateServiceMonitor.telemetry(
+      self.serviceMonitor, std.join(
+        '|',
+        telemetryGen.monitorKeysToMetricsMap[cfg.namespace + '/' + 'prometheus-k8s-telemetry']
+      )
+    ),
 
     serviceThanosSidecar+: {
       metadata+: {
