@@ -6,7 +6,7 @@ COPY . .
 ENV GOFLAGS="-mod=vendor"
 RUN make operator-no-deps && make tests-ext-build && gzip tests-ext
 
-FROM registry.ci.openshift.org/ocp/4.22:base-rhel9
+FROM registry.ci.openshift.org/ocp/4.22:base-rhel9-minimal
 LABEL io.k8s.display-name="OpenShift cluster-monitoring-operator" \
       io.k8s.description="This is a component of OpenShift and manages the lifecycle of the Prometheus based cluster monitoring stack." \
       io.openshift.tags="openshift" \
