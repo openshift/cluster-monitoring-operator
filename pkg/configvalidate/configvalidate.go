@@ -34,9 +34,9 @@ const (
 
 type parseConfig func(c *corev1.ConfigMap) error
 
-func configParser(collectionProfilesEnabled bool) parseConfig {
+func configParser() parseConfig {
 	return func(c *corev1.ConfigMap) error {
-		_, err := manifests.NewConfigFromConfigMap(c, collectionProfilesEnabled)
+		_, err := manifests.NewConfigFromConfigMap(c)
 		return err
 	}
 }
@@ -50,15 +50,13 @@ func uwmConfigParser() parseConfig {
 
 type configmapsValidator struct {
 	d admission.Decoder
-
-	collectionProfilesEnabled bool
 }
 
 func newConfigmapsValidator() *configmapsValidator {
 	return &configmapsValidator{d: admission.NewDecoder(runtime.NewScheme())}
 }
 
-func MustNewConfigmapsValidatorHandler(collectionProfilesEnabled bool) *http.Handler {
+func MustNewConfigmapsValidatorHandler() *http.Handler {
 	hook := &admission.Webhook{
 		Handler: newConfigmapsValidator(),
 	}
@@ -74,7 +72,7 @@ func (v *configmapsValidator) Handle(ctx context.Context, req admission.Request)
 	var parser parseConfig
 	switch {
 	case req.Namespace == monitoringPlatformNamespace && req.Name == monitoringPlatformConfigmap:
-		parser = configParser(v.collectionProfilesEnabled)
+		parser = configParser()
 	case req.Namespace == monitoringUWMNamespace && req.Name == monitoringUWMConfigmap:
 		parser = uwmConfigParser()
 	default:

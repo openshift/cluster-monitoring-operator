@@ -223,14 +223,16 @@ func (t *AlertmanagerTask) create(ctx context.Context) error {
 		return fmt.Errorf("reconciling alertmanager rules PrometheusRule failed: %w", err)
 	}
 
-	smam, err := t.factory.AlertmanagerServiceMonitor()
+	smams, err := t.factory.AlertmanagerServiceMonitors()
 	if err != nil {
 		return fmt.Errorf("initializing Alertmanager ServiceMonitor failed: %w", err)
 	}
 
-	err = t.client.CreateOrUpdateServiceMonitor(ctx, smam)
-	if err != nil {
-		return fmt.Errorf("reconciling Alertmanager ServiceMonitor failed: %w", err)
+	for _, smam := range smams {
+		err = t.client.CreateOrUpdateServiceMonitor(ctx, smam)
+		if err != nil {
+			return fmt.Errorf("reconciling Alertmanager ServiceMonitor failed: %w", err)
+		}
 	}
 
 	return nil

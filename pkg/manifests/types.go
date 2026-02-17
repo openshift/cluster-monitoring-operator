@@ -24,11 +24,16 @@ type CollectionProfiles []CollectionProfile
 type ExternalLabels map[string]string
 
 const (
-	FullCollectionProfile    = "full"
-	MinimalCollectionProfile = "minimal"
+	FullCollectionProfile      = "full"
+	MinimalCollectionProfile   = "minimal"
+	TelemetryCollectionProfile = "telemetry"
 )
 
-var SupportedCollectionProfiles = CollectionProfiles{FullCollectionProfile, MinimalCollectionProfile}
+var SupportedCollectionProfiles = CollectionProfiles{
+	FullCollectionProfile,
+	MinimalCollectionProfile,
+	TelemetryCollectionProfile,
+}
 
 // The `ClusterMonitoringConfiguration` resource defines settings that
 // customize the default platform monitoring stack through the
