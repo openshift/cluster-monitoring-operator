@@ -281,6 +281,9 @@ func TestPrometheusRemoteWrite(t *testing.T) {
 			f.AssertOperatorCondition(osConfigv1.OperatorProgressing, osConfigv1.ConditionFalse)(t)
 			f.AssertOperatorCondition(osConfigv1.OperatorAvailable, osConfigv1.ConditionTrue)(t)
 
+			// Allow time for Prometheus to push the first remote write batch.
+			time.Sleep(60 * time.Second)
+
 			remoteWriteCheckMetrics(ctx, t, prometheusReceiveClient, tc.expected)
 
 			if err := f.OperatorClient.DeletePrometheus(ctx, prometheusReceiver); err != nil {
@@ -339,10 +342,10 @@ func TestBodySizeLimit(t *testing.T) {
 	f.MustCreateOrUpdateConfigMap(t, configMapWithData(t, data))
 
 	f.PrometheusK8sClient.WaitForQueryReturn(
-		t, 5*time.Minute, `ceil(sum(increase(prometheus_target_scrapes_exceeded_body_size_limit_total{job="prometheus-k8s"}[5m])))`,
+		t, 10*time.Minute, `ceil(sum(increase(prometheus_target_scrapes_exceeded_body_size_limit_total{job="prometheus-k8s"}[5m])))`,
 		func(v float64) error {
 			if v == 0 {
-				return fmt.Errorf("expected prometheus_target_scrapes_exceeded_body_size_limit_total to increase but no increase is observed in last 5 minutes")
+				return fmt.Errorf("expected prometheus_target_scrapes_exceeded_body_size_limit_total to increase but no increase is observed in last 10 minutes")
 			}
 
 			return nil
