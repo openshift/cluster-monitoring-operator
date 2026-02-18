@@ -1283,6 +1283,21 @@ data:
     # - mode: "Cold", "Warm" or "RCM"
     # - status: "Suceeded", "Failed" or "Canceled"
     - '{__name__="cluster:mtv_migrations_status_total:sum", provider=~"ova|vsphere|openstack|openshift|ovirt|awsec2", target=~"Local|Remote", mode=~"Cold|Warm|RCM", status=~"Succeeded|Failed|Canceled"}'
+    #
+    # owners: (https://github.com/containers/kubernetes-mcp-server)
+    #
+    # cluster:k8s_mcp_tool_calls:sum tracks the total number of MCP tool calls.
+    - '{__name__="cluster:k8s_mcp_tool_calls:sum"}'
+    #
+    # owners: (https://github.com/containers/kubernetes-mcp-server)
+    #
+    # cluster:k8s_mcp_tool_errors:sum tracks the total number of MCP tool errors.
+    - '{__name__="cluster:k8s_mcp_tool_errors:sum"}'
+    #
+    # owners: (https://github.com/containers/kubernetes-mcp-server)
+    #
+    # cluster:k8s_mcp_http_requests:sum tracks the total HTTP requests.
+    - '{__name__="cluster:k8s_mcp_http_requests:sum"}'
 kind: ConfigMap
 metadata:
   name: telemetry-config
