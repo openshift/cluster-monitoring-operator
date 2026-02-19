@@ -22,6 +22,7 @@ import (
 
 	v1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	"k8s.io/apimachinery/pkg/util/wait"
 
 	osConfigv1 "github.com/openshift/api/config/v1"
 	"github.com/openshift/cluster-monitoring-operator/test/e2e/framework"
@@ -98,6 +99,18 @@ type remoteWriteTest struct {
 
 func TestPrometheusRemoteWrite(t *testing.T) {
 	ctx := context.Background()
+
+	// Use the same image than k8s' for the remote write target.
+	k8sProm, err := f.MonitoringClient.Prometheuses(f.Ns).Get(ctx, "k8s", metav1.GetOptions{})
+	if err != nil {
+		t.Fatal(err)
+	}
+	image := k8sProm.Spec.Image
+	if image != nil {
+		t.Logf("Image name is : %s", *image)
+	} else {
+		t.Logf("Image name is : <nil> (receiver will use operator default)")
+	}
 
 	name := "rwe2e"
 
@@ -267,10 +280,14 @@ func TestPrometheusRemoteWrite(t *testing.T) {
 
 		t.Run(tc.name, func(t *testing.T) {
 			// deploy remote write target
-			prometheusReceiver := f.MakePrometheusWithWebTLSRemoteReceive(name, secName)
+			prometheusReceiver := f.MakePrometheusWithWebTLSRemoteReceive(name, secName, image)
 			if err := f.OperatorClient.CreateOrUpdatePrometheus(ctx, prometheusReceiver); err != nil {
 				t.Fatal(err)
 			}
+			defer func() {
+				_ = f.OperatorClient.DeletePrometheus(ctx, prometheusReceiver)
+			}()
+
 			if err := f.OperatorClient.WaitForPrometheus(ctx, prometheusReceiver); err != nil {
 				t.Fatal(err)
 			}
@@ -281,11 +298,29 @@ func TestPrometheusRemoteWrite(t *testing.T) {
 			f.AssertOperatorCondition(osConfigv1.OperatorProgressing, osConfigv1.ConditionFalse)(t)
 			f.AssertOperatorCondition(osConfigv1.OperatorAvailable, osConfigv1.ConditionTrue)(t)
 
-			remoteWriteCheckMetrics(ctx, t, prometheusReceiveClient, tc.expected)
-
-			if err := f.OperatorClient.DeletePrometheus(ctx, prometheusReceiver); err != nil {
-				t.Fatal(err)
+			// Poll until at least one remote write batch has arrived at the receiver; fail the test if it does not.
+			var lastErr error
+			if err := wait.Poll(5*time.Second, 10*time.Minute, func() (bool, error) {
+				body, err := prometheusReceiveClient.PrometheusQuery(`sum(prometheus_build_info)`)
+				if err != nil {
+					lastErr = err
+					return false, nil
+				}
+				v, err := framework.GetFirstValueFromPromQuery(body)
+				if err != nil {
+					lastErr = err
+					return false, nil
+				}
+				if v < 1 {
+					lastErr = fmt.Errorf("no remote write data yet (sum(prometheus_build_info)=%d)", v)
+					return false, nil
+				}
+				return true, nil
+			}); err != nil {
+				t.Fatalf("remote write data did not arrive at receiver %s within 10 minutes: %v", prometheusReceiverURL, lastErr)
 			}
+
+			remoteWriteCheckMetrics(ctx, t, prometheusReceiveClient, tc.expected)
 		})
 	}
 }
@@ -293,7 +328,7 @@ func TestPrometheusRemoteWrite(t *testing.T) {
 func remoteWriteCheckMetrics(ctx context.Context, t *testing.T, promClient *framework.PrometheusClient, tests []remoteWriteTest) {
 	for _, test := range tests {
 		promClient.WaitForQueryReturn(
-			t, 6*time.Minute, test.query,
+			t, 4*time.Minute, test.query,
 			func(v int) error {
 				if !test.expected(v) {
 					return fmt.Errorf(test.description, v)
