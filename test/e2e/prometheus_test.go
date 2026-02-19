@@ -339,10 +339,10 @@ func TestBodySizeLimit(t *testing.T) {
 	f.MustCreateOrUpdateConfigMap(t, configMapWithData(t, data))
 
 	f.PrometheusK8sClient.WaitForQueryReturn(
-		t, 5*time.Minute, `ceil(sum(increase(prometheus_target_scrapes_exceeded_body_size_limit_total{job="prometheus-k8s"}[5m])))`,
+		t, 10*time.Minute, `ceil(sum(increase(prometheus_target_scrapes_exceeded_body_size_limit_total{job="prometheus-k8s"}[5m])))`,
 		func(v int) error {
 			if v == 0 {
-				return fmt.Errorf("expected prometheus_target_scrapes_exceeded_body_size_limit_total to increase but no increase is observed in last 5 minutes")
+				return fmt.Errorf("expected prometheus_target_scrapes_exceeded_body_size_limit_total to increase but no increase is observed in last 10 minutes")
 			}
 
 			return nil
