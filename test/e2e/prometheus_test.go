@@ -281,6 +281,9 @@ func TestPrometheusRemoteWrite(t *testing.T) {
 			f.AssertOperatorCondition(osConfigv1.OperatorProgressing, osConfigv1.ConditionFalse)(t)
 			f.AssertOperatorCondition(osConfigv1.OperatorAvailable, osConfigv1.ConditionTrue)(t)
 
+			// Allow time for Prometheus to push the first remote write batch.
+			time.Sleep(60 * time.Second)
+
 			remoteWriteCheckMetrics(ctx, t, prometheusReceiveClient, tc.expected)
 
 			if err := f.OperatorClient.DeletePrometheus(ctx, prometheusReceiver); err != nil {
