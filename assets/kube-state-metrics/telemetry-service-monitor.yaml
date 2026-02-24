@@ -1,0 +1,53 @@
+apiVersion: monitoring.coreos.com/v1
+kind: ServiceMonitor
+metadata:
+  labels:
+    app.kubernetes.io/component: exporter
+    app.kubernetes.io/managed-by: cluster-monitoring-operator
+    app.kubernetes.io/name: kube-state-metrics
+    app.kubernetes.io/part-of: openshift-monitoring
+    app.kubernetes.io/version: 2.18.0
+    monitoring.openshift.io/collection-profile: telemetry
+  name: kube-state-metrics-telemetry
+  namespace: openshift-monitoring
+spec:
+  endpoints:
+  - bearerTokenFile: ""
+    honorLabels: true
+    interval: 1m
+    metricRelabelings:
+    - action: labeldrop
+      regex: instance
+    - action: keep
+      regex: (kube_node_labels|kube_node_spec_unschedulable|kube_node_status_capacity|kube_node_status_condition|kube_persistentvolume_info|kube_persistentvolumeclaim_info|kube_persistentvolumeclaim_resource_requests_storage_bytes|kube_pod_container_resource_requests|kube_pod_info|kube_pod_labels|kube_pod_restart_policy|kube_pod_status_phase|kube_running_pod_ready|kube_storageclass_info)
+      sourceLabels:
+      - __name__
+    port: https-main
+    relabelings:
+    - action: labeldrop
+      regex: pod
+    scheme: https
+    scrapeTimeout: 1m
+    tlsConfig:
+      insecureSkipVerify: false
+      serverName: kube-state-metrics.openshift-monitoring.svc
+  - bearerTokenFile: ""
+    interval: 1m
+    metricRelabelings:
+    - action: keep
+      regex: (kube_node_labels|kube_node_spec_unschedulable|kube_node_status_capacity|kube_node_status_condition|kube_persistentvolume_info|kube_persistentvolumeclaim_info|kube_persistentvolumeclaim_resource_requests_storage_bytes|kube_pod_container_resource_requests|kube_pod_info|kube_pod_labels|kube_pod_restart_policy|kube_pod_status_phase|kube_running_pod_ready|kube_storageclass_info)
+      sourceLabels:
+      - __name__
+    port: https-self
+    scheme: https
+    scrapeTimeout: 1m
+    tlsConfig:
+      insecureSkipVerify: false
+      serverName: kube-state-metrics.openshift-monitoring.svc
+  jobLabel: app.kubernetes.io/name
+  scrapeClass: tls-client-certificate-auth
+  selector:
+    matchLabels:
+      app.kubernetes.io/component: exporter
+      app.kubernetes.io/name: kube-state-metrics
+      app.kubernetes.io/part-of: openshift-monitoring

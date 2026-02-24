@@ -168,6 +168,26 @@ function(params)
                                            ])
     ),
 
+    telemetryServiceMonitorKubelet: generateServiceMonitor.telemetry(
+      self.serviceMonitorKubelet, std.join('|',
+                                           [
+                                             'apiserver_current_inflight_requests',
+                                             'apiserver_request_total',
+                                             'apiserver_storage_objects',
+                                             'container_cpu_usage_seconds_total',
+                                             'container_memory_working_set_bytes',
+                                             'kubelet_containers_per_pod_count_sum',
+                                             'kubelet_volume_stats_used_bytes',
+                                             'pv_collector_total_pv_count',
+                                             'selinux_warning_controller_selinux_volume_conflict',
+                                             'volume_manager_selinux_pod_context_mismatch_errors_total',
+                                             'volume_manager_selinux_pod_context_mismatch_warnings_total',
+                                             'volume_manager_selinux_volume_context_mismatch_errors_total',
+                                             'volume_manager_selinux_volume_context_mismatch_warnings_total',
+                                             'volume_manager_selinux_volumes_admitted_total',
+                                           ])
+    ),
+
     // This avoids creating service monitors which are already managed by the respective operators.
     serviceMonitorApiserver:: {},
     serviceMonitorKubeScheduler:: {},
