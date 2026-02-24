@@ -18,19 +18,19 @@ import (
 	"context"
 	"fmt"
 	"reflect"
-
 	"strings"
 	"testing"
 	"time"
 
-	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
-
 	statusv1 "github.com/openshift/api/config/v1"
 	osmv1 "github.com/openshift/api/monitoring/v1"
 	monv1 "github.com/prometheus-operator/prometheus-operator/pkg/apis/monitoring/v1"
-
-	"github.com/openshift/cluster-monitoring-operator/test/e2e/framework"
+	"github.com/stretchr/testify/require"
+	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/util/intstr"
+
+	cmoalert "github.com/openshift/cluster-monitoring-operator/pkg/alert"
+	"github.com/openshift/cluster-monitoring-operator/test/e2e/framework"
 )
 
 const (
@@ -134,6 +134,65 @@ func TestAlertingRule(t *testing.T) {
 	f.AssertOperatorConditionFunc(statusv1.OperatorAvailable, statusv1.ConditionTrue)(t)
 	// Delete the invalid AlertingRule
 	deleteAlertingRule(t, invalidArName)
+}
+
+// TODO: Remove in 4.23.
+// TestAlertingRuleLegacyPrometheusRuleCleanup ensures that the controller
+// deletes a stale PrometheusRule left behind by the old MD5-based naming
+// scheme, before the hash was changed to SHA-224 in
+// https://github.com/openshift/cluster-monitoring-operator/pull/2086.
+func TestAlertingRuleLegacyPrometheusRuleCleanup(t *testing.T) {
+	const arName = "legacy-rule-test"
+
+	createAlertingRule(t, &osmv1.AlertingRule{
+		ObjectMeta: metav1.ObjectMeta{
+			Name:      arName,
+			Namespace: f.Ns,
+			Labels:    map[string]string{framework.E2eTestLabelName: framework.E2eTestLabelValue},
+		},
+		Spec: osmv1.AlertingRuleSpec{
+			Groups: []osmv1.RuleGroup{{
+				Name:     "test-group",
+				Interval: "30s",
+				Rules: []osmv1.Rule{{
+					Alert:       "LegacyCleanupTestAlert",
+					Expr:        intstr.FromString("vector(1)"),
+					For:         "5m",
+					Labels:      map[string]string{"severity": "warning"},
+					Annotations: map[string]string{"summary": "legacy cleanup test"},
+				}},
+			}},
+		},
+	})
+	defer deleteAlertingRule(t, arName)
+
+	// Wait for the corresponding PrometheusRule to be generated.
+	validatePrometheusRule(t, arName)
+
+	ar, err := f.OpenShiftMonitoringClient.MonitoringV1().AlertingRules(f.Ns).Get(ctx, arName, metav1.GetOptions{})
+	require.NoError(t, err)
+
+	// Inject a stale PrometheusRule with the old MD5-based name, as the old
+	// controller would have left it.
+	// No OwnerReference is needed: the cleanup logic deletes it by name regardless.
+	legacyName := cmoalert.LegacyPromRuleName(ar.Namespace, ar.Name, ar.UID)
+	_, err = f.MonitoringClient.PrometheusRules(f.Ns).Create(ctx, &monv1.PrometheusRule{
+		ObjectMeta: metav1.ObjectMeta{
+			Name:      legacyName,
+			Namespace: f.Ns,
+		},
+	}, metav1.CreateOptions{})
+	require.NoError(t, err)
+
+	// Update the AlertingRule spec to trigger a reconcile.
+	// In production no AlertingRule change is needed: the cleanup fires on the
+	// first reconcile triggered by the controller listing AlertingRules on
+	// startup.
+	ar.Spec.Groups[0].Rules[0].For = "99m"
+	updateAlertingRule(t, ar)
+
+	f.AssertPrometheusRuleDoesNotExistFunc(legacyName, f.Ns)(t)
+	validatePrometheusRule(t, arName)
 }
 
 func createAlertingRule(t *testing.T, ar *osmv1.AlertingRule) {
