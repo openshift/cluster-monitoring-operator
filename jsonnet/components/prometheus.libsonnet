@@ -2,6 +2,7 @@ local metrics = import 'github.com/openshift/telemeter/jsonnet/telemeter/metrics
 
 local generateCertInjection = import '../utils/generate-certificate-injection.libsonnet';
 local generateSecret = import '../utils/generate-secret.libsonnet';
+local generateServiceMonitor = import '../utils/generate-service-monitors.libsonnet';
 local prometheus = import 'github.com/prometheus-operator/kube-prometheus/jsonnet/kube-prometheus/components/prometheus.libsonnet';
 local withDescription = (import '../utils/add-annotations.libsonnet').withDescription;
 local requiredClusterRoles = (import '../utils/add-annotations.libsonnet').requiredClusterRoles;
@@ -296,6 +297,18 @@ function(params)
         ],
       },
     },
+
+    telemetryServiceMonitor: generateServiceMonitor.telemetry(
+      self.serviceMonitor, std.join('|',
+                                    [
+                                      'ALERTS',
+                                      'prometheus_tsdb_head_samples_appended_total',
+                                      'prometheus_tsdb_head_series',
+                                      'scrape_samples_post_metric_relabeling',
+                                      'scrape_series_added',
+                                      'up',
+                                    ])
+    ),
 
     serviceThanosSidecar+: {
       metadata+: {
