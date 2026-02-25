@@ -70,7 +70,6 @@ function(params)
                     // without requiring client TLS authentication.
                     c {
                       args+: [
-                        '--watch-referenced-objects-in-all-namespaces=true',
                         '--prometheus-instance-namespaces=' + params.namespace,
                         '--thanos-ruler-instance-namespaces=' + params.namespace,
                         '--alertmanager-instance-namespaces=' + params.namespace,
