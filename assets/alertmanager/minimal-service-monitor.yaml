@@ -8,18 +8,13 @@ metadata:
     app.kubernetes.io/name: alertmanager
     app.kubernetes.io/part-of: openshift-monitoring
     app.kubernetes.io/version: 0.31.1
-    monitoring.openshift.io/collection-profile: telemetry
-  name: alertmanager-main-telemetry
+    monitoring.openshift.io/collection-profile: minimal
+  name: alertmanager-main-minimal
   namespace: openshift-monitoring
 spec:
   endpoints:
   - bearerTokenFile: ""
     interval: 30s
-    metricRelabelings:
-    - action: keep
-      regex: (alertmanager_integrations)
-      sourceLabels:
-      - __name__
     port: metrics
     scheme: https
     tlsConfig:

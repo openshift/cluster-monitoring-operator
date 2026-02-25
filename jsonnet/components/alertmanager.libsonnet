@@ -230,7 +230,10 @@ function(params)
       },
     },
 
-    telemetryServiceMonitor: generateServiceMonitor.telemetry(self.serviceMonitor, 'alertmanager_integrations'),
+    minimalServiceMonitor: generateServiceMonitor.serviceMonitorForMinimalProfile(self.serviceMonitor),
+    telemetryServiceMonitor: generateServiceMonitor.serviceMonitorForTelemetryProfile(
+      generateServiceMonitor.keepOnlyMetrics(self.serviceMonitor, ['alertmanager_integrations'])
+    ),
 
     alertmanager+: {
       metadata+: {

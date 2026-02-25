@@ -160,7 +160,10 @@ function(params) {
     },
   },
 
-  telemetryServiceMonitor: generateServiceMonitor.telemetry(self.serviceMonitor, 'cluster_monitoring_operator_collection_profile'),
+  minimalServiceMonitor: generateServiceMonitor.serviceMonitorForMinimalProfile(self.serviceMonitor),
+  telemetryServiceMonitor: generateServiceMonitor.serviceMonitorForTelemetryProfile(
+    generateServiceMonitor.keepOnlyMetrics(self.serviceMonitor, ['cluster_monitoring_operator_collection_profile'])
+  ),
 
   // This is the base for the cluster-monitoring-operator ClusterRole. It will
   // be extended with the rules from all other ClusterRoles in main.jsonnet.
