@@ -297,17 +297,16 @@ function(params)
         ],
       },
     },
-
-    telemetryServiceMonitor: generateServiceMonitor.telemetry(
-      self.serviceMonitor, std.join('|',
-                                    [
-                                      'ALERTS',
-                                      'prometheus_tsdb_head_samples_appended_total',
-                                      'prometheus_tsdb_head_series',
-                                      'scrape_samples_post_metric_relabeling',
-                                      'scrape_series_added',
-                                      'up',
-                                    ])
+    minimalServiceMonitor: generateServiceMonitor.serviceMonitorForMinimalProfile(self.serviceMonitor),
+    telemetryServiceMonitor: generateServiceMonitor.serviceMonitorForTelemetryProfile(
+      generateServiceMonitor.keepOnlyMetrics(
+        self.serviceMonitor,
+        [
+          'ALERTS',
+          'prometheus_tsdb_head_samples_appended_total',
+          'prometheus_tsdb_head_series',
+        ]
+      )
     ),
 
     serviceThanosSidecar+: {

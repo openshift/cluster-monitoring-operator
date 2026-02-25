@@ -16,6 +16,7 @@ package manifests
 
 import (
 	"slices"
+	"strings"
 
 	monv1 "github.com/prometheus-operator/prometheus-operator/pkg/apis/monitoring/v1"
 	v1 "k8s.io/api/core/v1"
@@ -36,6 +37,11 @@ var SupportedCollectionProfiles = CollectionProfiles{
 	FullCollectionProfile,
 	MinimalCollectionProfile,
 	TelemetryCollectionProfile,
+}
+
+// String returns a comma-separated string of collection profiles.
+func (cps CollectionProfiles) String() string {
+	return strings.Join(cps.StringSlice(), ", ")
 }
 
 // StringSlice returns the list of collection profiles as []string.
