@@ -297,7 +297,7 @@ function(params)
         ],
       },
     },
-
+    minimalServiceMonitor: generateServiceMonitor.minimal(self.serviceMonitor, null, removeDrop=false),
     telemetryServiceMonitor: generateServiceMonitor.telemetry(
       self.serviceMonitor, std.join('|',
                                     [
