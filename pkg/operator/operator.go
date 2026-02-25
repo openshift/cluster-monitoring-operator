@@ -184,7 +184,6 @@ type Operator struct {
 	images                         map[string]string
 	telemetryMatches               []string
 	remoteWrite                    bool
-	CollectionProfilesEnabled      bool
 	ClusterMonitoringConfigEnabled bool
 
 	lastKnowInfrastructureConfig *InfrastructureConfig
@@ -454,7 +453,6 @@ func New(
 		if err != nil {
 			return nil, err
 		}
-		o.CollectionProfilesEnabled = featureGates.Enabled(features.FeatureGateMetricsCollectionProfiles)
 		o.ClusterMonitoringConfigEnabled = featureGates.Enabled(features.FeatureGateClusterMonitoringConfig)
 	case <-time.After(1 * time.Minute):
 		return nil, fmt.Errorf("timed out waiting for FeatureGate detection")
@@ -1011,7 +1009,7 @@ func (o *Operator) loadConfig(key string) (*manifests.Config, error) {
 	}
 
 	cmap := obj.(*v1.ConfigMap)
-	return manifests.NewConfigFromConfigMap(cmap, o.CollectionProfilesEnabled)
+	return manifests.NewConfigFromConfigMap(cmap)
 }
 
 func (o *Operator) Config(ctx context.Context, key string) (*manifests.Config, []string, error) {
