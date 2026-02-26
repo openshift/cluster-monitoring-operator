@@ -762,7 +762,7 @@ func (f *Factory) KubeStateMetricsClusterRole() (*rbacv1.ClusterRole, error) {
 }
 
 func (f *Factory) KubeStateMetricsServiceMonitors() ([]*monv1.ServiceMonitor, error) {
-	return serviceMonitors(f.config.CollectionProfilesFeatureGateEnabled, f.KubeStateMetricsServiceMonitor, f.KubeStateMetricsMinimalServiceMonitor)
+	return serviceMonitors(f.KubeStateMetricsServiceMonitor, f.KubeStateMetricsMinimalServiceMonitor)
 }
 
 func (f *Factory) KubeStateMetricsServiceMonitor() (*monv1.ServiceMonitor, error) {
@@ -894,7 +894,7 @@ func (f *Factory) OpenShiftStateMetricsNetworkPolicy() (*networkingv1.NetworkPol
 }
 
 func (f *Factory) NodeExporterServiceMonitors() ([]*monv1.ServiceMonitor, error) {
-	return serviceMonitors(f.config.CollectionProfilesFeatureGateEnabled, f.NodeExporterServiceMonitor, f.NodeExporterMinimalServiceMonitor)
+	return serviceMonitors(f.NodeExporterServiceMonitor, f.NodeExporterMinimalServiceMonitor)
 }
 
 func (f *Factory) NodeExporterServiceMonitor() (*monv1.ServiceMonitor, error) {
@@ -2569,7 +2569,7 @@ func (f *Factory) ControlPlanePrometheusRule() (*monv1.PrometheusRule, error) {
 }
 
 func (f *Factory) ControlPlaneKubeletServiceMonitors() ([]*monv1.ServiceMonitor, error) {
-	return serviceMonitors(f.config.CollectionProfilesFeatureGateEnabled, f.ControlPlaneKubeletServiceMonitor, f.ControlPlaneKubeletMinimalServiceMonitor)
+	return serviceMonitors(f.ControlPlaneKubeletServiceMonitor, f.ControlPlaneKubeletMinimalServiceMonitor)
 }
 
 func (f *Factory) ControlPlaneKubeletServiceMonitor() (*monv1.ServiceMonitor, error) {
@@ -3494,7 +3494,7 @@ func makeConsoleURL(c *configv1.Console, path string) (string, error) {
 	return "", nil
 }
 
-func serviceMonitors(appendMinimal bool, fullServiceMonitor, minimalServiceMonitor func() (*monv1.ServiceMonitor, error)) ([]*monv1.ServiceMonitor, error) {
+func serviceMonitors(fullServiceMonitor, minimalServiceMonitor func() (*monv1.ServiceMonitor, error)) ([]*monv1.ServiceMonitor, error) {
 	sMonitor, err := fullServiceMonitor()
 	if err != nil {
 		return nil, err
@@ -3503,11 +3503,7 @@ func serviceMonitors(appendMinimal bool, fullServiceMonitor, minimalServiceMonit
 	if err != nil {
 		return nil, err
 	}
-	sms := []*monv1.ServiceMonitor{sMonitor}
-	if appendMinimal {
-		sms = append(sms, sMonitorMinimal)
-	}
-	return sms, nil
+	return []*monv1.ServiceMonitor{sMonitor, sMonitorMinimal}, nil
 }
 
 func addRemoteWriteConfigs(clusterID string, rw []monv1.RemoteWriteSpec, rwTargets ...RemoteWriteSpec) []monv1.RemoteWriteSpec {

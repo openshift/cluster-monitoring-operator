@@ -64,7 +64,7 @@ func NewServer(name string, config *rest.Config, kubeConfig, certFile, keyFile s
 // Run starts the HTTPS server exposing the Prometheus /metrics and validate webhook endpoints on port :8443.
 // The server performs authn/authz as prescribed by
 // https://github.com/openshift/enhancements/blob/master/enhancements/monitoring/client-cert-scraping.md.
-func (s *Server) Run(ctx context.Context, collectionProfilesEnabled bool) error {
+func (s *Server) Run(ctx context.Context) error {
 	var server *genericapiserver.GenericAPIServer
 
 	servingInfo := configv1.HTTPServingInfo{}
@@ -119,7 +119,7 @@ func (s *Server) Run(ctx context.Context, collectionProfilesEnabled bool) error 
 	// This is a temporary measure until the CRD-based configuration is GA.
 	// Following the fail-early paradigm this makes configuration failures easily detectable by users.
 	// This will also aid in the transition to CRD by providing a preview of the future configuration process.
-	handler := configvalidate.MustNewConfigmapsValidatorHandler(collectionProfilesEnabled)
+	handler := configvalidate.MustNewConfigmapsValidatorHandler()
 	server.Handler.NonGoRestfulMux.Handle(
 		fmt.Sprintf("%s/monitoringconfigmaps", webhookPathPrefix),
 		*handler,
