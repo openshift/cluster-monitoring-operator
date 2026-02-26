@@ -3,6 +3,7 @@ local alertmanager = import 'github.com/prometheus-operator/kube-prometheus/json
 // local krp = import 'github.com/prometheus-operator/kube-prometheus/jsonnet/kube-prometheus/components/kube-rbac-proxy.libsonnet';
 local generateCertInjection = import '../utils/generate-certificate-injection.libsonnet';
 local generateSecret = import '../utils/generate-secret.libsonnet';
+local generateServiceMonitor = import '../utils/generate-service-monitors.libsonnet';
 local withDescription = (import '../utils/add-annotations.libsonnet').withDescription;
 local testFilePlaceholder = (import '../utils/add-annotations.libsonnet').testFilePlaceholder;
 local requiredRoles = (import '../utils/add-annotations.libsonnet').requiredRoles;
@@ -228,6 +229,9 @@ function(params)
         ],
       },
     },
+
+    minimalServiceMonitor: generateServiceMonitor.minimal(self.serviceMonitor, null, removeDrop=false),
+    telemetryServiceMonitor: generateServiceMonitor.telemetry(self.serviceMonitor, 'alertmanager_integrations'),
 
     alertmanager+: {
       metadata+: {
