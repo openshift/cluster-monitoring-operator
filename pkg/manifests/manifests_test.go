@@ -1838,7 +1838,7 @@ func TestPrometheusCollectionProfile(t *testing.T) {
 					{
 						Key:      "monitoring.openshift.io/collection-profile",
 						Operator: metav1.LabelSelectorOpNotIn,
-						Values:   []string{"minimal"},
+						Values:   []string{"minimal", "telemetry"},
 					},
 				},
 			},
@@ -1851,7 +1851,20 @@ func TestPrometheusCollectionProfile(t *testing.T) {
 					{
 						Key:      "monitoring.openshift.io/collection-profile",
 						Operator: metav1.LabelSelectorOpNotIn,
-						Values:   []string{"full"},
+						Values:   []string{"full", "telemetry"},
+					},
+				},
+			},
+		},
+		{
+			name:              "telemetry_collection_profile",
+			collectionProfile: "telemetry",
+			expectedLabelSelector: &metav1.LabelSelector{
+				MatchExpressions: []metav1.LabelSelectorRequirement{
+					{
+						Key:      "monitoring.openshift.io/collection-profile",
+						Operator: metav1.LabelSelectorOpNotIn,
+						Values:   []string{"full", "minimal"},
 					},
 				},
 			},
@@ -2664,7 +2677,7 @@ metricsServer:
   - effect: PreferNoSchedule
     operator: Exists`
 
-	c, err := NewConfigFromString(config, true)
+	c, err := NewConfigFromString(config, false)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -2762,7 +2775,7 @@ metricsServer:
 }
 
 func TestMetricsServerReadinessProbe(t *testing.T) {
-	c, err := NewConfigFromString("", true)
+	c, err := NewConfigFromString("", false)
 	if err != nil {
 		t.Fatal(err)
 	}
