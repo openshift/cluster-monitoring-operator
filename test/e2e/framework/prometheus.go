@@ -35,7 +35,7 @@ import (
 
 func (f Framework) MakePrometheusWithWebTLSRemoteReceive(name, tlsSecretName string, image *string) *monitoringv1.Prometheus {
 	// This is not required in the Prometheus spec, but we inspect that value in
-	// WaitForPrometheus. Omitting it causes this code to derefence a nil.
+	// WaitForPrometheus. Omitting it causes this code to dereference a nil.
 	replicas := int32(1)
 	return &monitoringv1.Prometheus{
 		ObjectMeta: metav1.ObjectMeta{
