@@ -1106,9 +1106,7 @@ func (o *Operator) mergeClusterMonitoringCRD(c *manifests.Config, cm *configv1al
 
 	if c.ClusterMonitoringConfiguration.MetricsServerConfig == nil {
 		// Merge MetricsServerConfig from CR (only when ConfigMap has no opinion).
-		if err := o.mergeMetricsServerConfig(c, &cm.Spec.MetricsServerConfig); err != nil {
-			return nil, fmt.Errorf("failed to merge MetricsServerConfig: %w", err)
-		}
+		o.mergeMetricsServerConfig(c, &cm.Spec.MetricsServerConfig)
 	}
 
 	return c, nil
@@ -1141,7 +1139,7 @@ func verbosityLevelToNumeric(level configv1alpha1.VerbosityLevel) uint8 {
 	}
 }
 
-func (o *Operator) mergeMetricsServerConfig(c *manifests.Config, msc *configv1alpha1.MetricsServerConfig) error {
+func (o *Operator) mergeMetricsServerConfig(c *manifests.Config, msc *configv1alpha1.MetricsServerConfig) {
 	if c.ClusterMonitoringConfiguration.MetricsServerConfig == nil {
 		c.ClusterMonitoringConfiguration.MetricsServerConfig = &manifests.MetricsServerConfig{}
 	}
@@ -1180,7 +1178,6 @@ func (o *Operator) mergeMetricsServerConfig(c *manifests.Config, msc *configv1al
 	if len(msc.TopologySpreadConstraints) > 0 {
 		cfg.TopologySpreadConstraints = msc.TopologySpreadConstraints
 	}
-	return nil
 }
 
 // storageNotConfiguredMessage returns the message to be set if a pvc has not
