@@ -199,12 +199,12 @@ func TestPrometheusRemoteWrite(t *testing.T) {
 				{
 					query:       `sum (prometheus_build_info{cluster_id="",prometheus_replica="prometheus-k8s-0"})`,
 					expected:    func(v float64) bool { return v == 2 },
-					description: "expected 2 prometheus_build_info metrics for prometheus-k8s-0, found %[1]s",
+					description: "expected 2 prometheus_build_info metrics for prometheus-k8s-0",
 				},
 				{
 					query:       `sum (prometheus_build_info{cluster_id="",prometheus_replica="prometheus-k8s-1"})`,
 					expected:    func(v float64) bool { return v == 2 },
-					description: "expected 2 prometheus_build_info metrics for prometheus-k8s-1, found %[1]s",
+					description: "expected 2 prometheus_build_info metrics for prometheus-k8s-1",
 				},
 			},
 		},
@@ -229,12 +229,12 @@ func TestPrometheusRemoteWrite(t *testing.T) {
 				{
 					query:       `sum (prometheus_build_info{cluster_id="",prometheus_replica="prometheus-k8s-0"})`,
 					expected:    func(v float64) bool { return v == 2 },
-					description: "expected 2 prometheus_build_info metrics for prometheus-k8s-0, found %[1]s",
+					description: "expected 2 prometheus_build_info metrics for prometheus-k8s-0",
 				},
 				{
 					query:       `sum (prometheus_build_info{cluster_id="",prometheus_replica="prometheus-k8s-1"})`,
 					expected:    func(v float64) bool { return v == 2 },
-					description: "expected 2 prometheus_build_info metrics for prometheus-k8s-1, found %[1]s",
+					description: "expected 2 prometheus_build_info metrics for prometheus-k8s-1",
 				},
 			},
 		},
@@ -279,12 +279,12 @@ func TestPrometheusRemoteWrite(t *testing.T) {
 				{
 					query:       `sum (prometheus_build_info{cluster_id!="",prometheus_replica="prometheus-k8s-0"})`,
 					expected:    func(v float64) bool { return v == 2 },
-					description: "expected 2 prometheus_build_info metrics for prometheus-k8s-0, found %[1]s",
+					description: "expected 2 prometheus_build_info metrics for prometheus-k8s-0",
 				},
 				{
 					query:       `sum (prometheus_build_info{cluster_id!="",prometheus_replica="prometheus-k8s-1"})`,
 					expected:    func(v float64) bool { return v == 2 },
-					description: "expected 2 prometheus_build_info metrics for prometheus-k8s-1, found %[1]s",
+					description: "expected 2 prometheus_build_info metrics for prometheus-k8s-1",
 				},
 			},
 		},
@@ -325,12 +325,13 @@ func TestPrometheusRemoteWrite(t *testing.T) {
 }
 
 func remoteWriteCheckMetrics(ctx context.Context, t *testing.T, promClient *framework.PrometheusClient, tests []remoteWriteTest) {
+	t.Helper()
 	for _, test := range tests {
 		promClient.WaitForQueryReturn(
 			t, 6*time.Minute, test.query,
 			func(v float64) error {
 				if !test.expected(v) {
-					return fmt.Errorf(test.description, v)
+					return fmt.Errorf("%s (got: %f)", test.description, v)
 				}
 				return nil
 			},
