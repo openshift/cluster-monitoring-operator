@@ -226,7 +226,7 @@ spec:
     runAsNonRoot: true
     runAsUser: 65534
   serviceAccountName: prometheus-k8s
-  serviceDiscoveryRole: Endpoints
+  serviceDiscoveryRole: EndpointSlice
   serviceMonitorNamespaceSelector:
     matchLabels:
       openshift.io/cluster-monitoring: "true"
