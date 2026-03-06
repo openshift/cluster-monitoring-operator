@@ -719,7 +719,7 @@ func TestAlertmanagerDisabling(t *testing.T) {
 		name      string
 		assertion framework.AssertionFunc
 	}{
-		{name: "assert alertmanager networkpolicy exists", assertion: f.AssertNetworkPolicyExists("alertmanager", f.Ns)},
+		{name: "assert alertmanager networkpolicy exists", assertion: f.AssertNetworkPolicyExistsFunc("alertmanager", f.Ns)},
 		{name: "assert alertmanager exists", assertion: f.AssertStatefulsetExists("alertmanager-main", f.Ns)},
 		{name: "assert route exists", assertion: f.AssertRouteExists("alertmanager-main", f.Ns)},
 		{name: "assert alertmanager main config exists", assertion: f.AssertSecretExists("alertmanager-main", f.Ns)},
