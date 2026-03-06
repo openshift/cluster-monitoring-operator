@@ -24,7 +24,6 @@ import (
 	"github.com/openshift/library-go/pkg/authorization/hardcodedauthorizer"
 	"github.com/openshift/library-go/pkg/config/configdefaults"
 	"github.com/openshift/library-go/pkg/config/serving"
-	"github.com/openshift/library-go/pkg/crypto"
 	"k8s.io/apiserver/pkg/authorization/authorizer"
 	"k8s.io/apiserver/pkg/authorization/union"
 	genericapiserver "k8s.io/apiserver/pkg/server"
@@ -43,10 +42,14 @@ type Server struct {
 	kubeClient        *kubernetes.Clientset
 	kubeConfig        string
 	certFile, keyFile string
+	minTLSVersion     string
+	cipherSuites      []string
+
+	srv *genericapiserver.GenericAPIServer
 }
 
 // NewServer returns a functional Server.
-func NewServer(name string, config *rest.Config, kubeConfig, certFile, keyFile string) (*Server, error) {
+func NewServer(name string, config *rest.Config, kubeConfig, certFile, keyFile string, minTLSVersion string, cipherSuites []string) (*Server, error) {
 	kubeClient, err := kubernetes.NewForConfig(config)
 	if err != nil {
 		return nil, err
@@ -61,24 +64,24 @@ func NewServer(name string, config *rest.Config, kubeConfig, certFile, keyFile s
 	}, nil
 }
 
-// Run starts the HTTPS server exposing the Prometheus /metrics and validate webhook endpoints on port :8443.
+// Prepare configures the HTTPS server exposing the Prometheus /metrics and
+// validate webhook endpoints on port :8443.
+//
 // The server performs authn/authz as prescribed by
 // https://github.com/openshift/enhancements/blob/master/enhancements/monitoring/client-cert-scraping.md.
-func (s *Server) Run(ctx context.Context) error {
+func (s *Server) Prepare(ctx context.Context) error {
 	var server *genericapiserver.GenericAPIServer
 
 	servingInfo := configv1.HTTPServingInfo{}
 	configdefaults.SetRecommendedHTTPServingInfoDefaults(&servingInfo)
 	servingInfo.ServingInfo.CertInfo.CertFile = s.certFile
 	servingInfo.ServingInfo.CertInfo.KeyFile = s.keyFile
+
 	// Don't set a CA file for client certificates because the CA is read from
 	// the kube-system/extension-apiserver-authentication ConfigMap.
 	servingInfo.ServingInfo.ClientCA = ""
-	// Use intermediate TLS profile cipher suites to avoid insecure cipher warnings
-	// Convert OpenSSL cipher names to IANA names for Kubernetes validation
-	intermediateTLSProfile := configv1.TLSProfiles[configv1.TLSProfileIntermediateType]
-	servingInfo.ServingInfo.CipherSuites = crypto.OpenSSLToIANACipherSuites(intermediateTLSProfile.Ciphers)
-	servingInfo.ServingInfo.MinTLSVersion = string(intermediateTLSProfile.MinTLSVersion)
+	servingInfo.ServingInfo.CipherSuites = s.cipherSuites
+	servingInfo.ServingInfo.MinTLSVersion = s.minTLSVersion
 
 	serverConfig, err := serving.ToServerConfig(
 		ctx,
@@ -125,15 +128,16 @@ func (s *Server) Run(ctx context.Context) error {
 		*handler,
 	)
 
-	go func() {
-		if err := server.PrepareRun().RunWithContext(ctx); err != nil {
-			klog.Fatal(err)
-		}
-		klog.Info("server exited")
-	}()
+	s.srv = server
+	return nil
+}
 
-	<-ctx.Done()
+func (s *Server) Run(ctx context.Context) error {
+	if err := s.srv.PrepareRun().RunWithContext(ctx); ctx.Err() == nil {
+		return err
+	}
 
+	klog.Info("server exited")
 	return nil
 }
 
