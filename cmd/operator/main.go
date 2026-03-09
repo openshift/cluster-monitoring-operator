@@ -245,6 +245,7 @@ func Main() int {
 		images.asMap(),
 		telemetryConfig.Matches,
 		assets,
+		cancel,
 	)
 	if err != nil {
 		fmt.Fprint(os.Stderr, err)

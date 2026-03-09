@@ -188,6 +188,7 @@ type Operator struct {
 	lastKnownConsoleConfig       *configv1.Console
 
 	client *client.Client
+	stop   func()
 
 	cmapInf              cache.SharedIndexInformer
 	informers            []cache.SharedIndexInformer
@@ -213,6 +214,7 @@ func New(
 	images map[string]string,
 	telemetryMatches []string,
 	a *manifests.Assets,
+	cancel func(),
 ) (*Operator, error) {
 	ruleController, err := alert.NewRuleController(ctx, c, version)
 	if err != nil {
@@ -234,6 +236,7 @@ func New(
 		namespace:                 namespace,
 		namespaceUserWorkload:     namespaceUserWorkload,
 		client:                    c,
+		stop:                      cancel,
 		queue: workqueue.NewTypedRateLimitingQueueWithConfig[string](
 			workqueue.NewTypedItemExponentialFailureRateLimiter[string](50*time.Millisecond, 3*time.Minute),
 			workqueue.TypedRateLimitingQueueConfig[string]{Name: "cluster-monitoring"},
@@ -246,6 +249,7 @@ func New(
 		relabelController:    relabelController,
 	}
 
+	// Watch secrets in the openshift-monitoring namespace.
 	informer := cache.NewSharedIndexInformer(
 		o.client.SecretListWatchForNamespace(namespace), &v1.Secret{}, resyncPeriod, cache.Indexers{},
 	)
@@ -259,6 +263,7 @@ func New(
 	}
 	o.informers = append(o.informers, informer)
 
+	// Watch configmaps in the openshift-monitoring namespace.
 	o.cmapInf = cache.NewSharedIndexInformer(
 		o.client.ConfigMapListWatchForNamespace(namespace), &v1.ConfigMap{}, resyncPeriod, cache.Indexers{},
 	)
@@ -271,6 +276,7 @@ func New(
 		return nil, err
 	}
 
+	// Watch configmaps in the openshift-user-workload-monitoring namespace.
 	informer = cache.NewSharedIndexInformer(
 		o.client.ConfigMapListWatchForNamespace(namespaceUserWorkload), &v1.ConfigMap{}, resyncPeriod, cache.Indexers{},
 	)
@@ -284,6 +290,7 @@ func New(
 	}
 	o.informers = append(o.informers, informer)
 
+	// Watch configmaps in the kube-system namespace (for metrics client CA).
 	informer = cache.NewSharedIndexInformer(
 		o.client.ConfigMapListWatchForNamespace("kube-system"),
 		&v1.ConfigMap{}, resyncPeriod, cache.Indexers{},
@@ -296,6 +303,7 @@ func New(
 	}
 	o.informers = append(o.informers, informer)
 
+	// Watch configmaps in the openshift-config-managed namespace (for kubelet CA).
 	informer = cache.NewSharedIndexInformer(
 		o.client.ConfigMapListWatchForNamespace("openshift-config-managed"),
 		&v1.ConfigMap{}, resyncPeriod, cache.Indexers{},
@@ -308,6 +316,7 @@ func New(
 	}
 	o.informers = append(o.informers, informer)
 
+	// Watch configmaps in the openshift-config namespace (for pull secrets).
 	informer = cache.NewSharedIndexInformer(
 		o.client.ConfigMapListWatchForNamespace("openshift-config"),
 		&v1.ConfigMap{}, resyncPeriod, cache.Indexers{},
@@ -320,6 +329,7 @@ func New(
 	}
 	o.informers = append(o.informers, informer)
 
+	// Watch the cluster Infrastructure resource (for control plane and infrastructure topologies).
 	informer = cache.NewSharedIndexInformer(
 		o.client.InfrastructureListWatchForResource(ctx, clusterResourceName),
 		&configv1.Infrastructure{}, resyncPeriod, cache.Indexers{},
@@ -332,12 +342,16 @@ func New(
 	}
 	o.informers = append(o.informers, informer)
 
+	// Watch the APIServer resource (for TLS configuration profile).
 	informer = cache.NewSharedIndexInformer(
 		o.client.ApiServersListWatchForResource(ctx, clusterResourceName),
 		&configv1.APIServer{}, resyncPeriod, cache.Indexers{},
 	)
 
 	_, err = informer.AddEventHandler(cache.ResourceEventHandlerFuncs{
+		AddFunc: func(obj interface{}) {
+			o.handleEvent(obj)
+		},
 		UpdateFunc: func(_, newObj interface{}) {
 			o.handleEvent(newObj)
 		},
@@ -347,6 +361,7 @@ func New(
 	}
 	o.informers = append(o.informers, informer)
 
+	// Watch the Console configuration resource (to build external URLs).
 	informer = cache.NewSharedIndexInformer(
 		o.client.ConsoleListWatch(ctx),
 		&configv1.Console{}, resyncPeriod, cache.Indexers{},
@@ -617,9 +632,16 @@ func (o *Operator) keyFunc(obj interface{}) (string, bool) {
 func (o *Operator) handleEvent(obj interface{}) {
 	cmoConfigMap := o.namespace + "/" + o.configMapName
 
-	switch obj.(type) {
+	switch v := obj.(type) {
+	case *configv1.APIServer:
+		if !o.apiServerConfig.Equal(manifests.NewAPIServerConfig(v)) {
+			// Trigger a restart of the process to read the new TLS
+			// configuration.
+			klog.Info("Detected changes to the TLS profile configuration, stopping the process")
+			o.stop()
+		}
+		return
 	case *configv1.Infrastructure,
-		*configv1.APIServer,
 		*configv1.Console,
 		*configv1.ClusterOperator,
 		*configv1.ClusterVersion,
