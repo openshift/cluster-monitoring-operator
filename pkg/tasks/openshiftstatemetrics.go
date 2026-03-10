@@ -110,11 +110,9 @@ func (t *OpenShiftStateMetricsTask) Run(ctx context.Context) error {
 		return fmt.Errorf("initializing openshift-state-metrics ServiceMonitor failed: %w", err)
 	}
 
-	for _, sm := range sms {
-		err = t.client.CreateOrUpdateServiceMonitor(ctx, sm)
-		if err != nil {
-			return fmt.Errorf("reconciling openshift-state-metrics ServiceMonitor failed: %w", err)
-		}
+	err = t.client.CreateOrUpdateServiceMonitors(ctx, sms)
+	if err != nil {
+		return fmt.Errorf("reconciling openshift-state-metrics ServiceMonitor failed: %w", err)
 	}
 
 	return nil

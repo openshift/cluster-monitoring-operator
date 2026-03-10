@@ -1688,6 +1688,15 @@ func (c *Client) CreateOrUpdateServiceMonitor(ctx context.Context, sm *monv1.Ser
 	return nil
 }
 
+func (c *Client) CreateOrUpdateServiceMonitors(ctx context.Context, sms []*monv1.ServiceMonitor) error {
+	for _, sm := range sms {
+		if err := c.CreateOrUpdateServiceMonitor(ctx, sm); err != nil {
+			return err
+		}
+	}
+	return nil
+}
+
 func (c *Client) CreateOrUpdateAPIService(ctx context.Context, apiService *apiregistrationv1.APIService) error {
 	_, _, err := resourceapply.ApplyAPIService(ctx, c.aggclient.ApiregistrationV1(), c.eventRecorder, apiService)
 	return err
