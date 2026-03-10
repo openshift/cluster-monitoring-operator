@@ -880,9 +880,18 @@ func (c *Client) DeleteServiceMonitorByNamespaceAndName(ctx context.Context, nam
 	err = sclient.Delete(ctx, name, metav1.DeleteOptions{})
 	// if the object does not exist then everything is good here
 	if err != nil && !apierrors.IsNotFound(err) {
-		return fmt.Errorf("deleting ServiceMonitor object failed: %w", err)
+		return fmt.Errorf("deleting ServiceMonitor object %s/%s failed: %w", namespace, name, err)
 	}
 
+	return nil
+}
+
+func (c *Client) DeleteServiceMonitors(ctx context.Context, sms []*monv1.ServiceMonitor) error {
+	for _, sm := range sms {
+		if err := c.DeleteServiceMonitor(ctx, sm); err != nil {
+			return err
+		}
+	}
 	return nil
 }
 
@@ -1683,7 +1692,7 @@ func (c *Client) CreateOrUpdateServiceMonitor(ctx context.Context, sm *monv1.Ser
 	required.ResourceVersion = existing.ResourceVersion
 	_, err = smClient.Update(ctx, required, metav1.UpdateOptions{})
 	if err != nil {
-		return fmt.Errorf("updating ServiceMonitor object failed: %w", err)
+		return fmt.Errorf("updating ServiceMonitor object %s/%s failed: %w", sm.GetNamespace(), sm.GetName(), err)
 	}
 	return nil
 }

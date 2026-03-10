@@ -291,14 +291,14 @@ func (t *TelemeterClientTask) destroy(ctx context.Context) error {
 		return fmt.Errorf("deleting Telemeter client ServiceAccount failed: %w", err)
 	}
 
-	sm, err := t.factory.TelemeterClientServiceMonitor()
+	sms, err := t.factory.TelemeterClientServiceMonitors()
 	if err != nil {
-		return fmt.Errorf("initializing Telemeter client ServiceMonitor failed: %w", err)
+		return fmt.Errorf("initializing Telemeter client ServiceMonitors failed: %w", err)
 	}
 
-	err = t.client.DeleteServiceMonitor(ctx, sm)
+	err = t.client.DeleteServiceMonitors(ctx, sms)
 	if err != nil {
-		return fmt.Errorf("deleting Telemeter client ServiceMonitor failed: %w", err)
+		return fmt.Errorf("deleting Telemeter client ServiceMonitors failed: %w", err)
 	}
 
 	cacm, err := t.factory.TelemeterClientServingCertsCABundle()
