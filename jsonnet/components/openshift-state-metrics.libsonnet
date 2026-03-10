@@ -98,13 +98,15 @@ function(params) {
     },
   },
   serviceMonitor: osm.openshiftStateMetrics.serviceMonitor,
-  minimalServiceMonitor: generateServiceMonitor.minimal(self.serviceMonitor, null, removeDrop=false),
-  telemetryServiceMonitor: generateServiceMonitor.telemetry(
-    self.serviceMonitor, std.join('|',
-                                  [
-                                    'openshift_build_status_phase_total',
-                                    'openshift_route_info',
-                                  ])
+  minimalServiceMonitor: generateServiceMonitor.serviceMonitorForMinimalProfile(self.serviceMonitor),
+  telemetryServiceMonitor: generateServiceMonitor.serviceMonitorForTelemetryProfile(
+    generateServiceMonitor.keepOnlyMetrics(
+      self.serviceMonitor,
+      [
+        'openshift_build_status_phase_total',
+        'openshift_route_info',
+      ]
+    )
   ),
   networkPolicyDownstream: {
     apiVersion: 'networking.k8s.io/v1',

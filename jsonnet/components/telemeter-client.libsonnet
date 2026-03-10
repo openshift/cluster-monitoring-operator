@@ -44,13 +44,15 @@ function(params) {
       ],
     },
   },
-  minimalServiceMonitor: generateServiceMonitor.minimal(self.serviceMonitor, null, removeDrop=false),
-  telemetryServiceMonitor: generateServiceMonitor.telemetry(
-    self.serviceMonitor, std.join('|',
-                                  [
-                                    'federate_filtered_samples',
-                                    'federate_samples',
-                                  ])
+  minimalServiceMonitor: generateServiceMonitor.serviceMonitorForMinimalProfile(self.serviceMonitor),
+  telemetryServiceMonitor: generateServiceMonitor.serviceMonitorForTelemetryProfile(
+    generateServiceMonitor.keepOnlyMetrics(
+      self.serviceMonitor,
+      [
+        'federate_filtered_samples',
+        'federate_samples',
+      ]
+    )
   ),
   secret: tc.telemeterClient.secret,
   servingCertsCABundle: tc.telemeterClient.servingCertsCABundle,
