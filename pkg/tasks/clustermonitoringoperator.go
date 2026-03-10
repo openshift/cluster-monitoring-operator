@@ -142,12 +142,12 @@ func (t *ClusterMonitoringOperatorTask) Run(ctx context.Context) error {
 
 	smscmo, err := t.factory.ClusterMonitoringOperatorServiceMonitors()
 	if err != nil {
-		return fmt.Errorf("initializing Cluster Monitoring Operator ServiceMonitor failed: %w", err)
+		return fmt.Errorf("initializing Cluster Monitoring Operator ServiceMonitors failed: %w", err)
 	}
 
 	err = t.client.CreateOrUpdateServiceMonitors(ctx, smscmo)
 	if err != nil {
-		return fmt.Errorf("reconciling Cluster Monitoring Operator ServiceMonitor failed: %w", err)
+		return fmt.Errorf("reconciling Cluster Monitoring Operator ServiceMonitors failed: %w", err)
 	}
 
 	s, err := t.factory.GRPCSecret()

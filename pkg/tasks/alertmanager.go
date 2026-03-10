@@ -225,12 +225,12 @@ func (t *AlertmanagerTask) create(ctx context.Context) error {
 
 	smams, err := t.factory.AlertmanagerServiceMonitors()
 	if err != nil {
-		return fmt.Errorf("initializing Alertmanager ServiceMonitor failed: %w", err)
+		return fmt.Errorf("initializing Alertmanager ServiceMonitors failed: %w", err)
 	}
 
 	err = t.client.CreateOrUpdateServiceMonitors(ctx, smams)
 	if err != nil {
-		return fmt.Errorf("reconciling Alertmanager ServiceMonitor failed: %w", err)
+		return fmt.Errorf("reconciling Alertmanager ServiceMonitors failed: %w", err)
 	}
 
 	return nil

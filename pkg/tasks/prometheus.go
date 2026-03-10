@@ -405,12 +405,12 @@ func (t *PrometheusTask) create(ctx context.Context) error {
 
 	smps, err := t.factory.PrometheusK8sPrometheusServiceMonitors()
 	if err != nil {
-		return fmt.Errorf("initializing Prometheus ServiceMonitor failed: %w", err)
+		return fmt.Errorf("initializing Prometheus ServiceMonitors failed: %w", err)
 	}
 
 	err = t.client.CreateOrUpdateServiceMonitors(ctx, smps)
 	if err != nil {
-		return fmt.Errorf("reconciling Prometheus ServiceMonitor failed: %w", err)
+		return fmt.Errorf("reconciling Prometheus ServiceMonitors failed: %w", err)
 	}
 
 	smt, err := t.factory.PrometheusK8sThanosSidecarServiceMonitor()
