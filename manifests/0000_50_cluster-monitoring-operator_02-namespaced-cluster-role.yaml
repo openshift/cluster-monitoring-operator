@@ -73,3 +73,14 @@ rules:
   - alertmanagers/api
   verbs:
   - '*'
+- apiGroups:
+  - networking.k8s.io
+  resources:
+  - networkpolicies
+  verbs:
+  - create
+  - get
+  - list
+  - watch
+  - update
+  - delete

@@ -373,4 +373,38 @@ function(params) {
       },
     },
   },
+  networkPolicyDownstream: {
+    apiVersion: 'networking.k8s.io/v1',
+    kind: 'NetworkPolicy',
+    metadata: {
+      name: 'metrics-server',
+      namespace: cfg.namespace,
+    },
+    spec: {
+      podSelector: {
+        matchLabels: {
+          'app.kubernetes.io/name': 'metrics-server',
+        },
+      },
+      policyTypes: [
+        'Ingress',
+        'Egress',
+      ],
+      ingress: [
+        {
+          ports: [
+            // make Metrics API available and allow prometheus to scrape metrics-server endpoint,
+            // 10250(port name: https) port
+            {
+              port: 'https',
+              protocol: 'TCP',
+            },
+          ],
+        },
+      ],
+      egress: [
+        {},
+      ],
+    },
+  },
 }
