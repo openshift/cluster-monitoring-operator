@@ -145,6 +145,7 @@ function(params)
                                       'kube_pod_container_status_restarts_total',
                                       'kube_pod_container_status_waiting_reason',
                                       'kube_pod_info',
+                                      'kube_pod_labels',
                                       'kube_pod_owner',
                                       'kube_pod_status_phase',
                                       'kube_pod_status_ready',
