@@ -266,8 +266,8 @@ func TestClusterMonitoringMetricsServer(t *testing.T) {
 	}
 }
 
-// TestClusterMonitorMetricsServerConfigMapAndCRD verifies that when ConfigMap has no metricsServer opinion,
-// the ClusterMonitoring CRD MetricsServerConfig is applied (merge rule: CRD fills in when ConfigMap is nil).
+// TestClusterMonitorMetricsServerConfigMapAndCRD verifies that when both ConfigMap and CRD
+// specify MetricsServerConfig, the CRD values take precedence over ConfigMap values.
 func TestClusterMonitorMetricsServerConfigMapAndCRD(t *testing.T) {
 	if !clusterMonitoringCRDAvailable {
 		t.Skip("ClusterMonitoring CRD not available (TechPreview / ClusterMonitoringConfig feature gate may be disabled)")
