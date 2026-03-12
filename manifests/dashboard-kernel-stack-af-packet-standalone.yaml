@@ -1,9 +1,11 @@
+# Dashboard for Node Exporter / Kernel Stack Cost & AF_PACKET (isolated CPUs, DPDK).
+# Aligned with the framework used in 0000_90_cluster-monitoring-operator_01-dashboards.yaml
+# and 0000_90_cluster-monitoring-operator_02-dashboards.yaml.
+---
 apiVersion: v1
 data:
   kernel-stack-af-packet.json: |-
     {
-        "__inputs": [],
-        "__requires": [],
         "annotations": {
             "list": []
         },
@@ -16,17 +18,31 @@ data:
         "refresh": "30s",
         "panels": [
             {
+                "content": "For **CPUs that are isolated and pinned to a workload (e.g. DPDK)**, the panels below show:\n\n- **What percentage of their time** is spent on kernel work (e.g. kernel networking)\n- **Breakdown by function type** (e.g. NET_RX, NET_TX) to identify **which kernel function is consuming cycles** on CPUs that should be dedicated to userspace packet processing.",
+                "gridPos": {
+                    "h": 3,
+                    "w": 24,
+                    "x": 0,
+                    "y": 0
+                },
+                "id": 99,
+                "mode": "markdown",
+                "panels": [],
+                "title": "",
+                "type": "text"
+            },
+            {
                 "gridPos": {
                     "h": 1,
                     "w": 24,
                     "x": 0,
-                    "y": 0
+                    "y": 3
                 },
                 "id": 100,
                 "panels": [],
                 "repeat": null,
                 "showTitle": true,
-                "title": "CPU & softirq (cost per packet / AF_PACKET)",
+                "title": "Isolated / pinned CPUs (e.g. DPDK) \u2014 kernel work % and breakdown by function type",
                 "titleSize": "h6",
                 "type": "row"
             },
@@ -34,9 +50,9 @@ data:
                 "datasource": "$datasource",
                 "gridPos": {
                     "h": 8,
-                    "w": 12,
+                    "w": 8,
                     "x": 0,
-                    "y": 1
+                    "y": 4
                 },
                 "id": 101,
                 "legend": {
@@ -53,13 +69,13 @@ data:
                 "linewidth": 1,
                 "targets": [
                     {
-                        "expr": "sum(rate(node_cpu_seconds_total{job=\"node-exporter\", mode=\"softirq\"}[5m])) by (instance) / sum(rate(node_cpu_seconds_total{job=\"node-exporter\"}[5m])) by (instance)",
+                        "expr": "sum(rate(node_cpu_seconds_total{job=\"node-exporter\", mode=\"system\"}[5m])) by (instance, cpu) / sum(rate(node_cpu_seconds_total{job=\"node-exporter\"}[5m])) by (instance, cpu)",
                         "format": "time_series",
-                        "legendFormat": "{{instance}}",
+                        "legendFormat": "{{instance}} cpu{{cpu}}",
                         "refId": "A"
                     }
                 ],
-                "title": "Softirq share of CPU",
+                "title": "System time % per CPU (kernel / syscalls)",
                 "type": "graph",
                 "yaxes": [
                     {
@@ -76,9 +92,9 @@ data:
                 "datasource": "$datasource",
                 "gridPos": {
                     "h": 8,
-                    "w": 12,
-                    "x": 12,
-                    "y": 1
+                    "w": 8,
+                    "x": 8,
+                    "y": 4
                 },
                 "id": 102,
                 "legend": {
@@ -95,13 +111,55 @@ data:
                 "linewidth": 1,
                 "targets": [
                     {
-                        "expr": "sum(rate(node_cpu_seconds_total{job=\"node-exporter\", mode=\"system\"}[5m])) by (instance) / sum(rate(node_cpu_seconds_total{job=\"node-exporter\"}[5m])) by (instance)",
+                        "expr": "sum(rate(node_cpu_seconds_total{job=\"node-exporter\", mode=\"softirq\"}[5m])) by (instance, cpu) / sum(rate(node_cpu_seconds_total{job=\"node-exporter\"}[5m])) by (instance, cpu)",
                         "format": "time_series",
-                        "legendFormat": "{{instance}}",
+                        "legendFormat": "{{instance}} cpu{{cpu}}",
                         "refId": "A"
                     }
                 ],
-                "title": "Kernel (system) time share",
+                "title": "Softirq time % per CPU (e.g. NET_RX / NET_TX)",
+                "type": "graph",
+                "yaxes": [
+                    {
+                        "format": "percentunit",
+                        "min": 0,
+                        "show": true
+                    },
+                    {
+                        "show": false
+                    }
+                ]
+            },
+            {
+                "datasource": "$datasource",
+                "gridPos": {
+                    "h": 8,
+                    "w": 8,
+                    "x": 16,
+                    "y": 4
+                },
+                "id": 126,
+                "legend": {
+                    "show": true,
+                    "alignAsTable": true,
+                    "avg": false,
+                    "current": true,
+                    "max": false,
+                    "min": false,
+                    "rightSide": true,
+                    "values": true
+                },
+                "lines": true,
+                "linewidth": 1,
+                "targets": [
+                    {
+                        "expr": "sum(rate(node_cpu_seconds_total{job=\"node-exporter\", mode=\"irq\"}[5m])) by (instance, cpu) / sum(rate(node_cpu_seconds_total{job=\"node-exporter\"}[5m])) by (instance, cpu)",
+                        "format": "time_series",
+                        "legendFormat": "{{instance}} cpu{{cpu}}",
+                        "refId": "A"
+                    }
+                ],
+                "title": "IRQ time % per CPU (hard interrupts)",
                 "type": "graph",
                 "yaxes": [
                     {
@@ -119,14 +177,28 @@ data:
                     "h": 1,
                     "w": 24,
                     "x": 0,
-                    "y": 9
+                    "y": 12
                 },
-                "id": 103,
+                "id": 136,
                 "panels": [],
                 "showTitle": true,
-                "title": "Softirq breakdown (NET_RX \u2014 receive path / AF_PACKET)",
+                "title": "IRQ per CPU (which device hits which CPU) \u2014 map interrupts to isolate DPDK CPUs",
                 "titleSize": "h6",
                 "type": "row"
+            },
+            {
+                "content": "**IRQ-to-CPU mapping:** Node exporter exposes **node_intr_total** (from /proc/interrupts) when the **interrupts** collector is enabled (e.g. **--collector.interrupts**). It is **disabled by default** due to high cardinality. When enabled, the panels below show **IRQ rate per CPU by device** so you can see which NIC/device queue (e.g. eno1np0-TxRx-2) is hitting which CPU \u2014 e.g. to explain softirq on an isolated CPU and to tune IRQ affinity.",
+                "gridPos": {
+                    "h": 2,
+                    "w": 24,
+                    "x": 0,
+                    "y": 13
+                },
+                "id": 133,
+                "mode": "markdown",
+                "panels": [],
+                "title": "",
+                "type": "text"
             },
             {
                 "datasource": "$datasource",
@@ -134,9 +206,9 @@ data:
                     "h": 8,
                     "w": 24,
                     "x": 0,
-                    "y": 10
+                    "y": 14
                 },
-                "id": 104,
+                "id": 134,
                 "legend": {
                     "show": true,
                     "alignAsTable": true,
@@ -144,15 +216,54 @@ data:
                     "values": true
                 },
                 "lines": true,
+                "stack": false,
                 "targets": [
                     {
-                        "expr": "rate(node_softirqs_functions_total{job=\"node-exporter\", type=\"NET_RX\"}[5m])",
+                        "expr": "rate(node_intr_total{job=\"node-exporter\"}[5m])",
                         "format": "time_series",
-                        "legendFormat": "{{instance}} cpu{{cpu}}",
+                        "legendFormat": "{{instance}} cpu{{cpu}} {{device}}",
                         "refId": "A"
                     }
                 ],
-                "title": "NET_RX softirq rate per CPU",
+                "title": "IRQ rate per CPU by device (which device hits which CPU)",
+                "type": "graph",
+                "yaxes": [
+                    {
+                        "format": "ops",
+                        "min": 0,
+                        "show": true
+                    },
+                    {
+                        "show": false
+                    }
+                ]
+            },
+            {
+                "datasource": "$datasource",
+                "gridPos": {
+                    "h": 8,
+                    "w": 24,
+                    "x": 0,
+                    "y": 22
+                },
+                "id": 135,
+                "legend": {
+                    "show": true,
+                    "alignAsTable": true,
+                    "current": true,
+                    "values": true
+                },
+                "lines": true,
+                "stack": true,
+                "targets": [
+                    {
+                        "expr": "rate(node_intr_total{job=\"node-exporter\", device=~\".*TxRx.*|.*eno.*|.*net.*\"}[5m])",
+                        "format": "time_series",
+                        "legendFormat": "{{instance}} cpu{{cpu}} {{device}}",
+                        "refId": "A"
+                    }
+                ],
+                "title": "IRQ rate per CPU (network devices only \u2014 NIC queues)",
                 "type": "graph",
                 "yaxes": [
                     {
@@ -170,7 +281,149 @@ data:
                     "h": 1,
                     "w": 24,
                     "x": 0,
-                    "y": 18
+                    "y": 30
+                },
+                "id": 103,
+                "panels": [],
+                "showTitle": true,
+                "title": "Softirq breakdown by function type (NET_RX, NET_TX, etc.) \u2014 which kernel function consumes cycles",
+                "titleSize": "h6",
+                "type": "row"
+            },
+            {
+                "content": "**Which kernel function on DPDK CPUs?** Linux exposes softirq **invocation counts** per type (not per-type CPU time). So we show **share of softirq invocations per CPU** below: the type that dominates (e.g. NET_RX) is the one most likely consuming cycles on that CPU. Combine with **Softirq time % per CPU** above to confirm kernel networking is the culprit.",
+                "gridPos": {
+                    "h": 2,
+                    "w": 24,
+                    "x": 0,
+                    "y": 31
+                },
+                "id": 131,
+                "mode": "markdown",
+                "panels": [],
+                "title": "",
+                "type": "text"
+            },
+            {
+                "datasource": "$datasource",
+                "gridPos": {
+                    "h": 8,
+                    "w": 24,
+                    "x": 0,
+                    "y": 33
+                },
+                "id": 132,
+                "legend": {
+                    "show": true,
+                    "alignAsTable": true,
+                    "current": true,
+                    "values": true
+                },
+                "lines": true,
+                "stack": true,
+                "targets": [
+                    {
+                        "expr": "sum(rate(node_softirqs_functions_total{job=\"node-exporter\"}[5m])) by (instance, cpu, type) / sum(rate(node_softirqs_functions_total{job=\"node-exporter\"}[5m])) by (instance, cpu)",
+                        "format": "time_series",
+                        "legendFormat": "{{instance}} cpu{{cpu}} {{type}}",
+                        "refId": "A"
+                    }
+                ],
+                "title": "Per CPU: which kernel function? (softirq type as % of softirq invocations)",
+                "type": "graph",
+                "yaxes": [
+                    {
+                        "format": "percentunit",
+                        "min": 0,
+                        "max": 1,
+                        "show": true
+                    },
+                    {
+                        "show": false
+                    }
+                ]
+            },
+            {
+                "datasource": "$datasource",
+                "gridPos": {
+                    "h": 8,
+                    "w": 12,
+                    "x": 0,
+                    "y": 41
+                },
+                "id": 104,
+                "legend": {
+                    "show": true,
+                    "alignAsTable": true,
+                    "current": true,
+                    "values": true
+                },
+                "lines": true,
+                "targets": [
+                    {
+                        "expr": "rate(node_softirqs_functions_total{job=\"node-exporter\", type=\"NET_RX\"}[5m])",
+                        "format": "time_series",
+                        "legendFormat": "{{instance}} cpu{{cpu}}",
+                        "refId": "A"
+                    }
+                ],
+                "title": "NET_RX softirq rate per CPU (invocations/s)",
+                "type": "graph",
+                "yaxes": [
+                    {
+                        "format": "ops",
+                        "min": 0,
+                        "show": true
+                    },
+                    {
+                        "show": false
+                    }
+                ]
+            },
+            {
+                "datasource": "$datasource",
+                "gridPos": {
+                    "h": 8,
+                    "w": 12,
+                    "x": 12,
+                    "y": 41
+                },
+                "id": 130,
+                "legend": {
+                    "show": true,
+                    "alignAsTable": true,
+                    "current": true,
+                    "values": true
+                },
+                "lines": true,
+                "stack": true,
+                "targets": [
+                    {
+                        "expr": "rate(node_softirqs_functions_total{job=\"node-exporter\"}[5m])",
+                        "format": "time_series",
+                        "legendFormat": "{{instance}} cpu{{cpu}} {{type}}",
+                        "refId": "A"
+                    }
+                ],
+                "title": "All softirq types per CPU (invocation rate)",
+                "type": "graph",
+                "yaxes": [
+                    {
+                        "format": "ops",
+                        "min": 0,
+                        "show": true
+                    },
+                    {
+                        "show": false
+                    }
+                ]
+            },
+            {
+                "gridPos": {
+                    "h": 1,
+                    "w": 24,
+                    "x": 0,
+                    "y": 49
                 },
                 "id": 105,
                 "panels": [],
@@ -185,7 +438,7 @@ data:
                     "h": 8,
                     "w": 12,
                     "x": 0,
-                    "y": 19
+                    "y": 50
                 },
                 "id": 106,
                 "legend": {
@@ -228,7 +481,7 @@ data:
                     "h": 8,
                     "w": 12,
                     "x": 12,
-                    "y": 19
+                    "y": 50
                 },
                 "id": 107,
                 "legend": {
@@ -270,7 +523,7 @@ data:
                     "h": 1,
                     "w": 24,
                     "x": 0,
-                    "y": 27
+                    "y": 58
                 },
                 "id": 108,
                 "panels": [],
@@ -285,7 +538,7 @@ data:
                     "h": 8,
                     "w": 12,
                     "x": 0,
-                    "y": 28
+                    "y": 59
                 },
                 "id": 109,
                 "legend": {
@@ -328,7 +581,7 @@ data:
                     "h": 8,
                     "w": 12,
                     "x": 12,
-                    "y": 28
+                    "y": 59
                 },
                 "id": 110,
                 "legend": {
@@ -370,7 +623,7 @@ data:
                     "h": 1,
                     "w": 24,
                     "x": 0,
-                    "y": 36
+                    "y": 67
                 },
                 "id": 111,
                 "panels": [],
@@ -385,7 +638,7 @@ data:
                     "h": 8,
                     "w": 12,
                     "x": 0,
-                    "y": 37
+                    "y": 68
                 },
                 "id": 112,
                 "legend": {
@@ -422,7 +675,7 @@ data:
                     "h": 8,
                     "w": 12,
                     "x": 12,
-                    "y": 37
+                    "y": 68
                 },
                 "id": 113,
                 "legend": {
@@ -465,7 +718,7 @@ data:
                     "h": 8,
                     "w": 12,
                     "x": 0,
-                    "y": 45
+                    "y": 76
                 },
                 "id": 114,
                 "legend": {
@@ -507,7 +760,7 @@ data:
                     "h": 1,
                     "w": 24,
                     "x": 0,
-                    "y": 53
+                    "y": 78
                 },
                 "id": 115,
                 "panels": [],
@@ -522,7 +775,7 @@ data:
                     "h": 8,
                     "w": 12,
                     "x": 0,
-                    "y": 54
+                    "y": 79
                 },
                 "id": 116,
                 "legend": {
@@ -564,7 +817,7 @@ data:
                     "h": 1,
                     "w": 24,
                     "x": 0,
-                    "y": 62
+                    "y": 87
                 },
                 "id": 117,
                 "panels": [],
@@ -579,7 +832,7 @@ data:
                     "h": 8,
                     "w": 12,
                     "x": 0,
-                    "y": 63
+                    "y": 88
                 },
                 "id": 118,
                 "legend": {
@@ -627,7 +880,7 @@ data:
                     "h": 1,
                     "w": 24,
                     "x": 0,
-                    "y": 71
+                    "y": 96
                 },
                 "id": 119,
                 "panels": [],
@@ -642,7 +895,7 @@ data:
                     "h": 8,
                     "w": 12,
                     "x": 0,
-                    "y": 72
+                    "y": 97
                 },
                 "id": 120,
                 "legend": {
@@ -685,7 +938,7 @@ data:
                     "h": 8,
                     "w": 12,
                     "x": 12,
-                    "y": 72
+                    "y": 97
                 },
                 "id": 121,
                 "legend": {
@@ -727,7 +980,7 @@ data:
                     "h": 1,
                     "w": 24,
                     "x": 0,
-                    "y": 80
+                    "y": 105
                 },
                 "id": 122,
                 "panels": [],
@@ -742,7 +995,7 @@ data:
                     "h": 6,
                     "w": 12,
                     "x": 0,
-                    "y": 81
+                    "y": 106
                 },
                 "id": 123,
                 "legend": {
@@ -788,7 +1041,7 @@ data:
                     "h": 1,
                     "w": 24,
                     "x": 0,
-                    "y": 87
+                    "y": 112
                 },
                 "id": 124,
                 "panels": [],
@@ -803,7 +1056,7 @@ data:
                     "h": 8,
                     "w": 12,
                     "x": 0,
-                    "y": 88
+                    "y": 113
                 },
                 "id": 125,
                 "legend": {
@@ -855,10 +1108,35 @@ data:
             "from": "now-1h",
             "to": "now"
         },
-        "timezone": "utc",
+        "timepicker": {
+            "refresh_intervals": [
+                "5s",
+                "10s",
+                "30s",
+                "1m",
+                "5m",
+                "15m",
+                "30m",
+                "1h",
+                "2h",
+                "1d"
+            ],
+            "time_options": [
+                "5m",
+                "15m",
+                "1h",
+                "6h",
+                "12h",
+                "24h",
+                "2d",
+                "7d",
+                "30d"
+            ]
+        },
+        "timezone": "UTC",
         "title": "Node Exporter / Kernel Stack Cost & AF_PACKET",
         "uid": "node-kernel-stack-af-packet",
-        "version": 1
+        "version": 0
     }
 kind: ConfigMap
 metadata:
