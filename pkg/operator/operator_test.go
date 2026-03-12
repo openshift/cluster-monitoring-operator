@@ -561,45 +561,6 @@ func TestGenerateRunReportFromTaskErrors(t *testing.T) {
 	}
 }
 
-func TestApplyUserDefinedMode(t *testing.T) {
-	for _, tc := range []struct {
-		name     string
-		udm      configv1alpha1.UserDefinedMonitoring
-		expected *bool
-	}{
-		{
-			name:     "Disabled",
-			udm:      configv1alpha1.UserDefinedMonitoring{Mode: configv1alpha1.UserDefinedDisabled},
-			expected: ptr.To(false),
-		},
-		{
-			name:     "NamespaceIsolated",
-			udm:      configv1alpha1.UserDefinedMonitoring{Mode: configv1alpha1.UserDefinedNamespaceIsolated},
-			expected: ptr.To(true),
-		},
-		{
-			name:     "empty mode",
-			udm:      configv1alpha1.UserDefinedMonitoring{},
-			expected: nil,
-		},
-		{
-			name:     "unknown mode",
-			udm:      configv1alpha1.UserDefinedMonitoring{Mode: "Unknown"},
-			expected: nil,
-		},
-	} {
-		t.Run(tc.name, func(t *testing.T) {
-			got := applyUserDefinedMode(tc.udm)
-			if tc.expected == nil {
-				require.Nil(t, got)
-				return
-			}
-			require.NotNil(t, got)
-			require.Equal(t, *tc.expected, *got)
-		})
-	}
-}
-
 func TestMergeClusterMonitoringCRD(t *testing.T) {
 	ptrFalse := ptr.To(false)
 	ptrTrue := ptr.To(true)
@@ -660,10 +621,8 @@ func TestMergeClusterMonitoringCRD(t *testing.T) {
 		},
 	} {
 		t.Run(tc.name, func(t *testing.T) {
-			o := &Operator{}
-			out, err := o.mergeClusterMonitoringCRD(tc.c, tc.cm)
-			require.NoError(t, err)
-			require.Same(t, tc.c, out)
+			tc.c.MergeClusterMonitoringCRD(tc.cm)
+			out := tc.c
 			if tc.expectValue != nil {
 				require.NotNil(t, out.ClusterMonitoringConfiguration)
 				require.NotNil(t, out.ClusterMonitoringConfiguration.UserWorkloadEnabled)
