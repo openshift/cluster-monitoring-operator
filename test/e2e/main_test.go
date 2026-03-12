@@ -35,6 +35,10 @@ import (
 
 var f *framework.Framework
 
+// clusterMonitoringCRDAvailable is set once in testMain(); tests that require the
+// ClusterMonitoring CRD (TechPreview / ClusterMonitoringConfig feature gate) should Skip when false.
+var clusterMonitoringCRDAvailable bool
+
 func TestMain(m *testing.M) {
 	if err := testMain(m); err != nil {
 		log.Fatal(err)
@@ -122,6 +126,11 @@ func testMain(m *testing.M) error {
 	})
 	if err != nil {
 		return fmt.Errorf("wait for prometheus-k8s: %w: %w", loopErr, err)
+	}
+
+	_, err = f.OpenShiftConfigClient.ConfigV1alpha1().ClusterMonitorings().List(ctx, metav1.ListOptions{Limit: 1})
+	if err == nil {
+		clusterMonitoringCRDAvailable = true
 	}
 
 	if m.Run() != 0 {
