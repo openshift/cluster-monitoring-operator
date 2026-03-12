@@ -226,7 +226,7 @@ func Main() int {
 	}
 	apiServerConfigAdapter := manifests.NewAPIServerConfig(apiServerConfig)
 	klog.Infof(
-		"TLS configuration: minimum version=%q, ciphers=[%s]",
+		"TLS configuration (read from the cluster TLS security profile): minimum version=%q, ciphers=[%s]",
 		apiServerConfigAdapter.MinTLSVersion(),
 		strings.Join(apiServerConfigAdapter.TLSCiphers(), ","),
 	)
@@ -279,6 +279,7 @@ func Main() int {
 		return 1
 	}
 
+	// Catch any configuration error before running the server.
 	if err := srv.Prepare(ctx); err != nil {
 		fmt.Fprint(os.Stderr, err)
 		return 1

@@ -188,7 +188,7 @@ type Operator struct {
 	lastKnownConsoleConfig       *configv1.Console
 
 	client *client.Client
-	stop   func()
+	cancel func()
 
 	cmapInf              cache.SharedIndexInformer
 	informers            []cache.SharedIndexInformer
@@ -236,7 +236,7 @@ func New(
 		namespace:                 namespace,
 		namespaceUserWorkload:     namespaceUserWorkload,
 		client:                    c,
-		stop:                      cancel,
+		cancel:                    cancel,
 		queue: workqueue.NewTypedRateLimitingQueueWithConfig[string](
 			workqueue.NewTypedItemExponentialFailureRateLimiter[string](50*time.Millisecond, 3*time.Minute),
 			workqueue.TypedRateLimitingQueueConfig[string]{Name: "cluster-monitoring"},
@@ -638,7 +638,7 @@ func (o *Operator) handleEvent(obj interface{}) {
 			// Trigger a restart of the process to read the new TLS
 			// configuration.
 			klog.Info("Detected changes to the TLS profile configuration, stopping the process")
-			o.stop()
+			o.cancel()
 		}
 		return
 	case *configv1.Infrastructure,
