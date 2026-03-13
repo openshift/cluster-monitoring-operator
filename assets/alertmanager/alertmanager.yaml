@@ -128,6 +128,7 @@ spec:
     terminationMessagePolicy: FallbackToLogsOnError
   image: ""
   listenLocal: true
+  minReadySeconds: 90
   nodeSelector:
     kubernetes.io/os: linux
   podMetadata:

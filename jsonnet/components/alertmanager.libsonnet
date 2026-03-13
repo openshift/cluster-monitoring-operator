@@ -238,6 +238,18 @@ function(params)
       spec+: {
         // The value of alertmanagerConfigSelector is defined at runtime by the Cluster Monitoring Operator.
         alertmanagerConfigSelector: null,
+        // Setting minReadySeconds to the default Prometheus resend delay (60s)
+        // with a 50% margin. During roll-out, the statefulset controller will
+        // wait that amount of time (after the updated pod is ready) before
+        // updating the next Alertmanager pod.
+        //
+        // The setting has 2 effects:
+        // - The updated Alertmanager pod should have received all active
+        //   alerts from Prometheus before the next pod is teared down.
+        // - The updated Alertmanager pod will delay alert dispatch by the same
+        //   amount of time, reducing the likelihood of unwanted notifications for
+        //   inhibited alerts.
+        minReadySeconds: 90,
         podMetadata+: {
           annotations+: {
             'openshift.io/required-scc': 'nonroot',
