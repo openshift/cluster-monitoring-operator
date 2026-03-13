@@ -50,7 +50,7 @@ func TestPrometheusMetrics(t *testing.T) {
 				t, time.Minute, fmt.Sprintf(`count(last_over_time(up{service="%s",namespace="openshift-monitoring"}[1m]) == 1)`, service),
 				func(v float64) error {
 					if v != float64(metric) {
-						return fmt.Errorf("expected %d targets to be up but got %f", metric, v)
+						return fmt.Errorf("expected %d targets to be up but got %v", metric, v)
 					}
 
 					return nil

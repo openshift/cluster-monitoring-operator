@@ -29,6 +29,13 @@ spec:
         app.kubernetes.io/part-of: openshift-monitoring
     spec:
       affinity:
+        nodeAffinity:
+          preferredDuringSchedulingIgnoredDuringExecution:
+          - preference:
+              matchExpressions:
+              - key: node-role.kubernetes.io/control-plane
+                operator: Exists
+            weight: 100
         podAntiAffinity:
           requiredDuringSchedulingIgnoredDuringExecution:
           - labelSelector:
@@ -103,6 +110,9 @@ spec:
       priorityClassName: system-cluster-critical
       serviceAccountName: metrics-server
       terminationGracePeriodSeconds: 170
+      tolerations:
+      - effect: NoSchedule
+        key: node-role.kubernetes.io/master
       volumes:
       - name: secret-metrics-server-client-certs
         secret:
