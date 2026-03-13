@@ -69,7 +69,7 @@ data:
                 "linewidth": 1,
                 "targets": [
                     {
-                        "expr": "sum(rate(node_cpu_seconds_total{job=\"node-exporter\", mode=\"system\"}[5m])) by (instance, cpu) / sum(rate(node_cpu_seconds_total{job=\"node-exporter\"}[5m])) by (instance, cpu)",
+                        "expr": "sum(rate(node_cpu_seconds_total{job=\"node-exporter\", mode=\"system\"}[1m])) by (instance, cpu) / sum(rate(node_cpu_seconds_total{job=\"node-exporter\"}[1m])) by (instance, cpu)",
                         "format": "time_series",
                         "legendFormat": "{{instance}} cpu{{cpu}}",
                         "refId": "A"
@@ -111,7 +111,7 @@ data:
                 "linewidth": 1,
                 "targets": [
                     {
-                        "expr": "sum(rate(node_cpu_seconds_total{job=\"node-exporter\", mode=\"softirq\"}[5m])) by (instance, cpu) / sum(rate(node_cpu_seconds_total{job=\"node-exporter\"}[5m])) by (instance, cpu)",
+                        "expr": "sum(rate(node_cpu_seconds_total{job=\"node-exporter\", mode=\"softirq\"}[1m])) by (instance, cpu) / sum(rate(node_cpu_seconds_total{job=\"node-exporter\"}[1m])) by (instance, cpu)",
                         "format": "time_series",
                         "legendFormat": "{{instance}} cpu{{cpu}}",
                         "refId": "A"
@@ -153,7 +153,7 @@ data:
                 "linewidth": 1,
                 "targets": [
                     {
-                        "expr": "sum(rate(node_cpu_seconds_total{job=\"node-exporter\", mode=\"irq\"}[5m])) by (instance, cpu) / sum(rate(node_cpu_seconds_total{job=\"node-exporter\"}[5m])) by (instance, cpu)",
+                        "expr": "sum(rate(node_cpu_seconds_total{job=\"node-exporter\", mode=\"irq\"}[1m])) by (instance, cpu) / sum(rate(node_cpu_seconds_total{job=\"node-exporter\"}[1m])) by (instance, cpu)",
                         "format": "time_series",
                         "legendFormat": "{{instance}} cpu{{cpu}}",
                         "refId": "A"
@@ -219,9 +219,9 @@ data:
                 "stack": false,
                 "targets": [
                     {
-                        "expr": "rate(node_intr_total{job=\"node-exporter\"}[5m])",
+                        "expr":"topk(100, rate(node_intr_total{}[1m]))",
                         "format": "time_series",
-                        "legendFormat": "{{instance}} cpu{{cpu}} {{device}}",
+                        "legendFormat": "{{instance}} cpu{{cpu}} {{devices}}",
                         "refId": "A"
                     }
                 ],
@@ -257,9 +257,9 @@ data:
                 "stack": true,
                 "targets": [
                     {
-                        "expr": "rate(node_intr_total{job=\"node-exporter\", device=~\".*TxRx.*|.*eno.*|.*net.*\"}[5m])",
+                        "expr": "topk(100, rate(node_interrupts_total{devices=~\".*TxRx.*|.*eno.*|.*net.*\"}[1m]))",
                         "format": "time_series",
-                        "legendFormat": "{{instance}} cpu{{cpu}} {{device}}",
+                        "legendFormat": "{{instance}} cpu{{cpu}} {{devices}}",
                         "refId": "A"
                     }
                 ],
@@ -323,7 +323,7 @@ data:
                 "stack": true,
                 "targets": [
                     {
-                        "expr": "sum(rate(node_softirqs_functions_total{job=\"node-exporter\"}[5m])) by (instance, cpu, type) / sum(rate(node_softirqs_functions_total{job=\"node-exporter\"}[5m])) by (instance, cpu)",
+                        "expr": "sum(rate(node_softirqs_functions_total{job=~\"node-exporter.*\"}[1m])) by (instance, cpu, type) / sum(rate(node_softirqs_functions_total{job=~\"node-exporter.*\"}[1m])) by (instance, cpu)",
                         "format": "time_series",
                         "legendFormat": "{{instance}} cpu{{cpu}} {{type}}",
                         "refId": "A"
@@ -361,7 +361,7 @@ data:
                 "lines": true,
                 "targets": [
                     {
-                        "expr": "rate(node_softirqs_functions_total{job=\"node-exporter\", type=\"NET_RX\"}[5m])",
+                        "expr": "rate(node_softirqs_functions_total{job=~\"node-exporter.*\", type=\"NET_RX\"}[1m])",
                         "format": "time_series",
                         "legendFormat": "{{instance}} cpu{{cpu}}",
                         "refId": "A"
@@ -399,7 +399,7 @@ data:
                 "stack": true,
                 "targets": [
                     {
-                        "expr": "rate(node_softirqs_functions_total{job=\"node-exporter\"}[5m])",
+                        "expr": "rate(node_softirqs_functions_total{job=~\"node-exporter.*\"}[1m])",
                         "format": "time_series",
                         "legendFormat": "{{instance}} cpu{{cpu}} {{type}}",
                         "refId": "A"
@@ -450,13 +450,13 @@ data:
                 "lines": true,
                 "targets": [
                     {
-                        "expr": "rate(node_network_receive_bytes_total{job=\"node-exporter\", device!=\"lo\"}[5m])",
+                        "expr": "rate(node_network_receive_bytes_total{job=\"node-exporter\", device!=\"lo\"}[1m])",
                         "format": "time_series",
                         "legendFormat": "{{instance}} {{device}} rx",
                         "refId": "A"
                     },
                     {
-                        "expr": "rate(node_network_transmit_bytes_total{job=\"node-exporter\", device!=\"lo\"}[5m])",
+                        "expr": "rate(node_network_transmit_bytes_total{job=\"node-exporter\", device!=\"lo\"}[1m])",
                         "format": "time_series",
                         "legendFormat": "{{instance}} {{device}} tx",
                         "refId": "B"
@@ -493,13 +493,13 @@ data:
                 "lines": true,
                 "targets": [
                     {
-                        "expr": "rate(node_network_receive_drop_total{job=\"node-exporter\", device!=\"lo\"}[5m])",
+                        "expr": "rate(node_network_receive_drop_total{job=\"node-exporter\", device!=\"lo\"}[1m])",
                         "format": "time_series",
                         "legendFormat": "{{instance}} {{device}} rx drop",
                         "refId": "A"
                     },
                     {
-                        "expr": "rate(node_network_receive_errs_total{job=\"node-exporter\", device!=\"lo\"}[5m])",
+                        "expr": "rate(node_network_receive_errs_total{job=\"node-exporter\", device!=\"lo\"}[1m])",
                         "format": "time_series",
                         "legendFormat": "{{instance}} {{device}} rx errs",
                         "refId": "B"
@@ -593,19 +593,19 @@ data:
                 "lines": true,
                 "targets": [
                     {
-                        "expr": "increase(node_nf_conntrack_stat_drop{job=\"node-exporter\"}[5m])",
+                        "expr": "increase(node_nf_conntrack_stat_drop{job=\"node-exporter\"}[1m])",
                         "format": "time_series",
                         "legendFormat": "{{instance}} drop",
                         "refId": "A"
                     },
                     {
-                        "expr": "increase(node_nf_conntrack_stat_early_drop{job=\"node-exporter\"}[5m])",
+                        "expr": "increase(node_nf_conntrack_stat_early_drop{job=\"node-exporter\"}[1m])",
                         "format": "time_series",
                         "legendFormat": "{{instance}} early_drop",
                         "refId": "B"
                     }
                 ],
-                "title": "Conntrack drops (increase 5m)",
+                "title": "Conntrack drops (increase 1m)",
                 "type": "graph",
                 "yaxes": [
                     {
@@ -650,7 +650,7 @@ data:
                 "lines": true,
                 "targets": [
                     {
-                        "expr": "increase(node_netstat_TcpExt_TCPRcvQDrop{job=\"node-exporter\"}[5m])",
+                        "expr": "increase(node_netstat_TcpExt_TCPRcvQDrop{job=\"node-exporter\"}[1m])",
                         "format": "time_series",
                         "legendFormat": "{{instance}} TCP rcvq drop",
                         "refId": "A"
@@ -687,13 +687,13 @@ data:
                 "lines": true,
                 "targets": [
                     {
-                        "expr": "increase(node_netstat_TcpExt_ListenOverflows{job=\"node-exporter\"}[5m])",
+                        "expr": "increase(node_netstat_TcpExt_ListenOverflows{job=\"node-exporter\"}[1m])",
                         "format": "time_series",
                         "legendFormat": "{{instance}} ListenOverflows",
                         "refId": "A"
                     },
                     {
-                        "expr": "increase(node_netstat_TcpExt_ListenDrops{job=\"node-exporter\"}[5m])",
+                        "expr": "increase(node_netstat_TcpExt_ListenDrops{job=\"node-exporter\"}[1m])",
                         "format": "time_series",
                         "legendFormat": "{{instance}} ListenDrops",
                         "refId": "B"
@@ -730,13 +730,13 @@ data:
                 "lines": true,
                 "targets": [
                     {
-                        "expr": "increase(node_netstat_Udp_RcvbufErrors{job=\"node-exporter\"}[5m])",
+                        "expr": "increase(node_netstat_Udp_RcvbufErrors{job=\"node-exporter\"}[1m])",
                         "format": "time_series",
                         "legendFormat": "{{instance}} UDP RcvbufErrors",
                         "refId": "A"
                     },
                     {
-                        "expr": "increase(node_netstat_Udp_SndbufErrors{job=\"node-exporter\"}[5m])",
+                        "expr": "increase(node_netstat_Udp_SndbufErrors{job=\"node-exporter\"}[1m])",
                         "format": "time_series",
                         "legendFormat": "{{instance}} UDP SndbufErrors",
                         "refId": "B"
@@ -907,13 +907,13 @@ data:
                 "lines": true,
                 "targets": [
                     {
-                        "expr": "rate(node_pressure_memory_stalled_seconds_total{job=\"node-exporter\"}[5m])",
+                        "expr": "rate(node_pressure_memory_stalled_seconds_total{job=~\"node-exporter.*\"}[1m])",
                         "format": "time_series",
                         "legendFormat": "{{instance}} stalled",
                         "refId": "A"
                     },
                     {
-                        "expr": "rate(node_pressure_memory_waiting_seconds_total{job=\"node-exporter\"}[5m])",
+                        "expr": "rate(node_pressure_memory_waiting_seconds_total{job=~\"node-exporter.*\"}[1m])",
                         "format": "time_series",
                         "legendFormat": "{{instance}} waiting",
                         "refId": "B"
@@ -950,13 +950,13 @@ data:
                 "lines": true,
                 "targets": [
                     {
-                        "expr": "rate(node_pressure_io_stalled_seconds_total{job=\"node-exporter\"}[5m])",
+                        "expr": "rate(node_pressure_io_stalled_seconds_total{job=~\"node-exporter.*\"}[1m])",
                         "format": "time_series",
                         "legendFormat": "{{instance}} stalled",
                         "refId": "A"
                     },
                     {
-                        "expr": "rate(node_pressure_cpu_waiting_seconds_total{job=\"node-exporter\"}[5m])",
+                        "expr": "rate(node_pressure_cpu_waiting_seconds_total{job=~\"node-exporter.*\"}[1m])",
                         "format": "time_series",
                         "legendFormat": "{{instance}} cpu waiting",
                         "refId": "B"
@@ -968,67 +968,6 @@ data:
                     {
                         "format": "percentunit",
                         "min": 0,
-                        "show": true
-                    },
-                    {
-                        "show": false
-                    }
-                ]
-            },
-            {
-                "gridPos": {
-                    "h": 1,
-                    "w": 24,
-                    "x": 0,
-                    "y": 105
-                },
-                "id": 122,
-                "panels": [],
-                "showTitle": true,
-                "title": "Node config (optional \u2014 isolated CPUs, PCIe, memory banks)",
-                "titleSize": "h6",
-                "type": "row"
-            },
-            {
-                "datasource": "$datasource",
-                "gridPos": {
-                    "h": 6,
-                    "w": 12,
-                    "x": 0,
-                    "y": 106
-                },
-                "id": 123,
-                "legend": {
-                    "show": true
-                },
-                "lines": true,
-                "targets": [
-                    {
-                        "expr": "node_nodeconfig_cores_dedicated{job=\"node-exporter\"}",
-                        "format": "time_series",
-                        "legendFormat": "{{instance}} cores_dedicated",
-                        "refId": "A"
-                    },
-                    {
-                        "expr": "node_nodeconfig_pcie_slot_ok{job=\"node-exporter\"}",
-                        "format": "time_series",
-                        "legendFormat": "{{instance}} pcie_slot_ok",
-                        "refId": "B"
-                    },
-                    {
-                        "expr": "node_nodeconfig_memory_banks_full{job=\"node-exporter\"}",
-                        "format": "time_series",
-                        "legendFormat": "{{instance}} memory_banks_full",
-                        "refId": "C"
-                    }
-                ],
-                "title": "Nodeconfig flags",
-                "type": "graph",
-                "yaxes": [
-                    {
-                        "format": "short",
-                        "min": 0,
-                        "max": 1,
                         "show": true
                     },
                     {
@@ -1068,7 +1007,7 @@ data:
                 "lines": true,
                 "targets": [
                     {
-                        "expr": "sum(rate(node_zoneinfo_numa_miss_total{job=\"node-exporter\"}[5m])) by (instance, node) / (sum(rate(node_zoneinfo_numa_hit_total{job=\"node-exporter\"}[5m])) by (instance, node) + sum(rate(node_zoneinfo_numa_miss_total{job=\"node-exporter\"}[5m])) by (instance, node))",
+                        "expr": "sum(rate(node_zoneinfo_numa_miss_total{}[1m])) by (instance, node) / (sum(rate(node_zoneinfo_numa_hit_total{}[1m])) by (instance, node) + sum(rate(node_zoneinfo_numa_miss_total{}[1m])) by (instance, node))",
                         "format": "time_series",
                         "legendFormat": "{{instance}} node{{node}}",
                         "refId": "A"
