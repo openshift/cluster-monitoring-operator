@@ -116,6 +116,7 @@ spec:
     key: query.yaml
     name: thanos-ruler-query-config
   replicas: 2
+  resendDelay: 60s
   resources:
     requests:
       cpu: 1m

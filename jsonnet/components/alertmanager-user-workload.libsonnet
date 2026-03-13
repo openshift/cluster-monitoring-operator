@@ -199,6 +199,8 @@ function(params)
         // The value of alertmanagerConfigSelector is defined at runtime by the Cluster Monitoring Operator.
         alertmanagerConfigSelector: null,
         automountServiceAccountToken: true,
+        // See jsonnet/components/alertmanager.libsonnet for the explanation about minReadySeconds.
+        minReadySeconds: 90,
         securityContext: {
           fsGroup: 65534,
           runAsNonRoot: true,

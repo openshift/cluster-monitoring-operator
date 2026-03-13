@@ -357,6 +357,15 @@ function(params)
             },
           },
         },
+        rules+: {
+          alert+: {
+            // Set the resend delay explicitly to match with the Alertmanager's
+            // min ready seconds value of 90s. It ensures that Prometheus has
+            // sent all active alerts to a newly rolled-out Alertmanager pod
+            // before Kubernetes updates the next one.
+            resendDelay: '60s',
+          },
+        },
         podMetadata+: {
           annotations+: {
             'openshift.io/required-scc': 'nonroot',
