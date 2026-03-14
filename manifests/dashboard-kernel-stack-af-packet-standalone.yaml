@@ -1,0 +1,1092 @@
+# Dashboard for Node Exporter / Kernel Stack Cost & AF_PACKET (isolated CPUs, DPDK).
+# Aligned with the framework used in 0000_90_cluster-monitoring-operator_01-dashboards.yaml
+# and 0000_90_cluster-monitoring-operator_02-dashboards.yaml.
+---
+apiVersion: v1
+data:
+  kernel-stack-af-packet.json: |-
+    {
+        "annotations": {
+            "list": []
+        },
+        "editable": true,
+        "gnetId": null,
+        "graphTooltip": 1,
+        "hideControls": false,
+        "id": null,
+        "links": [],
+        "refresh": "30s",
+        "panels": [
+            {
+                "content": "For **CPUs that are isolated and pinned to a workload (e.g. DPDK)**, the panels below show:\n\n- **What percentage of their time** is spent on kernel work (e.g. kernel networking)\n- **Breakdown by function type** (e.g. NET_RX, NET_TX) to identify **which kernel function is consuming cycles** on CPUs that should be dedicated to userspace packet processing.",
+                "gridPos": {
+                    "h": 3,
+                    "w": 24,
+                    "x": 0,
+                    "y": 0
+                },
+                "id": 99,
+                "mode": "markdown",
+                "panels": [],
+                "title": "",
+                "type": "text"
+            },
+            {
+                "gridPos": {
+                    "h": 1,
+                    "w": 24,
+                    "x": 0,
+                    "y": 3
+                },
+                "id": 100,
+                "panels": [],
+                "repeat": null,
+                "showTitle": true,
+                "title": "Isolated / pinned CPUs (e.g. DPDK) \u2014 kernel work % and breakdown by function type",
+                "titleSize": "h6",
+                "type": "row"
+            },
+            {
+                "datasource": "$datasource",
+                "gridPos": {
+                    "h": 8,
+                    "w": 8,
+                    "x": 0,
+                    "y": 4
+                },
+                "id": 101,
+                "legend": {
+                    "show": true,
+                    "alignAsTable": true,
+                    "avg": false,
+                    "current": true,
+                    "max": false,
+                    "min": false,
+                    "rightSide": true,
+                    "values": true
+                },
+                "lines": true,
+                "linewidth": 1,
+                "targets": [
+                    {
+                        "expr": "sum(rate(node_cpu_seconds_total{job=\"node-exporter\", mode=\"system\"}[1m])) by (instance, cpu) / sum(rate(node_cpu_seconds_total{job=\"node-exporter\"}[1m])) by (instance, cpu)",
+                        "format": "time_series",
+                        "legendFormat": "{{instance}} cpu{{cpu}}",
+                        "refId": "A"
+                    }
+                ],
+                "title": "System time % per CPU (kernel / syscalls)",
+                "type": "graph",
+                "yaxes": [
+                    {
+                        "format": "percentunit",
+                        "min": 0,
+                        "show": true
+                    },
+                    {
+                        "show": false
+                    }
+                ]
+            },
+            {
+                "datasource": "$datasource",
+                "gridPos": {
+                    "h": 8,
+                    "w": 8,
+                    "x": 8,
+                    "y": 4
+                },
+                "id": 102,
+                "legend": {
+                    "show": true,
+                    "alignAsTable": true,
+                    "avg": false,
+                    "current": true,
+                    "max": false,
+                    "min": false,
+                    "rightSide": true,
+                    "values": true
+                },
+                "lines": true,
+                "linewidth": 1,
+                "targets": [
+                    {
+                        "expr": "sum(rate(node_cpu_seconds_total{job=\"node-exporter\", mode=\"softirq\"}[1m])) by (instance, cpu) / sum(rate(node_cpu_seconds_total{job=\"node-exporter\"}[1m])) by (instance, cpu)",
+                        "format": "time_series",
+                        "legendFormat": "{{instance}} cpu{{cpu}}",
+                        "refId": "A"
+                    }
+                ],
+                "title": "Softirq time % per CPU (e.g. NET_RX / NET_TX)",
+                "type": "graph",
+                "yaxes": [
+                    {
+                        "format": "percentunit",
+                        "min": 0,
+                        "show": true
+                    },
+                    {
+                        "show": false
+                    }
+                ]
+            },
+            {
+                "datasource": "$datasource",
+                "gridPos": {
+                    "h": 8,
+                    "w": 8,
+                    "x": 16,
+                    "y": 4
+                },
+                "id": 126,
+                "legend": {
+                    "show": true,
+                    "alignAsTable": true,
+                    "avg": false,
+                    "current": true,
+                    "max": false,
+                    "min": false,
+                    "rightSide": true,
+                    "values": true
+                },
+                "lines": true,
+                "linewidth": 1,
+                "targets": [
+                    {
+                        "expr": "sum(rate(node_cpu_seconds_total{job=\"node-exporter\", mode=\"irq\"}[1m])) by (instance, cpu) / sum(rate(node_cpu_seconds_total{job=\"node-exporter\"}[1m])) by (instance, cpu)",
+                        "format": "time_series",
+                        "legendFormat": "{{instance}} cpu{{cpu}}",
+                        "refId": "A"
+                    }
+                ],
+                "title": "IRQ time % per CPU (hard interrupts)",
+                "type": "graph",
+                "yaxes": [
+                    {
+                        "format": "percentunit",
+                        "min": 0,
+                        "show": true
+                    },
+                    {
+                        "show": false
+                    }
+                ]
+            },
+            {
+                "gridPos": {
+                    "h": 1,
+                    "w": 24,
+                    "x": 0,
+                    "y": 12
+                },
+                "id": 136,
+                "panels": [],
+                "showTitle": true,
+                "title": "IRQ per CPU (which device hits which CPU) \u2014 map interrupts to isolate DPDK CPUs",
+                "titleSize": "h6",
+                "type": "row"
+            },
+            {
+                "content": "**IRQ-to-CPU mapping:** Node exporter exposes **node_intr_total** (from /proc/interrupts) when the **interrupts** collector is enabled (e.g. **--collector.interrupts**). It is **disabled by default** due to high cardinality. When enabled, the panels below show **IRQ rate per CPU by device** so you can see which NIC/device queue (e.g. eno1np0-TxRx-2) is hitting which CPU \u2014 e.g. to explain softirq on an isolated CPU and to tune IRQ affinity.",
+                "gridPos": {
+                    "h": 2,
+                    "w": 24,
+                    "x": 0,
+                    "y": 13
+                },
+                "id": 133,
+                "mode": "markdown",
+                "panels": [],
+                "title": "",
+                "type": "text"
+            },
+            {
+                "datasource": "$datasource",
+                "gridPos": {
+                    "h": 8,
+                    "w": 24,
+                    "x": 0,
+                    "y": 14
+                },
+                "id": 134,
+                "legend": {
+                    "show": true,
+                    "alignAsTable": true,
+                    "current": true,
+                    "values": true
+                },
+                "lines": true,
+                "stack": false,
+                "targets": [
+                    {
+                        "expr":"topk(100, rate(node_intr_total{}[1m]))",
+                        "format": "time_series",
+                        "legendFormat": "{{instance}} cpu{{cpu}} {{devices}}",
+                        "refId": "A"
+                    }
+                ],
+                "title": "IRQ rate per CPU by device (which device hits which CPU)",
+                "type": "graph",
+                "yaxes": [
+                    {
+                        "format": "ops",
+                        "min": 0,
+                        "show": true
+                    },
+                    {
+                        "show": false
+                    }
+                ]
+            },
+            {
+                "datasource": "$datasource",
+                "gridPos": {
+                    "h": 8,
+                    "w": 24,
+                    "x": 0,
+                    "y": 22
+                },
+                "id": 135,
+                "legend": {
+                    "show": true,
+                    "alignAsTable": true,
+                    "current": true,
+                    "values": true
+                },
+                "lines": true,
+                "stack": true,
+                "targets": [
+                    {
+                        "expr": "topk(100, rate(node_interrupts_total{devices=~\".*TxRx.*|.*eno.*|.*net.*\"}[1m]))",
+                        "format": "time_series",
+                        "legendFormat": "{{instance}} cpu{{cpu}} {{devices}}",
+                        "refId": "A"
+                    }
+                ],
+                "title": "IRQ rate per CPU (network devices only \u2014 NIC queues)",
+                "type": "graph",
+                "yaxes": [
+                    {
+                        "format": "ops",
+                        "min": 0,
+                        "show": true
+                    },
+                    {
+                        "show": false
+                    }
+                ]
+            },
+            {
+                "gridPos": {
+                    "h": 1,
+                    "w": 24,
+                    "x": 0,
+                    "y": 30
+                },
+                "id": 103,
+                "panels": [],
+                "showTitle": true,
+                "title": "Softirq breakdown by function type (NET_RX, NET_TX, etc.) \u2014 which kernel function consumes cycles",
+                "titleSize": "h6",
+                "type": "row"
+            },
+            {
+                "content": "**Which kernel function on DPDK CPUs?** Linux exposes softirq **invocation counts** per type (not per-type CPU time). So we show **share of softirq invocations per CPU** below: the type that dominates (e.g. NET_RX) is the one most likely consuming cycles on that CPU. Combine with **Softirq time % per CPU** above to confirm kernel networking is the culprit.",
+                "gridPos": {
+                    "h": 2,
+                    "w": 24,
+                    "x": 0,
+                    "y": 31
+                },
+                "id": 131,
+                "mode": "markdown",
+                "panels": [],
+                "title": "",
+                "type": "text"
+            },
+            {
+                "datasource": "$datasource",
+                "gridPos": {
+                    "h": 8,
+                    "w": 24,
+                    "x": 0,
+                    "y": 33
+                },
+                "id": 132,
+                "legend": {
+                    "show": true,
+                    "alignAsTable": true,
+                    "current": true,
+                    "values": true
+                },
+                "lines": true,
+                "stack": true,
+                "targets": [
+                    {
+                        "expr": "sum(rate(node_softirqs_functions_total{job=~\"node-exporter.*\"}[1m])) by (instance, cpu, type) / sum(rate(node_softirqs_functions_total{job=~\"node-exporter.*\"}[1m])) by (instance, cpu)",
+                        "format": "time_series",
+                        "legendFormat": "{{instance}} cpu{{cpu}} {{type}}",
+                        "refId": "A"
+                    }
+                ],
+                "title": "Per CPU: which kernel function? (softirq type as % of softirq invocations)",
+                "type": "graph",
+                "yaxes": [
+                    {
+                        "format": "percentunit",
+                        "min": 0,
+                        "max": 1,
+                        "show": true
+                    },
+                    {
+                        "show": false
+                    }
+                ]
+            },
+            {
+                "datasource": "$datasource",
+                "gridPos": {
+                    "h": 8,
+                    "w": 12,
+                    "x": 0,
+                    "y": 41
+                },
+                "id": 104,
+                "legend": {
+                    "show": true,
+                    "alignAsTable": true,
+                    "current": true,
+                    "values": true
+                },
+                "lines": true,
+                "targets": [
+                    {
+                        "expr": "rate(node_softirqs_functions_total{job=~\"node-exporter.*\", type=\"NET_RX\"}[1m])",
+                        "format": "time_series",
+                        "legendFormat": "{{instance}} cpu{{cpu}}",
+                        "refId": "A"
+                    }
+                ],
+                "title": "NET_RX softirq rate per CPU (invocations/s)",
+                "type": "graph",
+                "yaxes": [
+                    {
+                        "format": "ops",
+                        "min": 0,
+                        "show": true
+                    },
+                    {
+                        "show": false
+                    }
+                ]
+            },
+            {
+                "datasource": "$datasource",
+                "gridPos": {
+                    "h": 8,
+                    "w": 12,
+                    "x": 12,
+                    "y": 41
+                },
+                "id": 130,
+                "legend": {
+                    "show": true,
+                    "alignAsTable": true,
+                    "current": true,
+                    "values": true
+                },
+                "lines": true,
+                "stack": true,
+                "targets": [
+                    {
+                        "expr": "rate(node_softirqs_functions_total{job=~\"node-exporter.*\"}[1m])",
+                        "format": "time_series",
+                        "legendFormat": "{{instance}} cpu{{cpu}} {{type}}",
+                        "refId": "A"
+                    }
+                ],
+                "title": "All softirq types per CPU (invocation rate)",
+                "type": "graph",
+                "yaxes": [
+                    {
+                        "format": "ops",
+                        "min": 0,
+                        "show": true
+                    },
+                    {
+                        "show": false
+                    }
+                ]
+            },
+            {
+                "gridPos": {
+                    "h": 1,
+                    "w": 24,
+                    "x": 0,
+                    "y": 49
+                },
+                "id": 105,
+                "panels": [],
+                "showTitle": true,
+                "title": "Network throughput and drops",
+                "titleSize": "h6",
+                "type": "row"
+            },
+            {
+                "datasource": "$datasource",
+                "gridPos": {
+                    "h": 8,
+                    "w": 12,
+                    "x": 0,
+                    "y": 50
+                },
+                "id": 106,
+                "legend": {
+                    "show": true,
+                    "alignAsTable": true,
+                    "current": true,
+                    "values": true
+                },
+                "lines": true,
+                "targets": [
+                    {
+                        "expr": "rate(node_network_receive_bytes_total{job=\"node-exporter\", device!=\"lo\"}[1m])",
+                        "format": "time_series",
+                        "legendFormat": "{{instance}} {{device}} rx",
+                        "refId": "A"
+                    },
+                    {
+                        "expr": "rate(node_network_transmit_bytes_total{job=\"node-exporter\", device!=\"lo\"}[1m])",
+                        "format": "time_series",
+                        "legendFormat": "{{instance}} {{device}} tx",
+                        "refId": "B"
+                    }
+                ],
+                "title": "Network throughput (bytes/s)",
+                "type": "graph",
+                "yaxes": [
+                    {
+                        "format": "Bps",
+                        "min": 0,
+                        "show": true
+                    },
+                    {
+                        "show": false
+                    }
+                ]
+            },
+            {
+                "datasource": "$datasource",
+                "gridPos": {
+                    "h": 8,
+                    "w": 12,
+                    "x": 12,
+                    "y": 50
+                },
+                "id": 107,
+                "legend": {
+                    "show": true,
+                    "alignAsTable": true,
+                    "current": true,
+                    "values": true
+                },
+                "lines": true,
+                "targets": [
+                    {
+                        "expr": "rate(node_network_receive_drop_total{job=\"node-exporter\", device!=\"lo\"}[1m])",
+                        "format": "time_series",
+                        "legendFormat": "{{instance}} {{device}} rx drop",
+                        "refId": "A"
+                    },
+                    {
+                        "expr": "rate(node_network_receive_errs_total{job=\"node-exporter\", device!=\"lo\"}[1m])",
+                        "format": "time_series",
+                        "legendFormat": "{{instance}} {{device}} rx errs",
+                        "refId": "B"
+                    }
+                ],
+                "title": "Receive drops and errors (rate)",
+                "type": "graph",
+                "yaxes": [
+                    {
+                        "format": "ops",
+                        "min": 0,
+                        "show": true
+                    },
+                    {
+                        "show": false
+                    }
+                ]
+            },
+            {
+                "gridPos": {
+                    "h": 1,
+                    "w": 24,
+                    "x": 0,
+                    "y": 58
+                },
+                "id": 108,
+                "panels": [],
+                "showTitle": true,
+                "title": "Conntrack (nf_conntrack) \u2014 table full \u2192 packet drops",
+                "titleSize": "h6",
+                "type": "row"
+            },
+            {
+                "datasource": "$datasource",
+                "gridPos": {
+                    "h": 8,
+                    "w": 12,
+                    "x": 0,
+                    "y": 59
+                },
+                "id": 109,
+                "legend": {
+                    "show": true,
+                    "alignAsTable": true,
+                    "current": true,
+                    "values": true
+                },
+                "lines": true,
+                "targets": [
+                    {
+                        "expr": "node_nf_conntrack_entries{job=\"node-exporter\"}",
+                        "format": "time_series",
+                        "legendFormat": "{{instance}} entries",
+                        "refId": "A"
+                    },
+                    {
+                        "expr": "node_nf_conntrack_entries_limit{job=\"node-exporter\"}",
+                        "format": "time_series",
+                        "legendFormat": "{{instance}} limit",
+                        "refId": "B"
+                    }
+                ],
+                "title": "Conntrack entries vs limit",
+                "type": "graph",
+                "yaxes": [
+                    {
+                        "format": "short",
+                        "min": 0,
+                        "show": true
+                    },
+                    {
+                        "show": false
+                    }
+                ]
+            },
+            {
+                "datasource": "$datasource",
+                "gridPos": {
+                    "h": 8,
+                    "w": 12,
+                    "x": 12,
+                    "y": 59
+                },
+                "id": 110,
+                "legend": {
+                    "show": true,
+                    "alignAsTable": true,
+                    "current": true,
+                    "values": true
+                },
+                "lines": true,
+                "targets": [
+                    {
+                        "expr": "increase(node_nf_conntrack_stat_drop{job=\"node-exporter\"}[1m])",
+                        "format": "time_series",
+                        "legendFormat": "{{instance}} drop",
+                        "refId": "A"
+                    },
+                    {
+                        "expr": "increase(node_nf_conntrack_stat_early_drop{job=\"node-exporter\"}[1m])",
+                        "format": "time_series",
+                        "legendFormat": "{{instance}} early_drop",
+                        "refId": "B"
+                    }
+                ],
+                "title": "Conntrack drops (increase 1m)",
+                "type": "graph",
+                "yaxes": [
+                    {
+                        "format": "short",
+                        "min": 0,
+                        "show": true
+                    },
+                    {
+                        "show": false
+                    }
+                ]
+            },
+            {
+                "gridPos": {
+                    "h": 1,
+                    "w": 24,
+                    "x": 0,
+                    "y": 67
+                },
+                "id": 111,
+                "panels": [],
+                "showTitle": true,
+                "title": "Netstat \u2014 TCP/UDP buffer and listen-queue drops",
+                "titleSize": "h6",
+                "type": "row"
+            },
+            {
+                "datasource": "$datasource",
+                "gridPos": {
+                    "h": 8,
+                    "w": 12,
+                    "x": 0,
+                    "y": 68
+                },
+                "id": 112,
+                "legend": {
+                    "show": true,
+                    "alignAsTable": true,
+                    "current": true,
+                    "values": true
+                },
+                "lines": true,
+                "targets": [
+                    {
+                        "expr": "increase(node_netstat_TcpExt_TCPRcvQDrop{job=\"node-exporter\"}[1m])",
+                        "format": "time_series",
+                        "legendFormat": "{{instance}} TCP rcvq drop",
+                        "refId": "A"
+                    }
+                ],
+                "title": "TCP receive queue drops",
+                "type": "graph",
+                "yaxes": [
+                    {
+                        "format": "short",
+                        "min": 0,
+                        "show": true
+                    },
+                    {
+                        "show": false
+                    }
+                ]
+            },
+            {
+                "datasource": "$datasource",
+                "gridPos": {
+                    "h": 8,
+                    "w": 12,
+                    "x": 12,
+                    "y": 68
+                },
+                "id": 113,
+                "legend": {
+                    "show": true,
+                    "alignAsTable": true,
+                    "current": true,
+                    "values": true
+                },
+                "lines": true,
+                "targets": [
+                    {
+                        "expr": "increase(node_netstat_TcpExt_ListenOverflows{job=\"node-exporter\"}[1m])",
+                        "format": "time_series",
+                        "legendFormat": "{{instance}} ListenOverflows",
+                        "refId": "A"
+                    },
+                    {
+                        "expr": "increase(node_netstat_TcpExt_ListenDrops{job=\"node-exporter\"}[1m])",
+                        "format": "time_series",
+                        "legendFormat": "{{instance}} ListenDrops",
+                        "refId": "B"
+                    }
+                ],
+                "title": "Listen queue overflows and drops",
+                "type": "graph",
+                "yaxes": [
+                    {
+                        "format": "short",
+                        "min": 0,
+                        "show": true
+                    },
+                    {
+                        "show": false
+                    }
+                ]
+            },
+            {
+                "datasource": "$datasource",
+                "gridPos": {
+                    "h": 8,
+                    "w": 12,
+                    "x": 0,
+                    "y": 76
+                },
+                "id": 114,
+                "legend": {
+                    "show": true,
+                    "alignAsTable": true,
+                    "current": true,
+                    "values": true
+                },
+                "lines": true,
+                "targets": [
+                    {
+                        "expr": "increase(node_netstat_Udp_RcvbufErrors{job=\"node-exporter\"}[1m])",
+                        "format": "time_series",
+                        "legendFormat": "{{instance}} UDP RcvbufErrors",
+                        "refId": "A"
+                    },
+                    {
+                        "expr": "increase(node_netstat_Udp_SndbufErrors{job=\"node-exporter\"}[1m])",
+                        "format": "time_series",
+                        "legendFormat": "{{instance}} UDP SndbufErrors",
+                        "refId": "B"
+                    }
+                ],
+                "title": "UDP buffer errors",
+                "type": "graph",
+                "yaxes": [
+                    {
+                        "format": "short",
+                        "min": 0,
+                        "show": true
+                    },
+                    {
+                        "show": false
+                    }
+                ]
+            },
+            {
+                "gridPos": {
+                    "h": 1,
+                    "w": 24,
+                    "x": 0,
+                    "y": 78
+                },
+                "id": 115,
+                "panels": [],
+                "showTitle": true,
+                "title": "Sockstat \u2014 socket memory",
+                "titleSize": "h6",
+                "type": "row"
+            },
+            {
+                "datasource": "$datasource",
+                "gridPos": {
+                    "h": 8,
+                    "w": 12,
+                    "x": 0,
+                    "y": 79
+                },
+                "id": 116,
+                "legend": {
+                    "show": true,
+                    "alignAsTable": true,
+                    "current": true,
+                    "values": true
+                },
+                "lines": true,
+                "targets": [
+                    {
+                        "expr": "node_sockstat_TCP_mem_bytes{job=\"node-exporter\"}",
+                        "format": "time_series",
+                        "legendFormat": "{{instance}} TCP",
+                        "refId": "A"
+                    },
+                    {
+                        "expr": "node_sockstat_UDP_mem_bytes{job=\"node-exporter\"}",
+                        "format": "time_series",
+                        "legendFormat": "{{instance}} UDP",
+                        "refId": "B"
+                    }
+                ],
+                "title": "TCP/UDP socket memory (bytes)",
+                "type": "graph",
+                "yaxes": [
+                    {
+                        "format": "bytes",
+                        "min": 0,
+                        "show": true
+                    },
+                    {
+                        "show": false
+                    }
+                ]
+            },
+            {
+                "gridPos": {
+                    "h": 1,
+                    "w": 24,
+                    "x": 0,
+                    "y": 87
+                },
+                "id": 117,
+                "panels": [],
+                "showTitle": true,
+                "title": "Hugepages (runbook / DPDK context)",
+                "titleSize": "h6",
+                "type": "row"
+            },
+            {
+                "datasource": "$datasource",
+                "gridPos": {
+                    "h": 8,
+                    "w": 12,
+                    "x": 0,
+                    "y": 88
+                },
+                "id": 118,
+                "legend": {
+                    "show": true,
+                    "alignAsTable": true,
+                    "current": true,
+                    "values": true
+                },
+                "lines": true,
+                "targets": [
+                    {
+                        "expr": "node_memory_HugePages_Total{job=\"node-exporter\"}",
+                        "format": "time_series",
+                        "legendFormat": "{{instance}} Total",
+                        "refId": "A"
+                    },
+                    {
+                        "expr": "node_memory_HugePages_Free{job=\"node-exporter\"}",
+                        "format": "time_series",
+                        "legendFormat": "{{instance}} Free",
+                        "refId": "B"
+                    },
+                    {
+                        "expr": "node_memory_HugePages_Rsvd{job=\"node-exporter\"}",
+                        "format": "time_series",
+                        "legendFormat": "{{instance}} Rsvd",
+                        "refId": "C"
+                    }
+                ],
+                "title": "HugePages Total / Free / Rsvd",
+                "type": "graph",
+                "yaxes": [
+                    {
+                        "format": "short",
+                        "min": 0,
+                        "show": true
+                    },
+                    {
+                        "show": false
+                    }
+                ]
+            },
+            {
+                "gridPos": {
+                    "h": 1,
+                    "w": 24,
+                    "x": 0,
+                    "y": 96
+                },
+                "id": 119,
+                "panels": [],
+                "showTitle": true,
+                "title": "Pressure (memory / I/O stall)",
+                "titleSize": "h6",
+                "type": "row"
+            },
+            {
+                "datasource": "$datasource",
+                "gridPos": {
+                    "h": 8,
+                    "w": 12,
+                    "x": 0,
+                    "y": 97
+                },
+                "id": 120,
+                "legend": {
+                    "show": true,
+                    "alignAsTable": true,
+                    "current": true,
+                    "values": true
+                },
+                "lines": true,
+                "targets": [
+                    {
+                        "expr": "rate(node_pressure_memory_stalled_seconds_total{job=~\"node-exporter.*\"}[1m])",
+                        "format": "time_series",
+                        "legendFormat": "{{instance}} stalled",
+                        "refId": "A"
+                    },
+                    {
+                        "expr": "rate(node_pressure_memory_waiting_seconds_total{job=~\"node-exporter.*\"}[1m])",
+                        "format": "time_series",
+                        "legendFormat": "{{instance}} waiting",
+                        "refId": "B"
+                    }
+                ],
+                "title": "Memory pressure",
+                "type": "graph",
+                "yaxes": [
+                    {
+                        "format": "percentunit",
+                        "min": 0,
+                        "show": true
+                    },
+                    {
+                        "show": false
+                    }
+                ]
+            },
+            {
+                "datasource": "$datasource",
+                "gridPos": {
+                    "h": 8,
+                    "w": 12,
+                    "x": 12,
+                    "y": 97
+                },
+                "id": 121,
+                "legend": {
+                    "show": true,
+                    "alignAsTable": true,
+                    "current": true,
+                    "values": true
+                },
+                "lines": true,
+                "targets": [
+                    {
+                        "expr": "rate(node_pressure_io_stalled_seconds_total{job=~\"node-exporter.*\"}[1m])",
+                        "format": "time_series",
+                        "legendFormat": "{{instance}} stalled",
+                        "refId": "A"
+                    },
+                    {
+                        "expr": "rate(node_pressure_cpu_waiting_seconds_total{job=~\"node-exporter.*\"}[1m])",
+                        "format": "time_series",
+                        "legendFormat": "{{instance}} cpu waiting",
+                        "refId": "B"
+                    }
+                ],
+                "title": "I/O and CPU pressure",
+                "type": "graph",
+                "yaxes": [
+                    {
+                        "format": "percentunit",
+                        "min": 0,
+                        "show": true
+                    },
+                    {
+                        "show": false
+                    }
+                ]
+            },
+            {
+                "gridPos": {
+                    "h": 1,
+                    "w": 24,
+                    "x": 0,
+                    "y": 112
+                },
+                "id": 124,
+                "panels": [],
+                "showTitle": true,
+                "title": "NUMA (optional \u2014 zoneinfo / pcidevice)",
+                "titleSize": "h6",
+                "type": "row"
+            },
+            {
+                "datasource": "$datasource",
+                "gridPos": {
+                    "h": 8,
+                    "w": 12,
+                    "x": 0,
+                    "y": 113
+                },
+                "id": 125,
+                "legend": {
+                    "show": true,
+                    "alignAsTable": true,
+                    "current": true,
+                    "values": true
+                },
+                "lines": true,
+                "targets": [
+                    {
+                        "expr": "sum(rate(node_zoneinfo_numa_miss_total{}[1m])) by (instance, node) / (sum(rate(node_zoneinfo_numa_hit_total{}[1m])) by (instance, node) + sum(rate(node_zoneinfo_numa_miss_total{}[1m])) by (instance, node))",
+                        "format": "time_series",
+                        "legendFormat": "{{instance}} node{{node}}",
+                        "refId": "A"
+                    }
+                ],
+                "title": "NUMA miss ratio (per node)",
+                "type": "graph",
+                "yaxes": [
+                    {
+                        "format": "percentunit",
+                        "min": 0,
+                        "show": true
+                    },
+                    {
+                        "show": false
+                    }
+                ]
+            }
+        ],
+        "templating": {
+            "list": [
+                {
+                    "current": {
+                        "text": "default",
+                        "value": "default"
+                    },
+                    "hide": 0,
+                    "label": "Data Source",
+                    "name": "datasource",
+                    "query": "prometheus",
+                    "refresh": 1,
+                    "type": "datasource"
+                }
+            ]
+        },
+        "time": {
+            "from": "now-1h",
+            "to": "now"
+        },
+        "timepicker": {
+            "refresh_intervals": [
+                "5s",
+                "10s",
+                "30s",
+                "1m",
+                "5m",
+                "15m",
+                "30m",
+                "1h",
+                "2h",
+                "1d"
+            ],
+            "time_options": [
+                "5m",
+                "15m",
+                "1h",
+                "6h",
+                "12h",
+                "24h",
+                "2d",
+                "7d",
+                "30d"
+            ]
+        },
+        "timezone": "UTC",
+        "title": "Node Exporter / Kernel Stack Cost & AF_PACKET",
+        "uid": "node-kernel-stack-af-packet",
+        "version": 0
+    }
+kind: ConfigMap
+metadata:
+  annotations:
+    capability.openshift.io/name: Console
+    include.release.openshift.io/hypershift: "true"
+    include.release.openshift.io/ibm-cloud-managed: "true"
+    include.release.openshift.io/self-managed-high-availability: "true"
+    include.release.openshift.io/single-node-developer: "true"
+  labels:
+    app.kubernetes.io/part-of: openshift-monitoring
+    console.openshift.io/dashboard: "true"
+  name: dashboard-kernel-stack-af-packet
+  namespace: openshift-config-managed
