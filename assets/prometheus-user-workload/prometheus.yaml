@@ -304,7 +304,7 @@ spec:
       requests:
         cpu: 1m
         memory: 100Mi
-    version: 0.39.2
+    version: 0.41.0
   version: 3.9.1
   volumes:
   - configMap:
