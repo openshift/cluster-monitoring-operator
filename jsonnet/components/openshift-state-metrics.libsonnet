@@ -1,4 +1,5 @@
 local generateSecret = import '../utils/generate-secret.libsonnet';
+local generateServiceMonitor = import '../utils/generate-service-monitors.libsonnet';
 local withDescription = (import '../utils/add-annotations.libsonnet').withDescription;
 
 function(params) {
@@ -97,6 +98,16 @@ function(params) {
     },
   },
   serviceMonitor: osm.openshiftStateMetrics.serviceMonitor,
+  minimalServiceMonitor: generateServiceMonitor.serviceMonitorForMinimalProfile(self.serviceMonitor),
+  telemetryServiceMonitor: generateServiceMonitor.serviceMonitorForTelemetryProfile(
+    generateServiceMonitor.keepOnlyMetrics(
+      self.serviceMonitor,
+      [
+        'openshift_build_status_phase_total',
+        'openshift_route_info',
+      ]
+    )
+  ),
   networkPolicyDownstream: {
     apiVersion: 'networking.k8s.io/v1',
     kind: 'NetworkPolicy',
