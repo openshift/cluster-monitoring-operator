@@ -12,17 +12,17 @@
                 if !(std.objectHas(o.metadata.labels, 'app.kubernetes.io/name') && o.metadata.labels['app.kubernetes.io/name'] == 'kubelet') then
                   {
                     // For setting serverName the following logic is applied:
-                    // 1. Prometheus thanos sidecar, the SA that is created for thanos sidescars has a
-                    //    different name than the ServiceMonitor. The name format follows the following convention
-                    //    "prometheus-$PROM_INSTANCE-thanos-sidecar", $PROM_INSTANCE is either "k8s" or "user-workload"
-                    // 2. ServiceMonitors that adopted CollectionProfiles end with -$COLLECTION_PROFILE,
-                    //    thus we strip - and $PROFILE_NAME from o.metadata.name
-                    // 3. Default behaviour for the majority of ServiceMonitors. ServiceMonitor has the same
-                    //    name as the SA
+                    // 1. The name of the ServiceMonitor for the Prometheus thanos sidecar doesn't match
+                    //    the Service's name which has the following format:
+                    //      "prometheus-<PROMETHEUS_INSTANCE>-thanos-sidecar"
+                    //    where PROMETHEUS_INSTANCE is either "k8s" or "user-workload"
+                    // 2. ServiceMonitors that adopted CollectionProfiles have a "-<COLLECTION_PROFILE>" suffix
+                    //    which should be stripped from the service monitor's name to get the Service's name.
+                    // 3. Otherwise the name of the ServiceMonitor is equal to the name of the Service.
                     serverName: std.format('%s.%s.svc',
                                            [
                                              if o.metadata.name == 'thanos-sidecar' then
-                                               'prometheus-' + o.metadata.labels['app.kubernetes.io/instance'] + '-' + o.metadata.name
+                                               std.format('prometheus-%s-thanos-sidecar', o.metadata.labels['app.kubernetes.io/instance'])
                                              else
                                                if std.objectHas(o.metadata.labels, 'monitoring.openshift.io/collection-profile') then
                                                  std.rstripChars(o.metadata.name, '-' + o.metadata.labels['monitoring.openshift.io/collection-profile'])
