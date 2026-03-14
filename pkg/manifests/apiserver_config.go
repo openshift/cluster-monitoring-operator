@@ -15,6 +15,8 @@
 package manifests
 
 import (
+	"slices"
+
 	configv1 "github.com/openshift/api/config/v1"
 )
 
@@ -35,6 +37,13 @@ func NewAPIServerConfig(config *configv1.APIServer) *APIServerConfig {
 	return &APIServerConfig{
 		config,
 	}
+}
+
+// Equal returns true if the given configuration is semantically equal to the
+// current configuration.
+func (c *APIServerConfig) Equal(other *APIServerConfig) bool {
+	return c.MinTLSVersion() == other.MinTLSVersion() &&
+		slices.Equal(c.TLSCiphers(), other.TLSCiphers())
 }
 
 // TLSCiphers returns the TLS ciphers for the
