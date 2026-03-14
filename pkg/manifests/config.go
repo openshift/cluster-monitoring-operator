@@ -424,14 +424,16 @@ func (c *Config) applyDefaults() {
 		}
 	}
 
-	if c.ClusterMonitoringConfiguration.MetricsServerConfig == nil {
-		c.ClusterMonitoringConfiguration.MetricsServerConfig = &MetricsServerConfig{}
-	}
-	if c.ClusterMonitoringConfiguration.MetricsServerConfig.Audit == nil {
-		c.ClusterMonitoringConfiguration.MetricsServerConfig.Audit = &Audit{}
-	}
-	if c.ClusterMonitoringConfiguration.MetricsServerConfig.Audit.Profile == "" {
-		c.ClusterMonitoringConfiguration.MetricsServerConfig.Audit.Profile = auditv1.LevelMetadata
+	// MetricsServerConfig is left nil when not set by ConfigMap so the operator can
+	// apply ClusterMonitoring CRD merge (MetricsServerConfig from CR) when the feature gate is on.
+
+	if c.ClusterMonitoringConfiguration.MetricsServerConfig != nil {
+		if c.ClusterMonitoringConfiguration.MetricsServerConfig.Audit == nil {
+			c.ClusterMonitoringConfiguration.MetricsServerConfig.Audit = &Audit{}
+		}
+		if c.ClusterMonitoringConfiguration.MetricsServerConfig.Audit.Profile == "" {
+			c.ClusterMonitoringConfiguration.MetricsServerConfig.Audit.Profile = auditv1.LevelMetadata
+		}
 	}
 	if c.ClusterMonitoringConfiguration.PrometheusK8sConfig.CollectionProfile == "" {
 		c.ClusterMonitoringConfiguration.PrometheusK8sConfig.CollectionProfile = FullCollectionProfile
