@@ -777,54 +777,109 @@ func TestPrometheusOperatorAdmissionWebhookConfiguration(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	f := NewFactory("openshift-monitoring", "openshift-user-workload-monitoring", c, defaultInfrastructureReader(), &fakeProxyReader{}, NewAssets(assetsPath), &APIServerConfig{}, &configv1.Console{})
-	d, err := f.PrometheusOperatorAdmissionWebhookDeployment()
-	if err != nil {
-		t.Fatal(err)
-	}
-
-	if len(d.Spec.Template.Spec.NodeSelector) == 0 {
-		t.Fatal("expected node selector to be present, got none")
-	}
-
-	if got := d.Spec.Template.Spec.NodeSelector["type"]; got != "master" {
-		t.Fatalf("expected node selector to be master, got %q", got)
-	}
-
-	webTLSCipherSuitesArg := ""
-	webTLSVersionArg := ""
-	for _, container := range d.Spec.Template.Spec.Containers {
-		switch container.Name {
-		case "prometheus-operator-admission-webhook":
-			if container.Image != "docker.io/openshift/origin-prometheus-operator-admission-webhook:latest" {
-				t.Fatalf("%s image incorrectly configured", container.Name)
+	for _, tc := range []struct {
+		name                     string
+		apiServerConfig          *APIServerConfig
+		expectedMinTLSVersionArg string
+		expectedTLSCiphersArg    string
+	}{
+		{
+			name:                     "default API server config",
+			apiServerConfig:          NewAPIServerConfig(nil),
+			expectedMinTLSVersionArg: "--web.tls-min-version=VersionTLS12",
+			expectedTLSCiphersArg:    "--web.tls-cipher-suites=TLS_AES_128_GCM_SHA256,TLS_AES_256_GCM_SHA384,TLS_CHACHA20_POLY1305_SHA256,TLS_ECDHE_ECDSA_WITH_AES_128_GCM_SHA256,TLS_ECDHE_RSA_WITH_AES_128_GCM_SHA256,TLS_ECDHE_ECDSA_WITH_AES_256_GCM_SHA384,TLS_ECDHE_RSA_WITH_AES_256_GCM_SHA384,TLS_ECDHE_ECDSA_WITH_CHACHA20_POLY1305_SHA256,TLS_ECDHE_RSA_WITH_CHACHA20_POLY1305_SHA256",
+		},
+		{
+			name: "API server config with modern TLS profile",
+			apiServerConfig: NewAPIServerConfig(&configv1.APIServer{
+				Spec: configv1.APIServerSpec{
+					TLSSecurityProfile: &configv1.TLSSecurityProfile{
+						Type: configv1.TLSProfileModernType,
+					},
+				},
+			}),
+			expectedMinTLSVersionArg: "--web.tls-min-version=VersionTLS13",
+			expectedTLSCiphersArg:    "--web.tls-cipher-suites=TLS_AES_128_GCM_SHA256,TLS_AES_256_GCM_SHA384,TLS_CHACHA20_POLY1305_SHA256",
+		},
+		{
+			name: "API server config with custom TLS profile",
+			apiServerConfig: NewAPIServerConfig(&configv1.APIServer{
+				Spec: configv1.APIServerSpec{
+					TLSSecurityProfile: &configv1.TLSSecurityProfile{
+						Type: configv1.TLSProfileCustomType,
+						Custom: &configv1.CustomTLSProfile{
+							TLSProfileSpec: configv1.TLSProfileSpec{
+								MinTLSVersion: configv1.VersionTLS12,
+								Ciphers:       []string{"TLS_AES_128_GCM_SHA256"},
+							},
+						},
+					},
+				},
+			}),
+			expectedMinTLSVersionArg: "--web.tls-min-version=VersionTLS12",
+			expectedTLSCiphersArg:    "--web.tls-cipher-suites=TLS_AES_128_GCM_SHA256",
+		},
+		{
+			name: "API server config with custom TLS profile and TLS 1.1",
+			apiServerConfig: NewAPIServerConfig(&configv1.APIServer{
+				Spec: configv1.APIServerSpec{
+					TLSSecurityProfile: &configv1.TLSSecurityProfile{
+						Type: configv1.TLSProfileCustomType,
+						Custom: &configv1.CustomTLSProfile{
+							TLSProfileSpec: configv1.TLSProfileSpec{
+								MinTLSVersion: configv1.VersionTLS11,
+								Ciphers:       []string{"TLS_AES_128_GCM_SHA256"},
+							},
+						},
+					},
+				},
+			}),
+			// The operator admission webhook doesn't support TLS version < 1.2.
+			expectedMinTLSVersionArg: "--web.tls-min-version=VersionTLS12",
+			expectedTLSCiphersArg:    "--web.tls-cipher-suites=TLS_AES_128_GCM_SHA256",
+		},
+	} {
+		t.Run(tc.name, func(t *testing.T) {
+			f := NewFactory("openshift-monitoring", "openshift-user-workload-monitoring", c, defaultInfrastructureReader(), &fakeProxyReader{}, NewAssets(assetsPath), tc.apiServerConfig, &configv1.Console{})
+			d, err := f.PrometheusOperatorAdmissionWebhookDeployment()
+			if err != nil {
+				t.Fatal(err)
 			}
 
-			webTLSCipherSuitesArg = getContainerArgValue(d.Spec.Template.Spec.Containers, PrometheusOperatorWebTLSCipherSuitesFlag, container.Name)
-			webTLSVersionArg = getContainerArgValue(d.Spec.Template.Spec.Containers, PrometheusOperatorWebTLSMinTLSVersionFlag, container.Name)
-		}
-	}
+			if len(d.Spec.Template.Spec.NodeSelector) == 0 {
+				t.Fatal("expected node selector to be present, got none")
+			}
 
-	expectedPrometheusWebTLSCipherSuitesArg := fmt.Sprintf("%s%s",
-		PrometheusOperatorWebTLSCipherSuitesFlag,
-		strings.Join(crypto.OpenSSLToIANACipherSuites(APIServerDefaultTLSCiphers), ","))
-	if expectedPrometheusWebTLSCipherSuitesArg != webTLSCipherSuitesArg {
-		t.Fatalf("incorrect TLS ciphers, \n got %s, \nwant %s", webTLSCipherSuitesArg, expectedPrometheusWebTLSCipherSuitesArg)
-	}
+			if got := d.Spec.Template.Spec.NodeSelector["type"]; got != "master" {
+				t.Fatalf("expected node selector to be master, got %q", got)
+			}
 
-	expectedPrometheusWebTLSVersionArg := fmt.Sprintf("%s%s",
-		PrometheusOperatorWebTLSMinTLSVersionFlag, APIServerDefaultMinTLSVersion)
-	if expectedPrometheusWebTLSVersionArg != webTLSVersionArg {
-		t.Fatalf("incorrect TLS version \n got %s, \nwant %s", webTLSVersionArg, expectedPrometheusWebTLSVersionArg)
-	}
+			webTLSCipherSuitesArg := ""
+			webTLSVersionArg := ""
+			for _, container := range d.Spec.Template.Spec.Containers {
+				switch container.Name {
+				case "prometheus-operator-admission-webhook":
+					if container.Image != "docker.io/openshift/origin-prometheus-operator-admission-webhook:latest" {
+						t.Fatalf("%s image incorrectly configured", container.Name)
+					}
 
-	d2, err := f.PrometheusOperatorAdmissionWebhookDeployment()
-	if err != nil {
-		t.Fatal(err)
-	}
+					webTLSCipherSuitesArg = getContainerArgValue(d.Spec.Template.Spec.Containers, PrometheusOperatorWebTLSCipherSuitesFlag, container.Name)
+					webTLSVersionArg = getContainerArgValue(d.Spec.Template.Spec.Containers, PrometheusOperatorWebTLSMinTLSVersionFlag, container.Name)
+				}
+			}
 
-	if !reflect.DeepEqual(d, d2) {
-		t.Fatal("expected PrometheusOperatorDeployment to be an idempotent function")
+			require.Equal(t, tc.expectedMinTLSVersionArg, webTLSVersionArg)
+			require.Equal(t, tc.expectedTLSCiphersArg, webTLSCipherSuitesArg)
+
+			d2, err := f.PrometheusOperatorAdmissionWebhookDeployment()
+			if err != nil {
+				t.Fatal(err)
+			}
+
+			if !reflect.DeepEqual(d, d2) {
+				t.Fatal("expected PrometheusOperatorDeployment to be an idempotent function")
+			}
+		})
 	}
 }
 
