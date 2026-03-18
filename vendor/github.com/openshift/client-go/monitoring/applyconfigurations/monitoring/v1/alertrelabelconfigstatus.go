@@ -8,7 +8,11 @@ import (
 
 // AlertRelabelConfigStatusApplyConfiguration represents a declarative configuration of the AlertRelabelConfigStatus type for use
 // with apply.
+//
+// AlertRelabelConfigStatus is the status of an AlertRelabelConfig resource.
 type AlertRelabelConfigStatusApplyConfiguration struct {
+	// conditions contains details on the state of the AlertRelabelConfig, may be
+	// empty.
 	Conditions []metav1.ConditionApplyConfiguration `json:"conditions,omitempty"`
 }
 

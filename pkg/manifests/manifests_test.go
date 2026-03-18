@@ -2063,8 +2063,6 @@ func TestPrometheusK8sAdditionalAlertManagerConfigsSecret(t *testing.T) {
     - ECDHE-RSA-AES256-GCM-SHA384
     - ECDHE-ECDSA-CHACHA20-POLY1305
     - ECDHE-RSA-CHACHA20-POLY1305
-    - DHE-RSA-AES128-GCM-SHA256
-    - DHE-RSA-AES256-GCM-SHA384
   static_configs:
   - targets:
     - alertmanager1-remote.com
@@ -2373,8 +2371,6 @@ func TestThanosRulerAdditionalAlertManagerConfigsSecret(t *testing.T) {
       - ECDHE-RSA-AES256-GCM-SHA384
       - ECDHE-ECDSA-CHACHA20-POLY1305
       - ECDHE-RSA-CHACHA20-POLY1305
-      - DHE-RSA-AES128-GCM-SHA256
-      - DHE-RSA-AES256-GCM-SHA384
   static_configs:
   - alertmanager1-remote.com
   - alertmanager1-remotex.com

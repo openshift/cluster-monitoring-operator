@@ -13,11 +13,38 @@ import (
 
 // AlertingRuleApplyConfiguration represents a declarative configuration of the AlertingRule type for use
 // with apply.
+//
+// AlertingRule represents a set of user-defined Prometheus rule groups containing
+// alerting rules.  This resource is the supported method for cluster admins to
+// create alerts based on metrics recorded by the platform monitoring stack in
+// OpenShift, i.e. the Prometheus instance deployed to the openshift-monitoring
+// namespace.  You might use this to create custom alerting rules not shipped with
+// OpenShift based on metrics from components such as the node_exporter, which
+// provides machine-level metrics such as CPU usage, or kube-state-metrics, which
+// provides metrics on Kubernetes usage.
+//
+// The API is mostly compatible with the upstream PrometheusRule type from the
+// prometheus-operator.  The primary difference being that recording rules are not
+// allowed here -- only alerting rules.  For each AlertingRule resource created, a
+// corresponding PrometheusRule will be created in the openshift-monitoring
+// namespace.  OpenShift requires admins to use the AlertingRule resource rather
+// than the upstream type in order to allow better OpenShift specific defaulting
+// and validation, while not modifying the upstream APIs directly.
+//
+// You can find upstream API documentation for PrometheusRule resources here:
+//
+// https://github.com/prometheus-operator/prometheus-operator/blob/main/Documentation/api.md
+//
+// Compatibility level 1: Stable within a major release for a minimum of 12 months or 3 minor releases (whichever is longer).
 type AlertingRuleApplyConfiguration struct {
-	metav1.TypeMetaApplyConfiguration    `json:",inline"`
+	metav1.TypeMetaApplyConfiguration `json:",inline"`
+	// metadata is the standard object's metadata.
+	// More info: https://git.k8s.io/community/contributors/devel/sig-architecture/api-conventions.md#metadata
 	*metav1.ObjectMetaApplyConfiguration `json:"metadata,omitempty"`
-	Spec                                 *AlertingRuleSpecApplyConfiguration   `json:"spec,omitempty"`
-	Status                               *AlertingRuleStatusApplyConfiguration `json:"status,omitempty"`
+	// spec describes the desired state of this AlertingRule object.
+	Spec *AlertingRuleSpecApplyConfiguration `json:"spec,omitempty"`
+	// status describes the current state of this AlertOverrides object.
+	Status *AlertingRuleStatusApplyConfiguration `json:"status,omitempty"`
 }
 
 // AlertingRule constructs a declarative configuration of the AlertingRule type for use with
@@ -31,29 +58,14 @@ func AlertingRule(name, namespace string) *AlertingRuleApplyConfiguration {
 	return b
 }
 
-// ExtractAlertingRule extracts the applied configuration owned by fieldManager from
-// alertingRule. If no managedFields are found in alertingRule for fieldManager, a
-// AlertingRuleApplyConfiguration is returned with only the Name, Namespace (if applicable),
-// APIVersion and Kind populated. It is possible that no managed fields were found for because other
-// field managers have taken ownership of all the fields previously owned by fieldManager, or because
-// the fieldManager never owned fields any fields.
+// ExtractAlertingRuleFrom extracts the applied configuration owned by fieldManager from
+// alertingRule for the specified subresource. Pass an empty string for subresource to extract
+// the main resource. Common subresources include "status", "scale", etc.
 // alertingRule must be a unmodified AlertingRule API object that was retrieved from the Kubernetes API.
-// ExtractAlertingRule provides a way to perform a extract/modify-in-place/apply workflow.
+// ExtractAlertingRuleFrom provides a way to perform a extract/modify-in-place/apply workflow.
 // Note that an extracted apply configuration will contain fewer fields than what the fieldManager previously
 // applied if another fieldManager has updated or force applied any of the previously applied fields.
-// Experimental!
-func ExtractAlertingRule(alertingRule *monitoringv1.AlertingRule, fieldManager string) (*AlertingRuleApplyConfiguration, error) {
-	return extractAlertingRule(alertingRule, fieldManager, "")
-}
-
-// ExtractAlertingRuleStatus is the same as ExtractAlertingRule except
-// that it extracts the status subresource applied configuration.
-// Experimental!
-func ExtractAlertingRuleStatus(alertingRule *monitoringv1.AlertingRule, fieldManager string) (*AlertingRuleApplyConfiguration, error) {
-	return extractAlertingRule(alertingRule, fieldManager, "status")
-}
-
-func extractAlertingRule(alertingRule *monitoringv1.AlertingRule, fieldManager string, subresource string) (*AlertingRuleApplyConfiguration, error) {
+func ExtractAlertingRuleFrom(alertingRule *monitoringv1.AlertingRule, fieldManager string, subresource string) (*AlertingRuleApplyConfiguration, error) {
 	b := &AlertingRuleApplyConfiguration{}
 	err := managedfields.ExtractInto(alertingRule, internal.Parser().Type("com.github.openshift.api.monitoring.v1.AlertingRule"), fieldManager, b, subresource)
 	if err != nil {
@@ -66,6 +78,27 @@ func extractAlertingRule(alertingRule *monitoringv1.AlertingRule, fieldManager s
 	b.WithAPIVersion("monitoring.openshift.io/v1")
 	return b, nil
 }
+
+// ExtractAlertingRule extracts the applied configuration owned by fieldManager from
+// alertingRule. If no managedFields are found in alertingRule for fieldManager, a
+// AlertingRuleApplyConfiguration is returned with only the Name, Namespace (if applicable),
+// APIVersion and Kind populated. It is possible that no managed fields were found for because other
+// field managers have taken ownership of all the fields previously owned by fieldManager, or because
+// the fieldManager never owned fields any fields.
+// alertingRule must be a unmodified AlertingRule API object that was retrieved from the Kubernetes API.
+// ExtractAlertingRule provides a way to perform a extract/modify-in-place/apply workflow.
+// Note that an extracted apply configuration will contain fewer fields than what the fieldManager previously
+// applied if another fieldManager has updated or force applied any of the previously applied fields.
+func ExtractAlertingRule(alertingRule *monitoringv1.AlertingRule, fieldManager string) (*AlertingRuleApplyConfiguration, error) {
+	return ExtractAlertingRuleFrom(alertingRule, fieldManager, "")
+}
+
+// ExtractAlertingRuleStatus extracts the applied configuration owned by fieldManager from
+// alertingRule for the status subresource.
+func ExtractAlertingRuleStatus(alertingRule *monitoringv1.AlertingRule, fieldManager string) (*AlertingRuleApplyConfiguration, error) {
+	return ExtractAlertingRuleFrom(alertingRule, fieldManager, "status")
+}
+
 func (b AlertingRuleApplyConfiguration) IsApplyConfiguration() {}
 
 // WithKind sets the Kind field in the declarative configuration to the given value

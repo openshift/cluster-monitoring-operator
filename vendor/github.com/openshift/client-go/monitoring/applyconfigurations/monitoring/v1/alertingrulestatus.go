@@ -4,9 +4,15 @@ package v1
 
 // AlertingRuleStatusApplyConfiguration represents a declarative configuration of the AlertingRuleStatus type for use
 // with apply.
+//
+// AlertingRuleStatus is the status of an AlertingRule resource.
 type AlertingRuleStatusApplyConfiguration struct {
-	ObservedGeneration *int64                               `json:"observedGeneration,omitempty"`
-	PrometheusRule     *PrometheusRuleRefApplyConfiguration `json:"prometheusRule,omitempty"`
+	// observedGeneration is the last generation change you've dealt with.
+	ObservedGeneration *int64 `json:"observedGeneration,omitempty"`
+	// prometheusRule is the generated PrometheusRule for this AlertingRule.  Each
+	// AlertingRule instance results in a generated PrometheusRule object in the
+	// same namespace, which is always the openshift-monitoring namespace.
+	PrometheusRule *PrometheusRuleRefApplyConfiguration `json:"prometheusRule,omitempty"`
 }
 
 // AlertingRuleStatusApplyConfiguration constructs a declarative configuration of the AlertingRuleStatus type for use with

@@ -8,14 +8,41 @@ import (
 
 // RelabelConfigApplyConfiguration represents a declarative configuration of the RelabelConfig type for use
 // with apply.
+//
+// RelabelConfig allows dynamic rewriting of label sets for alerts.
+// See Prometheus documentation:
+// - https://prometheus.io/docs/prometheus/latest/configuration/configuration/#alert_relabel_configs
+// - https://prometheus.io/docs/prometheus/latest/configuration/configuration/#relabel_config
 type RelabelConfigApplyConfiguration struct {
+	// sourceLabels select values from existing labels. Their content is
+	// concatenated using the configured separator and matched against the
+	// configured regular expression for the 'Replace', 'Keep', and 'Drop' actions.
+	// Not allowed for actions 'LabelKeep' and 'LabelDrop'.
 	SourceLabels []monitoringv1.LabelName `json:"sourceLabels,omitempty"`
-	Separator    *string                  `json:"separator,omitempty"`
-	TargetLabel  *string                  `json:"targetLabel,omitempty"`
-	Regex        *string                  `json:"regex,omitempty"`
-	Modulus      *uint64                  `json:"modulus,omitempty"`
-	Replacement  *string                  `json:"replacement,omitempty"`
-	Action       *string                  `json:"action,omitempty"`
+	// separator placed between concatenated source label values. When omitted,
+	// Prometheus will use its default value of ';'.
+	Separator *string `json:"separator,omitempty"`
+	// targetLabel to which the resulting value is written in a 'Replace' action.
+	// It is required for 'Replace' and 'HashMod' actions and forbidden for
+	// actions 'LabelKeep' and 'LabelDrop'. Regex capture groups
+	// are available.
+	TargetLabel *string `json:"targetLabel,omitempty"`
+	// regex against which the extracted value is matched. Default is: '(.*)'
+	// regex is required for all actions except 'HashMod'
+	Regex *string `json:"regex,omitempty"`
+	// modulus to take of the hash of the source label values.  This can be
+	// combined with the 'HashMod' action to set 'target_label' to the 'modulus'
+	// of a hash of the concatenated 'source_labels'. This is only valid if
+	// sourceLabels is not empty and action is not 'LabelKeep' or 'LabelDrop'.
+	Modulus *uint64 `json:"modulus,omitempty"`
+	// replacement value against which a regex replace is performed if the regular
+	// expression matches. This is required if the action is 'Replace' or
+	// 'LabelMap' and forbidden for actions 'LabelKeep' and 'LabelDrop'.
+	// Regex capture groups are available. Default is: '$1'
+	Replacement *string `json:"replacement,omitempty"`
+	// action to perform based on regex matching. Must be one of: 'Replace', 'Keep',
+	// 'Drop', 'HashMod', 'LabelMap', 'LabelDrop', or 'LabelKeep'. Default is: 'Replace'
+	Action *string `json:"action,omitempty"`
 }
 
 // RelabelConfigApplyConfiguration constructs a declarative configuration of the RelabelConfig type for use with
