@@ -602,8 +602,8 @@ func (c *Client) GetInfrastructure(ctx context.Context, name string) (*configv1.
 	return c.oscclient.ConfigV1().Infrastructures().Get(ctx, name, metav1.GetOptions{})
 }
 
-func (c *Client) GetAPIServerConfig(ctx context.Context, name string) (*configv1.APIServer, error) {
-	return c.oscclient.ConfigV1().APIServers().Get(ctx, name, metav1.GetOptions{})
+func (c *Client) GetAPIServerConfig(ctx context.Context) (*configv1.APIServer, error) {
+	return c.oscclient.ConfigV1().APIServers().Get(ctx, "cluster", metav1.GetOptions{})
 }
 
 func (c *Client) GetConsoleConfig(ctx context.Context, name string) (*configv1.Console, error) {
@@ -1962,4 +1962,8 @@ func Poll(ctx context.Context, condition wait.ConditionWithContextFunc, options 
 	}
 
 	return nil
+}
+
+func (c *Client) OpenShiftConfigClientset() openshiftconfigclientset.Interface {
+	return c.oscclient
 }
