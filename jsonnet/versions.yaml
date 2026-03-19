@@ -15,7 +15,7 @@ repos:
     thanos: openshift/thanos
 versions:
     alertmanager: 0.31.1
-    kubeRbacProxy: 0.20.2
+    kubeRbacProxy: 0.21.1
     kubeStateMetrics: 2.18.0
     kubernetesMetricsServer: 0.8.1
     monitoringPlugin: 1.0.0
