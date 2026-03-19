@@ -556,7 +556,7 @@ func (o *Operator) Run(ctx context.Context) error {
 			errChan <- fmt.Errorf("communicating with server failed: %w", err)
 			return
 		}
-		klog.V(4).Infof("Connection established (cluster-version: %s)", v)
+		klog.Infof("Connection established (cluster-version: %s)", v)
 
 		errChan <- nil
 	}()
@@ -570,25 +570,26 @@ func (o *Operator) Run(ctx context.Context) error {
 		return nil
 	}
 
-	go o.cmapInf.Run(stopc)
+	go o.cmapInf.RunWithContext(ctx)
 	synced := []cache.InformerSynced{o.cmapInf.HasSynced}
+
 	for _, inf := range o.informers {
-		go inf.Run(stopc)
+		go inf.RunWithContext(ctx)
 		synced = append(synced, inf.HasSynced)
 	}
 	for _, f := range o.informerFactories {
 		f.Start(stopc)
 	}
 
-	klog.V(4).Info("Waiting for initial cache sync.")
-	ok := cache.WaitForCacheSync(stopc, synced...)
+	klog.Info("Waiting for initial cache sync.")
+	ok := cache.WaitForNamedCacheSyncWithContext(ctx, synced...)
 	if !ok {
 		return errors.New("failed to sync informers")
 	}
 	for _, f := range o.informerFactories {
 		f.WaitForCacheSync(stopc)
 	}
-	klog.V(4).Info("Initial cache sync done.")
+	klog.Info("Initial cache sync done.")
 
 	for _, r := range o.controllersToRunFunc {
 		go r(ctx, 1)
