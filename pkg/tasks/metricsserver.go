@@ -81,7 +81,7 @@ func (t *MetricsServerTask) Run(ctx context.Context) error {
 	{
 		cr, err := t.factory.MetricsServerClusterRole()
 		if err != nil {
-			return fmt.Errorf("initializing metrics-server ClusterRolefailed: %w", err)
+			return fmt.Errorf("initializing metrics-server ClusterRole failed: %w", err)
 		}
 
 		err = t.client.CreateOrUpdateClusterRole(ctx, cr)
