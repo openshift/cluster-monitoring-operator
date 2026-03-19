@@ -525,6 +525,27 @@ data:
     # at least max of one instance with  k8s.v1.cni.cncf.io/networks annotation, labelled by networks (any or sriov).
     - '{__name__="cluster:network_attachment_definition_enabled_instance_up:max"}'
     #
+    # owners: (@openshift/networking)
+    #
+    # cluster:kubernetes_nmstate_features_applied:sum gives the total count
+    # of nmstate features applied across all nodes in the cluster, broken
+    # down by feature name.
+    - '{__name__="cluster:kubernetes_nmstate_features_applied:sum",name=~"sriov|ovs-dpdk|ovn-mapping|ovs-bond|ovs-patch|lldp|mptcp|static-route-rule|iface-name-refered-by-sriov-vf-id|mac-based-identifier"}'
+    #
+    # owners: (@openshift/networking)
+    #
+    # cluster:kubernetes_nmstate_network_interfaces:sum gives the total count
+    # of network interfaces across all nodes in the cluster, broken down by
+    # interface type.
+    - '{__name__="cluster:kubernetes_nmstate_network_interfaces:sum",type=~"ethernet|linux-bridge|bond|vlan|ovs-bridge|ovs-interface|ovs-port|mac-vlan|vxlan|infiniband"}'
+    #
+    # owners: (@openshift/networking)
+    #
+    # cluster:kubernetes_nmstate_routes:sum gives the total count of network
+    # routes across all nodes in the cluster, broken down by IP stack and
+    # route type (static/dynamic).
+    - '{__name__="cluster:kubernetes_nmstate_routes:sum"}'
+    #
     # owners: (@openshift/network-edge)
     #
     # cluster:ingress_controller_aws_nlb_active:sum informs how many NLBs are active in AWS.
