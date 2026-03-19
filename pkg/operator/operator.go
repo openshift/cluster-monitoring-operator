@@ -165,9 +165,6 @@ const (
 	metricsServerClientCerts      = "openshift-monitoring/metrics-server-client-certs"
 	federateClientCerts           = "openshift-monitoring/federate-client-certs"
 
-	// Canonical name of the cluster-wide infrastructure resource.
-	clusterResourceName = "cluster"
-
 	UWMTaskPrefix = "UpdatingUserWorkload"
 )
 
@@ -331,7 +328,7 @@ func New(
 
 	// Watch the cluster Infrastructure resource (for control plane and infrastructure topologies).
 	informer = cache.NewSharedIndexInformer(
-		o.client.InfrastructureListWatchForResource(ctx, clusterResourceName),
+		o.client.InfrastructureListWatch(),
 		&configv1.Infrastructure{}, resyncPeriod, cache.Indexers{},
 	)
 	_, err = informer.AddEventHandler(cache.ResourceEventHandlerFuncs{
@@ -344,7 +341,7 @@ func New(
 
 	// Watch the APIServer resource (for TLS configuration profile).
 	informer = cache.NewSharedIndexInformer(
-		o.client.ApiServersListWatchForResource(ctx, clusterResourceName),
+		o.client.ApiServersListWatch(),
 		&configv1.APIServer{}, resyncPeriod, cache.Indexers{},
 	)
 
@@ -363,7 +360,7 @@ func New(
 
 	// Watch the Console configuration resource (to build external URLs).
 	informer = cache.NewSharedIndexInformer(
-		o.client.ConsoleListWatch(ctx),
+		o.client.ConsoleListWatch(),
 		&configv1.Console{}, resyncPeriod, cache.Indexers{},
 	)
 
@@ -378,7 +375,7 @@ func New(
 	o.informers = append(o.informers, informer)
 
 	informer = cache.NewSharedIndexInformer(
-		o.client.ClusterOperatorListWatch(ctx, "ingress"),
+		o.client.ClusterOperatorListWatch("ingress"),
 		&configv1.ClusterOperator{}, resyncPeriod, cache.Indexers{},
 	)
 
@@ -400,7 +397,7 @@ func New(
 	// Many of the cluster capabilities such as Console can be enabled after
 	// installation. So this watches for any updates to the ClusterVersion - version
 	informer = cache.NewSharedIndexInformer(
-		o.client.ClusterVersionListWatch(ctx, "version"),
+		o.client.ClusterVersionListWatch(),
 		&configv1.ClusterVersion{}, resyncPeriod, cache.Indexers{},
 	)
 	_, err = informer.AddEventHandler(cache.ResourceEventHandlerFuncs{
@@ -447,7 +444,7 @@ func New(
 	// Watch the ClusterMonitoring config resource if the feature gate is enabled
 	if o.ClusterMonitoringConfigEnabled {
 		informer = cache.NewSharedIndexInformer(
-			o.client.ClusterMonitoringListWatch(ctx),
+			o.client.ClusterMonitoringListWatch(),
 			&configv1alpha1.ClusterMonitoring{},
 			resyncPeriod,
 			cache.Indexers{},
@@ -577,6 +574,7 @@ func (o *Operator) Run(ctx context.Context) error {
 		go inf.RunWithContext(ctx)
 		synced = append(synced, inf.HasSynced)
 	}
+
 	for _, f := range o.informerFactories {
 		f.Start(stopc)
 	}
@@ -586,8 +584,13 @@ func (o *Operator) Run(ctx context.Context) error {
 	if !ok {
 		return errors.New("failed to sync informers")
 	}
+
 	for _, f := range o.informerFactories {
-		f.WaitForCacheSync(stopc)
+		for informerType, synced := range f.WaitForCacheSync(stopc) {
+			if !synced {
+				return fmt.Errorf("failed to sync informer factory cache for %v", informerType)
+			}
+		}
 	}
 	klog.Info("Initial cache sync done.")
 
@@ -866,7 +869,7 @@ func (o *Operator) sync(ctx context.Context, key string) error {
 
 	var degradedConditionMessage, degradedConditionReason string
 	if !config.IsStorageConfigured() {
-		degradedConditionMessage = o.storageNotConfiguredMessage()
+		degradedConditionMessage = o.storageNotConfiguredMessage(ctx)
 		degradedConditionReason = client.StorageNotConfiguredReason
 	} else if config.HasInconsistentAlertmanagerConfigurations() {
 		degradedConditionMessage = client.UserAlermanagerConfigMisconfiguredMessage
@@ -905,7 +908,7 @@ func (o *Operator) reportFailed(ctx context.Context, report runReport) {
 func (o *Operator) loadInfrastructureConfig(ctx context.Context) *InfrastructureConfig {
 	var infrastructureConfig *InfrastructureConfig
 
-	infrastructure, err := o.client.GetInfrastructure(ctx, clusterResourceName)
+	infrastructure, err := o.client.GetInfrastructure(ctx)
 	if err != nil {
 		klog.Warningf("Error getting cluster infrastructure: %v", err)
 
@@ -928,7 +931,7 @@ func (o *Operator) loadInfrastructureConfig(ctx context.Context) *Infrastructure
 func (o *Operator) loadProxyConfig(ctx context.Context) (*ProxyConfig, error) {
 	var proxyConfig *ProxyConfig
 
-	proxy, err := o.client.GetProxy(ctx, clusterResourceName)
+	proxy, err := o.client.GetProxy(ctx)
 	if err != nil {
 		klog.Warningf("Error getting cluster proxy configuration: %v", err)
 
@@ -1038,7 +1041,7 @@ func (o *Operator) Config(ctx context.Context, key string) (*manifests.Config, [
 	// Only fetch the token and cluster ID if they have not been specified in the config.
 	if c.ClusterMonitoringConfiguration.TelemeterClientConfig.ClusterID == "" || c.ClusterMonitoringConfiguration.TelemeterClientConfig.Token == "" {
 		err := c.LoadClusterID(func() (*configv1.ClusterVersion, error) {
-			return o.client.GetClusterVersion(ctx, "version")
+			return o.client.GetClusterVersion(ctx)
 		})
 
 		if err != nil {
@@ -1094,14 +1097,14 @@ func applyUserDefinedMode(udm configv1alpha1.UserDefinedMonitoring) *bool {
 // documentation on configuring monitoring stack. If the current cluster
 // version can be computed, the link will point to the documentation for that
 // version, else it will point to latest documentation.
-func (o Operator) storageNotConfiguredMessage() string {
+func (o Operator) storageNotConfiguredMessage(ctx context.Context) string {
 	const docURL = "https://docs.openshift.com/container-platform/%s/observability/monitoring/configuring-the-monitoring-stack.html"
 
 	latestDocMsg := client.StorageNotConfiguredMessage + fmt.Sprintf(docURL, "latest")
 
 	// if cluster version cannot be obtained due to any failure, point to the
 	// latest documentation
-	cv, err := o.client.GetClusterVersion(context.Background(), "version")
+	cv, err := o.client.GetClusterVersion(ctx)
 	if err != nil {
 		klog.Warningf("failed to find the cluster version: %s", err)
 		return latestDocMsg

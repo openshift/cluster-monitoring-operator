@@ -102,7 +102,7 @@ func testMain(m *testing.M) error {
 			return false, nil
 		}
 
-		i, loopErr := f.OperatorClient.GetInfrastructure(ctx, "cluster")
+		i, loopErr := f.OperatorClient.GetInfrastructure(ctx)
 		if loopErr != nil {
 			loopErr = fmt.Errorf("error getting cluster infrastructure: %w", loopErr)
 			return false, nil
