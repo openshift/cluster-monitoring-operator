@@ -286,6 +286,7 @@ local inCluster =
           },
         },
         tlsCipherSuites: $.values.common.tlsCipherSuites,
+        repairPolicy: 'evict',
       },
       thanos: {
         image: $.values.common.images.thanos,
@@ -482,6 +483,7 @@ local userWorkload =
         kubeRbacProxyImage: $.values.common.images.kubeRbacProxy,
         configReloaderImage: $.values.common.images.prometheusOperatorReloader,
         commonLabels+: $.values.common.commonLabels,
+        repairPolicy: 'evict',
       },
     },
 

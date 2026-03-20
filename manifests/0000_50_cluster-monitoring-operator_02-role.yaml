@@ -807,6 +807,12 @@ rules:
   - update
   - delete
 - apiGroups:
+  - ""
+  resources:
+  - pods/eviction
+  verbs:
+  - create
+- apiGroups:
   - authentication.k8s.io
   resources:
   - tokenreviews
