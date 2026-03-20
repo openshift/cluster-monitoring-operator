@@ -1,6 +1,8 @@
 package metrics
 
 import (
+	"time"
+
 	"k8s.io/component-base/metrics"
 	"k8s.io/component-base/metrics/legacyregistry"
 )
@@ -41,11 +43,16 @@ var DeprecatedConfig = metrics.NewGaugeVec(&metrics.GaugeOpts{
 var (
 	// WebhookRequestLatency is a prometheus metric which is a histogram of the latency
 	// of processing admission requests.
+	// Buckets have been chosen to minimize the cardinality while providing
+	// good-enough visibility.
 	WebhookRequestLatency = metrics.NewHistogramVec(
 		&metrics.HistogramOpts{
-			Name:    "cluster_monitoring_webhook_latency_seconds",
-			Help:    "Histogram of the latency of processing admission requests",
-			Buckets: []float64{0.1, 0.5, 1.0, 2.5, 5.0},
+			Name:                            "cluster_monitoring_webhook_latency_seconds",
+			Help:                            "Histogram of the latency of processing admission requests",
+			Buckets:                         []float64{0.1, 0.5, 1.0, 2.5, 5.0},
+			NativeHistogramBucketFactor:     1.1,
+			NativeHistogramMaxBucketNumber:  100,
+			NativeHistogramMinResetDuration: 1 * time.Hour,
 		},
 		[]string{"webhook"},
 	)
