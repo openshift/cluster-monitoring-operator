@@ -116,3 +116,31 @@ func TestTelemeterClient(t *testing.T) {
 		)
 	}
 }
+
+// TestTelemeterClusterMetrics verifies that key Telemetry metrics are present.
+func TestTelemeterClusterMetrics(t *testing.T) {
+	for _, q := range []string{
+		`count(cluster:usage:resources:sum) > 0`,
+		`count(cluster:usage:resources:sum{resource="pods"}) > 0`,
+		`count(cluster:usage:resources:sum{resource="deployments.apps"}) > 0`,
+		`count(cluster:usage:resources:sum{resource="clusterroles.rbac.authorization.k8s.io"}) > 0`,
+		`count(count:up1) > 0`,
+		`count(node_role_os_version_machine:cpu_capacity_cores:sum) > 0`,
+		`count(node_role_os_version_machine:cpu_capacity_sockets:sum) > 0`,
+		`count(cluster:cpu_usage_cores:sum) > 0`,
+		`count(cluster:memory_usage_bytes:sum) > 0`,
+	} {
+		t.Run(q, func(t *testing.T) {
+			t.Parallel()
+			f.PrometheusK8sClient.WaitForQueryReturn(
+				t,
+				time.Minute,
+				q,
+				func(float64) error {
+					// Queries are written to return something if the expected condition is met.
+					return nil
+				},
+			)
+		})
+	}
+}
