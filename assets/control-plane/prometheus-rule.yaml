@@ -220,9 +220,16 @@ spec:
         description: HPA {{ $labels.namespace }}/{{ $labels.horizontalpodautoscaler  }} has been running at max replicas for longer than 15 minutes.
         summary: HPA is running at max replicas
       expr: |
-        kube_horizontalpodautoscaler_status_current_replicas{namespace=~"(openshift-.*|kube-.*|default)",job="kube-state-metrics"}
-          ==
-        kube_horizontalpodautoscaler_spec_max_replicas{namespace=~"(openshift-.*|kube-.*|default)",job="kube-state-metrics"}
+        (
+          kube_horizontalpodautoscaler_status_current_replicas{namespace=~"(openshift-.*|kube-.*|default)",job="kube-state-metrics"}
+            ==
+          kube_horizontalpodautoscaler_spec_max_replicas{namespace=~"(openshift-.*|kube-.*|default)",job="kube-state-metrics"}
+        )
+        and on(namespace, horizontalpodautoscaler) (
+          kube_horizontalpodautoscaler_spec_max_replicas{namespace=~"(openshift-.*|kube-.*|default)",job="kube-state-metrics"}
+            !=
+          kube_horizontalpodautoscaler_spec_min_replicas{namespace=~"(openshift-.*|kube-.*|default)",job="kube-state-metrics"}
+        )
       for: 15m
       labels:
         severity: warning
@@ -512,7 +519,9 @@ spec:
         runbook_url: https://github.com/openshift/runbooks/blob/master/alerts/cluster-monitoring-operator/KubeletDown.md
         summary: Target disappeared from Prometheus target discovery.
       expr: |
-        absent(up{job="kubelet", metrics_path="/metrics"})
+        count by (cluster) (kube_node_info{job="kube-state-metrics"})
+        unless on (cluster)
+        count by (cluster) (up{job="kubelet", metrics_path="/metrics"} == 1)
       for: 15m
       labels:
         namespace: kube-system
@@ -783,10 +792,10 @@ spec:
         quantile: "0.99"
       record: cluster_quantile:scheduler_scheduling_algorithm_duration_seconds:histogram_quantile
     - expr: |
-        histogram_quantile(0.99, sum(rate(scheduler_binding_duration_seconds_bucket{job="scheduler"}[5m])) without(instance, pod))
+        histogram_quantile(0.99, sum(rate(scheduler_pod_scheduling_sli_duration_seconds_bucket{job="scheduler"}[5m])) without(instance, pod))
       labels:
         quantile: "0.99"
-      record: cluster_quantile:scheduler_binding_duration_seconds:histogram_quantile
+      record: cluster_quantile:scheduler_pod_scheduling_sli_duration_seconds:histogram_quantile
     - expr: |
         histogram_quantile(0.9, sum(rate(scheduler_scheduling_attempt_duration_seconds_bucket{job="scheduler"}[5m])) without(instance, pod))
       labels:
@@ -798,10 +807,10 @@ spec:
         quantile: "0.9"
       record: cluster_quantile:scheduler_scheduling_algorithm_duration_seconds:histogram_quantile
     - expr: |
-        histogram_quantile(0.9, sum(rate(scheduler_binding_duration_seconds_bucket{job="scheduler"}[5m])) without(instance, pod))
+        histogram_quantile(0.9, sum(rate(scheduler_pod_scheduling_sli_duration_seconds_bucket{job="scheduler"}[5m])) without(instance, pod))
       labels:
         quantile: "0.9"
-      record: cluster_quantile:scheduler_binding_duration_seconds:histogram_quantile
+      record: cluster_quantile:scheduler_pod_scheduling_sli_duration_seconds:histogram_quantile
     - expr: |
         histogram_quantile(0.5, sum(rate(scheduler_scheduling_attempt_duration_seconds_bucket{job="scheduler"}[5m])) without(instance, pod))
       labels:
@@ -813,10 +822,10 @@ spec:
         quantile: "0.5"
       record: cluster_quantile:scheduler_scheduling_algorithm_duration_seconds:histogram_quantile
     - expr: |
-        histogram_quantile(0.5, sum(rate(scheduler_binding_duration_seconds_bucket{job="scheduler"}[5m])) without(instance, pod))
+        histogram_quantile(0.5, sum(rate(scheduler_pod_scheduling_sli_duration_seconds_bucket{job="scheduler"}[5m])) without(instance, pod))
       labels:
         quantile: "0.5"
-      record: cluster_quantile:scheduler_binding_duration_seconds:histogram_quantile
+      record: cluster_quantile:scheduler_pod_scheduling_sli_duration_seconds:histogram_quantile
   - name: node.rules
     rules:
     - expr: |
