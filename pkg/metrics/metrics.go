@@ -1,8 +1,6 @@
 package metrics
 
 import (
-	"time"
-
 	"k8s.io/component-base/metrics"
 	"k8s.io/component-base/metrics/legacyregistry"
 )
@@ -45,14 +43,14 @@ var (
 	// of processing admission requests.
 	// Buckets have been chosen to minimize the cardinality while providing
 	// good-enough visibility.
+	//
+	// TODO(simonpasquier): add support for native histograms once it is
+	// supported by k8s.io/component-base/metrics.
 	WebhookRequestLatency = metrics.NewHistogramVec(
 		&metrics.HistogramOpts{
-			Name:                            "cluster_monitoring_webhook_latency_seconds",
-			Help:                            "Histogram of the latency of processing admission requests",
-			Buckets:                         []float64{0.1, 0.5, 1.0, 2.5, 5.0},
-			NativeHistogramBucketFactor:     1.1,
-			NativeHistogramMaxBucketNumber:  100,
-			NativeHistogramMinResetDuration: 1 * time.Hour,
+			Name:    "cluster_monitoring_webhook_latency_seconds",
+			Help:    "Histogram of the latency of processing admission requests",
+			Buckets: []float64{0.1, 0.5, 1.0, 2.5, 5.0},
 		},
 		[]string{"webhook"},
 	)
