@@ -42,7 +42,7 @@ GOLANGCI_LINT_VERSION=v2.11.3
 PROMTOOL_BIN=$(BIN_DIR)/promtool
 DOCGEN_BIN=$(BIN_DIR)/docgen
 MISSPELL_BIN=$(BIN_DIR)/misspell
-TOOLING=$(EMBEDMD_BIN) $(JB_BIN) $(GOJSONTOYAML_BIN) $(JSONNET_BIN) $(JSONNETFMT_BIN) $(PROMTOOL_BIN) $(DOCGEN_BIN) $(GOLANGCI_LINT_BIN) $(MISSPELL_BIN)
+TOOLING=$(EMBEDMD_BIN) $(JB_BIN) $(GOJSONTOYAML_BIN) $(JSONNET_BIN) $(JSONNETFMT_BIN) $(PROMTOOL_BIN) $(DOCGEN_BIN) $(MISSPELL_BIN)
 
 MANIFESTS_DIR ?= $(shell pwd)/manifests
 JSON_MANIFESTS_DIR ?= $(shell pwd)/tmp/json-manifests/manifests
@@ -225,6 +225,9 @@ golangci-lint: $(GOLANGCI_LINT_BIN)
 golangci-lint-fix: $(GOLANGCI_LINT_BIN)
 	$(GOLANGCI_LINT_BIN) run --verbose --print-resources-usage --fix
 
+$(GOLANGCI_LINT_BIN): $(BIN_DIR)
+	curl -sfL https://raw.githubusercontent.com/golangci/golangci-lint/master/install.sh| sh -s -- -b $(BIN_DIR) $(GOLANGCI_LINT_VERSION)
+
 .PHONY:
 misspell: $(MISSPELL_BIN)
 	$(MISSPELL_BIN) -error $(MARKDOWN_DOCS)
@@ -295,4 +298,3 @@ $(TOOLING): $(BIN_DIR)
 	@echo Installing tools from hack/tools/tools.go
 	@cd hack/tools && go list -mod=mod -tags tools -e -f '{{ range .Imports }}{{ printf "%s\n" .}}{{end}}' ./ | xargs -tI % go build -mod=mod -o $(BIN_DIR) %
 	@GOBIN=$(BIN_DIR) go install $(GO_PKG)/hack/docgen
-	curl -sfL https://raw.githubusercontent.com/golangci/golangci-lint/master/install.sh| sh -s -- -b $(BIN_DIR) $(GOLANGCI_LINT_VERSION)
