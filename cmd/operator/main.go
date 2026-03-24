@@ -128,7 +128,8 @@ func newClient(
 func Main() int {
 	flagset := flag.CommandLine
 	klog.InitFlags(flagset)
-	runtimelog.SetLogger(klog.Background())
+	logger := klog.Background()
+	runtimelog.SetLogger(logger)
 	namespace := flagset.String("namespace", "openshift-monitoring", "Namespace to deploy and manage cluster monitoring stack in.")
 	namespaceUserWorkload := flagset.String("namespace-user-workload", "openshift-user-workload-monitoring", "Namespace to deploy and manage user workload monitoring stack in.")
 	configMapName := flagset.String("configmap", "cluster-monitoring-config", "ConfigMap name to configure the cluster monitoring stack.")
@@ -209,7 +210,7 @@ func Main() int {
 	config.QPS = 100
 	config.Burst = 200
 
-	ctx, cancel := context.WithCancel(context.Background())
+	ctx, cancel := context.WithCancel(klog.NewContext(context.Background(), logger))
 	defer cancel()
 
 	client, err := newClient(ctx, config, *releaseVersion, *namespace, *namespaceUserWorkload)

@@ -13,11 +13,19 @@ import (
 
 // AlertRelabelConfigApplyConfiguration represents a declarative configuration of the AlertRelabelConfig type for use
 // with apply.
+//
+// AlertRelabelConfig defines a set of relabel configs for alerts.
+//
+// Compatibility level 1: Stable within a major release for a minimum of 12 months or 3 minor releases (whichever is longer).
 type AlertRelabelConfigApplyConfiguration struct {
-	metav1.TypeMetaApplyConfiguration    `json:",inline"`
+	metav1.TypeMetaApplyConfiguration `json:",inline"`
+	// metadata is the standard object's metadata.
+	// More info: https://git.k8s.io/community/contributors/devel/sig-architecture/api-conventions.md#metadata
 	*metav1.ObjectMetaApplyConfiguration `json:"metadata,omitempty"`
-	Spec                                 *AlertRelabelConfigSpecApplyConfiguration   `json:"spec,omitempty"`
-	Status                               *AlertRelabelConfigStatusApplyConfiguration `json:"status,omitempty"`
+	// spec describes the desired state of this AlertRelabelConfig object.
+	Spec *AlertRelabelConfigSpecApplyConfiguration `json:"spec,omitempty"`
+	// status describes the current state of this AlertRelabelConfig object.
+	Status *AlertRelabelConfigStatusApplyConfiguration `json:"status,omitempty"`
 }
 
 // AlertRelabelConfig constructs a declarative configuration of the AlertRelabelConfig type for use with
@@ -31,29 +39,14 @@ func AlertRelabelConfig(name, namespace string) *AlertRelabelConfigApplyConfigur
 	return b
 }
 
-// ExtractAlertRelabelConfig extracts the applied configuration owned by fieldManager from
-// alertRelabelConfig. If no managedFields are found in alertRelabelConfig for fieldManager, a
-// AlertRelabelConfigApplyConfiguration is returned with only the Name, Namespace (if applicable),
-// APIVersion and Kind populated. It is possible that no managed fields were found for because other
-// field managers have taken ownership of all the fields previously owned by fieldManager, or because
-// the fieldManager never owned fields any fields.
+// ExtractAlertRelabelConfigFrom extracts the applied configuration owned by fieldManager from
+// alertRelabelConfig for the specified subresource. Pass an empty string for subresource to extract
+// the main resource. Common subresources include "status", "scale", etc.
 // alertRelabelConfig must be a unmodified AlertRelabelConfig API object that was retrieved from the Kubernetes API.
-// ExtractAlertRelabelConfig provides a way to perform a extract/modify-in-place/apply workflow.
+// ExtractAlertRelabelConfigFrom provides a way to perform a extract/modify-in-place/apply workflow.
 // Note that an extracted apply configuration will contain fewer fields than what the fieldManager previously
 // applied if another fieldManager has updated or force applied any of the previously applied fields.
-// Experimental!
-func ExtractAlertRelabelConfig(alertRelabelConfig *monitoringv1.AlertRelabelConfig, fieldManager string) (*AlertRelabelConfigApplyConfiguration, error) {
-	return extractAlertRelabelConfig(alertRelabelConfig, fieldManager, "")
-}
-
-// ExtractAlertRelabelConfigStatus is the same as ExtractAlertRelabelConfig except
-// that it extracts the status subresource applied configuration.
-// Experimental!
-func ExtractAlertRelabelConfigStatus(alertRelabelConfig *monitoringv1.AlertRelabelConfig, fieldManager string) (*AlertRelabelConfigApplyConfiguration, error) {
-	return extractAlertRelabelConfig(alertRelabelConfig, fieldManager, "status")
-}
-
-func extractAlertRelabelConfig(alertRelabelConfig *monitoringv1.AlertRelabelConfig, fieldManager string, subresource string) (*AlertRelabelConfigApplyConfiguration, error) {
+func ExtractAlertRelabelConfigFrom(alertRelabelConfig *monitoringv1.AlertRelabelConfig, fieldManager string, subresource string) (*AlertRelabelConfigApplyConfiguration, error) {
 	b := &AlertRelabelConfigApplyConfiguration{}
 	err := managedfields.ExtractInto(alertRelabelConfig, internal.Parser().Type("com.github.openshift.api.monitoring.v1.AlertRelabelConfig"), fieldManager, b, subresource)
 	if err != nil {
@@ -66,6 +59,27 @@ func extractAlertRelabelConfig(alertRelabelConfig *monitoringv1.AlertRelabelConf
 	b.WithAPIVersion("monitoring.openshift.io/v1")
 	return b, nil
 }
+
+// ExtractAlertRelabelConfig extracts the applied configuration owned by fieldManager from
+// alertRelabelConfig. If no managedFields are found in alertRelabelConfig for fieldManager, a
+// AlertRelabelConfigApplyConfiguration is returned with only the Name, Namespace (if applicable),
+// APIVersion and Kind populated. It is possible that no managed fields were found for because other
+// field managers have taken ownership of all the fields previously owned by fieldManager, or because
+// the fieldManager never owned fields any fields.
+// alertRelabelConfig must be a unmodified AlertRelabelConfig API object that was retrieved from the Kubernetes API.
+// ExtractAlertRelabelConfig provides a way to perform a extract/modify-in-place/apply workflow.
+// Note that an extracted apply configuration will contain fewer fields than what the fieldManager previously
+// applied if another fieldManager has updated or force applied any of the previously applied fields.
+func ExtractAlertRelabelConfig(alertRelabelConfig *monitoringv1.AlertRelabelConfig, fieldManager string) (*AlertRelabelConfigApplyConfiguration, error) {
+	return ExtractAlertRelabelConfigFrom(alertRelabelConfig, fieldManager, "")
+}
+
+// ExtractAlertRelabelConfigStatus extracts the applied configuration owned by fieldManager from
+// alertRelabelConfig for the status subresource.
+func ExtractAlertRelabelConfigStatus(alertRelabelConfig *monitoringv1.AlertRelabelConfig, fieldManager string) (*AlertRelabelConfigApplyConfiguration, error) {
+	return ExtractAlertRelabelConfigFrom(alertRelabelConfig, fieldManager, "status")
+}
+
 func (b AlertRelabelConfigApplyConfiguration) IsApplyConfiguration() {}
 
 // WithKind sets the Kind field in the declarative configuration to the given value
