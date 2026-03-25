@@ -700,8 +700,6 @@ func TestPrometheusOperatorConfiguration(t *testing.T) {
 		t.Fatal("k8s-prometheus-operator topology spread constraints WhenUnsatisfiable not configured correctly")
 	}
 
-	prometheusReloaderFound := false
-	prometheusWebListenLocal := false
 	kubeRbacProxyTLSCipherSuitesArg := ""
 	kubeRbacProxyMinTLSVersionArg := ""
 	for _, container := range d.Spec.Template.Spec.Containers {
@@ -715,12 +713,13 @@ func TestPrometheusOperatorConfiguration(t *testing.T) {
 				t.Fatalf("%s resources incorrectly configured", container.Name)
 			}
 
-			if getContainerArgValue(d.Spec.Template.Spec.Containers, PrometheusConfigReloaderFlag+"docker.io/openshift/origin-prometheus-config-reloader:latest", container.Name) != "" {
-				prometheusReloaderFound = true
-			}
-
-			if getContainerArgValue(d.Spec.Template.Spec.Containers, "--web.listen-address=127.0.0.1:8080", container.Name) != "" {
-				prometheusWebListenLocal = true
+			for _, arg := range []string{
+				PrometheusConfigReloaderFlag + "docker.io/openshift/origin-prometheus-config-reloader:latest",
+				"--web.listen-address=127.0.0.1:8080",
+				"--repair-policy-for-statefulsets=evict",
+			} {
+				_, found := getArgValue(container, arg)
+				require.True(t, found, "%q argument not found", arg)
 			}
 		case "kube-rbac-proxy":
 			if container.Image != "docker.io/openshift/origin-kube-rbac-proxy:latest" {
@@ -729,14 +728,6 @@ func TestPrometheusOperatorConfiguration(t *testing.T) {
 			kubeRbacProxyTLSCipherSuitesArg = getContainerArgValue(d.Spec.Template.Spec.Containers, KubeRbacProxyTLSCipherSuitesFlag, container.Name)
 			kubeRbacProxyMinTLSVersionArg = getContainerArgValue(d.Spec.Template.Spec.Containers, KubeRbacProxyMinTLSVersionFlag, container.Name)
 		}
-	}
-
-	if !prometheusReloaderFound {
-		t.Fatal("Configuring the Prometheus Config reloader image failed")
-	}
-
-	if !prometheusWebListenLocal {
-		t.Fatal("expected Prometheus operator to listen on 127.0.0.1:8080")
 	}
 
 	expectedKubeRbacProxyTLSCipherSuitesArg := fmt.Sprintf("%s%s",
@@ -4830,8 +4821,6 @@ func TestPrometheusOperatorUserWorkloadConfiguration(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	prometheusReloaderFound := false
-	prometheusWebListenLocal := false
 	kubeRbacProxyTLSCipherSuitesArg := ""
 	kubeRbacProxyMinTLSVersionArg := ""
 	for _, container := range d.Spec.Template.Spec.Containers {
@@ -4840,12 +4829,14 @@ func TestPrometheusOperatorUserWorkloadConfiguration(t *testing.T) {
 			if container.Image != "docker.io/openshift/origin-prometheus-operator:latest" {
 				t.Fatalf("%s image incorrectly configured", container.Name)
 			}
-			if getContainerArgValue(d.Spec.Template.Spec.Containers, PrometheusConfigReloaderFlag+"docker.io/openshift/origin-prometheus-config-reloader:latest", container.Name) != "" {
-				prometheusReloaderFound = true
-			}
 
-			if getContainerArgValue(d.Spec.Template.Spec.Containers, "--web.listen-address=127.0.0.1:8080", container.Name) != "" {
-				prometheusWebListenLocal = true
+			for _, arg := range []string{
+				PrometheusConfigReloaderFlag + "docker.io/openshift/origin-prometheus-config-reloader:latest",
+				"--web.listen-address=127.0.0.1:8080",
+				"--repair-policy-for-statefulsets=evict",
+			} {
+				_, found := getArgValue(container, arg)
+				require.True(t, found, "%q argument not found", arg)
 			}
 		case "kube-rbac-proxy":
 			if container.Image != "docker.io/openshift/origin-kube-rbac-proxy:latest" {
@@ -4854,14 +4845,6 @@ func TestPrometheusOperatorUserWorkloadConfiguration(t *testing.T) {
 			kubeRbacProxyTLSCipherSuitesArg = getContainerArgValue(d.Spec.Template.Spec.Containers, KubeRbacProxyTLSCipherSuitesFlag, container.Name)
 			kubeRbacProxyMinTLSVersionArg = getContainerArgValue(d.Spec.Template.Spec.Containers, KubeRbacProxyMinTLSVersionFlag, container.Name)
 		}
-	}
-
-	if !prometheusReloaderFound {
-		t.Fatal("Configuring the Prometheus Config reloader image failed")
-	}
-
-	if !prometheusWebListenLocal {
-		t.Fatal("expected Prometheus operator to listen on 127.0.0.1:8080")
 	}
 
 	expectedKubeRbacProxyTLSCipherSuitesArg := fmt.Sprintf("%s%s",

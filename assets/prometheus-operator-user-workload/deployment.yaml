@@ -37,6 +37,7 @@ spec:
         - --disable-unmanaged-prometheus-configuration=true
         - --kubelet-endpoints=true
         - --kubelet-endpointslice=true
+        - --repair-policy-for-statefulsets=evict
         - --prometheus-instance-namespaces=openshift-user-workload-monitoring
         - --alertmanager-instance-namespaces=openshift-user-workload-monitoring
         - --thanos-ruler-instance-namespaces=openshift-user-workload-monitoring
