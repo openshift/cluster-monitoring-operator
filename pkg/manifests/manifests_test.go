@@ -4354,6 +4354,9 @@ func TestThanosRulerConfiguration(t *testing.T) {
 	if tr.Spec.AlertQueryURL != expectedExternalURL {
 		t.Fatalf("Thanos Ruler alertquery URL is not configured correctly, expected %s, but got %s", expectedExternalURL, tr.Spec.AlertQueryURL)
 	}
+
+	require.Equal(t, "TLS12", string(*tr.Spec.GRPCServerTLSConfig.SafeTLSConfig.MinVersion))
+
 }
 
 func TestThanosRulerRetentionConfig(t *testing.T) {
