@@ -15,9 +15,12 @@
 package manifests
 
 import (
+	"fmt"
 	"slices"
 
 	configv1 "github.com/openshift/api/config/v1"
+	monv1 "github.com/prometheus-operator/prometheus-operator/pkg/apis/monitoring/v1"
+	"k8s.io/utils/ptr"
 )
 
 var (
@@ -64,6 +67,20 @@ func (c *APIServerConfig) MinTLSVersion() string {
 		return string(APIServerDefaultMinTLSVersion)
 	}
 	return string(profile.MinTLSVersion)
+}
+
+func convertTLSVersionToMonitoringV1(v string) (*monv1.TLSVersion, error) {
+	switch configv1.TLSProtocolVersion(v) {
+	case configv1.VersionTLS10:
+		return ptr.To(monv1.TLSVersion10), nil
+	case configv1.VersionTLS11:
+		return ptr.To(monv1.TLSVersion11), nil
+	case configv1.VersionTLS12:
+		return ptr.To(monv1.TLSVersion12), nil
+	case configv1.VersionTLS13:
+		return ptr.To(monv1.TLSVersion13), nil
+	}
+	return nil, fmt.Errorf("invalid TLS version: %v", v)
 }
 
 func (c *APIServerConfig) getTLSProfile() configv1.TLSProfileSpec {
