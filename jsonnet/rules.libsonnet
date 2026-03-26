@@ -319,14 +319,34 @@ function(params) {
           // This recording rule doesn't expose objects count of -1 as it
           // indicates issues between the kube-apiserver and etcd and pollutes
           // the data in telemetry.
-          expr: 'sum by (instance) (apiserver_storage_objects != -1)',
+          expr: 'sum by (instance) (apiserver_resource_objects != -1)',
           record: 'instance:etcd_object_counts:sum',
         },
         {
           // This recording rule doesn't expose objects count of -1 as it
           // indicates issues between the kube-apiserver and etcd and pollutes
           // the data in telemetry.
-          expr: 'topk(500, max by(resource) (apiserver_storage_objects != -1))',
+          // The expression concatenates the resource and group labels together
+          // because this is how the original recorded metric was constructed.
+          // Core resources have an empty group label hence the 'or' clause.
+          expr: |||
+            topk(
+              500,
+              max by (resource) (
+                  label_replace(
+                      label_join(apiserver_resource_objects{group!=""}, "resource_group", ".", "resource", "group")
+                    or
+                      label_replace(apiserver_resource_objects{group=""}, "resource_group", "$1", "resource", "(.+)"),
+                    "resource",
+                    "$1",
+                    "resource_group",
+                    "(.+)"
+                  )
+                !=
+                  -1
+              )
+            )
+          |||,
           record: 'cluster:usage:resources:sum',
         },
         {
