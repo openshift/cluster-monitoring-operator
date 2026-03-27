@@ -336,24 +336,8 @@ func UnmarshalStrict(data []byte, v interface{}) error {
 	}
 }
 
-func newConfig(content []byte) (*Config, error) {
-	c := Config{}
-
-	cmc := defaultClusterMonitoringConfiguration()
-	err := UnmarshalStrict(content, &cmc)
-	if err != nil {
-		return nil, err
-	}
-
-	c.ClusterMonitoringConfiguration = &cmc
-	c.applyDefaults()
-	c.UserWorkloadConfiguration = NewDefaultUserWorkloadMonitoringConfig()
-
-	return &c, nil
-}
-
-func defaultClusterMonitoringConfiguration() ClusterMonitoringConfiguration {
-	return ClusterMonitoringConfiguration{
+func NewConfigFromString(content string) (*Config, error) {
+	cmc := ClusterMonitoringConfiguration{
 		NodeExporterConfig: NodeExporterConfig{
 			Collectors: NodeExporterCollectorConfig{
 				NetDev: NodeExporterCollectorNetDevConfig{
@@ -369,6 +353,18 @@ func defaultClusterMonitoringConfiguration() ClusterMonitoringConfiguration {
 			},
 		},
 	}
+	err := UnmarshalStrict([]byte(content), &cmc)
+	if err != nil {
+		return nil, err
+	}
+
+	c := Config{
+		ClusterMonitoringConfiguration: &cmc,
+		UserWorkloadConfiguration:      NewDefaultUserWorkloadMonitoringConfig(),
+	}
+	c.applyDefaults()
+
+	return &c, nil
 }
 
 func (c *Config) applyDefaults() {
@@ -628,24 +624,15 @@ func calculateBodySizeLimit(podCapacity int) string {
 	return fmt.Sprintf("%dMB", int(math.Ceil(float64(bodySize)/(1024*1024))))
 }
 
-// NewConfigFromString transforms a string containing configuration in the
-// openshift-monitoring/cluster-monitoring-configuration format into a data
-// structure that facilitates programmatical checks of that configuration. The
-// content of the data structure might change if TechPreview is enabled (tp), as
-// some features are only meant for TechPreview.
-func NewConfigFromString(content string) (*Config, error) {
-	if content == "" {
-		return NewDefaultConfig(), nil
-	}
-
-	return newConfig([]byte(content))
-}
-
 func NewConfigFromConfigMap(c *v1.ConfigMap) (*Config, error) {
 	configContent, found := c.Data[configKey]
-
 	if !found {
 		return nil, fmt.Errorf("%q key not found in the configmap", configKey)
+	}
+
+	if configContent == "" {
+		// Consider an empty string to be equivalent to an empty map.
+		configContent = "{}"
 	}
 
 	cParsed, err := NewConfigFromString(configContent)
@@ -653,15 +640,6 @@ func NewConfigFromConfigMap(c *v1.ConfigMap) (*Config, error) {
 		return nil, fmt.Errorf("failed to parse data at key %q: %w", configKey, err)
 	}
 	return cParsed, nil
-}
-
-func NewDefaultConfig() *Config {
-	c := &Config{}
-	cmc := defaultClusterMonitoringConfiguration()
-	c.ClusterMonitoringConfiguration = &cmc
-	c.UserWorkloadConfiguration = NewDefaultUserWorkloadMonitoringConfig()
-	c.applyDefaults()
-	return c
 }
 
 func (u *UserWorkloadConfiguration) applyDefaults() {

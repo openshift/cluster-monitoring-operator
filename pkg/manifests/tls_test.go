@@ -95,7 +95,7 @@ func TestNeedsNewCert(t *testing.T) {
 }
 
 func TestRotateGrpcTLSSecret(t *testing.T) {
-	f := NewFactory("openshift-monitoring", "openshift-user-workload-monitoring", NewDefaultConfig(), defaultInfrastructureReader(), &fakeProxyReader{}, NewAssets(assetsPath), &APIServerConfig{}, &configv1.Console{})
+	f := NewFactory("openshift-monitoring", "openshift-user-workload-monitoring", mustDefaultConfig(), defaultInfrastructureReader(), &fakeProxyReader{}, NewAssets(assetsPath), &APIServerConfig{}, &configv1.Console{})
 
 	for _, tc := range []struct {
 		name  string
@@ -213,7 +213,7 @@ func TestRotateGrpcTLSSecret(t *testing.T) {
 }
 
 func TestUnconfiguredGRPCManifests(t *testing.T) {
-	f := NewFactory("openshift-monitoring", "openshift-user-workload-monitoring", NewDefaultConfig(), defaultInfrastructureReader(), &fakeProxyReader{}, NewAssets(assetsPath), &APIServerConfig{}, &configv1.Console{})
+	f := NewFactory("openshift-monitoring", "openshift-user-workload-monitoring", mustDefaultConfig(), defaultInfrastructureReader(), &fakeProxyReader{}, NewAssets(assetsPath), &APIServerConfig{}, &configv1.Console{})
 	_, err := f.AlertmanagerConfig()
 	if err != nil {
 		t.Fatal(err)
@@ -226,7 +226,7 @@ func TestUnconfiguredGRPCManifests(t *testing.T) {
 }
 
 func TestCrossSigningAfterRotation(t *testing.T) {
-	f := NewFactory("openshift-monitoring", "openshift-user-workload-monitoring", NewDefaultConfig(), defaultInfrastructureReader(), &fakeProxyReader{}, NewAssets(assetsPath), &APIServerConfig{}, &configv1.Console{})
+	f := NewFactory("openshift-monitoring", "openshift-user-workload-monitoring", mustDefaultConfig(), defaultInfrastructureReader(), &fakeProxyReader{}, NewAssets(assetsPath), &APIServerConfig{}, &configv1.Console{})
 
 	for _, tc := range []struct {
 		name string

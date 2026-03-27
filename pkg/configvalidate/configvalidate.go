@@ -32,22 +32,6 @@ const (
 	monitoringUWMConfigmap      = "user-workload-monitoring-config"
 )
 
-type parseConfig func(c *corev1.ConfigMap) error
-
-func configParser() parseConfig {
-	return func(c *corev1.ConfigMap) error {
-		_, err := manifests.NewConfigFromConfigMap(c)
-		return err
-	}
-}
-
-func uwmConfigParser() parseConfig {
-	return func(c *corev1.ConfigMap) error {
-		_, err := manifests.NewUserWorkloadConfigFromConfigMap(c)
-		return err
-	}
-}
-
 type configmapsValidator struct {
 	d admission.Decoder
 }
@@ -69,12 +53,18 @@ func MustNewConfigmapsValidatorHandler() *http.Handler {
 }
 
 func (v *configmapsValidator) Handle(ctx context.Context, req admission.Request) admission.Response {
-	var parser parseConfig
+	var configLoader func(c *corev1.ConfigMap) error
 	switch {
 	case req.Namespace == monitoringPlatformNamespace && req.Name == monitoringPlatformConfigmap:
-		parser = configParser()
+		configLoader = func(c *corev1.ConfigMap) error {
+			_, err := manifests.NewConfigFromConfigMap(c)
+			return err
+		}
 	case req.Namespace == monitoringUWMNamespace && req.Name == monitoringUWMConfigmap:
-		parser = uwmConfigParser()
+		configLoader = func(c *corev1.ConfigMap) error {
+			_, err := manifests.NewUserWorkloadConfigFromConfigMap(c)
+			return err
+		}
 	default:
 		return admission.Allowed("")
 	}
@@ -84,7 +74,7 @@ func (v *configmapsValidator) Handle(ctx context.Context, req admission.Request)
 		return admission.Errored(http.StatusBadRequest, err)
 	}
 
-	err := parser(&configmap)
+	err := configLoader(&configmap)
 	if err != nil {
 		return admission.Denied(err.Error())
 	}
