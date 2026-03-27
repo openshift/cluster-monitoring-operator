@@ -1683,6 +1683,8 @@ func TestPrometheusK8sConfiguration(t *testing.T) {
 	if p.Spec.ExternalURL != expectedExternalURL {
 		t.Fatalf("Prometheus external URL is not configured correctly, expected %s, but got %s", expectedExternalURL, p.Spec.ExternalURL)
 	}
+
+	require.Equal(t, "TLS12", string(*p.Spec.Thanos.GRPCServerTLSConfig.SafeTLSConfig.MinVersion))
 }
 
 func TestPrometheusUserWorkloadConfiguration(t *testing.T) {
@@ -1768,6 +1770,8 @@ func TestPrometheusUserWorkloadConfiguration(t *testing.T) {
 	require.Equal(t, p.Spec.ScrapeClasses[0].FallbackScrapeProtocol, ptr.To(monv1.PrometheusText1_0_0))
 
 	require.Equal(t, p.Spec.ExternalLabels, map[string]string{"foo": "bar", "oof": "rab"})
+
+	require.Equal(t, "TLS12", string(*p.Spec.Thanos.GRPCServerTLSConfig.SafeTLSConfig.MinVersion))
 }
 
 func TestPrometheusQueryLogFileConfig(t *testing.T) {
