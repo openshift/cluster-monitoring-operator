@@ -285,16 +285,6 @@ func (cfg *TelemeterClientConfig) IsEnabled() bool {
 	return true
 }
 
-func (cps CollectionProfiles) String() string {
-	var sb strings.Builder
-	for i := 0; i < len(cps)-1; i++ {
-		sb.WriteString(string(cps[i]))
-		sb.WriteString(", ")
-	}
-	sb.WriteString(string(cps[len(cps)-1]))
-	return sb.String()
-}
-
 // Copied from k8s.io/apimachinery/pkg/util/yaml.UnmarshalStrict but using
 // sigs.k8s.io/json.UnmarshalStrict instead of encoding/json.UnmarshalStrict
 // to enforce case-sensitive unmarshalling and provide more detailed error context.
@@ -363,6 +353,15 @@ func NewConfigFromString(content string) (*Config, error) {
 		UserWorkloadConfiguration:      NewDefaultUserWorkloadMonitoringConfig(),
 	}
 	c.applyDefaults()
+
+	// Validate the configured collection profile.
+	if !slices.Contains(SupportedCollectionProfiles, c.ClusterMonitoringConfiguration.PrometheusK8sConfig.CollectionProfile) {
+		return nil, fmt.Errorf("%w: %q is not supported, supported collection profiles are [%s]",
+			ErrConfigValidation,
+			c.ClusterMonitoringConfiguration.PrometheusK8sConfig.CollectionProfile,
+			strings.Join(SupportedCollectionProfiles.StringSlice(), ", "),
+		)
+	}
 
 	return &c, nil
 }
@@ -584,31 +583,18 @@ func (c *Config) LoadEnforcedBodySizeLimit(pcr PodCapacityReader, ctx context.Co
 	return nil
 }
 
-func (c *Config) Precheck() (*InvalidConfigWarning, error) {
-	// Validate the configured collection profile.
-	for _, profile := range SupportedCollectionProfiles {
-		var v float64
-		if profile == c.ClusterMonitoringConfiguration.PrometheusK8sConfig.CollectionProfile {
-			v = 1
-		}
-		metrics.CollectionProfile.WithLabelValues(string(profile)).Set(v)
-	}
-	if !slices.Contains(SupportedCollectionProfiles, c.ClusterMonitoringConfiguration.PrometheusK8sConfig.CollectionProfile) {
-		return nil, fmt.Errorf(`%q is not supported, supported collection profiles are: %q: %w`, c.ClusterMonitoringConfiguration.PrometheusK8sConfig.CollectionProfile, SupportedCollectionProfiles.String(), ErrConfigValidation)
-	}
-
-	// Highlight deprecated config fields.
+func (c *Config) CheckDeprecatedFields() []InvalidConfigWarning {
+	// Prometheus-Adapter is replaced with Metrics Server by default from 4.16
 	var d float64
-	var warn *InvalidConfigWarning
+	var warnings []InvalidConfigWarning
 	if c.ClusterMonitoringConfiguration.K8sPrometheusAdapter != nil {
 		klog.Infof("k8sPrometheusAdapter is a deprecated config use metricsServer instead")
 		d = 1
-		warn = &InvalidConfigWarning{ConfigMap: "openshift-monitoring/cluster-monitoring-config", Err: errPrometheusAdapterDeprecated}
+		warnings = append(warnings, InvalidConfigWarning{ConfigMap: "openshift-monitoring/cluster-monitoring-config", Err: errPrometheusAdapterDeprecated})
 	}
-	// Prometheus-Adapter is replaced with Metrics Server by default from 4.16
 	metrics.DeprecatedConfig.WithLabelValues("openshift-monitoring/cluster-monitoring-config", "k8sPrometheusAdapter", "4.16").Set(d)
 
-	return warn, nil
+	return warnings
 }
 
 func calculateBodySizeLimit(podCapacity int) string {

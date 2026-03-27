@@ -985,13 +985,14 @@ func (o *Operator) Config(ctx context.Context) (*manifests.Config, []string, err
 		return nil, warnings, err
 	}
 
-	warning, err := c.Precheck()
-	if warning != nil {
+	for _, warning := range c.CheckDeprecatedFields() {
 		warnings = append(warnings, warning.Warning())
 	}
-	if err != nil {
-		return nil, warnings, err
-	}
+
+	metrics.SetCollectionProfileMetrics(
+		string(c.ClusterMonitoringConfiguration.PrometheusK8sConfig.CollectionProfile),
+		manifests.SupportedCollectionProfiles.StringSlice(),
+	)
 
 	// Merge ClusterMonitoring CRD configuration if feature gate is enabled
 	if o.ClusterMonitoringConfigEnabled {

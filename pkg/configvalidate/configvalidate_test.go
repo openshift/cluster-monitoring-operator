@@ -62,7 +62,7 @@ func TestHandle(t *testing.T) {
 			allowed: true,
 		},
 		{
-			name: "invalid platform config",
+			name: "configuration with unknown field",
 			req: admission.Request{
 				AdmissionRequest: admissionv1.AdmissionRequest{
 					Name:      "cluster-monitoring-config",
@@ -89,6 +89,35 @@ func TestHandle(t *testing.T) {
 			},
 			allowed: false,
 			message: "failed to parse data at key \"config.yaml\": error unmarshaling: unknown field \"prometheus_operator\"",
+		},
+		{
+			name: "configuration with invalid YAML",
+			req: admission.Request{
+				AdmissionRequest: admissionv1.AdmissionRequest{
+					Name:      "cluster-monitoring-config",
+					Namespace: "openshift-monitoring",
+					Resource: metav1.GroupVersionResource{
+						Group:    "",
+						Version:  "v1",
+						Resource: "configmaps",
+					},
+					Object: runtime.RawExtension{
+						Raw: []byte(`{
+							"apiVersion": "v1",
+							"kind": "ConfigMap",
+							"metadata": {
+								"name": "cluster-monitoring-config",
+								"namespace": "openshift-monitoring"
+							},
+							"data": {
+								"config.yaml": "{"
+							}
+						}`),
+					},
+				},
+			},
+			allowed: false,
+			message: "failed to parse data at key \"config.yaml\": yaml: line 1: did not find expected node content",
 		},
 		{
 			name: "non monitoring configmap",
