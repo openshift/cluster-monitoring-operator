@@ -18,11 +18,14 @@ import (
 	"context"
 	"net/http"
 
+	"github.com/prometheus/client_golang/prometheus"
+	"github.com/prometheus/client_golang/prometheus/promhttp"
 	corev1 "k8s.io/api/core/v1"
 	"k8s.io/apimachinery/pkg/runtime"
 	"sigs.k8s.io/controller-runtime/pkg/webhook/admission"
 
 	"github.com/openshift/cluster-monitoring-operator/pkg/manifests"
+	"github.com/openshift/cluster-monitoring-operator/pkg/metrics"
 )
 
 const (
@@ -32,21 +35,7 @@ const (
 	monitoringUWMConfigmap      = "user-workload-monitoring-config"
 )
 
-type parseConfig func(c *corev1.ConfigMap) error
-
-func configParser() parseConfig {
-	return func(c *corev1.ConfigMap) error {
-		_, err := manifests.NewConfigFromConfigMap(c)
-		return err
-	}
-}
-
-func uwmConfigParser() parseConfig {
-	return func(c *corev1.ConfigMap) error {
-		_, err := manifests.NewUserWorkloadConfigFromConfigMap(c)
-		return err
-	}
-}
+type parserFunc func(c *corev1.ConfigMap) error
 
 type configmapsValidator struct {
 	d admission.Decoder
@@ -56,7 +45,7 @@ func newConfigmapsValidator() *configmapsValidator {
 	return &configmapsValidator{d: admission.NewDecoder(runtime.NewScheme())}
 }
 
-func MustNewConfigmapsValidatorHandler() *http.Handler {
+func MustNewConfigmapsValidatorHandler(path string) http.Handler {
 	hook := &admission.Webhook{
 		Handler: newConfigmapsValidator(),
 	}
@@ -65,17 +54,46 @@ func MustNewConfigmapsValidatorHandler() *http.Handler {
 	if err != nil {
 		panic(err)
 	}
-	return &handler
+
+	lbl := prometheus.Labels{"webhook": path}
+	lat := metrics.WebhookRequestLatency.MustCurryWith(lbl)
+	cnt := metrics.WebhookRequestTotal.MustCurryWith(lbl)
+	gge := metrics.WebhookRequestInFlight.With(lbl)
+
+	// Initialize the most likely HTTP status codes.
+	_ = cnt.WithLabelValues("200")
+	_ = cnt.WithLabelValues("500")
+
+	return promhttp.InstrumentHandlerDuration(
+		lat,
+		promhttp.InstrumentHandlerCounter(
+			cnt,
+			http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+				gge.Inc()
+				defer gge.Dec()
+				handler.ServeHTTP(w, r)
+			}),
+		),
+	)
 }
 
 func (v *configmapsValidator) Handle(ctx context.Context, req admission.Request) admission.Response {
-	var parser parseConfig
+	var parser parserFunc
 	switch {
 	case req.Namespace == monitoringPlatformNamespace && req.Name == monitoringPlatformConfigmap:
-		parser = configParser()
+		parser = func(c *corev1.ConfigMap) error {
+			_, err := manifests.NewConfigFromConfigMap(c)
+			return err
+		}
 	case req.Namespace == monitoringUWMNamespace && req.Name == monitoringUWMConfigmap:
-		parser = uwmConfigParser()
+		parser = func(c *corev1.ConfigMap) error {
+			_, err := manifests.NewUserWorkloadConfigFromConfigMap(c)
+			return err
+		}
 	default:
+		// This should not happen because the ValidatingWebhookConfiguration is
+		// configured to validate only CMO and UWM configmaps but fail safe in
+		// case the invariant changes.
 		return admission.Allowed("")
 	}
 
@@ -84,8 +102,7 @@ func (v *configmapsValidator) Handle(ctx context.Context, req admission.Request)
 		return admission.Errored(http.StatusBadRequest, err)
 	}
 
-	err := parser(&configmap)
-	if err != nil {
+	if err := parser(&configmap); err != nil {
 		return admission.Denied(err.Error())
 	}
 
