@@ -541,6 +541,14 @@ func New(
 	return o, nil
 }
 
+func (o *Operator) cmoConfigMap() string {
+	return fmt.Sprintf("%s/%s", o.namespace, o.configMapName)
+}
+
+func (o *Operator) uwmConfigMap() string {
+	return fmt.Sprintf("%s/%s", o.namespaceUserWorkload, o.userWorkloadConfigMapName)
+}
+
 // Run the controller.
 func (o *Operator) Run(ctx context.Context) error {
 	stopc := ctx.Done()
@@ -603,11 +611,10 @@ func (o *Operator) Run(ctx context.Context) error {
 	ticker := time.NewTicker(reconciliationPeriod)
 	defer ticker.Stop()
 
-	key := o.namespace + "/" + o.configMapName
-	_, exists, _ := o.cmapInf.GetStore().GetByKey(key)
+	_, exists, _ := o.cmapInf.GetStore().GetByKey(o.cmoConfigMap())
 	if !exists {
 		klog.Infof("ConfigMap to configure stack does not exist. Reconciling with default config every %s.", reconciliationPeriod)
-		o.enqueue(key)
+		o.enqueue()
 	}
 
 	for {
@@ -615,10 +622,10 @@ func (o *Operator) Run(ctx context.Context) error {
 		case <-stopc:
 			return nil
 		case <-ticker.C:
-			_, exists, _ := o.cmapInf.GetStore().GetByKey(key)
+			_, exists, _ := o.cmapInf.GetStore().GetByKey(o.cmoConfigMap())
 			if !exists {
 				klog.Infof("ConfigMap to configure stack does not exist. Reconciling with default config every %s.", reconciliationPeriod)
-				o.enqueue(key)
+				o.enqueue()
 			}
 		}
 	}
@@ -634,8 +641,6 @@ func (o *Operator) keyFunc(obj interface{}) (string, bool) {
 }
 
 func (o *Operator) handleEvent(obj interface{}) {
-	cmoConfigMap := o.namespace + "/" + o.configMapName
-
 	switch v := obj.(type) {
 	case *configv1.APIServer:
 		if !o.apiServerConfig.Equal(manifests.NewAPIServerConfig(v)) {
@@ -664,7 +669,7 @@ func (o *Operator) handleEvent(obj interface{}) {
 			objKind = fmt.Sprintf("%T", obj)
 		}
 		klog.Infof("Triggering an update due to a change in %s/%s", objKind, name)
-		o.enqueue(cmoConfigMap)
+		o.enqueue()
 		return
 	}
 
@@ -676,10 +681,8 @@ func (o *Operator) handleEvent(obj interface{}) {
 
 	klog.V(5).Infof("ConfigMap or Secret updated: %s", key)
 
-	uwmConfigMap := o.namespaceUserWorkload + "/" + o.userWorkloadConfigMapName
-
 	switch key {
-	case cmoConfigMap:
+	case o.cmoConfigMap():
 	case apiAuthenticationConfigMap:
 	case kubeletServingCAConfigMap:
 	case metricsServerClientCerts:
@@ -688,7 +691,7 @@ func (o *Operator) handleEvent(obj interface{}) {
 	case grpcTLS:
 	case metricsClientCerts:
 	case federateClientCerts:
-	case uwmConfigMap:
+	case o.uwmConfigMap():
 	default:
 		klog.V(5).Infof("ConfigMap or Secret (%s) not triggering an update.", key)
 		return
@@ -696,9 +699,7 @@ func (o *Operator) handleEvent(obj interface{}) {
 
 	klog.Infof("Triggering an update due to ConfigMap or Secret: %s", key)
 
-	// Always enqueue the cluster monitoring operator configmap.
-	// That way we reuse the same synchronization logic for all triggering object changes.
-	o.enqueue(cmoConfigMap)
+	o.enqueue()
 }
 
 func (o *Operator) worker(ctx context.Context) {
@@ -714,7 +715,7 @@ func (o *Operator) processNextWorkItem(ctx context.Context) bool {
 	defer o.queue.Done(key)
 
 	metrics.ReconcileAttempts.Inc()
-	err := o.sync(ctx, key)
+	err := o.sync(ctx)
 	if err == nil {
 		metrics.ReconcileStatus.Set(1)
 		o.queue.Forget(key)
@@ -722,27 +723,17 @@ func (o *Operator) processNextWorkItem(ctx context.Context) bool {
 	}
 
 	metrics.ReconcileStatus.Set(0)
-	klog.Errorf("Syncing %q failed", key)
-	utilruntime.HandleError(fmt.Errorf("sync %q failed: %w", key, err))
+	klog.Error("Syncing failed")
+	utilruntime.HandleError(fmt.Errorf("sync failed: %w", err))
 	o.queue.AddRateLimited(key)
 
 	return true
 }
 
-func (o *Operator) enqueue(obj interface{}) {
-	if obj == nil {
-		return
-	}
-
-	key, ok := obj.(string)
-	if !ok {
-		key, ok = o.keyFunc(obj)
-		if !ok {
-			return
-		}
-	}
-
-	o.queue.Add(key)
+func (o *Operator) enqueue() {
+	// We use a unique key value here because the synchronization logic is the
+	// same for all triggering object changes.
+	o.queue.Add("reconcile")
 }
 
 type proxyConfigSupplier func(context.Context) (*ProxyConfig, error)
@@ -776,8 +767,8 @@ func (o *Operator) setUpgradeable(ctx context.Context, status configv1.Condition
 	}
 }
 
-func (o *Operator) sync(ctx context.Context, key string) error {
-	config, warnings, err := o.Config(ctx, key)
+func (o *Operator) sync(ctx context.Context) error {
+	config, warnings, err := o.Config(ctx)
 
 	reason := "InvalidConfiguration"
 	if warnings != nil {
@@ -957,51 +948,51 @@ func (o *Operator) loadConsoleConfig(ctx context.Context) (*configv1.Console, er
 }
 
 func (o *Operator) loadUserWorkloadConfig(ctx context.Context) (*manifests.UserWorkloadConfiguration, error) {
-	cmKey := fmt.Sprintf("%s/%s", o.namespaceUserWorkload, o.userWorkloadConfigMapName)
-
 	userCM, err := o.client.GetConfigmap(ctx, o.namespaceUserWorkload, o.userWorkloadConfigMapName)
 	if err != nil {
+		cm := o.uwmConfigMap()
 		if apierrors.IsNotFound(err) {
-			klog.Warningf("User Workload Monitoring %q ConfigMap not found. Using defaults.", cmKey)
+			klog.Warningf("User Workload Monitoring %q ConfigMap not found. Using defaults.", cm)
 			return manifests.NewDefaultUserWorkloadMonitoringConfig(), nil
 		}
-		klog.Warningf("Error loading User Workload Monitoring %q ConfigMap. Error: %v", cmKey, err)
-		return nil, fmt.Errorf("the User Workload Monitoring %q ConfigMap could not be loaded: %w", cmKey, err)
+		klog.Warningf("Error loading User Workload Monitoring %q ConfigMap. Error: %v", cm, err)
+		return nil, fmt.Errorf("the User Workload Monitoring %q ConfigMap could not be loaded: %w", cm, err)
 	}
 
 	return manifests.NewUserWorkloadConfigFromConfigMap(userCM)
 }
 
-func (o *Operator) loadConfig(key string) (*manifests.Config, error) {
-	obj, found, err := o.cmapInf.GetStore().GetByKey(key)
+func (o *Operator) loadConfig() (*manifests.Config, error) {
+	obj, found, err := o.cmapInf.GetStore().GetByKey(o.cmoConfigMap())
 	if err != nil {
 		return nil, fmt.Errorf("an error occurred when retrieving the Cluster Monitoring ConfigMap: %w", err)
 	}
 
 	if !found {
 		klog.Warning("No Cluster Monitoring ConfigMap was found. Using defaults.")
-		return manifests.NewDefaultConfig(), nil
+		return manifests.NewConfigFromString("{}")
 	}
 
 	cmap := obj.(*v1.ConfigMap)
 	return manifests.NewConfigFromConfigMap(cmap)
 }
 
-func (o *Operator) Config(ctx context.Context, key string) (*manifests.Config, []string, error) {
+func (o *Operator) Config(ctx context.Context) (*manifests.Config, []string, error) {
 	var warnings []string
 
-	c, err := o.loadConfig(key)
+	c, err := o.loadConfig()
 	if err != nil {
 		return nil, warnings, err
 	}
 
-	warning, err := c.Precheck()
-	if warning != nil {
+	for _, warning := range c.CheckDeprecatedFields() {
 		warnings = append(warnings, warning.Warning())
 	}
-	if err != nil {
-		return nil, warnings, err
-	}
+
+	metrics.SetCollectionProfileMetrics(
+		string(c.ClusterMonitoringConfiguration.PrometheusK8sConfig.CollectionProfile),
+		manifests.SupportedCollectionProfiles.StringSlice(),
+	)
 
 	// Merge ClusterMonitoring CRD configuration if feature gate is enabled
 	if o.ClusterMonitoringConfigEnabled {
