@@ -22,5 +22,5 @@ versions:
     nodeExporter: 1.10.2
     promLabelProxy: 0.12.1
     prometheus: 3.9.1
-    prometheusOperator: 0.90.0
+    prometheusOperator: 0.90.1
     thanos: 0.41.0
