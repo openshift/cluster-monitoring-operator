@@ -34,6 +34,11 @@ function(params) {
     },
   },
   serviceMonitor: tc.telemeterClient.serviceMonitor {
+    metadata+: {
+      labels+: {
+        'monitoring.openshift.io/collection-profile': 'full',
+      },
+    },
     spec+: {
       endpoints: [
         {

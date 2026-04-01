@@ -135,6 +135,7 @@ function(params) {
       namespace: cfg.namespace,
       labels: {
         'app.kubernetes.io/name': cfg.name,
+        'monitoring.openshift.io/collection-profile': 'full',
       },
     },
     spec: {
