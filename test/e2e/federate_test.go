@@ -29,10 +29,8 @@ import (
 )
 
 func TestPlatformPrometheusFederateEndpoint(t *testing.T) {
-	const (
-		testAccount = "test-platform-federate"
-		testNs      = "openshift-monitoring" // f.Ns
-	)
+	const testAccount = "test-platform-federate"
+	testNs := f.Ns
 
 	saCleanup, err := f.CreateServiceAccount(testNs, testAccount)
 	require.NoError(t, err)
@@ -52,7 +50,7 @@ func TestPlatformPrometheusFederateEndpoint(t *testing.T) {
 
 	// Test service endpoint
 	t.Run("ServiceEndpoint", func(t *testing.T) {
-		err := framework.Poll(5*time.Second, time.Minute, func() error {
+		err := framework.Poll(5*time.Second, time.Minute, func() (err error) {
 			// port 9091 is the web port for prometheus-k8s
 			host, cleanUp, err := f.ForwardPort(t, f.Ns, "prometheus-k8s", 9091)
 			if err != nil {
@@ -165,7 +163,7 @@ func TestUserWorkloadPrometheusFederateEndpoint(t *testing.T) {
 
 	// Test service endpoint
 	t.Run("ServiceEndpoint", func(t *testing.T) {
-		err := framework.Poll(5*time.Second, 2*time.Minute, func() error {
+		err := framework.Poll(5*time.Second, 2*time.Minute, func() (err error) {
 			// port 9092 is the web port for prometheus-user-workload
 			host, cleanUp, err := f.ForwardPort(t, f.UserWorkloadMonitoringNs, "prometheus-user-workload", 9092)
 			if err != nil {
