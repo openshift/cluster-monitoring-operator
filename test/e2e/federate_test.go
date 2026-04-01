@@ -93,11 +93,11 @@ func TestPlatformPrometheusFederateEndpoint(t *testing.T) {
 		require.NoError(t, err)
 	})
 
-	// Test route endpoint. There is no `prometheus-k8s-federate` route by default.
-	// The federate endpoint is available on the main `prometheus-k8s` route.
+	// Test route endpoint.
 	t.Run("RouteEndpoint", func(t *testing.T) {
 		err = framework.Poll(5*time.Second, time.Minute, func() error {
-			route, err := f.OpenShiftRouteClient.Routes(f.Ns).Get(context.Background(), "prometheus-k8s", metav1.GetOptions{})
+			// Use the dedicated federate route
+			route, err := f.OpenShiftRouteClient.Routes(f.Ns).Get(context.Background(), "prometheus-k8s-federate", metav1.GetOptions{})
 			if err != nil {
 				return err
 			}
@@ -111,6 +111,7 @@ func TestPlatformPrometheusFederateEndpoint(t *testing.T) {
 				},
 			)
 
+			// The 'prometheus-k8s-federate' route has path '/federate', so the direct path is used.
 			resp, err := client.Do("GET", "/federate", nil)
 			if err != nil {
 				return err
@@ -130,6 +131,128 @@ func TestPlatformPrometheusFederateEndpoint(t *testing.T) {
 				return fmt.Errorf("metric 'prometheus_build_info' not found in response")
 			}
 
+			return nil
+		})
+		require.NoError(t, err)
+	})
+}
+
+func TestUserWorkloadPrometheusFederateEndpoint(t *testing.T) {
+	setupUserWorkloadAssetsWithTeardownHook(t, f)
+	require.NoError(t, deployUserApplication(f))
+
+	const (
+		testAccount = "test-uwm-federate"
+		// The old test creates the rolebinding in the test namespace for the default SA.
+		testNs = userWorkloadTestNs
+	)
+
+	saCleanup, err := f.CreateServiceAccount(testNs, testAccount)
+	require.NoError(t, err)
+	defer func() { require.NoError(t, saCleanup()) }()
+
+	// The old test binds `cluster-monitoring-view` to default SA. Let's do that.
+	rbCleanup, err := f.CreateClusterRoleBinding(testNs, testAccount, "cluster-monitoring-view")
+	require.NoError(t, err)
+	defer func() { require.NoError(t, rbCleanup()) }()
+
+	var token string
+	err = framework.Poll(5*time.Second, time.Minute, func() error {
+		token, err = f.GetServiceAccountToken(testNs, testAccount)
+		return err
+	})
+	require.NoError(t, err)
+
+	// Test service endpoint
+	t.Run("ServiceEndpoint", func(t *testing.T) {
+		err := framework.Poll(5*time.Second, 2*time.Minute, func() error {
+			// port 9092 is the web port for prometheus-user-workload
+			host, cleanUp, err := f.ForwardPort(t, f.UserWorkloadMonitoringNs, "prometheus-user-workload", 9092)
+			if err != nil {
+				return err
+			}
+			defer cleanUp()
+
+			client := framework.NewPrometheusClient(
+				host,
+				token,
+				&framework.QueryParameterInjector{
+					Name:  "match[]",
+					Value: `version`, // from prometheus-example-app
+				},
+				// The tenancy proxy needs the namespace
+				&framework.QueryParameterInjector{
+					Name:  "namespace",
+					Value: testNs,
+				},
+			)
+
+			resp, err := client.Do("GET", "/federate", nil)
+			if err != nil {
+				return err
+			}
+			defer resp.Body.Close()
+
+			body, err := io.ReadAll(resp.Body)
+			if err != nil {
+				return err
+			}
+
+			if resp.StatusCode != http.StatusOK {
+				return fmt.Errorf("unexpected status code, want %d, got %d. Body: %s", http.StatusOK, resp.StatusCode, string(body))
+			}
+
+			if !strings.Contains(string(body), `job="prometheus-example-app"`) {
+				return fmt.Errorf("metric from 'prometheus-example-app' not found in response")
+			}
+
+			return nil
+		})
+		require.NoError(t, err)
+	})
+
+	// Test route endpoint
+	t.Run("RouteEndpoint", func(t *testing.T) {
+		err = framework.Poll(5*time.Second, 2*time.Minute, func() error {
+			route, err := f.OpenShiftRouteClient.Routes(f.UserWorkloadMonitoringNs).Get(context.Background(), "federate", metav1.GetOptions{})
+			if err != nil {
+				return err
+			}
+
+			client := framework.NewPrometheusClient(
+				route.Spec.Host,
+				token,
+				&framework.QueryParameterInjector{
+					Name:  "match[]",
+					Value: `version`, // from prometheus-example-app
+				},
+				// The tenancy proxy needs the namespace
+				&framework.QueryParameterInjector{
+					Name:  "namespace",
+					Value: testNs,
+				},
+			)
+
+			// For UWM federate route, let's assume it directly exposes the /federate endpoint
+			// If it also has a path prefix, this would need adjustment as well.
+			resp, err := client.Do("GET", "/federate", nil)
+			if err != nil {
+				return err
+			}
+			defer resp.Body.Close()
+
+			body, err := io.ReadAll(resp.Body)
+			if err != nil {
+				return err
+			}
+
+			if resp.StatusCode != http.StatusOK {
+				return fmt.Errorf("unexpected status code, want %d, got %d. Body: %s", http.StatusOK, resp.StatusCode, string(body))
+			}
+
+			if !strings.Contains(string(body), `job="prometheus-example-app"`) {
+				return fmt.Errorf("metric from 'prometheus-example-app' not found in response")
+			}
 			return nil
 		})
 		require.NoError(t, err)
