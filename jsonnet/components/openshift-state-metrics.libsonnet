@@ -97,7 +97,13 @@ function(params) {
       ),
     },
   },
-  serviceMonitor: osm.openshiftStateMetrics.serviceMonitor,
+  serviceMonitor: osm.openshiftStateMetrics.serviceMonitor {
+    metadata+: {
+      labels+: {
+        'monitoring.openshift.io/collection-profile': 'full',
+      },
+    },
+  },
   minimalServiceMonitor: generateServiceMonitor.serviceMonitorForMinimalProfile(self.serviceMonitor),
   telemetryServiceMonitor: generateServiceMonitor.serviceMonitorForTelemetryProfile(
     generateServiceMonitor.keepOnlyMetrics(

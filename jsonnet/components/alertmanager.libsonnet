@@ -218,6 +218,11 @@ function(params)
     },
 
     serviceMonitor+: {
+      metadata+: {
+        labels+: {
+          'monitoring.openshift.io/collection-profile': 'full',
+        },
+      },
       spec+: {
         serviceDiscoveryRole: 'EndpointSlice',
         endpoints: [

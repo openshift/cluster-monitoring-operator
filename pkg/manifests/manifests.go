@@ -3548,27 +3548,33 @@ func makeConsoleURL(c *configv1.Console, path string) (string, error) {
 
 // serviceMonitors creates service monitors from the given asset paths.
 // It expects exactly one service monitor per supported collection profile
-// and validates that any collection profile label value is supported.
+// and validates that all service monitors carry a supported collection
+// profile label and that each profile is covered exactly once.
 func (f *Factory) serviceMonitors(assetPaths ...string) ([]*monv1.ServiceMonitor, error) {
 	if len(assetPaths) != len(SupportedCollectionProfiles) {
 		return nil, fmt.Errorf("expected %d service monitors (one per collection profile), got %d", len(SupportedCollectionProfiles), len(assetPaths))
 	}
 
 	sms := make([]*monv1.ServiceMonitor, 0, len(assetPaths))
+	seenProfiles := make(map[CollectionProfile]string, len(assetPaths))
 	for _, path := range assetPaths {
 		sm, err := f.NewServiceMonitor(f.assets.MustNewAssetSlice(path))
 		if err != nil {
 			return nil, err
 		}
 
-		// Absence of the collection profile label implies the "full" profile.
-		profileValue := sm.Labels[collectionProfileLabel]
-		if profileValue == "" {
-			profileValue = FullCollectionProfile
+		profileValue, ok := sm.Labels[collectionProfileLabel]
+		if !ok {
+			return nil, fmt.Errorf("service monitor %q is missing the %q label", sm.Name, collectionProfileLabel)
 		}
-		if !slices.Contains(SupportedCollectionProfiles, CollectionProfile(profileValue)) {
+		profile := CollectionProfile(profileValue)
+		if !slices.Contains(SupportedCollectionProfiles, profile) {
 			return nil, fmt.Errorf("service monitor %q has unsupported collection profile label value %q, supported values are: %s", sm.Name, profileValue, SupportedCollectionProfiles.String())
 		}
+		if other, exists := seenProfiles[profile]; exists {
+			return nil, fmt.Errorf("service monitors %q and %q have the same collection profile %q", other, sm.Name, profile)
+		}
+		seenProfiles[profile] = sm.Name
 
 		sms = append(sms, sm)
 	}
