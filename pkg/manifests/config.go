@@ -378,7 +378,7 @@ func validateAdditionalResourceLabels(ksm *KubeStateMetricsConfig) error {
 		return nil
 	}
 
-	seen := map[string]bool{}
+	seenResources := map[string]bool{}
 	for _, rl := range ksm.AdditionalResourceLabels {
 		if rl.Resource == "" {
 			return fmt.Errorf("%w: additionalResourceLabels: resource name must not be empty", ErrConfigValidation)
@@ -386,12 +386,22 @@ func validateAdditionalResourceLabels(ksm *KubeStateMetricsConfig) error {
 		if !slices.Contains(supportedResourceLabelsResources, rl.Resource) {
 			return fmt.Errorf("%w: additionalResourceLabels: unsupported resource %q, supported resources are: %v", ErrConfigValidation, rl.Resource, supportedResourceLabelsResources)
 		}
-		if seen[rl.Resource] {
+		if seenResources[rl.Resource] {
 			return fmt.Errorf("%w: additionalResourceLabels: duplicate resource %q", ErrConfigValidation, rl.Resource)
 		}
-		seen[rl.Resource] = true
+		seenResources[rl.Resource] = true
 		if len(rl.Labels) == 0 {
 			return fmt.Errorf("%w: additionalResourceLabels: resource %q must have at least one label", ErrConfigValidation, rl.Resource)
+		}
+		if slices.Contains(rl.Labels, "") {
+			return fmt.Errorf("%w: additionalResourceLabels: resource %q has an empty label value", ErrConfigValidation, rl.Resource)
+		}
+		seenLabels := map[string]bool{}
+		for _, l := range rl.Labels {
+			if seenLabels[l] {
+				return fmt.Errorf("%w: additionalResourceLabels: resource %q has duplicate label %q", ErrConfigValidation, rl.Resource, l)
+			}
+			seenLabels[l] = true
 		}
 	}
 	return nil

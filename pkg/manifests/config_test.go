@@ -832,6 +832,27 @@ func TestAdditionalResourceLabelsValidation(t *testing.T) {
     labels: []`,
 			expectError: true,
 		},
+		{
+			name: "empty label value",
+			config: `kubeStateMetrics:
+  additionalResourceLabels:
+  - resource: jobs
+    labels:
+    - foo
+    - ""`,
+			expectError: true,
+		},
+		{
+			name: "duplicate label",
+			config: `kubeStateMetrics:
+  additionalResourceLabels:
+  - resource: jobs
+    labels:
+    - foo
+    - bar
+    - foo`,
+			expectError: true,
+		},
 	} {
 		t.Run(tc.name, func(t *testing.T) {
 			_, err := NewConfigFromString(tc.config)

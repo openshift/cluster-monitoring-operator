@@ -3884,9 +3884,7 @@ func TestKubeStateMetricsAdditionalResourceLabels(t *testing.T) {
 	for _, tc := range tests {
 		t.Run(tc.name, func(t *testing.T) {
 			c, err := NewConfigFromString(tc.config)
-			if err != nil {
-				t.Fatal(err)
-			}
+			require.NoError(t, err)
 			c.SetImages(map[string]string{
 				"kube-state-metrics": "docker.io/openshift/origin-kube-state-metrics:latest",
 				"kube-rbac-proxy":    "docker.io/openshift/origin-kube-rbac-proxy:latest",
@@ -3895,9 +3893,7 @@ func TestKubeStateMetricsAdditionalResourceLabels(t *testing.T) {
 			f := NewFactory("openshift-monitoring", "openshift-user-workload-monitoring", c, defaultInfrastructureReader(), &fakeProxyReader{}, NewAssets(assetsPath), &APIServerConfig{}, &configv1.Console{})
 
 			d, err := f.KubeStateMetricsDeployment()
-			if err != nil {
-				t.Fatal(err)
-			}
+			require.NoError(t, err)
 
 			found := false
 			for _, container := range d.Spec.Template.Spec.Containers {
@@ -3905,16 +3901,12 @@ func TestKubeStateMetricsAdditionalResourceLabels(t *testing.T) {
 					for _, arg := range container.Args {
 						if strings.HasPrefix(arg, "--metric-labels-allowlist=") {
 							found = true
-							if arg != tc.expectedArg {
-								t.Fatalf("expected arg %q, got %q", tc.expectedArg, arg)
-							}
+							require.Equal(t, tc.expectedArg, arg)
 						}
 					}
 				}
 			}
-			if !found {
-				t.Fatal("--metric-labels-allowlist arg not found in kube-state-metrics container")
-			}
+			require.True(t, found, "--metric-labels-allowlist arg not found in kube-state-metrics container")
 		})
 	}
 }
