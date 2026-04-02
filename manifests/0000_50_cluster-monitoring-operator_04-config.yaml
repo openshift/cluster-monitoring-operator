@@ -91,12 +91,13 @@ data:
     #
     # owners: (@openshift/openshift-team-cincinnati)
     #
-    # cluster_version_payload captures how far through a payload the cluster
-    # version operator has progressed and can be used to identify whether
-    # a particular payload entry is causing failures during upgrade.
+    # cluster_version_risk_conditions captures update risk evaluation
+    # from the cluster version operator, and can be used to identify
+    # whether a particular update risk condition is prevalent, and how
+    # successfully that risk is being evaluated.
     #
     # consumers: (@openshift/openshift-team-cluster-manager)
-    - '{__name__="cluster_version_payload"}'
+    - '{__name__="cluster_version_risk_conditions"}'
     #
     # owners: (@openshift/openshift-team-installer, @openshift/openshift-team-cincinnati)
     #
