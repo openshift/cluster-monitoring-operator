@@ -15,20 +15,38 @@
 package manifests
 
 import (
+	"slices"
+
 	monv1 "github.com/prometheus-operator/prometheus-operator/pkg/apis/monitoring/v1"
 	v1 "k8s.io/api/core/v1"
 )
 
-type CollectionProfile string
-type CollectionProfiles []CollectionProfile
 type ExternalLabels map[string]string
 
+type CollectionProfile string
+type CollectionProfiles []CollectionProfile
+
 const (
-	FullCollectionProfile    = "full"
+	// FullCollectionProfile collects all metrics.
+	FullCollectionProfile = "full"
+
+	// MinimalCollectionProfile collects only metrics used by recording/alerting, dashboards and Telemetry.
 	MinimalCollectionProfile = "minimal"
 )
 
+// SupportedCollectionProfiles is the list of collection profiles supported by CMO.
 var SupportedCollectionProfiles = CollectionProfiles{FullCollectionProfile, MinimalCollectionProfile}
+
+// StringSlice returns the list of collection profiles as []string.
+func (cps CollectionProfiles) StringSlice() []string {
+	return slices.Collect(func(yield func(string) bool) {
+		for _, cp := range cps {
+			if !yield(string(cp)) {
+				return
+			}
+		}
+	})
+}
 
 // The `ClusterMonitoringConfiguration` resource defines settings that
 // customize the default platform monitoring stack through the

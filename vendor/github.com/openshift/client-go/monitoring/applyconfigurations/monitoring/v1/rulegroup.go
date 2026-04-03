@@ -8,10 +8,22 @@ import (
 
 // RuleGroupApplyConfiguration represents a declarative configuration of the RuleGroup type for use
 // with apply.
+//
+// RuleGroup is a list of sequentially evaluated alerting rules.
 type RuleGroupApplyConfiguration struct {
-	Name     *string                  `json:"name,omitempty"`
-	Interval *monitoringv1.Duration   `json:"interval,omitempty"`
-	Rules    []RuleApplyConfiguration `json:"rules,omitempty"`
+	// name is the name of the group.
+	Name *string `json:"name,omitempty"`
+	// interval is how often rules in the group are evaluated.  If not specified,
+	// it defaults to the global.evaluation_interval configured in Prometheus,
+	// which itself defaults to 30 seconds.  You can check if this value has been
+	// modified from the default on your cluster by inspecting the platform
+	// Prometheus configuration:
+	// The relevant field in that resource is: spec.evaluationInterval
+	Interval *monitoringv1.Duration `json:"interval,omitempty"`
+	// rules is a list of sequentially evaluated alerting rules.  Prometheus may
+	// process rule groups in parallel, but rules within a single group are always
+	// processed sequentially, and all rules are processed.
+	Rules []RuleApplyConfiguration `json:"rules,omitempty"`
 }
 
 // RuleGroupApplyConfiguration constructs a declarative configuration of the RuleGroup type for use with

@@ -25,12 +25,18 @@ import (
 	"strings"
 	"syscall"
 
+	configv1client "github.com/openshift/client-go/config/clientset/versioned"
+	"github.com/openshift/library-go/pkg/operator/events"
 	"golang.org/x/sync/errgroup"
 	"k8s.io/apimachinery/pkg/util/yaml"
+	"k8s.io/client-go/kubernetes"
+	"k8s.io/client-go/rest"
 	"k8s.io/client-go/tools/clientcmd"
 	"k8s.io/klog/v2"
+	"k8s.io/utils/clock"
 	runtimelog "sigs.k8s.io/controller-runtime/pkg/log"
 
+	"github.com/openshift/cluster-monitoring-operator/pkg/client"
 	"github.com/openshift/cluster-monitoring-operator/pkg/manifests"
 	cmo "github.com/openshift/cluster-monitoring-operator/pkg/operator"
 	"github.com/openshift/cluster-monitoring-operator/pkg/server"
@@ -83,10 +89,47 @@ type telemetryConfig struct {
 	Matches []string `json:"matches"`
 }
 
+func newClient(
+	ctx context.Context,
+	config *rest.Config,
+	version string,
+	namespace, namespaceUserWorkload string,
+) (*client.Client, error) {
+	kclient, err := kubernetes.NewForConfig(config)
+	if err != nil {
+		return nil, fmt.Errorf("creating kubernetes clientset client: %w", err)
+	}
+	controllerRef, err := events.GetControllerReferenceForCurrentPod(ctx, kclient, namespace, nil)
+	if err != nil {
+		klog.Warningf("unable to get owner reference (falling back to namespace): %v", err)
+	}
+
+	eventRecorder := events.NewKubeRecorderWithOptions(
+		kclient.CoreV1().Events(namespace),
+		events.RecommendedClusterSingletonCorrelatorOptions(),
+		"cluster-monitoring-operator",
+		controllerRef,
+		clock.RealClock{},
+	)
+
+	configClient, err := configv1client.NewForConfig(config)
+	if err != nil {
+		return nil, err
+	}
+
+	c, err := client.NewForConfig(config, version, namespace, namespaceUserWorkload, client.KubernetesClient(kclient), client.OpenshiftConfigClient(configClient), client.EventRecorder(eventRecorder))
+	if err != nil {
+		return nil, err
+	}
+
+	return c, nil
+}
+
 func Main() int {
 	flagset := flag.CommandLine
 	klog.InitFlags(flagset)
-	runtimelog.SetLogger(klog.Background())
+	logger := klog.Background()
+	runtimelog.SetLogger(logger)
 	namespace := flagset.String("namespace", "openshift-monitoring", "Namespace to deploy and manage cluster monitoring stack in.")
 	namespaceUserWorkload := flagset.String("namespace-user-workload", "openshift-user-workload-monitoring", "Namespace to deploy and manage user workload monitoring stack in.")
 	configMapName := flagset.String("configmap", "cluster-monitoring-config", "ConfigMap name to configure the cluster monitoring stack.")
@@ -167,13 +210,33 @@ func Main() int {
 	config.QPS = 100
 	config.Burst = 200
 
-	ctx, cancel := context.WithCancel(context.Background())
+	ctx, cancel := context.WithCancel(klog.NewContext(context.Background(), logger))
 	defer cancel()
+
+	client, err := newClient(ctx, config, *releaseVersion, *namespace, *namespaceUserWorkload)
+	if err != nil {
+		fmt.Fprint(os.Stderr, err)
+		return 1
+	}
+
+	// Retrieve the TLS settings from the API server configuration.
+	apiServerConfig, err := client.GetAPIServerConfig(ctx)
+	if err != nil {
+		fmt.Fprint(os.Stderr, err)
+		return 1
+	}
+	apiServerConfigAdapter := manifests.NewAPIServerConfig(apiServerConfig)
+	klog.Infof(
+		"TLS configuration (read from the cluster TLS security profile): minimum version=%q, ciphers=[%s]",
+		apiServerConfigAdapter.MinTLSVersion(),
+		strings.Join(apiServerConfigAdapter.TLSCiphers(), ","),
+	)
 
 	userWorkloadConfigMapName := "user-workload-monitoring-config"
 	o, err := cmo.New(
 		ctx,
-		config,
+		client,
+		apiServerConfigAdapter,
 		*releaseVersion,
 		*namespace,
 		*namespaceUserWorkload,
@@ -183,6 +246,7 @@ func Main() int {
 		images.asMap(),
 		telemetryConfig.Matches,
 		assets,
+		cancel,
 	)
 	if err != nil {
 		fmt.Fprint(os.Stderr, err)
@@ -203,8 +267,21 @@ func Main() int {
 
 	wg.Go(func() error { return o.Run(ctx) })
 
-	srv, err := server.NewServer("cluster-monitoring-operator", config, *kubeconfigPath, *certFile, *keyFile)
+	srv, err := server.NewServer(
+		"cluster-monitoring-operator",
+		config,
+		*kubeconfigPath,
+		*certFile, *keyFile,
+		apiServerConfigAdapter.MinTLSVersion(),
+		apiServerConfigAdapter.TLSCiphers(),
+	)
 	if err != nil {
+		fmt.Fprint(os.Stderr, err)
+		return 1
+	}
+
+	// Catch any configuration error before running the server.
+	if err := srv.Prepare(ctx); err != nil {
 		fmt.Fprint(os.Stderr, err)
 		return 1
 	}

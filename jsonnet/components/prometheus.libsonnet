@@ -540,27 +540,12 @@ function(params)
           },
           {
             name: 'thanos-sidecar',
-            args: [
-              'sidecar',
-              '--prometheus.url=http://localhost:9090/',
-              '--tsdb.path=/prometheus',
-              '--http-address=127.0.0.1:10902',
-              '--grpc-server-tls-cert=/etc/tls/grpc/server.crt',
-              '--grpc-server-tls-key=/etc/tls/grpc/server.key',
-              '--grpc-server-tls-client-ca=/etc/tls/grpc/ca.crt',
-            ],
             volumeMounts: [
               {
                 mountPath: '/etc/tls/grpc',
                 name: 'secret-grpc-tls',
               },
             ],
-            resources: {
-              requests: {
-                cpu: '1m',
-                memory: '25Mi',
-              },
-            },
           },
           {
             name: 'prometheus',
@@ -593,6 +578,20 @@ function(params)
             },
           },
         ],
+        thanos+: {
+          httpListenLocal: true,
+          grpcServerTlsConfig: {
+            caFile: '/etc/tls/grpc/ca.crt',
+            certFile: '/etc/tls/grpc/server.crt',
+            keyFile: '/etc/tls/grpc/server.key',
+          },
+          resources: {
+            requests: {
+              cpu: '1m',
+              memory: '25Mi',
+            },
+          },
+        },
         volumes+: [
           {
             name: $.trustedCaBundle.metadata.name,

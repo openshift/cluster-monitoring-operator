@@ -9,12 +9,39 @@ import (
 
 // RuleApplyConfiguration represents a declarative configuration of the Rule type for use
 // with apply.
+//
+// Rule describes an alerting rule.
+// See Prometheus documentation:
+// - https://www.prometheus.io/docs/prometheus/latest/configuration/alerting_rules
 type RuleApplyConfiguration struct {
-	Alert       *string                `json:"alert,omitempty"`
-	Expr        *intstr.IntOrString    `json:"expr,omitempty"`
-	For         *monitoringv1.Duration `json:"for,omitempty"`
-	Labels      map[string]string      `json:"labels,omitempty"`
-	Annotations map[string]string      `json:"annotations,omitempty"`
+	// alert is the name of the alert. Must be a valid label value, i.e. may
+	// contain any Unicode character.
+	Alert *string `json:"alert,omitempty"`
+	// expr is the PromQL expression to evaluate. Every evaluation cycle this is
+	// evaluated at the current time, and all resultant time series become pending
+	// or firing alerts.  This is most often a string representing a PromQL
+	// expression, e.g.: mapi_current_pending_csr > mapi_max_pending_csr
+	// In rare cases this could be a simple integer, e.g. a simple "1" if the
+	// intent is to create an alert that is always firing.  This is sometimes used
+	// to create an always-firing "Watchdog" alert in order to ensure the alerting
+	// pipeline is functional.
+	Expr *intstr.IntOrString `json:"expr,omitempty"`
+	// for is the time period after which alerts are considered firing after first
+	// returning results.  Alerts which have not yet fired for long enough are
+	// considered pending.
+	For *monitoringv1.Duration `json:"for,omitempty"`
+	// labels to add or overwrite for each alert.  The results of the PromQL
+	// expression for the alert will result in an existing set of labels for the
+	// alert, after evaluating the expression, for any label specified here with
+	// the same name as a label in that set, the label here wins and overwrites
+	// the previous value.  These should typically be short identifying values
+	// that may be useful to query against.  A common example is the alert
+	// severity, where one sets `severity: warning` under the `labels` key:
+	Labels map[string]string `json:"labels,omitempty"`
+	// annotations to add to each alert.  These are values that can be used to
+	// store longer additional information that you won't query on, such as alert
+	// descriptions or runbook links.
+	Annotations map[string]string `json:"annotations,omitempty"`
 }
 
 // RuleApplyConfiguration constructs a declarative configuration of the Rule type for use with

@@ -53,13 +53,11 @@ import (
 	apierrors "k8s.io/apimachinery/pkg/api/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/fields"
-	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/apimachinery/pkg/runtime/schema"
 	"k8s.io/apimachinery/pkg/types"
 	apiutilerrors "k8s.io/apimachinery/pkg/util/errors"
 	"k8s.io/apimachinery/pkg/util/intstr"
 	"k8s.io/apimachinery/pkg/util/wait"
-	"k8s.io/apimachinery/pkg/watch"
 	"k8s.io/client-go/kubernetes"
 	"k8s.io/client-go/metadata"
 	"k8s.io/client-go/rest"
@@ -72,7 +70,11 @@ import (
 const (
 	deleteTimeout  = 10 * time.Minute
 	metadataPrefix = "monitoring.openshift.io/"
-	clusterConsole = "cluster"
+
+	// ClusterResourceName is the canonical name for cluster-wide configuration resources.
+	ClusterResourceName = "cluster"
+
+	clusterVersionResourceName = "version"
 )
 
 type Client struct {
@@ -288,14 +290,17 @@ func (c *Client) UserWorkloadNamespace() string {
 	return c.userWorkloadNamespace
 }
 
+// AlertingRuleListWatchForNamespace watches for all AlertingRule resources in a given namespace.
 func (c *Client) AlertingRuleListWatchForNamespace(ns string) *cache.ListWatch {
 	return cache.NewListWatchFromClient(c.osmclient.MonitoringV1().RESTClient(), "alertingrules", ns, fields.Everything())
 }
 
+// PrometheusRuleListWatchForNamespace watches for all PrometheusRule resources in a given namespace.
 func (c *Client) PrometheusRuleListWatchForNamespace(ns string) *cache.ListWatch {
 	return cache.NewListWatchFromClient(c.mclient.MonitoringV1().RESTClient(), "prometheusrules", ns, fields.Everything())
 }
 
+// AlertRelabelConfigListWatchForNamespace watches for all AlertRelabelConfig in a given namespace.
 func (c *Client) AlertRelabelConfigListWatchForNamespace(ns string) *cache.ListWatch {
 	return cache.NewListWatchFromClient(
 		c.osmclient.MonitoringV1().RESTClient(),
@@ -305,14 +310,17 @@ func (c *Client) AlertRelabelConfigListWatchForNamespace(ns string) *cache.ListW
 	)
 }
 
+// ConfigMapListWatchForNamespace watches for all configmaps in a given namespace.
 func (c *Client) ConfigMapListWatchForNamespace(ns string) *cache.ListWatch {
 	return cache.NewListWatchFromClient(c.kclient.CoreV1().RESTClient(), "configmaps", ns, fields.Everything())
 }
 
+// SecretListWatchForNamespace watches for all secrets in a given namespace.
 func (c *Client) SecretListWatchForNamespace(ns string) *cache.ListWatch {
 	return cache.NewListWatchFromClient(c.kclient.CoreV1().RESTClient(), "secrets", ns, fields.Everything())
 }
 
+// SecretListWatchForResource watches for a specific secret.
 func (c *Client) SecretListWatchForResource(namespace, name string) *cache.ListWatch {
 	return cache.NewListWatchFromClient(
 		c.kclient.CoreV1().RESTClient(),
@@ -322,114 +330,64 @@ func (c *Client) SecretListWatchForResource(namespace, name string) *cache.ListW
 	)
 }
 
-func (c *Client) InfrastructureListWatchForResource(ctx context.Context, resource string) *cache.ListWatch {
-	infrastructure := c.oscclient.ConfigV1().Infrastructures()
-
-	return &cache.ListWatch{
-		ListFunc: func(options metav1.ListOptions) (runtime.Object, error) {
-			return infrastructure.List(
-				ctx,
-				metav1.ListOptions{
-					FieldSelector: fields.OneTermEqualSelector("metadata.name", resource).String(),
-				},
-			)
-		},
-		WatchFunc: func(options metav1.ListOptions) (watch.Interface, error) {
-			return infrastructure.Watch(
-				ctx,
-				metav1.ListOptions{
-					FieldSelector: fields.OneTermEqualSelector("metadata.name", resource).String(),
-				},
-			)
-		},
-	}
+// InfrastructureListWatch watches for the cluster's infrastructure configuration resource.
+func (c *Client) InfrastructureListWatch() *cache.ListWatch {
+	return cache.NewListWatchFromClient(
+		c.oscclient.ConfigV1().RESTClient(),
+		"infrastructures",
+		"",
+		fields.OneTermEqualSelector("metadata.name", ClusterResourceName),
+	)
 }
 
-func (c *Client) ApiServersListWatchForResource(ctx context.Context, resource string) *cache.ListWatch {
-	apiServerInterface := c.oscclient.ConfigV1().APIServers()
-
-	return &cache.ListWatch{
-		ListFunc: func(options metav1.ListOptions) (runtime.Object, error) {
-			return apiServerInterface.List(
-				ctx,
-				metav1.ListOptions{
-					FieldSelector: fields.OneTermEqualSelector("metadata.name", resource).String(),
-				},
-			)
-		},
-		WatchFunc: func(options metav1.ListOptions) (watch.Interface, error) {
-			return apiServerInterface.Watch(
-				ctx,
-				metav1.ListOptions{
-					FieldSelector: fields.OneTermEqualSelector("metadata.name", resource).String(),
-				},
-			)
-		},
-	}
+// ApiServersListWatch watches for the cluster's API server configuration resource.
+func (c *Client) ApiServersListWatch() *cache.ListWatch {
+	return cache.NewListWatchFromClient(
+		c.oscclient.ConfigV1().RESTClient(),
+		"apiservers",
+		"",
+		fields.OneTermEqualSelector("metadata.name", ClusterResourceName),
+	)
 }
 
-func (c *Client) ConsoleListWatch(ctx context.Context) *cache.ListWatch {
-	consoleInterface := c.oscclient.ConfigV1().Consoles()
-
-	return &cache.ListWatch{
-		ListFunc: func(options metav1.ListOptions) (runtime.Object, error) {
-			return consoleInterface.List(ctx, metav1.ListOptions{})
-		},
-		WatchFunc: func(options metav1.ListOptions) (watch.Interface, error) {
-			return consoleInterface.Watch(ctx, options)
-		},
-	}
+// ConsoleListWatch watches for the cluster's console configuration resource.
+func (c *Client) ConsoleListWatch() *cache.ListWatch {
+	return cache.NewListWatchFromClient(
+		c.oscclient.ConfigV1().RESTClient(),
+		"consoles",
+		"",
+		fields.OneTermEqualSelector("metadata.name", ClusterResourceName),
+	)
 }
 
-func (c *Client) ClusterVersionListWatch(ctx context.Context, name string) *cache.ListWatch {
-	clusterVersionInterface := c.oscclient.ConfigV1().ClusterVersions()
-
-	return &cache.ListWatch{
-		ListFunc: func(options metav1.ListOptions) (runtime.Object, error) {
-			return clusterVersionInterface.List(ctx,
-				metav1.ListOptions{
-					FieldSelector: fields.OneTermEqualSelector("metadata.name", name).String(),
-				})
-		},
-		WatchFunc: func(options metav1.ListOptions) (watch.Interface, error) {
-			return clusterVersionInterface.Watch(ctx,
-				metav1.ListOptions{
-					FieldSelector: fields.OneTermEqualSelector("metadata.name", name).String(),
-				})
-		},
-	}
+// ClusterVersionListWatch watches for the cluster version resource.
+func (c *Client) ClusterVersionListWatch() *cache.ListWatch {
+	return cache.NewListWatchFromClient(
+		c.oscclient.ConfigV1().RESTClient(),
+		"clusterversions",
+		"",
+		fields.OneTermEqualSelector("metadata.name", clusterVersionResourceName),
+	)
 }
 
-func (c *Client) ClusterOperatorListWatch(ctx context.Context, name string) *cache.ListWatch {
-	ClusterOperatorInterface := c.oscclient.ConfigV1().ClusterOperators()
-
-	return &cache.ListWatch{
-		ListFunc: func(options metav1.ListOptions) (runtime.Object, error) {
-			return ClusterOperatorInterface.List(ctx,
-				metav1.ListOptions{
-					FieldSelector: fields.OneTermEqualSelector("metadata.name", name).String(),
-				})
-		},
-		WatchFunc: func(options metav1.ListOptions) (watch.Interface, error) {
-			return ClusterOperatorInterface.Watch(ctx,
-				metav1.ListOptions{
-					FieldSelector: fields.OneTermEqualSelector("metadata.name", name).String(),
-				})
-		},
-	}
+// ClusterOperatorListWatch watches for a specific ClusterOperator resource.
+func (c *Client) ClusterOperatorListWatch(name string) *cache.ListWatch {
+	return cache.NewListWatchFromClient(
+		c.oscclient.ConfigV1().RESTClient(),
+		"clusteroperators",
+		"",
+		fields.OneTermEqualSelector("metadata.name", name),
+	)
 }
 
-func (c *Client) ClusterMonitoringListWatch(ctx context.Context) *cache.ListWatch {
-	clusterMonitoringInterface := c.oscclient.ConfigV1alpha1().ClusterMonitorings()
-
-	return &cache.ListWatch{
-		ListFunc: func(options metav1.ListOptions) (runtime.Object, error) {
-			return clusterMonitoringInterface.List(ctx, metav1.ListOptions{})
-		},
-		WatchFunc: func(options metav1.ListOptions) (watch.Interface, error) {
-			return clusterMonitoringInterface.Watch(ctx, options)
-		},
-	}
+// ClusterMonitoringListWatch watches for the ClusterMonitoring configuration resource.
+func (c *Client) ClusterMonitoringListWatch() *cache.ListWatch {
+	return cache.NewListWatchFromClient(
+		c.oscclient.ConfigV1alpha1().RESTClient(),
+		"clustermonitorings",
+		"",
+		fields.OneTermEqualSelector("metadata.name", ClusterResourceName),
+	)
 }
 
 func (c *Client) HasRouteCapability(ctx context.Context) (bool, error) {
@@ -590,20 +548,20 @@ func (c *Client) GetRouteURL(ctx context.Context, r *routev1.Route) (*url.URL, e
 	return u, nil
 }
 
-func (c *Client) GetClusterVersion(ctx context.Context, name string) (*configv1.ClusterVersion, error) {
-	return c.oscclient.ConfigV1().ClusterVersions().Get(ctx, name, metav1.GetOptions{})
+func (c *Client) GetClusterVersion(ctx context.Context) (*configv1.ClusterVersion, error) {
+	return c.oscclient.ConfigV1().ClusterVersions().Get(ctx, clusterVersionResourceName, metav1.GetOptions{})
 }
 
-func (c *Client) GetProxy(ctx context.Context, name string) (*configv1.Proxy, error) {
-	return c.oscclient.ConfigV1().Proxies().Get(ctx, name, metav1.GetOptions{})
+func (c *Client) GetProxy(ctx context.Context) (*configv1.Proxy, error) {
+	return c.oscclient.ConfigV1().Proxies().Get(ctx, ClusterResourceName, metav1.GetOptions{})
 }
 
-func (c *Client) GetInfrastructure(ctx context.Context, name string) (*configv1.Infrastructure, error) {
-	return c.oscclient.ConfigV1().Infrastructures().Get(ctx, name, metav1.GetOptions{})
+func (c *Client) GetInfrastructure(ctx context.Context) (*configv1.Infrastructure, error) {
+	return c.oscclient.ConfigV1().Infrastructures().Get(ctx, ClusterResourceName, metav1.GetOptions{})
 }
 
-func (c *Client) GetAPIServerConfig(ctx context.Context, name string) (*configv1.APIServer, error) {
-	return c.oscclient.ConfigV1().APIServers().Get(ctx, name, metav1.GetOptions{})
+func (c *Client) GetAPIServerConfig(ctx context.Context) (*configv1.APIServer, error) {
+	return c.oscclient.ConfigV1().APIServers().Get(ctx, ClusterResourceName, metav1.GetOptions{})
 }
 
 func (c *Client) GetConsoleConfig(ctx context.Context, name string) (*configv1.Console, error) {
@@ -1774,7 +1732,7 @@ func (c *Client) PodCapacity(ctx context.Context) (int, error) {
 }
 
 func (c *Client) HasClusterCapability(ctx context.Context, capability configv1.ClusterVersionCapability) (bool, error) {
-	version, err := c.oscclient.ConfigV1().ClusterVersions().Get(ctx, "version", metav1.GetOptions{})
+	version, err := c.oscclient.ConfigV1().ClusterVersions().Get(ctx, clusterVersionResourceName, metav1.GetOptions{})
 	if err != nil {
 		return false, err
 	}
@@ -1826,12 +1784,14 @@ func (c *Client) CreateOrUpdateConsolePlugin(ctx context.Context, plg *consolev1
 	return nil
 }
 
+// RegisterConsolePlugin registers the console plugin. It is a no-op if the
+// plugin is already registered.
 func (c *Client) RegisterConsolePlugin(ctx context.Context, name string) error {
 	consoleClient := c.osopclient.OperatorV1().Consoles()
 
-	console, err := consoleClient.Get(ctx, clusterConsole, metav1.GetOptions{})
+	console, err := consoleClient.Get(ctx, ClusterResourceName, metav1.GetOptions{})
 	if err != nil {
-		return fmt.Errorf("retrieving console %q failed: %w", clusterConsole, err)
+		return fmt.Errorf("retrieving console %q failed: %w", ClusterResourceName, err)
 	}
 
 	if slices.Contains(console.Spec.Plugins, name) {
@@ -1860,9 +1820,9 @@ func (c *Client) RegisterConsolePlugin(ctx context.Context, name string) error {
 		panic(err)
 	}
 
-	_, err = consoleClient.Patch(ctx, clusterConsole, types.JSONPatchType, patchBytes, metav1.PatchOptions{})
+	_, err = consoleClient.Patch(ctx, ClusterResourceName, types.JSONPatchType, patchBytes, metav1.PatchOptions{})
 	if err != nil {
-		return fmt.Errorf("registering console-plugin %q with console %q failed: %w", name, clusterConsole, err)
+		return fmt.Errorf("registering console-plugin %q with console %q failed: %w", name, ClusterResourceName, err)
 	}
 	return nil
 }
@@ -1962,4 +1922,8 @@ func Poll(ctx context.Context, condition wait.ConditionWithContextFunc, options 
 	}
 
 	return nil
+}
+
+func (c *Client) OpenShiftConfigClientset() openshiftconfigclientset.Interface {
+	return c.oscclient
 }

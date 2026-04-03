@@ -26,12 +26,10 @@ import (
 	configv1 "github.com/openshift/api/config/v1"
 	configv1alpha1 "github.com/openshift/api/config/v1alpha1"
 	"github.com/openshift/api/features"
-	configv1client "github.com/openshift/client-go/config/clientset/versioned"
 	configv1informers "github.com/openshift/client-go/config/informers/externalversions"
 	"github.com/openshift/library-go/pkg/operator/certrotation"
 	"github.com/openshift/library-go/pkg/operator/configobserver/featuregates"
 	"github.com/openshift/library-go/pkg/operator/csr"
-	"github.com/openshift/library-go/pkg/operator/events"
 	certapiv1 "k8s.io/api/certificates/v1"
 	v1 "k8s.io/api/core/v1"
 	apierrors "k8s.io/apimachinery/pkg/api/errors"
@@ -40,12 +38,9 @@ import (
 	apiutilerrors "k8s.io/apimachinery/pkg/util/errors"
 	utilruntime "k8s.io/apimachinery/pkg/util/runtime"
 	"k8s.io/client-go/informers"
-	"k8s.io/client-go/kubernetes"
-	"k8s.io/client-go/rest"
 	"k8s.io/client-go/tools/cache"
 	"k8s.io/client-go/util/workqueue"
 	"k8s.io/klog/v2"
-	"k8s.io/utils/clock"
 	"k8s.io/utils/ptr"
 
 	"github.com/openshift/cluster-monitoring-operator/pkg/alert"
@@ -170,9 +165,6 @@ const (
 	metricsServerClientCerts      = "openshift-monitoring/metrics-server-client-certs"
 	federateClientCerts           = "openshift-monitoring/federate-client-certs"
 
-	// Canonical name of the cluster-wide infrastructure resource.
-	clusterResourceName = "cluster"
-
 	UWMTaskPrefix = "UpdatingUserWorkload"
 )
 
@@ -186,12 +178,14 @@ type Operator struct {
 	remoteWrite                    bool
 	ClusterMonitoringConfigEnabled bool
 
+	apiServerConfig *manifests.APIServerConfig
+
 	lastKnowInfrastructureConfig *InfrastructureConfig
 	lastKnowProxyConfig          *ProxyConfig
-	lastKnownApiServerConfig     *manifests.APIServerConfig
 	lastKnownConsoleConfig       *configv1.Console
 
 	client *client.Client
+	cancel func()
 
 	cmapInf              cache.SharedIndexInformer
 	informers            []cache.SharedIndexInformer
@@ -210,40 +204,15 @@ type Operator struct {
 
 func New(
 	ctx context.Context,
-	config *rest.Config,
+	c *client.Client,
+	apiServerConfig *manifests.APIServerConfig,
 	version, namespace, namespaceUserWorkload, configMapName, userWorkloadConfigMapName string,
 	remoteWrite bool,
 	images map[string]string,
 	telemetryMatches []string,
 	a *manifests.Assets,
+	cancel func(),
 ) (*Operator, error) {
-	kclient, err := kubernetes.NewForConfig(config)
-	if err != nil {
-		return nil, fmt.Errorf("creating kubernetes clientset client: %w", err)
-	}
-	controllerRef, err := events.GetControllerReferenceForCurrentPod(ctx, kclient, namespace, nil)
-	if err != nil {
-		klog.Warningf("unable to get owner reference (falling back to namespace): %v", err)
-	}
-
-	eventRecorder := events.NewKubeRecorderWithOptions(
-		kclient.CoreV1().Events(namespace),
-		events.RecommendedClusterSingletonCorrelatorOptions(),
-		"cluster-monitoring-operator",
-		controllerRef,
-		clock.RealClock{},
-	)
-
-	configClient, err := configv1client.NewForConfig(config)
-	if err != nil {
-		return nil, err
-	}
-
-	c, err := client.NewForConfig(config, version, namespace, namespaceUserWorkload, client.KubernetesClient(kclient), client.OpenshiftConfigClient(configClient), client.EventRecorder(eventRecorder))
-	if err != nil {
-		return nil, err
-	}
-
 	ruleController, err := alert.NewRuleController(ctx, c, version)
 	if err != nil {
 		return nil, fmt.Errorf("failed to create alerting rule controller: %w", err)
@@ -259,10 +228,12 @@ func New(
 		telemetryMatches:          telemetryMatches,
 		configMapName:             configMapName,
 		userWorkloadConfigMapName: userWorkloadConfigMapName,
+		apiServerConfig:           apiServerConfig,
 		remoteWrite:               remoteWrite,
 		namespace:                 namespace,
 		namespaceUserWorkload:     namespaceUserWorkload,
 		client:                    c,
+		cancel:                    cancel,
 		queue: workqueue.NewTypedRateLimitingQueueWithConfig[string](
 			workqueue.NewTypedItemExponentialFailureRateLimiter[string](50*time.Millisecond, 3*time.Minute),
 			workqueue.TypedRateLimitingQueueConfig[string]{Name: "cluster-monitoring"},
@@ -275,6 +246,7 @@ func New(
 		relabelController:    relabelController,
 	}
 
+	// Watch secrets in the openshift-monitoring namespace.
 	informer := cache.NewSharedIndexInformer(
 		o.client.SecretListWatchForNamespace(namespace), &v1.Secret{}, resyncPeriod, cache.Indexers{},
 	)
@@ -288,6 +260,7 @@ func New(
 	}
 	o.informers = append(o.informers, informer)
 
+	// Watch configmaps in the openshift-monitoring namespace.
 	o.cmapInf = cache.NewSharedIndexInformer(
 		o.client.ConfigMapListWatchForNamespace(namespace), &v1.ConfigMap{}, resyncPeriod, cache.Indexers{},
 	)
@@ -300,6 +273,7 @@ func New(
 		return nil, err
 	}
 
+	// Watch configmaps in the openshift-user-workload-monitoring namespace.
 	informer = cache.NewSharedIndexInformer(
 		o.client.ConfigMapListWatchForNamespace(namespaceUserWorkload), &v1.ConfigMap{}, resyncPeriod, cache.Indexers{},
 	)
@@ -313,6 +287,7 @@ func New(
 	}
 	o.informers = append(o.informers, informer)
 
+	// Watch configmaps in the kube-system namespace (for metrics client CA).
 	informer = cache.NewSharedIndexInformer(
 		o.client.ConfigMapListWatchForNamespace("kube-system"),
 		&v1.ConfigMap{}, resyncPeriod, cache.Indexers{},
@@ -325,6 +300,7 @@ func New(
 	}
 	o.informers = append(o.informers, informer)
 
+	// Watch configmaps in the openshift-config-managed namespace (for kubelet CA).
 	informer = cache.NewSharedIndexInformer(
 		o.client.ConfigMapListWatchForNamespace("openshift-config-managed"),
 		&v1.ConfigMap{}, resyncPeriod, cache.Indexers{},
@@ -337,6 +313,7 @@ func New(
 	}
 	o.informers = append(o.informers, informer)
 
+	// Watch configmaps in the openshift-config namespace (for pull secrets).
 	informer = cache.NewSharedIndexInformer(
 		o.client.ConfigMapListWatchForNamespace("openshift-config"),
 		&v1.ConfigMap{}, resyncPeriod, cache.Indexers{},
@@ -349,8 +326,9 @@ func New(
 	}
 	o.informers = append(o.informers, informer)
 
+	// Watch the cluster Infrastructure resource (for control plane and infrastructure topologies).
 	informer = cache.NewSharedIndexInformer(
-		o.client.InfrastructureListWatchForResource(ctx, clusterResourceName),
+		o.client.InfrastructureListWatch(),
 		&configv1.Infrastructure{}, resyncPeriod, cache.Indexers{},
 	)
 	_, err = informer.AddEventHandler(cache.ResourceEventHandlerFuncs{
@@ -361,12 +339,16 @@ func New(
 	}
 	o.informers = append(o.informers, informer)
 
+	// Watch the APIServer resource (for TLS configuration profile).
 	informer = cache.NewSharedIndexInformer(
-		o.client.ApiServersListWatchForResource(ctx, clusterResourceName),
+		o.client.ApiServersListWatch(),
 		&configv1.APIServer{}, resyncPeriod, cache.Indexers{},
 	)
 
 	_, err = informer.AddEventHandler(cache.ResourceEventHandlerFuncs{
+		AddFunc: func(obj interface{}) {
+			o.handleEvent(obj)
+		},
 		UpdateFunc: func(_, newObj interface{}) {
 			o.handleEvent(newObj)
 		},
@@ -376,8 +358,9 @@ func New(
 	}
 	o.informers = append(o.informers, informer)
 
+	// Watch the Console configuration resource (to build external URLs).
 	informer = cache.NewSharedIndexInformer(
-		o.client.ConsoleListWatch(ctx),
+		o.client.ConsoleListWatch(),
 		&configv1.Console{}, resyncPeriod, cache.Indexers{},
 	)
 
@@ -392,7 +375,7 @@ func New(
 	o.informers = append(o.informers, informer)
 
 	informer = cache.NewSharedIndexInformer(
-		o.client.ClusterOperatorListWatch(ctx, "ingress"),
+		o.client.ClusterOperatorListWatch("ingress"),
 		&configv1.ClusterOperator{}, resyncPeriod, cache.Indexers{},
 	)
 
@@ -414,7 +397,7 @@ func New(
 	// Many of the cluster capabilities such as Console can be enabled after
 	// installation. So this watches for any updates to the ClusterVersion - version
 	informer = cache.NewSharedIndexInformer(
-		o.client.ClusterVersionListWatch(ctx, "version"),
+		o.client.ClusterVersionListWatch(),
 		&configv1.ClusterVersion{}, resyncPeriod, cache.Indexers{},
 	)
 	_, err = informer.AddEventHandler(cache.ResourceEventHandlerFuncs{
@@ -432,7 +415,7 @@ func New(
 	)
 	o.informerFactories = append(o.informerFactories, kubeInformersOperatorNS)
 
-	configInformers := configv1informers.NewSharedInformerFactory(configClient, 10*time.Minute)
+	configInformers := configv1informers.NewSharedInformerFactory(c.OpenShiftConfigClientset(), 10*time.Minute)
 	missingVersion := "0.0.1-snapshot"
 
 	// By default, when the enabled/disabled list of featuregates changes,
@@ -442,7 +425,7 @@ func New(
 		version, missingVersion,
 		configInformers.Config().V1().ClusterVersions(),
 		configInformers.Config().V1().FeatureGates(),
-		eventRecorder,
+		c.EventRecorder(),
 	)
 	go featureGateAccessor.Run(ctx)
 	go configInformers.Start(ctx.Done())
@@ -461,7 +444,7 @@ func New(
 	// Watch the ClusterMonitoring config resource if the feature gate is enabled
 	if o.ClusterMonitoringConfigEnabled {
 		informer = cache.NewSharedIndexInformer(
-			o.client.ClusterMonitoringListWatch(ctx),
+			o.client.ClusterMonitoringListWatch(),
 			&configv1alpha1.ClusterMonitoring{},
 			resyncPeriod,
 			cache.Indexers{},
@@ -558,6 +541,14 @@ func New(
 	return o, nil
 }
 
+func (o *Operator) cmoConfigMap() string {
+	return fmt.Sprintf("%s/%s", o.namespace, o.configMapName)
+}
+
+func (o *Operator) uwmConfigMap() string {
+	return fmt.Sprintf("%s/%s", o.namespaceUserWorkload, o.userWorkloadConfigMapName)
+}
+
 // Run the controller.
 func (o *Operator) Run(ctx context.Context) error {
 	stopc := ctx.Done()
@@ -570,7 +561,7 @@ func (o *Operator) Run(ctx context.Context) error {
 			errChan <- fmt.Errorf("communicating with server failed: %w", err)
 			return
 		}
-		klog.V(4).Infof("Connection established (cluster-version: %s)", v)
+		klog.Infof("Connection established (cluster-version: %s)", v)
 
 		errChan <- nil
 	}()
@@ -584,25 +575,32 @@ func (o *Operator) Run(ctx context.Context) error {
 		return nil
 	}
 
-	go o.cmapInf.Run(stopc)
+	go o.cmapInf.RunWithContext(ctx)
 	synced := []cache.InformerSynced{o.cmapInf.HasSynced}
+
 	for _, inf := range o.informers {
-		go inf.Run(stopc)
+		go inf.RunWithContext(ctx)
 		synced = append(synced, inf.HasSynced)
 	}
+
 	for _, f := range o.informerFactories {
 		f.Start(stopc)
 	}
 
-	klog.V(4).Info("Waiting for initial cache sync.")
-	ok := cache.WaitForCacheSync(stopc, synced...)
+	klog.Info("Waiting for initial cache sync.")
+	ok := cache.WaitForNamedCacheSyncWithContext(ctx, synced...)
 	if !ok {
 		return errors.New("failed to sync informers")
 	}
+
 	for _, f := range o.informerFactories {
-		f.WaitForCacheSync(stopc)
+		for informerType, synced := range f.WaitForCacheSync(stopc) {
+			if !synced {
+				return fmt.Errorf("failed to sync informer factory cache for %v", informerType)
+			}
+		}
 	}
-	klog.V(4).Info("Initial cache sync done.")
+	klog.Info("Initial cache sync done.")
 
 	for _, r := range o.controllersToRunFunc {
 		go r(ctx, 1)
@@ -613,11 +611,10 @@ func (o *Operator) Run(ctx context.Context) error {
 	ticker := time.NewTicker(reconciliationPeriod)
 	defer ticker.Stop()
 
-	key := o.namespace + "/" + o.configMapName
-	_, exists, _ := o.cmapInf.GetStore().GetByKey(key)
+	_, exists, _ := o.cmapInf.GetStore().GetByKey(o.cmoConfigMap())
 	if !exists {
 		klog.Infof("ConfigMap to configure stack does not exist. Reconciling with default config every %s.", reconciliationPeriod)
-		o.enqueue(key)
+		o.enqueue()
 	}
 
 	for {
@@ -625,10 +622,10 @@ func (o *Operator) Run(ctx context.Context) error {
 		case <-stopc:
 			return nil
 		case <-ticker.C:
-			_, exists, _ := o.cmapInf.GetStore().GetByKey(key)
+			_, exists, _ := o.cmapInf.GetStore().GetByKey(o.cmoConfigMap())
 			if !exists {
 				klog.Infof("ConfigMap to configure stack does not exist. Reconciling with default config every %s.", reconciliationPeriod)
-				o.enqueue(key)
+				o.enqueue()
 			}
 		}
 	}
@@ -644,11 +641,16 @@ func (o *Operator) keyFunc(obj interface{}) (string, bool) {
 }
 
 func (o *Operator) handleEvent(obj interface{}) {
-	cmoConfigMap := o.namespace + "/" + o.configMapName
-
-	switch obj.(type) {
+	switch v := obj.(type) {
+	case *configv1.APIServer:
+		if !o.apiServerConfig.Equal(manifests.NewAPIServerConfig(v)) {
+			// Trigger a restart of the process to read the new TLS
+			// configuration.
+			klog.Info("Detected changes to the TLS profile configuration, stopping the process")
+			o.cancel()
+		}
+		return
 	case *configv1.Infrastructure,
-		*configv1.APIServer,
 		*configv1.Console,
 		*configv1.ClusterOperator,
 		*configv1.ClusterVersion,
@@ -667,7 +669,7 @@ func (o *Operator) handleEvent(obj interface{}) {
 			objKind = fmt.Sprintf("%T", obj)
 		}
 		klog.Infof("Triggering an update due to a change in %s/%s", objKind, name)
-		o.enqueue(cmoConfigMap)
+		o.enqueue()
 		return
 	}
 
@@ -679,10 +681,8 @@ func (o *Operator) handleEvent(obj interface{}) {
 
 	klog.V(5).Infof("ConfigMap or Secret updated: %s", key)
 
-	uwmConfigMap := o.namespaceUserWorkload + "/" + o.userWorkloadConfigMapName
-
 	switch key {
-	case cmoConfigMap:
+	case o.cmoConfigMap():
 	case apiAuthenticationConfigMap:
 	case kubeletServingCAConfigMap:
 	case metricsServerClientCerts:
@@ -691,7 +691,7 @@ func (o *Operator) handleEvent(obj interface{}) {
 	case grpcTLS:
 	case metricsClientCerts:
 	case federateClientCerts:
-	case uwmConfigMap:
+	case o.uwmConfigMap():
 	default:
 		klog.V(5).Infof("ConfigMap or Secret (%s) not triggering an update.", key)
 		return
@@ -699,9 +699,7 @@ func (o *Operator) handleEvent(obj interface{}) {
 
 	klog.Infof("Triggering an update due to ConfigMap or Secret: %s", key)
 
-	// Always enqueue the cluster monitoring operator configmap.
-	// That way we reuse the same synchronization logic for all triggering object changes.
-	o.enqueue(cmoConfigMap)
+	o.enqueue()
 }
 
 func (o *Operator) worker(ctx context.Context) {
@@ -717,7 +715,7 @@ func (o *Operator) processNextWorkItem(ctx context.Context) bool {
 	defer o.queue.Done(key)
 
 	metrics.ReconcileAttempts.Inc()
-	err := o.sync(ctx, key)
+	err := o.sync(ctx)
 	if err == nil {
 		metrics.ReconcileStatus.Set(1)
 		o.queue.Forget(key)
@@ -725,27 +723,17 @@ func (o *Operator) processNextWorkItem(ctx context.Context) bool {
 	}
 
 	metrics.ReconcileStatus.Set(0)
-	klog.Errorf("Syncing %q failed", key)
-	utilruntime.HandleError(fmt.Errorf("sync %q failed: %w", key, err))
+	klog.Error("Syncing failed")
+	utilruntime.HandleError(fmt.Errorf("sync failed: %w", err))
 	o.queue.AddRateLimited(key)
 
 	return true
 }
 
-func (o *Operator) enqueue(obj interface{}) {
-	if obj == nil {
-		return
-	}
-
-	key, ok := obj.(string)
-	if !ok {
-		key, ok = o.keyFunc(obj)
-		if !ok {
-			return
-		}
-	}
-
-	o.queue.Add(key)
+func (o *Operator) enqueue() {
+	// We use a unique key value here because the synchronization logic is the
+	// same for all triggering object changes.
+	o.queue.Add("reconcile")
 }
 
 type proxyConfigSupplier func(context.Context) (*ProxyConfig, error)
@@ -779,8 +767,8 @@ func (o *Operator) setUpgradeable(ctx context.Context, status configv1.Condition
 	}
 }
 
-func (o *Operator) sync(ctx context.Context, key string) error {
-	config, warnings, err := o.Config(ctx, key)
+func (o *Operator) sync(ctx context.Context) error {
+	config, warnings, err := o.Config(ctx)
 
 	reason := "InvalidConfiguration"
 	if warnings != nil {
@@ -802,14 +790,6 @@ func (o *Operator) sync(ctx context.Context, key string) error {
 
 	var proxyConfig = getProxyReader(ctx, config, o.loadProxyConfig)
 
-	var apiServerConfig *manifests.APIServerConfig
-	apiServerConfig, err = o.loadApiServerConfig(ctx)
-
-	if err != nil {
-		o.reportFailed(ctx, newRunReportForError("APIServerConfigError", err))
-		return err
-	}
-
 	consoleConfig, err := o.loadConsoleConfig(ctx)
 	if err != nil {
 		klog.Warningf("Fail to load ConsoleConfig, AlertManager's externalURL may be outdated")
@@ -822,7 +802,7 @@ func (o *Operator) sync(ctx context.Context, key string) error {
 		o.loadInfrastructureConfig(ctx),
 		proxyConfig,
 		o.assets,
-		apiServerConfig,
+		o.apiServerConfig,
 		consoleConfig,
 	)
 
@@ -880,7 +860,7 @@ func (o *Operator) sync(ctx context.Context, key string) error {
 
 	var degradedConditionMessage, degradedConditionReason string
 	if !config.IsStorageConfigured() {
-		degradedConditionMessage = o.storageNotConfiguredMessage()
+		degradedConditionMessage = o.storageNotConfiguredMessage(ctx)
 		degradedConditionReason = client.StorageNotConfiguredReason
 	} else if config.HasInconsistentAlertmanagerConfigurations() {
 		degradedConditionMessage = client.UserAlermanagerConfigMisconfiguredMessage
@@ -919,7 +899,7 @@ func (o *Operator) reportFailed(ctx context.Context, report runReport) {
 func (o *Operator) loadInfrastructureConfig(ctx context.Context) *InfrastructureConfig {
 	var infrastructureConfig *InfrastructureConfig
 
-	infrastructure, err := o.client.GetInfrastructure(ctx, clusterResourceName)
+	infrastructure, err := o.client.GetInfrastructure(ctx)
 	if err != nil {
 		klog.Warningf("Error getting cluster infrastructure: %v", err)
 
@@ -942,7 +922,7 @@ func (o *Operator) loadInfrastructureConfig(ctx context.Context) *Infrastructure
 func (o *Operator) loadProxyConfig(ctx context.Context) (*ProxyConfig, error) {
 	var proxyConfig *ProxyConfig
 
-	proxy, err := o.client.GetProxy(ctx, clusterResourceName)
+	proxy, err := o.client.GetProxy(ctx)
 	if err != nil {
 		klog.Warningf("Error getting cluster proxy configuration: %v", err)
 
@@ -959,20 +939,6 @@ func (o *Operator) loadProxyConfig(ctx context.Context) (*ProxyConfig, error) {
 	return o.lastKnowProxyConfig, nil
 }
 
-func (o *Operator) loadApiServerConfig(ctx context.Context) (*manifests.APIServerConfig, error) {
-	config, err := o.client.GetAPIServerConfig(ctx, "cluster")
-	if err != nil {
-		klog.Warningf("failed to get api server config: %v", err)
-
-		if o.lastKnownApiServerConfig == nil {
-			return nil, fmt.Errorf("no last known api server configuration")
-		}
-	} else {
-		o.lastKnownApiServerConfig = manifests.NewAPIServerConfig(config)
-	}
-	return o.lastKnownApiServerConfig, nil
-}
-
 func (o *Operator) loadConsoleConfig(ctx context.Context) (*configv1.Console, error) {
 	config, err := o.client.GetConsoleConfig(ctx, "cluster")
 	if err == nil {
@@ -982,51 +948,51 @@ func (o *Operator) loadConsoleConfig(ctx context.Context) (*configv1.Console, er
 }
 
 func (o *Operator) loadUserWorkloadConfig(ctx context.Context) (*manifests.UserWorkloadConfiguration, error) {
-	cmKey := fmt.Sprintf("%s/%s", o.namespaceUserWorkload, o.userWorkloadConfigMapName)
-
 	userCM, err := o.client.GetConfigmap(ctx, o.namespaceUserWorkload, o.userWorkloadConfigMapName)
 	if err != nil {
+		cm := o.uwmConfigMap()
 		if apierrors.IsNotFound(err) {
-			klog.Warningf("User Workload Monitoring %q ConfigMap not found. Using defaults.", cmKey)
+			klog.Warningf("User Workload Monitoring %q ConfigMap not found. Using defaults.", cm)
 			return manifests.NewDefaultUserWorkloadMonitoringConfig(), nil
 		}
-		klog.Warningf("Error loading User Workload Monitoring %q ConfigMap. Error: %v", cmKey, err)
-		return nil, fmt.Errorf("the User Workload Monitoring %q ConfigMap could not be loaded: %w", cmKey, err)
+		klog.Warningf("Error loading User Workload Monitoring %q ConfigMap. Error: %v", cm, err)
+		return nil, fmt.Errorf("the User Workload Monitoring %q ConfigMap could not be loaded: %w", cm, err)
 	}
 
 	return manifests.NewUserWorkloadConfigFromConfigMap(userCM)
 }
 
-func (o *Operator) loadConfig(key string) (*manifests.Config, error) {
-	obj, found, err := o.cmapInf.GetStore().GetByKey(key)
+func (o *Operator) loadConfig() (*manifests.Config, error) {
+	obj, found, err := o.cmapInf.GetStore().GetByKey(o.cmoConfigMap())
 	if err != nil {
 		return nil, fmt.Errorf("an error occurred when retrieving the Cluster Monitoring ConfigMap: %w", err)
 	}
 
 	if !found {
 		klog.Warning("No Cluster Monitoring ConfigMap was found. Using defaults.")
-		return manifests.NewDefaultConfig(), nil
+		return manifests.NewConfigFromString("{}")
 	}
 
 	cmap := obj.(*v1.ConfigMap)
 	return manifests.NewConfigFromConfigMap(cmap)
 }
 
-func (o *Operator) Config(ctx context.Context, key string) (*manifests.Config, []string, error) {
+func (o *Operator) Config(ctx context.Context) (*manifests.Config, []string, error) {
 	var warnings []string
 
-	c, err := o.loadConfig(key)
+	c, err := o.loadConfig()
 	if err != nil {
 		return nil, warnings, err
 	}
 
-	warning, err := c.Precheck()
-	if warning != nil {
+	for _, warning := range c.CheckDeprecatedFields() {
 		warnings = append(warnings, warning.Warning())
 	}
-	if err != nil {
-		return nil, warnings, err
-	}
+
+	metrics.SetCollectionProfileMetrics(
+		string(c.ClusterMonitoringConfiguration.PrometheusK8sConfig.CollectionProfile),
+		manifests.SupportedCollectionProfiles.StringSlice(),
+	)
 
 	// Merge ClusterMonitoring CRD configuration if feature gate is enabled
 	if o.ClusterMonitoringConfigEnabled {
@@ -1066,7 +1032,7 @@ func (o *Operator) Config(ctx context.Context, key string) (*manifests.Config, [
 	// Only fetch the token and cluster ID if they have not been specified in the config.
 	if c.ClusterMonitoringConfiguration.TelemeterClientConfig.ClusterID == "" || c.ClusterMonitoringConfiguration.TelemeterClientConfig.Token == "" {
 		err := c.LoadClusterID(func() (*configv1.ClusterVersion, error) {
-			return o.client.GetClusterVersion(ctx, "version")
+			return o.client.GetClusterVersion(ctx)
 		})
 
 		if err != nil {
@@ -1122,14 +1088,14 @@ func applyUserDefinedMode(udm configv1alpha1.UserDefinedMonitoring) *bool {
 // documentation on configuring monitoring stack. If the current cluster
 // version can be computed, the link will point to the documentation for that
 // version, else it will point to latest documentation.
-func (o Operator) storageNotConfiguredMessage() string {
+func (o Operator) storageNotConfiguredMessage(ctx context.Context) string {
 	const docURL = "https://docs.openshift.com/container-platform/%s/observability/monitoring/configuring-the-monitoring-stack.html"
 
 	latestDocMsg := client.StorageNotConfiguredMessage + fmt.Sprintf(docURL, "latest")
 
 	// if cluster version cannot be obtained due to any failure, point to the
 	// latest documentation
-	cv, err := o.client.GetClusterVersion(context.Background(), "version")
+	cv, err := o.client.GetClusterVersion(ctx)
 	if err != nil {
 		klog.Warningf("failed to find the cluster version: %s", err)
 		return latestDocMsg

@@ -141,7 +141,7 @@ func TestHashSecret(t *testing.T) {
 		},
 	} {
 		t.Run(tt.name, func(t *testing.T) {
-			f := NewFactory("openshift-monitoring", "openshift-user-workload-monitoring", NewDefaultConfig(), defaultInfrastructureReader(), &fakeProxyReader{}, NewAssets(assetsPath), &APIServerConfig{}, &configv1.Console{})
+			f := NewFactory("openshift-monitoring", "openshift-user-workload-monitoring", mustDefaultConfig(), defaultInfrastructureReader(), &fakeProxyReader{}, NewAssets(assetsPath), &APIServerConfig{}, &configv1.Console{})
 			s, err := f.HashSecret(tt.given, tt.data...)
 			if got := err != nil; got != tt.errExpected {
 				t.Errorf("expected error %t, got %t, err %v", tt.errExpected, got, err)
@@ -156,7 +156,7 @@ func TestHashSecret(t *testing.T) {
 }
 
 func TestUnconfiguredManifests(t *testing.T) {
-	f := NewFactory("openshift-monitoring", "openshift-user-workload-monitoring", NewDefaultConfig(), defaultInfrastructureReader(), &fakeProxyReader{}, NewAssets(assetsPath), &APIServerConfig{}, &configv1.Console{})
+	f := NewFactory("openshift-monitoring", "openshift-user-workload-monitoring", mustDefaultConfig(), defaultInfrastructureReader(), &fakeProxyReader{}, NewAssets(assetsPath), &APIServerConfig{}, &configv1.Console{})
 	_, err := f.AlertmanagerConfig()
 	if err != nil {
 		t.Fatal(err)
@@ -620,7 +620,7 @@ func TestSharingConfig(t *testing.T) {
 		},
 	} {
 		t.Run(tc.name, func(t *testing.T) {
-			f := NewFactory("openshift-monitoring", "openshift-user-workload-monitoring", NewDefaultConfig(), defaultInfrastructureReader(), &fakeProxyReader{}, NewAssets(assetsPath), &APIServerConfig{}, &configv1.Console{})
+			f := NewFactory("openshift-monitoring", "openshift-user-workload-monitoring", mustDefaultConfig(), defaultInfrastructureReader(), &fakeProxyReader{}, NewAssets(assetsPath), &APIServerConfig{}, &configv1.Console{})
 			u, err := url.Parse("http://example.com/")
 			if err != nil {
 				t.Fatal(err)
@@ -700,8 +700,6 @@ func TestPrometheusOperatorConfiguration(t *testing.T) {
 		t.Fatal("k8s-prometheus-operator topology spread constraints WhenUnsatisfiable not configured correctly")
 	}
 
-	prometheusReloaderFound := false
-	prometheusWebListenLocal := false
 	kubeRbacProxyTLSCipherSuitesArg := ""
 	kubeRbacProxyMinTLSVersionArg := ""
 	for _, container := range d.Spec.Template.Spec.Containers {
@@ -715,12 +713,13 @@ func TestPrometheusOperatorConfiguration(t *testing.T) {
 				t.Fatalf("%s resources incorrectly configured", container.Name)
 			}
 
-			if getContainerArgValue(d.Spec.Template.Spec.Containers, PrometheusConfigReloaderFlag+"docker.io/openshift/origin-prometheus-config-reloader:latest", container.Name) != "" {
-				prometheusReloaderFound = true
-			}
-
-			if getContainerArgValue(d.Spec.Template.Spec.Containers, "--web.listen-address=127.0.0.1:8080", container.Name) != "" {
-				prometheusWebListenLocal = true
+			for _, arg := range []string{
+				PrometheusConfigReloaderFlag + "docker.io/openshift/origin-prometheus-config-reloader:latest",
+				"--web.listen-address=127.0.0.1:8080",
+				"--repair-policy-for-statefulsets=evict",
+			} {
+				_, found := getArgValue(container, arg)
+				require.True(t, found, "%q argument not found", arg)
 			}
 		case "kube-rbac-proxy":
 			if container.Image != "docker.io/openshift/origin-kube-rbac-proxy:latest" {
@@ -729,14 +728,6 @@ func TestPrometheusOperatorConfiguration(t *testing.T) {
 			kubeRbacProxyTLSCipherSuitesArg = getContainerArgValue(d.Spec.Template.Spec.Containers, KubeRbacProxyTLSCipherSuitesFlag, container.Name)
 			kubeRbacProxyMinTLSVersionArg = getContainerArgValue(d.Spec.Template.Spec.Containers, KubeRbacProxyMinTLSVersionFlag, container.Name)
 		}
-	}
-
-	if !prometheusReloaderFound {
-		t.Fatal("Configuring the Prometheus Config reloader image failed")
-	}
-
-	if !prometheusWebListenLocal {
-		t.Fatal("expected Prometheus operator to listen on 127.0.0.1:8080")
 	}
 
 	expectedKubeRbacProxyTLSCipherSuitesArg := fmt.Sprintf("%s%s",
@@ -777,54 +768,109 @@ func TestPrometheusOperatorAdmissionWebhookConfiguration(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	f := NewFactory("openshift-monitoring", "openshift-user-workload-monitoring", c, defaultInfrastructureReader(), &fakeProxyReader{}, NewAssets(assetsPath), &APIServerConfig{}, &configv1.Console{})
-	d, err := f.PrometheusOperatorAdmissionWebhookDeployment()
-	if err != nil {
-		t.Fatal(err)
-	}
-
-	if len(d.Spec.Template.Spec.NodeSelector) == 0 {
-		t.Fatal("expected node selector to be present, got none")
-	}
-
-	if got := d.Spec.Template.Spec.NodeSelector["type"]; got != "master" {
-		t.Fatalf("expected node selector to be master, got %q", got)
-	}
-
-	webTLSCipherSuitesArg := ""
-	webTLSVersionArg := ""
-	for _, container := range d.Spec.Template.Spec.Containers {
-		switch container.Name {
-		case "prometheus-operator-admission-webhook":
-			if container.Image != "docker.io/openshift/origin-prometheus-operator-admission-webhook:latest" {
-				t.Fatalf("%s image incorrectly configured", container.Name)
+	for _, tc := range []struct {
+		name                     string
+		apiServerConfig          *APIServerConfig
+		expectedMinTLSVersionArg string
+		expectedTLSCiphersArg    string
+	}{
+		{
+			name:                     "default API server config",
+			apiServerConfig:          NewAPIServerConfig(nil),
+			expectedMinTLSVersionArg: "--web.tls-min-version=VersionTLS12",
+			expectedTLSCiphersArg:    "--web.tls-cipher-suites=TLS_AES_128_GCM_SHA256,TLS_AES_256_GCM_SHA384,TLS_CHACHA20_POLY1305_SHA256,TLS_ECDHE_ECDSA_WITH_AES_128_GCM_SHA256,TLS_ECDHE_RSA_WITH_AES_128_GCM_SHA256,TLS_ECDHE_ECDSA_WITH_AES_256_GCM_SHA384,TLS_ECDHE_RSA_WITH_AES_256_GCM_SHA384,TLS_ECDHE_ECDSA_WITH_CHACHA20_POLY1305_SHA256,TLS_ECDHE_RSA_WITH_CHACHA20_POLY1305_SHA256",
+		},
+		{
+			name: "API server config with modern TLS profile",
+			apiServerConfig: NewAPIServerConfig(&configv1.APIServer{
+				Spec: configv1.APIServerSpec{
+					TLSSecurityProfile: &configv1.TLSSecurityProfile{
+						Type: configv1.TLSProfileModernType,
+					},
+				},
+			}),
+			expectedMinTLSVersionArg: "--web.tls-min-version=VersionTLS13",
+			expectedTLSCiphersArg:    "--web.tls-cipher-suites=TLS_AES_128_GCM_SHA256,TLS_AES_256_GCM_SHA384,TLS_CHACHA20_POLY1305_SHA256",
+		},
+		{
+			name: "API server config with custom TLS profile",
+			apiServerConfig: NewAPIServerConfig(&configv1.APIServer{
+				Spec: configv1.APIServerSpec{
+					TLSSecurityProfile: &configv1.TLSSecurityProfile{
+						Type: configv1.TLSProfileCustomType,
+						Custom: &configv1.CustomTLSProfile{
+							TLSProfileSpec: configv1.TLSProfileSpec{
+								MinTLSVersion: configv1.VersionTLS12,
+								Ciphers:       []string{"TLS_AES_128_GCM_SHA256"},
+							},
+						},
+					},
+				},
+			}),
+			expectedMinTLSVersionArg: "--web.tls-min-version=VersionTLS12",
+			expectedTLSCiphersArg:    "--web.tls-cipher-suites=TLS_AES_128_GCM_SHA256",
+		},
+		{
+			name: "API server config with custom TLS profile and TLS 1.1",
+			apiServerConfig: NewAPIServerConfig(&configv1.APIServer{
+				Spec: configv1.APIServerSpec{
+					TLSSecurityProfile: &configv1.TLSSecurityProfile{
+						Type: configv1.TLSProfileCustomType,
+						Custom: &configv1.CustomTLSProfile{
+							TLSProfileSpec: configv1.TLSProfileSpec{
+								MinTLSVersion: configv1.VersionTLS11,
+								Ciphers:       []string{"TLS_AES_128_GCM_SHA256"},
+							},
+						},
+					},
+				},
+			}),
+			// The operator admission webhook doesn't support TLS version < 1.2.
+			expectedMinTLSVersionArg: "--web.tls-min-version=VersionTLS12",
+			expectedTLSCiphersArg:    "--web.tls-cipher-suites=TLS_AES_128_GCM_SHA256",
+		},
+	} {
+		t.Run(tc.name, func(t *testing.T) {
+			f := NewFactory("openshift-monitoring", "openshift-user-workload-monitoring", c, defaultInfrastructureReader(), &fakeProxyReader{}, NewAssets(assetsPath), tc.apiServerConfig, &configv1.Console{})
+			d, err := f.PrometheusOperatorAdmissionWebhookDeployment()
+			if err != nil {
+				t.Fatal(err)
 			}
 
-			webTLSCipherSuitesArg = getContainerArgValue(d.Spec.Template.Spec.Containers, PrometheusOperatorWebTLSCipherSuitesFlag, container.Name)
-			webTLSVersionArg = getContainerArgValue(d.Spec.Template.Spec.Containers, PrometheusOperatorWebTLSMinTLSVersionFlag, container.Name)
-		}
-	}
+			if len(d.Spec.Template.Spec.NodeSelector) == 0 {
+				t.Fatal("expected node selector to be present, got none")
+			}
 
-	expectedPrometheusWebTLSCipherSuitesArg := fmt.Sprintf("%s%s",
-		PrometheusOperatorWebTLSCipherSuitesFlag,
-		strings.Join(crypto.OpenSSLToIANACipherSuites(APIServerDefaultTLSCiphers), ","))
-	if expectedPrometheusWebTLSCipherSuitesArg != webTLSCipherSuitesArg {
-		t.Fatalf("incorrect TLS ciphers, \n got %s, \nwant %s", webTLSCipherSuitesArg, expectedPrometheusWebTLSCipherSuitesArg)
-	}
+			if got := d.Spec.Template.Spec.NodeSelector["type"]; got != "master" {
+				t.Fatalf("expected node selector to be master, got %q", got)
+			}
 
-	expectedPrometheusWebTLSVersionArg := fmt.Sprintf("%s%s",
-		PrometheusOperatorWebTLSMinTLSVersionFlag, APIServerDefaultMinTLSVersion)
-	if expectedPrometheusWebTLSVersionArg != webTLSVersionArg {
-		t.Fatalf("incorrect TLS version \n got %s, \nwant %s", webTLSVersionArg, expectedPrometheusWebTLSVersionArg)
-	}
+			webTLSCipherSuitesArg := ""
+			webTLSVersionArg := ""
+			for _, container := range d.Spec.Template.Spec.Containers {
+				switch container.Name {
+				case "prometheus-operator-admission-webhook":
+					if container.Image != "docker.io/openshift/origin-prometheus-operator-admission-webhook:latest" {
+						t.Fatalf("%s image incorrectly configured", container.Name)
+					}
 
-	d2, err := f.PrometheusOperatorAdmissionWebhookDeployment()
-	if err != nil {
-		t.Fatal(err)
-	}
+					webTLSCipherSuitesArg = getContainerArgValue(d.Spec.Template.Spec.Containers, PrometheusOperatorWebTLSCipherSuitesFlag, container.Name)
+					webTLSVersionArg = getContainerArgValue(d.Spec.Template.Spec.Containers, PrometheusOperatorWebTLSMinTLSVersionFlag, container.Name)
+				}
+			}
 
-	if !reflect.DeepEqual(d, d2) {
-		t.Fatal("expected PrometheusOperatorDeployment to be an idempotent function")
+			require.Equal(t, tc.expectedMinTLSVersionArg, webTLSVersionArg)
+			require.Equal(t, tc.expectedTLSCiphersArg, webTLSCipherSuitesArg)
+
+			d2, err := f.PrometheusOperatorAdmissionWebhookDeployment()
+			if err != nil {
+				t.Fatal(err)
+			}
+
+			if !reflect.DeepEqual(d, d2) {
+				t.Fatal("expected PrometheusOperatorDeployment to be an idempotent function")
+			}
+		})
 	}
 }
 
@@ -926,10 +972,7 @@ func TestPrometheusK8sRemoteWriteClusterIDRelabel(t *testing.T) {
 			name: "simple remote write",
 
 			config: func() *Config {
-				c, err := NewConfigFromString("")
-				if err != nil {
-					t.Fatal(err)
-				}
+				c := mustDefaultConfig()
 
 				c.ClusterMonitoringConfiguration.PrometheusK8sConfig.RemoteWrite = []RemoteWriteSpec{{URL: "http://custom"}}
 
@@ -953,10 +996,7 @@ func TestPrometheusK8sRemoteWriteClusterIDRelabel(t *testing.T) {
 			name: "simple remote write with relabel config",
 
 			config: func() *Config {
-				c, err := NewConfigFromString("")
-				if err != nil {
-					t.Fatal(err)
-				}
+				c := mustDefaultConfig()
 
 				c.ClusterMonitoringConfiguration.PrometheusK8sConfig.RemoteWrite = []RemoteWriteSpec{
 					{
@@ -994,10 +1034,7 @@ func TestPrometheusK8sRemoteWriteClusterIDRelabel(t *testing.T) {
 			name: "multiple remote write with relabel config",
 
 			config: func() *Config {
-				c, err := NewConfigFromString("")
-				if err != nil {
-					t.Fatal(err)
-				}
+				c := mustDefaultConfig()
 
 				c.ClusterMonitoringConfiguration.PrometheusK8sConfig.RemoteWrite = []RemoteWriteSpec{
 					{
@@ -1104,7 +1141,7 @@ func TestPrometheusK8sRemoteWriteURLs(t *testing.T) {
 			name: "default config",
 
 			config: func() *Config {
-				c := NewDefaultConfig()
+				c := mustDefaultConfig()
 				c.ClusterMonitoringConfiguration.TelemeterClientConfig.ClusterID = "123"
 				c.ClusterMonitoringConfiguration.TelemeterClientConfig.Token = "secret"
 
@@ -1117,7 +1154,7 @@ func TestPrometheusK8sRemoteWriteURLs(t *testing.T) {
 			name: "legacy telemetry and custom remote write",
 
 			config: func() *Config {
-				c := NewDefaultConfig()
+				c := mustDefaultConfig()
 				c.ClusterMonitoringConfiguration.PrometheusK8sConfig.RemoteWrite = []RemoteWriteSpec{{URL: "http://custom"}}
 				c.ClusterMonitoringConfiguration.TelemeterClientConfig.ClusterID = "123"
 				c.ClusterMonitoringConfiguration.TelemeterClientConfig.Token = "secret"
@@ -1133,7 +1170,7 @@ func TestPrometheusK8sRemoteWriteURLs(t *testing.T) {
 			name: "remote write telemetry",
 
 			config: func() *Config {
-				c := NewDefaultConfig()
+				c := mustDefaultConfig()
 				c.SetRemoteWrite(true)
 				c.ClusterMonitoringConfiguration.TelemeterClientConfig.ClusterID = "123"
 				c.ClusterMonitoringConfiguration.TelemeterClientConfig.Token = "secret"
@@ -1150,7 +1187,7 @@ func TestPrometheusK8sRemoteWriteURLs(t *testing.T) {
 			name: "remote write telemetry and custom remote write",
 
 			config: func() *Config {
-				c := NewDefaultConfig()
+				c := mustDefaultConfig()
 				c.SetRemoteWrite(true)
 				c.ClusterMonitoringConfiguration.PrometheusK8sConfig.RemoteWrite = []RemoteWriteSpec{{URL: "http://custom"}}
 				c.ClusterMonitoringConfiguration.TelemeterClientConfig.ClusterID = "123"
@@ -1169,7 +1206,7 @@ func TestPrometheusK8sRemoteWriteURLs(t *testing.T) {
 			name: "remote write telemetry with custom url and custom remote write",
 
 			config: func() *Config {
-				c := NewDefaultConfig()
+				c := mustDefaultConfig()
 				c.SetRemoteWrite(true)
 				c.ClusterMonitoringConfiguration.TelemeterClientConfig.TelemeterServerURL = "http://custom-telemeter"
 				c.ClusterMonitoringConfiguration.PrometheusK8sConfig.RemoteWrite = []RemoteWriteSpec{{URL: "http://custom-remote-write"}}
@@ -1637,10 +1674,12 @@ func TestPrometheusK8sConfiguration(t *testing.T) {
 	if p.Spec.ExternalURL != expectedExternalURL {
 		t.Fatalf("Prometheus external URL is not configured correctly, expected %s, but got %s", expectedExternalURL, p.Spec.ExternalURL)
 	}
+
+	require.Equal(t, "TLS12", string(*p.Spec.Thanos.GRPCServerTLSConfig.SafeTLSConfig.MinVersion))
 }
 
 func TestPrometheusUserWorkloadConfiguration(t *testing.T) {
-	c := NewDefaultConfig()
+	c := mustDefaultConfig()
 
 	uwc, err := NewUserConfigFromString(`prometheus:
   scrapeInterval: 15s
@@ -1722,6 +1761,8 @@ func TestPrometheusUserWorkloadConfiguration(t *testing.T) {
 	require.Equal(t, p.Spec.ScrapeClasses[0].FallbackScrapeProtocol, ptr.To(monv1.PrometheusText1_0_0))
 
 	require.Equal(t, p.Spec.ExternalLabels, map[string]string{"foo": "bar", "oof": "rab"})
+
+	require.Equal(t, "TLS12", string(*p.Spec.Thanos.GRPCServerTLSConfig.SafeTLSConfig.MinVersion))
 }
 
 func TestPrometheusQueryLogFileConfig(t *testing.T) {
@@ -1783,7 +1824,7 @@ func TestPrometheusQueryLogFileConfig(t *testing.T) {
 		},
 	} {
 		t.Run(tc.name, func(t *testing.T) {
-			c := NewDefaultConfig()
+			c := mustDefaultConfig()
 			c.ClusterMonitoringConfiguration.PrometheusK8sConfig.QueryLogFile = tc.queryLogFilePath
 			f := NewFactory("openshift-monitoring", "openshift-user-workload-monitoring", c, defaultInfrastructureReader(), &fakeProxyReader{}, NewAssets(assetsPath), &APIServerConfig{}, &configv1.Console{})
 			p, err := f.PrometheusK8s(
@@ -1858,7 +1899,7 @@ func TestPrometheusCollectionProfile(t *testing.T) {
 		},
 	} {
 		t.Run(tc.name, func(t *testing.T) {
-			c := NewDefaultConfig()
+			c := mustDefaultConfig()
 			c.ClusterMonitoringConfiguration.PrometheusK8sConfig.CollectionProfile = tc.collectionProfile
 			f := NewFactory("openshift-monitoring", "openshift-user-workload-monitoring", c, defaultInfrastructureReader(), &fakeProxyReader{}, NewAssets(assetsPath), &APIServerConfig{}, &configv1.Console{})
 			p, err := f.PrometheusK8s(
@@ -1913,7 +1954,7 @@ func TestPrometheusRetentionConfigs(t *testing.T) {
 		},
 	} {
 		t.Run(tc.name, func(t *testing.T) {
-			c := NewDefaultConfig()
+			c := mustDefaultConfig()
 			c.ClusterMonitoringConfiguration.PrometheusK8sConfig.Retention = tc.retention
 			c.ClusterMonitoringConfiguration.PrometheusK8sConfig.RetentionSize = tc.retentionSize
 
@@ -2063,8 +2104,6 @@ func TestPrometheusK8sAdditionalAlertManagerConfigsSecret(t *testing.T) {
     - ECDHE-RSA-AES256-GCM-SHA384
     - ECDHE-ECDSA-CHACHA20-POLY1305
     - ECDHE-RSA-CHACHA20-POLY1305
-    - DHE-RSA-AES128-GCM-SHA256
-    - DHE-RSA-AES256-GCM-SHA384
   static_configs:
   - targets:
     - alertmanager1-remote.com
@@ -2373,8 +2412,6 @@ func TestThanosRulerAdditionalAlertManagerConfigsSecret(t *testing.T) {
       - ECDHE-RSA-AES256-GCM-SHA384
       - ECDHE-ECDSA-CHACHA20-POLY1305
       - ECDHE-RSA-CHACHA20-POLY1305
-      - DHE-RSA-AES128-GCM-SHA256
-      - DHE-RSA-AES256-GCM-SHA384
   static_configs:
   - alertmanager1-remote.com
   - alertmanager1-remotex.com
@@ -2762,10 +2799,7 @@ metricsServer:
 }
 
 func TestMetricsServerReadinessProbe(t *testing.T) {
-	c, err := NewConfigFromString("")
-	if err != nil {
-		t.Fatal(err)
-	}
+	c := mustDefaultConfig()
 
 	c.SetImages(map[string]string{
 		"kube-metrics-server": "docker.io/openshift/origin-kube-metrics-server:latest",
@@ -3219,7 +3253,7 @@ func TestAlertmanagerMainConfiguration(t *testing.T) {
 }
 
 func TestAlertManagerUserWorkloadConfiguration(t *testing.T) {
-	c := NewDefaultConfig()
+	c := mustDefaultConfig()
 	uwc, err := NewUserConfigFromString(`alertmanager:
   resources:
     requests:
@@ -3903,7 +3937,7 @@ func TestPrometheusK8sControlPlaneRulesFiltered(t *testing.T) {
 	}
 
 	for _, tc := range tests {
-		f := NewFactory("openshift-monitoring", "openshift-user-workload-monitoring", NewDefaultConfig(), tc.infrastructure, &fakeProxyReader{}, NewAssets(assetsPath), &APIServerConfig{}, &configv1.Console{})
+		f := NewFactory("openshift-monitoring", "openshift-user-workload-monitoring", mustDefaultConfig(), tc.infrastructure, &fakeProxyReader{}, NewAssets(assetsPath), &APIServerConfig{}, &configv1.Console{})
 		r, err := f.ControlPlanePrometheusRule()
 		if err != nil {
 			t.Fatal(err)
@@ -4311,7 +4345,7 @@ func TestThanosRulerConfiguration(t *testing.T) {
 }
 
 func TestThanosRulerRetentionConfig(t *testing.T) {
-	c := NewDefaultConfig()
+	c := mustDefaultConfig()
 	c.UserWorkloadConfiguration.ThanosRuler.Retention = "30d"
 
 	f := NewFactory("openshift-monitoring", "openshift-user-workload-monitoring", c, defaultInfrastructureReader(), &fakeProxyReader{}, NewAssets(assetsPath), &APIServerConfig{}, &configv1.Console{})
@@ -4341,7 +4375,7 @@ prometheus:
 `)
 	require.NoError(t, err)
 
-	c := NewDefaultConfig()
+	c := mustDefaultConfig()
 	c.UserWorkloadConfiguration = uwc
 
 	f := NewFactory("openshift-monitoring", "openshift-user-workload-monitoring", c, defaultInfrastructureReader(), &fakeProxyReader{}, NewAssets(assetsPath), &APIServerConfig{}, &configv1.Console{})
@@ -4405,7 +4439,7 @@ func TestPrometheusGoGCRelatedConfig(t *testing.T) {
 		},
 	} {
 		t.Run("", func(t *testing.T) {
-			f := NewFactory("openshift-monitoring", "openshift-user-workload-monitoring", NewDefaultConfig(), tc.ir, &fakeProxyReader{}, NewAssets(assetsPath), &APIServerConfig{}, &configv1.Console{})
+			f := NewFactory("openshift-monitoring", "openshift-user-workload-monitoring", mustDefaultConfig(), tc.ir, &fakeProxyReader{}, NewAssets(assetsPath), &APIServerConfig{}, &configv1.Console{})
 
 			p, err := tc.promf(f)
 			require.NoError(t, err)
@@ -4516,7 +4550,7 @@ func TestNonHighlyAvailableInfrastructure(t *testing.T) {
 	}
 
 	for _, tc := range tests {
-		f := NewFactory("openshift-monitoring", "openshift-user-workload-monitoring", NewDefaultConfig(), &fakeInfrastructureReader{highlyAvailableInfrastructure: false}, &fakeProxyReader{}, NewAssets(assetsPath), &APIServerConfig{}, &configv1.Console{})
+		f := NewFactory("openshift-monitoring", "openshift-user-workload-monitoring", mustDefaultConfig(), &fakeInfrastructureReader{highlyAvailableInfrastructure: false}, &fakeProxyReader{}, NewAssets(assetsPath), &APIServerConfig{}, &configv1.Console{})
 		spec, err := tc.getSpec(f)
 		if err != nil {
 			t.Error(err)
@@ -4619,12 +4653,12 @@ func TestNonHighlyAvailableInfrastructureServiceMonitors(t *testing.T) {
 		},
 	}
 	for _, tc := range tests {
-		nonHAFac := NewFactory("openshift-monitoring", "openshift-user-workload-monitoring", NewDefaultConfig(), &fakeInfrastructureReader{highlyAvailableInfrastructure: false}, &fakeProxyReader{}, NewAssets(assetsPath), &APIServerConfig{}, &configv1.Console{})
+		nonHAFac := NewFactory("openshift-monitoring", "openshift-user-workload-monitoring", mustDefaultConfig(), &fakeInfrastructureReader{highlyAvailableInfrastructure: false}, &fakeProxyReader{}, NewAssets(assetsPath), &APIServerConfig{}, &configv1.Console{})
 		noHAEndpoints, err := tc.getEndpoints(nonHAFac)
 		if err != nil {
 			t.Error(err)
 		}
-		HAFac := NewFactory("openshift-monitoring", "openshift-user-workload-monitoring", NewDefaultConfig(), &fakeInfrastructureReader{highlyAvailableInfrastructure: true}, &fakeProxyReader{}, NewAssets(assetsPath), &APIServerConfig{}, &configv1.Console{})
+		HAFac := NewFactory("openshift-monitoring", "openshift-user-workload-monitoring", mustDefaultConfig(), &fakeInfrastructureReader{highlyAvailableInfrastructure: true}, &fakeProxyReader{}, NewAssets(assetsPath), &APIServerConfig{}, &configv1.Console{})
 		HAEndpoints, err := tc.getEndpoints(HAFac)
 		if err != nil {
 			t.Error(err)
@@ -4733,7 +4767,7 @@ func TestPodDisruptionBudget(t *testing.T) {
 	}
 
 	for _, tc := range tests {
-		f := NewFactory("openshift-monitoring", "openshift-user-workload-monitoring", NewDefaultConfig(), &fakeInfrastructureReader{highlyAvailableInfrastructure: tc.ha}, &fakeProxyReader{}, NewAssets(assetsPath), &APIServerConfig{}, &configv1.Console{})
+		f := NewFactory("openshift-monitoring", "openshift-user-workload-monitoring", mustDefaultConfig(), &fakeInfrastructureReader{highlyAvailableInfrastructure: tc.ha}, &fakeProxyReader{}, NewAssets(assetsPath), &APIServerConfig{}, &configv1.Console{})
 		pdb, err := tc.getPDB(f)
 		if err != nil {
 			t.Error(err)
@@ -4749,7 +4783,7 @@ func TestPodDisruptionBudget(t *testing.T) {
 }
 
 func TestPrometheusOperatorUserWorkloadConfiguration(t *testing.T) {
-	c := NewDefaultConfig()
+	c := mustDefaultConfig()
 	uwc, err := NewUserConfigFromString(`prometheusOperator:
   topologySpreadConstraints:
   - maxSkew: 1
@@ -4779,8 +4813,6 @@ func TestPrometheusOperatorUserWorkloadConfiguration(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	prometheusReloaderFound := false
-	prometheusWebListenLocal := false
 	kubeRbacProxyTLSCipherSuitesArg := ""
 	kubeRbacProxyMinTLSVersionArg := ""
 	for _, container := range d.Spec.Template.Spec.Containers {
@@ -4789,12 +4821,14 @@ func TestPrometheusOperatorUserWorkloadConfiguration(t *testing.T) {
 			if container.Image != "docker.io/openshift/origin-prometheus-operator:latest" {
 				t.Fatalf("%s image incorrectly configured", container.Name)
 			}
-			if getContainerArgValue(d.Spec.Template.Spec.Containers, PrometheusConfigReloaderFlag+"docker.io/openshift/origin-prometheus-config-reloader:latest", container.Name) != "" {
-				prometheusReloaderFound = true
-			}
 
-			if getContainerArgValue(d.Spec.Template.Spec.Containers, "--web.listen-address=127.0.0.1:8080", container.Name) != "" {
-				prometheusWebListenLocal = true
+			for _, arg := range []string{
+				PrometheusConfigReloaderFlag + "docker.io/openshift/origin-prometheus-config-reloader:latest",
+				"--web.listen-address=127.0.0.1:8080",
+				"--repair-policy-for-statefulsets=evict",
+			} {
+				_, found := getArgValue(container, arg)
+				require.True(t, found, "%q argument not found", arg)
 			}
 		case "kube-rbac-proxy":
 			if container.Image != "docker.io/openshift/origin-kube-rbac-proxy:latest" {
@@ -4803,14 +4837,6 @@ func TestPrometheusOperatorUserWorkloadConfiguration(t *testing.T) {
 			kubeRbacProxyTLSCipherSuitesArg = getContainerArgValue(d.Spec.Template.Spec.Containers, KubeRbacProxyTLSCipherSuitesFlag, container.Name)
 			kubeRbacProxyMinTLSVersionArg = getContainerArgValue(d.Spec.Template.Spec.Containers, KubeRbacProxyMinTLSVersionFlag, container.Name)
 		}
-	}
-
-	if !prometheusReloaderFound {
-		t.Fatal("Configuring the Prometheus Config reloader image failed")
-	}
-
-	if !prometheusWebListenLocal {
-		t.Fatal("expected Prometheus operator to listen on 127.0.0.1:8080")
 	}
 
 	expectedKubeRbacProxyTLSCipherSuitesArg := fmt.Sprintf("%s%s",
@@ -5060,7 +5086,7 @@ func TestAlertmanagerProxy(t *testing.T) {
 				return nil
 			}
 
-			f := NewFactory("openshift-monitoring", "openshift-user-workload-monitoring", NewDefaultConfig(), defaultInfrastructureReader(), tc.proxyReader, NewAssets(assetsPath), &APIServerConfig{}, &configv1.Console{})
+			f := NewFactory("openshift-monitoring", "openshift-user-workload-monitoring", mustDefaultConfig(), defaultInfrastructureReader(), tc.proxyReader, NewAssets(assetsPath), &APIServerConfig{}, &configv1.Console{})
 
 			t.Run("main", func(t *testing.T) {
 				am, err := f.AlertmanagerMain()
@@ -5129,7 +5155,7 @@ func TestPrometheusProxy(t *testing.T) {
 				return nil
 			}
 
-			f := NewFactory("openshift-monitoring", "openshift-user-workload-monitoring", NewDefaultConfig(), defaultInfrastructureReader(), tc.proxyReader, NewAssets(assetsPath), &APIServerConfig{}, &configv1.Console{})
+			f := NewFactory("openshift-monitoring", "openshift-user-workload-monitoring", mustDefaultConfig(), defaultInfrastructureReader(), tc.proxyReader, NewAssets(assetsPath), &APIServerConfig{}, &configv1.Console{})
 
 			t.Run("main", func(t *testing.T) {
 				p, err := f.PrometheusK8s(
@@ -5259,7 +5285,7 @@ func TestSetTLSSecurityConfiguration(t *testing.T) {
 			f := NewFactory(
 				"openshift-monitoring",
 				"openshift-user-workload-monitoring",
-				NewDefaultConfig(),
+				mustDefaultConfig(),
 				defaultInfrastructureReader(),
 				&fakeProxyReader{},
 				NewAssets(assetsPath),
@@ -5342,4 +5368,13 @@ func TestPromConfigurationExternalLabels(t *testing.T) {
 			}
 		})
 	}
+}
+
+func mustDefaultConfig() *Config {
+	cfg, err := NewConfigFromString("{}")
+	if err != nil {
+		panic(err)
+	}
+
+	return cfg
 }

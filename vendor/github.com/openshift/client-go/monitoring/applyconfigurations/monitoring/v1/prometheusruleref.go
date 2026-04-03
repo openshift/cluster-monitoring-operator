@@ -4,7 +4,13 @@ package v1
 
 // PrometheusRuleRefApplyConfiguration represents a declarative configuration of the PrometheusRuleRef type for use
 // with apply.
+//
+// PrometheusRuleRef is a reference to an existing PrometheusRule object.  Each
+// AlertingRule instance results in a generated PrometheusRule object in the same
+// namespace, which is always the openshift-monitoring namespace.  This is used to
+// point to the generated PrometheusRule object in the AlertingRule status.
 type PrometheusRuleRefApplyConfiguration struct {
+	// name of the referenced PrometheusRule.
 	Name *string `json:"name,omitempty"`
 }
 

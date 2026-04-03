@@ -1515,6 +1515,13 @@ func (f *Factory) PrometheusK8s(grpcTLS *v1.Secret, telemetrySecret *v1.Secret) 
 		}
 	}
 
+	// Configure the TLS settings for the Thanos gRPC server.
+	grpcTLSVersion, err := convertTLSVersionToMonitoringV1(f.APIServerConfig.MinTLSVersion())
+	if err != nil {
+		return nil, err
+	}
+	p.Spec.Thanos.GRPCServerTLSConfig.SafeTLSConfig.MinVersion = grpcTLSVersion
+
 	p.Spec.Volumes = append(p.Spec.Volumes, v1.Volume{
 		Name: "secret-grpc-tls",
 		VolumeSource: v1.VolumeSource{
@@ -1831,6 +1838,12 @@ func (f *Factory) PrometheusUserWorkload(grpcTLS *v1.Secret) (*monv1.Prometheus,
 		return nil, err
 	}
 
+	// Configure the TLS settings for the Thanos gRPC server.
+	grpcTLSVersion, err := convertTLSVersionToMonitoringV1(f.APIServerConfig.MinTLSVersion())
+	if err != nil {
+		return nil, err
+	}
+	p.Spec.Thanos.GRPCServerTLSConfig.SafeTLSConfig.MinVersion = grpcTLSVersion
 	p.Spec.Volumes = append(p.Spec.Volumes, v1.Volume{
 		Name: "secret-grpc-tls",
 		VolumeSource: v1.VolumeSource{

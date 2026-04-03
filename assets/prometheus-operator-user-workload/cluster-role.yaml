@@ -6,7 +6,7 @@ metadata:
     app.kubernetes.io/managed-by: cluster-monitoring-operator
     app.kubernetes.io/name: prometheus-operator
     app.kubernetes.io/part-of: openshift-monitoring
-    app.kubernetes.io/version: 0.89.0
+    app.kubernetes.io/version: 0.90.1
   name: prometheus-user-workload-operator
 rules:
 - apiGroups:
@@ -117,6 +117,12 @@ rules:
   - list
   - update
   - delete
+- apiGroups:
+  - ""
+  resources:
+  - pods/eviction
+  verbs:
+  - create
 - apiGroups:
   - authentication.k8s.io
   resources:

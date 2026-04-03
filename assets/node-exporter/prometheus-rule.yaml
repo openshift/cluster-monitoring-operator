@@ -354,6 +354,26 @@ spec:
           rate(node_network_transmit_drop_total{job="node-exporter", device!="lo"}[1m])
         )
       record: instance:node_network_transmit_drop_excluding_lo:rate1m
+    - expr: |
+        sum without (device) (
+          rate(node_network_receive_bytes_total{job="node-exporter", device!~"lo|veth.+"}[1m])
+        )
+      record: instance:node_network_receive_bytes_physical:rate1m
+    - expr: |
+        sum without (device) (
+          rate(node_network_transmit_bytes_total{job="node-exporter", device!~"lo|veth.+"}[1m])
+        )
+      record: instance:node_network_transmit_bytes_physical:rate1m
+    - expr: |
+        sum without (device) (
+          rate(node_network_receive_drop_total{job="node-exporter", device!~"lo|veth.+"}[1m])
+        )
+      record: instance:node_network_receive_drop_physical:rate1m
+    - expr: |
+        sum without (device) (
+          rate(node_network_transmit_drop_total{job="node-exporter", device!~"lo|veth.+"}[1m])
+        )
+      record: instance:node_network_transmit_drop_physical:rate1m
   - name: telemetry
     rules:
     - expr: sum by(vendor,model) (node_accelerator_card_info)

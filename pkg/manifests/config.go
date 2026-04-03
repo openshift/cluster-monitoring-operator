@@ -285,16 +285,6 @@ func (cfg *TelemeterClientConfig) IsEnabled() bool {
 	return true
 }
 
-func (cps CollectionProfiles) String() string {
-	var sb strings.Builder
-	for i := 0; i < len(cps)-1; i++ {
-		sb.WriteString(string(cps[i]))
-		sb.WriteString(", ")
-	}
-	sb.WriteString(string(cps[len(cps)-1]))
-	return sb.String()
-}
-
 // Copied from k8s.io/apimachinery/pkg/util/yaml.UnmarshalStrict but using
 // sigs.k8s.io/json.UnmarshalStrict instead of encoding/json.UnmarshalStrict
 // to enforce case-sensitive unmarshalling and provide more detailed error context.
@@ -336,24 +326,8 @@ func UnmarshalStrict(data []byte, v interface{}) error {
 	}
 }
 
-func newConfig(content []byte) (*Config, error) {
-	c := Config{}
-
-	cmc := defaultClusterMonitoringConfiguration()
-	err := UnmarshalStrict(content, &cmc)
-	if err != nil {
-		return nil, err
-	}
-
-	c.ClusterMonitoringConfiguration = &cmc
-	c.applyDefaults()
-	c.UserWorkloadConfiguration = NewDefaultUserWorkloadMonitoringConfig()
-
-	return &c, nil
-}
-
-func defaultClusterMonitoringConfiguration() ClusterMonitoringConfiguration {
-	return ClusterMonitoringConfiguration{
+func NewConfigFromString(content string) (*Config, error) {
+	cmc := ClusterMonitoringConfiguration{
 		NodeExporterConfig: NodeExporterConfig{
 			Collectors: NodeExporterCollectorConfig{
 				NetDev: NodeExporterCollectorNetDevConfig{
@@ -369,6 +343,27 @@ func defaultClusterMonitoringConfiguration() ClusterMonitoringConfiguration {
 			},
 		},
 	}
+	err := UnmarshalStrict([]byte(content), &cmc)
+	if err != nil {
+		return nil, err
+	}
+
+	c := Config{
+		ClusterMonitoringConfiguration: &cmc,
+		UserWorkloadConfiguration:      NewDefaultUserWorkloadMonitoringConfig(),
+	}
+	c.applyDefaults()
+
+	// Validate the configured collection profile.
+	if !slices.Contains(SupportedCollectionProfiles, c.ClusterMonitoringConfiguration.PrometheusK8sConfig.CollectionProfile) {
+		return nil, fmt.Errorf("%w: %q is not supported, supported collection profiles are [%s]",
+			ErrConfigValidation,
+			c.ClusterMonitoringConfiguration.PrometheusK8sConfig.CollectionProfile,
+			strings.Join(SupportedCollectionProfiles.StringSlice(), ", "),
+		)
+	}
+
+	return &c, nil
 }
 
 func (c *Config) applyDefaults() {
@@ -588,31 +583,18 @@ func (c *Config) LoadEnforcedBodySizeLimit(pcr PodCapacityReader, ctx context.Co
 	return nil
 }
 
-func (c *Config) Precheck() (*InvalidConfigWarning, error) {
-	// Validate the configured collection profile.
-	for _, profile := range SupportedCollectionProfiles {
-		var v float64
-		if profile == c.ClusterMonitoringConfiguration.PrometheusK8sConfig.CollectionProfile {
-			v = 1
-		}
-		metrics.CollectionProfile.WithLabelValues(string(profile)).Set(v)
-	}
-	if !slices.Contains(SupportedCollectionProfiles, c.ClusterMonitoringConfiguration.PrometheusK8sConfig.CollectionProfile) {
-		return nil, fmt.Errorf(`%q is not supported, supported collection profiles are: %q: %w`, c.ClusterMonitoringConfiguration.PrometheusK8sConfig.CollectionProfile, SupportedCollectionProfiles.String(), ErrConfigValidation)
-	}
-
-	// Highlight deprecated config fields.
+func (c *Config) CheckDeprecatedFields() []InvalidConfigWarning {
+	// Prometheus-Adapter is replaced with Metrics Server by default from 4.16
 	var d float64
-	var warn *InvalidConfigWarning
+	var warnings []InvalidConfigWarning
 	if c.ClusterMonitoringConfiguration.K8sPrometheusAdapter != nil {
 		klog.Infof("k8sPrometheusAdapter is a deprecated config use metricsServer instead")
 		d = 1
-		warn = &InvalidConfigWarning{ConfigMap: "openshift-monitoring/cluster-monitoring-config", Err: errPrometheusAdapterDeprecated}
+		warnings = append(warnings, InvalidConfigWarning{ConfigMap: "openshift-monitoring/cluster-monitoring-config", Err: errPrometheusAdapterDeprecated})
 	}
-	// Prometheus-Adapter is replaced with Metrics Server by default from 4.16
 	metrics.DeprecatedConfig.WithLabelValues("openshift-monitoring/cluster-monitoring-config", "k8sPrometheusAdapter", "4.16").Set(d)
 
-	return warn, nil
+	return warnings
 }
 
 func calculateBodySizeLimit(podCapacity int) string {
@@ -628,24 +610,15 @@ func calculateBodySizeLimit(podCapacity int) string {
 	return fmt.Sprintf("%dMB", int(math.Ceil(float64(bodySize)/(1024*1024))))
 }
 
-// NewConfigFromString transforms a string containing configuration in the
-// openshift-monitoring/cluster-monitoring-configuration format into a data
-// structure that facilitates programmatical checks of that configuration. The
-// content of the data structure might change if TechPreview is enabled (tp), as
-// some features are only meant for TechPreview.
-func NewConfigFromString(content string) (*Config, error) {
-	if content == "" {
-		return NewDefaultConfig(), nil
-	}
-
-	return newConfig([]byte(content))
-}
-
 func NewConfigFromConfigMap(c *v1.ConfigMap) (*Config, error) {
 	configContent, found := c.Data[configKey]
-
 	if !found {
 		return nil, fmt.Errorf("%q key not found in the configmap", configKey)
+	}
+
+	if configContent == "" {
+		// Consider an empty string to be equivalent to an empty map.
+		configContent = "{}"
 	}
 
 	cParsed, err := NewConfigFromString(configContent)
@@ -653,15 +626,6 @@ func NewConfigFromConfigMap(c *v1.ConfigMap) (*Config, error) {
 		return nil, fmt.Errorf("failed to parse data at key %q: %w", configKey, err)
 	}
 	return cParsed, nil
-}
-
-func NewDefaultConfig() *Config {
-	c := &Config{}
-	cmc := defaultClusterMonitoringConfiguration()
-	c.ClusterMonitoringConfiguration = &cmc
-	c.UserWorkloadConfiguration = NewDefaultUserWorkloadMonitoringConfig()
-	c.applyDefaults()
-	return c
 }
 
 func (u *UserWorkloadConfiguration) applyDefaults() {

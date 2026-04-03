@@ -4,7 +4,23 @@ package v1
 
 // AlertingRuleSpecApplyConfiguration represents a declarative configuration of the AlertingRuleSpec type for use
 // with apply.
+//
+// AlertingRuleSpec is the desired state of an AlertingRule resource.
 type AlertingRuleSpecApplyConfiguration struct {
+	// groups is a list of grouped alerting rules.  Rule groups are the unit at
+	// which Prometheus parallelizes rule processing.  All rules in a single group
+	// share a configured evaluation interval.  All rules in the group will be
+	// processed together on this interval, sequentially, and all rules will be
+	// processed.
+	//
+	// It's common to group related alerting rules into a single AlertingRule
+	// resources, and within that resource, closely related alerts, or simply
+	// alerts with the same interval, into individual groups.  You are also free
+	// to create AlertingRule resources with only a single rule group, but be
+	// aware that this can have a performance impact on Prometheus if the group is
+	// extremely large or has very complex query expressions to evaluate.
+	// Spreading very complex rules across multiple groups to allow them to be
+	// processed in parallel is also a common use-case.
 	Groups []RuleGroupApplyConfiguration `json:"groups,omitempty"`
 }
 

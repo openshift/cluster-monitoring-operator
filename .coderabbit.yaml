@@ -1,0 +1,9 @@
+# Inherits org-wide settings from https://github.com/openshift/coderabbit/blob/main/.coderabbit.yaml
+inheritance: true
+reviews:
+  high_level_summary: false
+  review_status: false
+  collapse_walkthrough: true
+  sequence_diagrams: false
+  changed_files_summary: false
+  enable_prompt_for_ai_agents: false

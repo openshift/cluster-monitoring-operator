@@ -7,7 +7,7 @@ metadata:
     include.release.openshift.io/ibm-cloud-managed: "true"
     include.release.openshift.io/self-managed-high-availability: "true"
     include.release.openshift.io/single-node-developer: "true"
-    operator.prometheus.io/version: 0.89.0
+    operator.prometheus.io/version: 0.90.1
     service.beta.openshift.io/inject-cabundle: "true"
   labels:
     app.kubernetes.io/managed-by: cluster-version-operator
@@ -1017,6 +1017,14 @@ spec:
                               This is used for SMTP AUTH when the server requires authentication.
                             minLength: 1
                             type: string
+                          forceImplicitTLS:
+                            description: |-
+                              forceImplicitTLS defines whether to force use of implicit TLS (direct TLS connection) for better security.
+                              true: force use of implicit TLS (direct TLS connection on any port)
+                              false: force disable implicit TLS (use explicit TLS/STARTTLS if required)
+                              nil (default): auto-detect based on port (465=implicit, other=explicit) for backward compatibility
+                              It requires Alertmanager >= v0.31.0.
+                            type: boolean
                           from:
                             description: |-
                               from defines the sender address for email notifications.
@@ -6670,6 +6678,13 @@ spec:
                               linkNames enables automatic linking of channel names and usernames in the message.
                               When true, @channel and @username will be converted to clickable links.
                             type: boolean
+                          messageText:
+                            description: |-
+                              messageText defines text content of the Slack message.
+                              If set, this is sent as the top-level 'text' field in the Slack payload.
+                              It requires Alertmanager >= v0.31.0.
+                            minLength: 1
+                            type: string
                           mrkdwnIn:
                             description: |-
                               mrkdwnIn defines which fields should be parsed as Slack markdown.
@@ -12102,6 +12117,14 @@ spec:
                               This is used for SMTP AUTH when the server requires authentication.
                             minLength: 1
                             type: string
+                          forceImplicitTLS:
+                            description: |-
+                              forceImplicitTLS defines whether to force use of implicit TLS (direct TLS connection) for better security.
+                              true: force use of implicit TLS (direct TLS connection on any port)
+                              false: force disable implicit TLS (use explicit TLS/STARTTLS if required)
+                              nil (default): auto-detect based on port (465=implicit, other=explicit) for backward compatibility
+                              It requires Alertmanager >= v0.31.0.
+                            type: boolean
                           from:
                             description: |-
                               from defines the sender address for email notifications.
@@ -17645,6 +17668,13 @@ spec:
                               linkNames enables automatic linking of channel names and usernames in the message.
                               When true, @channel and @username will be converted to clickable links.
                             type: boolean
+                          messageText:
+                            description: |-
+                              messageText defines text content of the Slack message.
+                              If set, this is sent as the top-level 'text' field in the Slack payload.
+                              It requires Alertmanager >= v0.31.0.
+                            minLength: 1
+                            type: string
                           mrkdwnIn:
                             description: |-
                               mrkdwnIn defines which fields should be parsed as Slack markdown.

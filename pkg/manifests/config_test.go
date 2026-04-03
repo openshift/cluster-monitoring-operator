@@ -706,7 +706,7 @@ func TestEvaluationIntervalUWM(t *testing.T) {
 	}
 }
 
-func TestCollectionProfilePreCheck(t *testing.T) {
+func TestCollectionProfileValues(t *testing.T) {
 	for _, tc := range []struct {
 		name          string
 		config        string
@@ -714,43 +714,39 @@ func TestCollectionProfilePreCheck(t *testing.T) {
 		expectedError bool
 	}{
 		{
-			name:          "default",
-			config:        "",
-			expected:      CollectionProfile("full"),
-			expectedError: false,
+			name:     "default",
+			config:   "",
+			expected: CollectionProfile("full"),
 		},
 		{
-			name: "full_profile",
+			name: "full profile",
 			config: `prometheusK8s:
   collectionProfile: full
   `,
-			expected:      CollectionProfile("full"),
-			expectedError: false,
+			expected: CollectionProfile("full"),
 		},
 		{
-			name: "minimal_profile",
+			name: "minimal profile",
 			config: `prometheusK8s:
   collectionProfile: minimal
   `,
-			expected:      CollectionProfile("minimal"),
-			expectedError: false,
+			expected: CollectionProfile("minimal"),
 		},
 		{
-			name: "incorrect_profile",
+			name: "incorrect profile",
 			config: `prometheusK8s:
   collectionProfile: foo
   `,
-			expected:      "",
 			expectedError: true,
 		},
 	} {
 		t.Run(tc.name, func(t *testing.T) {
 			c, err := NewConfigFromString(tc.config)
-			require.NoError(t, err)
-			_, err = c.Precheck()
 			if err != nil && tc.expectedError {
+				require.Error(t, err)
 				return
 			}
+
 			require.NoError(t, err)
 			require.Equal(t, tc.expected, c.ClusterMonitoringConfiguration.PrometheusK8sConfig.CollectionProfile)
 		})
@@ -790,11 +786,11 @@ func TestDeprecatedConfig(t *testing.T) {
 		t.Run(tc.name, func(t *testing.T) {
 			c, err := NewConfigFromString(tc.config)
 			require.NoError(t, err)
-			warning, err := c.Precheck()
+			warnings := c.CheckDeprecatedFields()
 			if tc.warning != "" {
-				require.Equal(t, tc.warning, warning.Warning())
+				require.Len(t, warnings, 1)
+				require.Equal(t, tc.warning, warnings[0].Warning())
 			}
-			require.NoError(t, err)
 			require.Equal(t, tc.expectedMetricValue, prom_testutil.ToFloat64(metrics.DeprecatedConfig))
 		})
 	}

@@ -42,3 +42,14 @@ func init() {
 	legacyregistry.MustRegister(CollectionProfile)
 	legacyregistry.MustRegister(DeprecatedConfig)
 }
+
+// SetCollectionProfileMetrics updates the collection profile metric with the current profile.
+func SetCollectionProfileMetrics(current string, profiles []string) {
+	for _, profile := range profiles {
+		var v float64
+		if profile == current {
+			v = 1
+		}
+		CollectionProfile.WithLabelValues(profile).Set(v)
+	}
+}
