@@ -1562,10 +1562,8 @@ func TestPrometheusK8sConfiguration(t *testing.T) {
   - url: "https://test.remotewrite.com/api/write"
   queryLogFile: /tmp/test
 `)
+	require.NoError(t, err)
 
-	if err != nil {
-		t.Fatal(err)
-	}
 	c.SetImages(map[string]string{
 		"prometheus":       "docker.io/openshift/origin-prometheus:latest",
 		"kube-rbac-proxy":  "docker.io/openshift/origin-kube-rbac-proxy:latest",
@@ -1825,22 +1823,24 @@ func TestPrometheusQueryLogFileConfig(t *testing.T) {
 		},
 	} {
 		t.Run(tc.name, func(t *testing.T) {
-			c := mustDefaultConfig()
-			c.ClusterMonitoringConfiguration.PrometheusK8sConfig.QueryLogFile = tc.queryLogFilePath
+			c, err := NewConfigFromString(
+				fmt.Sprintf(`prometheusK8s:
+    queryLogFile: %s`, tc.queryLogFilePath),
+			)
+
+			if tc.errExpected {
+				require.Error(t, err)
+				require.True(t, errors.Is(err, ErrConfigValidation))
+				return
+			}
+			require.NoError(t, err)
+
 			f := NewFactory("openshift-monitoring", "openshift-user-workload-monitoring", c, defaultInfrastructureReader(), &fakeProxyReader{}, NewAssets(assetsPath), &APIServerConfig{}, &configv1.Console{})
 			p, err := f.PrometheusK8s(
 				&v1.Secret{ObjectMeta: metav1.ObjectMeta{Name: "foo"}},
 				nil,
 			)
-			if err != nil {
-				if !tc.errExpected {
-					t.Fatalf("Expecting no error but got %v", err)
-				}
-				return
-			}
-			if tc.errExpected {
-				t.Fatalf("Expected query log file %s to give an error, but err is nil", tc.queryLogFilePath)
-			}
+			require.NoError(t, err)
 
 			if p.Spec.QueryLogFile != tc.expected {
 				t.Fatal("Prometheus query log is not configured correctly")
@@ -2932,9 +2932,9 @@ metricsServer:
 	for _, test := range tt {
 		t.Run(test.scenario, func(t *testing.T) {
 			c, err := NewConfigFromString(test.config)
-			if err != nil {
-				t.Logf("%s\n\n", test.config)
-				t.Fatal(err)
+			if test.err != nil {
+				require.True(t, errors.Is(err, ErrConfigValidation))
+				return
 			}
 			// When ConfigMap does not set metricsServer, the operator sets a default before building manifests.
 			// Simulate that for tests that expect default audit (metadata profile).
@@ -2984,18 +2984,11 @@ metricsServer:
 				"requestheader-username-headers":     "",
 			}
 			d, err := f.MetricsServerDeployment("foo", kubeletCABundle, servingCASecret, metricsClientSecret, apiAuthConfigMapData)
+			require.NoError(t, err)
 
-			if test.err != nil || err != nil {
-				// fail only if the error isn't what is expected
-				if !errors.Is(err, test.err) {
-					t.Fatalf("Expected error %q but got %q", test.err, err)
-				}
-				return
-			}
-
-			adapterArgs := d.Spec.Template.Spec.Containers[0].Args
+			args := d.Spec.Template.Spec.Containers[0].Args
 			auditArgs := []string{}
-			for _, arg := range adapterArgs {
+			for _, arg := range args {
 				if strings.HasPrefix(arg, "--audit-") {
 					auditArgs = append(auditArgs, arg)
 				}

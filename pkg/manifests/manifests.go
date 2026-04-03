@@ -48,7 +48,6 @@ import (
 	rbacv1 "k8s.io/api/rbac/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/util/sets"
-	auditv1 "k8s.io/apiserver/pkg/apis/audit/v1"
 	apiregistrationv1 "k8s.io/kube-aggregator/pkg/apis/apiregistration/v1"
 	"k8s.io/utils/ptr"
 	k8syaml "sigs.k8s.io/yaml"
@@ -1438,13 +1437,9 @@ func (f *Factory) PrometheusK8s(grpcTLS *v1.Secret, telemetrySecret *v1.Secret) 
 		}
 	}
 
-	if err := f.setupQueryLogFile(p, f.config.ClusterMonitoringConfiguration.PrometheusK8sConfig.QueryLogFile); err != nil {
-		return nil, err
-	}
+	f.setupQueryLogFile(p, f.config.ClusterMonitoringConfiguration.PrometheusK8sConfig.QueryLogFile)
 
-	if err := setupProfilesToIgnore(p, f.config.ClusterMonitoringConfiguration.PrometheusK8sConfig.CollectionProfile); err != nil {
-		return nil, err
-	}
+	setupProfilesToIgnore(p, f.config.ClusterMonitoringConfiguration.PrometheusK8sConfig.CollectionProfile)
 
 	clusterID := f.config.ClusterMonitoringConfiguration.TelemeterClientConfig.ClusterID
 	if f.config.ClusterMonitoringConfiguration.TelemeterClientConfig.IsEnabled() && f.config.RemoteWrite {
@@ -1601,36 +1596,26 @@ func setupAlerting(p *monv1.Prometheus, svcName, svcNamespace string, enabled bo
 	p.Spec.Alerting.Alertmanagers = []monv1.AlertmanagerEndpoints{eps}
 }
 
-func (f *Factory) setupQueryLogFile(p *monv1.Prometheus, queryLogFile string) error {
+func (f *Factory) setupQueryLogFile(p *monv1.Prometheus, queryLogFile string) {
 	if queryLogFile == "" {
-		return nil
+		return
 	}
+
+	p.Spec.QueryLogFile = queryLogFile
 	dirPath := filepath.Dir(queryLogFile)
-	// queryLogFile is not an absolute path nor a simple filename
-	if !filepath.IsAbs(queryLogFile) && dirPath != "." {
-		return fmt.Errorf(`relative paths to query log file are not supported: %w`, ErrConfigValidation)
-	}
-	if dirPath == "/" {
-		return fmt.Errorf(`query log file can't be stored on the root directory: %w`, ErrConfigValidation)
-	}
 
 	// /prometheus is where Prometheus will store the TSDB, so it is
 	// already mounted inside the pod (either from a persistent volume claim or from an empty dir).
 	// When queryLogFile is a simple filename the prometheus-operator will take
 	// care of mounting an emptyDir under /var/log/prometheus
-	p.Spec.QueryLogFile = queryLogFile
 	if dirPath == "/prometheus" || dirPath == "." {
-		return nil
+		return
 	}
 
 	// It is not necesssary to mount a volume if the user configured
 	// the query log file to be one of the preexisting linux output streams.
 	if dirPath == "/dev" {
-		base := filepath.Base(p.Spec.QueryLogFile)
-		if base != "stdout" && base != "stderr" && base != "null" {
-			return fmt.Errorf(`query log file can't be stored on a new file on the dev directory: %w`, ErrConfigValidation)
-		}
-		return nil
+		return
 	}
 
 	p.Spec.Volumes = append(
@@ -1648,13 +1633,12 @@ func (f *Factory) setupQueryLogFile(p *monv1.Prometheus, queryLogFile string) er
 			Name:      "query-log",
 			MountPath: dirPath,
 		})
-	return nil
 }
 
 // setupProfilesToIgnore configures the label selectors of the Prometheus ("p")
 // to select any ServiceMonitor's or PodMonitor's that doesn't have the scrape
 // profile label or that matches the CollectionProfile ("cp").
-func setupProfilesToIgnore(p *monv1.Prometheus, cp CollectionProfile) error {
+func setupProfilesToIgnore(p *monv1.Prometheus, cp CollectionProfile) {
 	// Our goal is to configure Prometheus to select both the resources that
 	// either don't have the collection profile label or have the desired value.
 	// However, with label selectors we are not able to express OR conditions.
@@ -1682,8 +1666,6 @@ func setupProfilesToIgnore(p *monv1.Prometheus, cp CollectionProfile) error {
 	p.Spec.ServiceMonitorSelector = labelSelector
 	p.Spec.PodMonitorSelector = labelSelector
 	p.Spec.ProbeSelector = labelSelector
-
-	return nil
 }
 
 func (f *Factory) setupPrometheusRemoteWriteProxy(p *monv1.Prometheus) {
@@ -1846,9 +1828,7 @@ func (f *Factory) PrometheusUserWorkload(grpcTLS *v1.Secret) (*monv1.Prometheus,
 		p.Spec.Thanos.Image = &f.config.Images.Thanos
 	}
 
-	if err := f.setupQueryLogFile(p, f.config.UserWorkloadConfiguration.Prometheus.QueryLogFile); err != nil {
-		return nil, err
-	}
+	f.setupQueryLogFile(p, f.config.UserWorkloadConfiguration.Prometheus.QueryLogFile)
 
 	// Configure the TLS settings for the Thanos gRPC server.
 	grpcTLSVersion, err := convertTLSVersionToMonitoringV1(f.APIServerConfig.MinTLSVersion())
@@ -1933,22 +1913,6 @@ func (f *Factory) PrometheusK8sPrometheusServiceMonitor() (*monv1.ServiceMonitor
 
 func (f *Factory) PrometheusUserWorkloadPrometheusServiceMonitor() (*monv1.ServiceMonitor, error) {
 	return f.NewServiceMonitor(f.assets.MustNewAssetSlice(PrometheusUserWorkloadPrometheusServiceMonitor))
-}
-
-func validateAuditProfile(profile auditv1.Level) error {
-	// Refer: audit rules: https://kubernetes.io/docs/tasks/debug-application-cluster/audit/#audit-policy
-	// for valid log levels
-
-	switch profile {
-	case auditv1.LevelNone,
-		auditv1.LevelMetadata,
-		auditv1.LevelRequest,
-		auditv1.LevelRequestResponse:
-		return nil
-	default:
-		// a wrong profile name is a Config validation Error
-		return fmt.Errorf("%w - adapter audit profile: %s", ErrConfigValidation, profile)
-	}
 }
 
 func (f *Factory) MetricsServerConfigMapAuditPolicy() (*v1.ConfigMap, error) {
@@ -2059,10 +2023,6 @@ func (f *Factory) MetricsServerDeployment(apiAuthSecretName string, kubeletCABun
 			MountPath: "/etc/client-ca-bundle",
 		},
 	)
-
-	if err := validateAuditProfile(config.Audit.Profile); err != nil {
-		return nil, err
-	}
 
 	profile := strings.ToLower(string(config.Audit.Profile))
 	containers[idx].Args = append(containers[idx].Args,
