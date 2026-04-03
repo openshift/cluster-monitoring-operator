@@ -1,0 +1,39 @@
+tests:
+  - script: |
+      # Create a test namespace and a service account.
+      oc create namespace test-platform-federate-service
+      oc create serviceaccount prom-client --namespace=test-platform-federate-service
+      # Bind the role to the service account.
+      oc create rolebinding test-platform-federate-service-rb 
+        --namespace=openshift-monitoring 
+        --clusterrole=cluster-monitoring-view 
+        --serviceaccount=test-platform-federate-service:prom-client
+      # Generate a token to access the endpoints.
+      TOKEN=$(oc create token prom-client --namespace=test-platform-federate-service)
+      # Access Prometheus federate endpoint from within the cluster.
+      # This tests the service endpoint (port 9091).
+      RESPONSE=$(curl -k -H "Authorization: Bearer $TOKEN" "https://prometheus-k8s.openshift-monitoring:9091/federate?match[]={prometheus_build_info}")
+      echo "$RESPONSE" | grep "prometheus_build_info"
+    tearDown: |
+      oc delete rolebinding test-platform-federate-service-rb --namespace=openshift-monitoring
+      oc delete namespace test-platform-federate-service --wait=false
+  - script: |
+      # Create a test namespace and a service account.
+      oc create namespace test-platform-federate-route
+      oc create serviceaccount prom-client --namespace=test-platform-federate-route
+      # Bind the role to the service account.
+      oc create rolebinding test-platform-federate-route-rb 
+        --namespace=openshift-monitoring 
+        --clusterrole=cluster-monitoring-view 
+        --serviceaccount=test-platform-federate-route:prom-client
+      # Generate a token to access the endpoints.
+      TOKEN=$(oc create token prom-client --namespace=test-platform-federate-route)
+      # Access Prometheus federate endpoint externally via route.
+      # This tests the route endpoint (prometheus-k8s-federate).
+      ROUTE=$(oc get route prometheus-k8s-federate --namespace=openshift-monitoring -ojsonpath={.spec.host})
+      # Route path is typically /federate but can be dynamic, so we just append it.
+      RESPONSE=$(curl -k -H "Authorization: Bearer $TOKEN" "https://$ROUTE/federate?match[]={prometheus_build_info}")
+      echo "$RESPONSE" | grep "prometheus_build_info"
+    tearDown: |
+      oc delete rolebinding test-platform-federate-route-rb --namespace=openshift-monitoring
+      oc delete namespace test-platform-federate-route --wait=false
