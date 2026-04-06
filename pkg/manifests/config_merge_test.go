@@ -122,6 +122,42 @@ func TestConfig_MergeClusterMonitoringCRD(t *testing.T) {
 	}
 }
 
+func TestConfig_MergeClusterMonitoringCRD_MetricsServerConfigPhase1(t *testing.T) {
+	t.Run("CR applies when ConfigMap left MetricsServerConfig nil", func(t *testing.T) {
+		c := &Config{
+			ClusterMonitoringConfiguration: &ClusterMonitoringConfiguration{},
+		}
+		cm := &configv1alpha1.ClusterMonitoring{
+			Spec: configv1alpha1.ClusterMonitoringSpec{
+				MetricsServerConfig: configv1alpha1.MetricsServerConfig{
+					Verbosity: configv1alpha1.VerbosityLevelInfo,
+				},
+			},
+		}
+		c.MergeClusterMonitoringCRD(cm)
+		require.NotNil(t, c.ClusterMonitoringConfiguration.MetricsServerConfig)
+		require.Equal(t, uint8(2), c.ClusterMonitoringConfiguration.MetricsServerConfig.Verbosity)
+	})
+	t.Run("CR ignored when ConfigMap already set MetricsServerConfig", func(t *testing.T) {
+		c := &Config{
+			ClusterMonitoringConfiguration: &ClusterMonitoringConfiguration{
+				MetricsServerConfig: &MetricsServerConfig{
+					Verbosity: 1,
+				},
+			},
+		}
+		cm := &configv1alpha1.ClusterMonitoring{
+			Spec: configv1alpha1.ClusterMonitoringSpec{
+				MetricsServerConfig: configv1alpha1.MetricsServerConfig{
+					Verbosity: configv1alpha1.VerbosityLevelInfo,
+				},
+			},
+		}
+		c.MergeClusterMonitoringCRD(cm)
+		require.Equal(t, uint8(1), c.ClusterMonitoringConfiguration.MetricsServerConfig.Verbosity)
+	})
+}
+
 func TestConfig_EnsureSafeDefaults(t *testing.T) {
 	t.Run("sets UserWorkloadEnabled to false when nil", func(t *testing.T) {
 		c := &Config{ClusterMonitoringConfiguration: &ClusterMonitoringConfiguration{}}

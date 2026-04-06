@@ -266,8 +266,8 @@ func TestClusterMonitoringMetricsServer(t *testing.T) {
 	}
 }
 
-// TestClusterMonitorMetricsServerConfigMapAndCRD verifies that when both ConfigMap and CRD
-// specify MetricsServerConfig, the CRD values take precedence over ConfigMap values.
+// TestClusterMonitorMetricsServerConfigMapAndCRD verifies Phase 1 merge: when both ConfigMap and CR
+// specify metricsServer, the ConfigMap wins at the top level and CR values are ignored.
 func TestClusterMonitorMetricsServerConfigMapAndCRD(t *testing.T) {
 	if !clusterMonitoringCRDAvailable {
 		t.Skip("ClusterMonitoring CRD not available (TechPreview / ClusterMonitoringConfig feature gate may be disabled)")
@@ -289,7 +289,7 @@ func TestClusterMonitorMetricsServerConfigMapAndCRD(t *testing.T) {
 		f.MustDeleteConfigMap(t, cm)
 	})
 
-	t.Log("creating ClusterMonitoring CRD with configuration that should override ConfigMap")
+	t.Log("creating ClusterMonitoring CR with different metricsServer settings (must be ignored when ConfigMap defines metricsServer)")
 	crd := &configv1alpha1.ClusterMonitoring{
 		ObjectMeta: metav1.ObjectMeta{
 			Name: clusterMonitoringName,
@@ -324,7 +324,7 @@ func TestClusterMonitorMetricsServerConfigMapAndCRD(t *testing.T) {
 		f.MustCreateOrUpdateClusterMonitoring(t, crd)
 	})
 
-	t.Logf("configured both ConfigMap and ClusterMonitoring CRD for precedence testing")
+	t.Logf("configured both ConfigMap and ClusterMonitoring CR for Phase 1 precedence (ConfigMap wins)")
 
 	for _, tc := range []scenario{
 		{
@@ -332,15 +332,13 @@ func TestClusterMonitorMetricsServerConfigMapAndCRD(t *testing.T) {
 			assertion: f.AssertDeploymentExistsAndRolloutFunc("metrics-server", f.Ns),
 		},
 		{
-			name: "assert CRD configuration overrides ConfigMap configuration",
+			name: "assert ConfigMap metricsServer is used; CR metricsServer is ignored",
 			assertion: f.AssertPodConfigurationFunc(
 				f.Ns,
 				"app.kubernetes.io/name=metrics-server,app.kubernetes.io/component=metrics-server",
 				[]framework.PodAssertion{
-					expectContainerArg("--v=2", "metrics-server"),
-					expectMatchingRequests("*", "metrics-server", "100Mi", "10m"),
-					expectMatchingLimits("*", "metrics-server", "200Mi", "100m"),
-					expectNodeSelector("test-precedence", "from-crd"),
+					expectMatchingRequests("*", "metrics-server", "50Mi", "5m"),
+					expectNodeSelector("test-precedence", "from-configmap"),
 				},
 			),
 		},

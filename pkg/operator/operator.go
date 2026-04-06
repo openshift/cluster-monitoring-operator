@@ -993,16 +993,17 @@ func (o *Operator) Config(ctx context.Context) (*manifests.Config, []string, err
 		manifests.SupportedCollectionProfiles.StringSlice(),
 	)
 
-	// Merge ClusterMonitoring CRD into config when feature gate is enabled.
-	// Config package owns merge and safe defaults.
+	// Always merge ClusterMonitoring CR (nil when FG is off or CR is missing).
+	// manifests.Config applies safe defaults inside MergeClusterMonitoringCRD.
+	var cm *configv1alpha1.ClusterMonitoring
 	if o.ClusterMonitoringConfigEnabled {
-		cm, getErr := o.client.GetClusterMonitoring(ctx, "cluster")
+		var getErr error
+		cm, getErr = o.client.GetClusterMonitoring(ctx, "cluster")
 		if getErr != nil && !apierrors.IsNotFound(getErr) {
 			return nil, warnings, fmt.Errorf("failed to get ClusterMonitoring CRD: %w", getErr)
 		}
-		c.MergeClusterMonitoringCRD(cm)
 	}
-	c.EnsureSafeDefaults()
+	c.MergeClusterMonitoringCRD(cm)
 
 	// Only use User Workload Monitoring ConfigMap from user ns and populate if
 	// it's enabled by admin via Cluster Monitoring ConfigMap.  The above

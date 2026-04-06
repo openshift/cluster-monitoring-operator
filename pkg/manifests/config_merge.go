@@ -15,40 +15,39 @@
 package manifests
 
 import (
-	"strings"
-
 	configv1alpha1 "github.com/openshift/api/config/v1alpha1"
 	v1 "k8s.io/api/core/v1"
 	auditv1 "k8s.io/apiserver/pkg/apis/audit/v1"
 	"k8s.io/utils/ptr"
 )
 
-// MergeClusterMonitoringCRD merges the ClusterMonitoring CRD spec into the
-// ConfigMap-derived config. Phase 1 merge rule: if a field is nil in the
-// ConfigMap, use the CRD value; otherwise keep the ConfigMap value.
-// Call EnsureSafeDefaults after this (or when CRD is not enabled) so the config is always safe.
+// MergeClusterMonitoringCRD merges the ClusterMonitoring CR spec into the ConfigMap-derived
+// config when clusterMonitoring is non-nil. Phase 1 (pre-GA): for each top-level field, if the
+// ConfigMap did not set it, use the CR; otherwise keep the ConfigMap and ignore the CR for that field.
+//
+// The operator should always call this with nil when the feature gate is off or the CR is missing.
+// EnsureSafeDefaults runs at the end here so callers do not need to invoke it separately.
 func (c *Config) MergeClusterMonitoringCRD(clusterMonitoring *configv1alpha1.ClusterMonitoring) {
-	if clusterMonitoring == nil {
-		return
-	}
-	if c.ClusterMonitoringConfiguration == nil {
-		c.ClusterMonitoringConfiguration = &ClusterMonitoringConfiguration{}
-	}
-
-	// UserDefined (CRD) -> UserWorkloadEnabled (ConfigMap): only set from CRD when ConfigMap has no opinion.
-	if c.ClusterMonitoringConfiguration.UserWorkloadEnabled == nil && clusterMonitoring.Spec.UserDefined.Mode != "" {
-		if v := applyUserDefinedMode(clusterMonitoring.Spec.UserDefined); v != nil {
-			c.ClusterMonitoringConfiguration.UserWorkloadEnabled = v
+	if clusterMonitoring != nil {
+		if c.ClusterMonitoringConfiguration == nil {
+			c.ClusterMonitoringConfiguration = &ClusterMonitoringConfiguration{}
 		}
-	}
 
-	// MetricsServerConfig: merge from CRD so CRD values override ConfigMap when both are set.
-	mergeMetricsServerConfigFromCRD(c, &clusterMonitoring.Spec.MetricsServerConfig)
+		// UserDefined (CR) -> UserWorkloadEnabled: only when ConfigMap has no opinion.
+		if c.ClusterMonitoringConfiguration.UserWorkloadEnabled == nil && clusterMonitoring.Spec.UserDefined.Mode != "" {
+			if v := applyUserDefinedMode(clusterMonitoring.Spec.UserDefined); v != nil {
+				c.ClusterMonitoringConfiguration.UserWorkloadEnabled = v
+			}
+		}
+
+		// MetricsServerConfig: Phase 1 top-level — CR only when ConfigMap left it nil.
+		c.mergeMetricsServerConfiguration(clusterMonitoring.Spec.MetricsServerConfig)
+	}
+	c.EnsureSafeDefaults()
 }
 
-// EnsureSafeDefaults sets safe defaults for fields that may be nil when
-// neither ConfigMap nor CRD set them (e.g. when ClusterMonitoring CRD is not enabled).
-// The operator should call this after MergeClusterMonitoringCRD (or when merge is skipped).
+// EnsureSafeDefaults sets safe defaults for fields that may be nil when neither ConfigMap nor CR
+// set them. MergeClusterMonitoringCRD invokes this at the end; direct use is for tests or special cases.
 func (c *Config) EnsureSafeDefaults() {
 	if c.ClusterMonitoringConfiguration == nil {
 		return
@@ -93,21 +92,18 @@ func verbosityLevelToNumeric(level configv1alpha1.VerbosityLevel) uint8 {
 	}
 }
 
-func mergeMetricsServerConfigFromCRD(c *Config, msc *configv1alpha1.MetricsServerConfig) {
-	if c.ClusterMonitoringConfiguration.MetricsServerConfig == nil {
-		c.ClusterMonitoringConfiguration.MetricsServerConfig = &MetricsServerConfig{}
+func (c *Config) mergeMetricsServerConfiguration(msc configv1alpha1.MetricsServerConfig) {
+	if c.ClusterMonitoringConfiguration.MetricsServerConfig != nil {
+		return
 	}
+	c.ClusterMonitoringConfiguration.MetricsServerConfig = &MetricsServerConfig{}
 	cfg := c.ClusterMonitoringConfiguration.MetricsServerConfig
 
 	if msc.Verbosity != "" {
 		cfg.Verbosity = verbosityLevelToNumeric(msc.Verbosity)
 	}
-	if len(msc.NodeSelector) > 0 {
-		cfg.NodeSelector = msc.NodeSelector
-	}
-	if len(msc.Tolerations) > 0 {
-		cfg.Tolerations = msc.Tolerations
-	}
+	cfg.NodeSelector = msc.NodeSelector
+	cfg.Tolerations = msc.Tolerations
 	if len(msc.Resources) > 0 {
 		resources := &v1.ResourceRequirements{
 			Requests: v1.ResourceList{},
@@ -127,9 +123,7 @@ func mergeMetricsServerConfigFromCRD(c *Config, msc *configv1alpha1.MetricsServe
 		if cfg.Audit == nil {
 			cfg.Audit = &Audit{}
 		}
-		cfg.Audit.Profile = auditv1.Level(strings.ToLower(string(msc.Audit.Profile)))
+		cfg.Audit.Profile = auditv1.Level((string(msc.Audit.Profile)))
 	}
-	if len(msc.TopologySpreadConstraints) > 0 {
-		cfg.TopologySpreadConstraints = msc.TopologySpreadConstraints
-	}
+	cfg.TopologySpreadConstraints = msc.TopologySpreadConstraints
 }
