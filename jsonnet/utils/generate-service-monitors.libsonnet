@@ -48,7 +48,7 @@
   // already filter out everything except the specified metrics).
   keepOnlyMetrics(sm, metrics):
     local smWithoutDrops = removeDrop(sm);
-    local metricsRegex = std.join('|', metrics);
+    local metricsRegex = std.join('|', std.sort(metrics));
     smWithoutDrops {
       spec+: {
         endpoints: std.map(

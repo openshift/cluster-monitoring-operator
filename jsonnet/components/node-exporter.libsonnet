@@ -174,12 +174,19 @@ function(params)
       },
     },
 
+    local telemetryMetrics = [
+      'node_accelerator_card_info',
+      'node_cpu_info',
+      'node_cpu_seconds_total',
+      'node_memory_MemAvailable_bytes',
+      'node_memory_MemTotal_bytes',
+      'virt_platform',
+    ],
+
     minimalServiceMonitor: generateServiceMonitor.serviceMonitorForMinimalProfile(
       generateServiceMonitor.keepOnlyMetrics(
         super.serviceMonitor,
-        [
-          'node_cpu_info',
-          'node_cpu_seconds_total',
+        telemetryMetrics + [
           'node_disk_io_time_seconds_total',
           'node_disk_io_time_weighted_seconds_total',
           'node_disk_read_time_seconds_total',
@@ -197,9 +204,7 @@ function(params)
           'node_load1',
           'node_memory_Buffers_bytes',
           'node_memory_Cached_bytes',
-          'node_memory_MemAvailable_bytes',
           'node_memory_MemFree_bytes',
-          'node_memory_MemTotal_bytes',
           'node_memory_Slab_bytes',
           'node_netstat_TcpExt_TCPSynRetrans',
           'node_netstat_Tcp_OutSegs',
@@ -221,7 +226,6 @@ function(params)
           'node_timex_sync_status',
           'node_vmstat_pgmajfault',
           'process_start_time_seconds',
-          'virt_platform',
         ]
       )
     ),
@@ -229,14 +233,7 @@ function(params)
     telemetryServiceMonitor: generateServiceMonitor.serviceMonitorForTelemetryProfile(
       generateServiceMonitor.keepOnlyMetrics(
         super.serviceMonitor,
-        [
-          'node_accelerator_card_info',
-          'node_cpu_info',
-          'node_cpu_seconds_total',
-          'node_memory_MemAvailable_bytes',
-          'node_memory_MemTotal_bytes',
-          'virt_platform',
-        ]
+        telemetryMetrics,
       )
     ),
 

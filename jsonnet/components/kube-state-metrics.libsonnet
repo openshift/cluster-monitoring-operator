@@ -110,10 +110,27 @@ function(params)
       },
     },
 
+    local telemetryMetrics = [
+      'kube_node_labels',
+      'kube_node_spec_unschedulable',
+      'kube_node_status_capacity',
+      'kube_node_status_condition',
+      'kube_persistentvolume_info',
+      'kube_persistentvolumeclaim_info',
+      'kube_persistentvolumeclaim_resource_requests_storage_bytes',
+      'kube_pod_container_resource_requests',
+      'kube_pod_info',
+      'kube_pod_labels',
+      'kube_pod_restart_policy',
+      'kube_pod_status_phase',
+      'kube_running_pod_ready',
+      'kube_storageclass_info',
+    ],
+
     minimalServiceMonitor: generateServiceMonitor.serviceMonitorForMinimalProfile(
       generateServiceMonitor.keepOnlyMetrics(
         self.serviceMonitor,
-        [
+        telemetryMetrics + [
           'kube_daemonset_status_current_number_scheduled',
           'kube_daemonset_status_desired_number_scheduled',
           'kube_daemonset_status_number_available',
@@ -132,28 +149,17 @@ function(params)
           'kube_job_status_active',
           'kube_job_status_start_time',
           'kube_node_info',
-          'kube_node_labels',
           'kube_node_role',
           'kube_node_spec_taint',
-          'kube_node_spec_unschedulable',
           'kube_node_status_allocatable',
-          'kube_node_status_capacity',
-          'kube_node_status_condition',
-          'kube_persistentvolume_info',
           'kube_persistentvolume_status_phase',
           'kube_persistentvolumeclaim_access_mode',
-          'kube_persistentvolumeclaim_info',
           'kube_persistentvolumeclaim_labels',
-          'kube_persistentvolumeclaim_resource_requests_storage_bytes',
           'kube_pod_container_resource_limits',
-          'kube_pod_container_resource_requests',
           'kube_pod_container_status_last_terminated_reason',
           'kube_pod_container_status_restarts_total',
           'kube_pod_container_status_waiting_reason',
-          'kube_pod_info',
-          'kube_pod_labels',
           'kube_pod_owner',
-          'kube_pod_status_phase',
           'kube_pod_status_ready',
           'kube_pod_status_unschedulable',
           'kube_poddisruptionbudget_status_current_healthy',
@@ -172,7 +178,6 @@ function(params)
           'kube_statefulset_status_replicas_ready',
           'kube_statefulset_status_replicas_updated',
           'kube_statefulset_status_update_revision',
-          'kube_storageclass_info',
           'process_start_time_seconds',
         ]
       )
@@ -181,22 +186,7 @@ function(params)
     telemetryServiceMonitor: generateServiceMonitor.serviceMonitorForTelemetryProfile(
       generateServiceMonitor.keepOnlyMetrics(
         self.serviceMonitor,
-        [
-          'kube_node_labels',
-          'kube_node_spec_unschedulable',
-          'kube_node_status_capacity',
-          'kube_node_status_condition',
-          'kube_persistentvolume_info',
-          'kube_persistentvolumeclaim_info',
-          'kube_persistentvolumeclaim_resource_requests_storage_bytes',
-          'kube_pod_container_resource_requests',
-          'kube_pod_info',
-          'kube_pod_labels',
-          'kube_pod_restart_policy',
-          'kube_pod_status_phase',
-          'kube_running_pod_ready',
-          'kube_storageclass_info',
-        ]
+        telemetryMetrics,
       )
     ),
 
