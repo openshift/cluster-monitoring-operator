@@ -33,15 +33,19 @@ func (c *Config) MergeClusterMonitoringCRD(clusterMonitoring *configv1alpha1.Clu
 			c.ClusterMonitoringConfiguration = &ClusterMonitoringConfiguration{}
 		}
 
-		// UserDefined (CR) -> UserWorkloadEnabled: only when ConfigMap has no opinion.
+		// User workload: use the CR only if the ConfigMap did not set enableUserWorkload.
 		if c.ClusterMonitoringConfiguration.UserWorkloadEnabled == nil && clusterMonitoring.Spec.UserDefined.Mode != "" {
 			if v := applyUserDefinedMode(clusterMonitoring.Spec.UserDefined); v != nil {
 				c.ClusterMonitoringConfiguration.UserWorkloadEnabled = v
 			}
 		}
 
-		// MetricsServerConfig: Phase 1 top-level — CR only when ConfigMap left it nil.
-		c.mergeMetricsServerConfiguration(clusterMonitoring.Spec.MetricsServerConfig)
+		// Metrics Server (Phase 1): if the ConfigMap already has metricsServer, mergeMetricsServerConfiguration
+		// is a no-op. Spec.MetricsServerConfig is a struct value—unset in YAML is a zero struct in Go, not nil—
+		// so only merge when the CR author set at least one field (avoids allocating an empty MetricsServerConfig).
+		if clusterMonitoringMetricsServerSpecNonEmpty(clusterMonitoring.Spec.MetricsServerConfig) {
+			c.mergeMetricsServerConfiguration(clusterMonitoring.Spec.MetricsServerConfig)
+		}
 	}
 	c.EnsureSafeDefaults()
 }
@@ -75,6 +79,30 @@ func applyUserDefinedMode(udm configv1alpha1.UserDefinedMonitoring) *bool {
 	default:
 		return nil
 	}
+}
+
+// clusterMonitoringMetricsServerSpecNonEmpty reports whether the CR's metricsServer stanza contains any
+// user-set field. The API uses a value type, so omitted in the manifest is always the zero struct here.
+func clusterMonitoringMetricsServerSpecNonEmpty(msc configv1alpha1.MetricsServerConfig) bool {
+	if msc.Verbosity != "" {
+		return true
+	}
+	if len(msc.NodeSelector) > 0 {
+		return true
+	}
+	if len(msc.Tolerations) > 0 {
+		return true
+	}
+	if len(msc.Resources) > 0 {
+		return true
+	}
+	if msc.Audit.Profile != "" {
+		return true
+	}
+	if len(msc.TopologySpreadConstraints) > 0 {
+		return true
+	}
+	return false
 }
 
 func verbosityLevelToNumeric(level configv1alpha1.VerbosityLevel) uint8 {
