@@ -51,3 +51,4 @@ spec:
       app.kubernetes.io/component: exporter
       app.kubernetes.io/name: kube-state-metrics
       app.kubernetes.io/part-of: openshift-monitoring
+  serviceDiscoveryRole: EndpointSlice

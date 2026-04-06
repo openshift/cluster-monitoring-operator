@@ -72,6 +72,7 @@ function(params)
         },
       },
       spec+: {
+        serviceDiscoveryRole: 'EndpointSlice',
         endpoints: [
           {
             honorLabels: true,
