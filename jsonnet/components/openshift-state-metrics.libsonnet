@@ -103,6 +103,9 @@ function(params) {
         'monitoring.openshift.io/collection-profile': 'full',
       },
     },
+    spec+: {
+      serviceDiscoveryRole: 'EndpointSlice',
+    },
   },
   minimalServiceMonitor: generateServiceMonitor.serviceMonitorForMinimalProfile(self.serviceMonitor),
   telemetryServiceMonitor: generateServiceMonitor.serviceMonitorForTelemetryProfile(
