@@ -246,6 +246,9 @@ spec:
       operator: In
       values:
       - leaf-prometheus
+  rules:
+    alert:
+      resendDelay: 60s
   scrapeClasses:
   - default: true
     fallbackScrapeProtocol: PrometheusText1.0.0

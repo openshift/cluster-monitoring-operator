@@ -353,6 +353,8 @@ function(params)
             }],
           },
         },
+        // See jsonnet/components/prometheus.libsonnet for the explanation about resendDelay.
+        resendDelay: '60s',
         podMetadata+: {
           annotations+: {
             'openshift.io/required-scc': 'nonroot-v2',

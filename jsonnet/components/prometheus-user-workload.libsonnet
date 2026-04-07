@@ -307,6 +307,12 @@ function(params)
         arbitraryFSAccessThroughSMs+: {
           deny: true,
         },
+        rules+: {
+          alert+: {
+            // See jsonnet/components/prometheus.libsonnet for the explanation about resendDelay.
+            resendDelay: '60s',
+          },
+        },
         thanos+: {
           httpListenLocal: true,
           grpcServerTlsConfig: {

@@ -194,6 +194,9 @@ spec:
     matchLabels:
       openshift.io/cluster-monitoring: "true"
   ruleSelector: {}
+  rules:
+    alert:
+      resendDelay: 60s
   scrapeClasses:
   - name: tls-client-certificate-auth
     tlsConfig:
