@@ -1163,10 +1163,11 @@ func assertUWMFederateEndpoint(t *testing.T) {
 		}
 
 		federatePath := strings.TrimSpace(r.Spec.Path)
+		federatePath = strings.TrimRight(federatePath, "/")
 		if federatePath == "" || federatePath == "/" {
 			federatePath = "/federate"
 		} else if !strings.HasSuffix(federatePath, "/federate") {
-			federatePath = strings.TrimRight(federatePath, "/") + "/federate"
+			federatePath = federatePath + "/federate"
 		}
 
 		client := framework.NewPrometheusClient(
