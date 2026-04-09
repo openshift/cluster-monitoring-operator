@@ -955,6 +955,24 @@ func (f *Factory) updateNodeExporterArgs(args []string) ([]string, error) {
 		args = setArg(args, "--no-collector.ethtool", "")
 	}
 
+	if f.config.ClusterMonitoringConfiguration.NodeExporterConfig.Collectors.Softirqs.Enabled {
+		args = setArg(args, "--collector.softirqs", "")
+	} else {
+		args = setArg(args, "--no-collector.softirqs", "")
+	}
+
+	if f.config.ClusterMonitoringConfiguration.NodeExporterConfig.Collectors.Zoneinfo.Enabled {
+		args = setArg(args, "--collector.zoneinfo", "")
+	} else {
+		args = setArg(args, "--no-collector.zoneinfo", "")
+	}
+
+	if f.config.ClusterMonitoringConfiguration.NodeExporterConfig.Collectors.Interrupts.Enabled {
+		args = setArg(args, "--collector.interrupts", "")
+	} else {
+		args = setArg(args, "--no-collector.interrupts", "")
+	}
+
 	if f.config.ClusterMonitoringConfiguration.NodeExporterConfig.Collectors.BuddyInfo.Enabled {
 		args = setArg(args, "--collector.buddyinfo", "")
 	} else {

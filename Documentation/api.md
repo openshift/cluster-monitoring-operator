@@ -30,13 +30,16 @@ Configuring Cluster Monitoring is optional. If the config does not exist or is e
 * [NodeExporterCollectorConfig](#nodeexportercollectorconfig)
 * [NodeExporterCollectorCpufreqConfig](#nodeexportercollectorcpufreqconfig)
 * [NodeExporterCollectorEthtoolConfig](#nodeexportercollectorethtoolconfig)
+* [NodeExporterCollectorInterruptsConfig](#nodeexportercollectorinterruptsconfig)
 * [NodeExporterCollectorKSMDConfig](#nodeexportercollectorksmdconfig)
 * [NodeExporterCollectorMountStatsConfig](#nodeexportercollectormountstatsconfig)
 * [NodeExporterCollectorNetClassConfig](#nodeexportercollectornetclassconfig)
 * [NodeExporterCollectorNetDevConfig](#nodeexportercollectornetdevconfig)
 * [NodeExporterCollectorProcessesConfig](#nodeexportercollectorprocessesconfig)
+* [NodeExporterCollectorSoftirqsConfig](#nodeexportercollectorsoftirqsconfig)
 * [NodeExporterCollectorSystemdConfig](#nodeexportercollectorsystemdconfig)
 * [NodeExporterCollectorTcpStatConfig](#nodeexportercollectortcpstatconfig)
+* [NodeExporterCollectorZoneinfoConfig](#nodeexportercollectorzoneinfoconfig)
 * [NodeExporterConfig](#nodeexporterconfig)
 * [OpenShiftStateMetricsConfig](#openshiftstatemetricsconfig)
 * [PrometheusK8sConfig](#prometheusk8sconfig)
@@ -252,6 +255,9 @@ The `NodeExporterCollectorConfig` resource defines settings for individual colle
 | ksmd | [NodeExporterCollectorKSMDConfig](#nodeexportercollectorksmdconfig) | Defines the configuration of the `ksmd` collector, which collects statistics from the kernel same-page merger daemon. Disabled by default. |
 | processes | [NodeExporterCollectorProcessesConfig](#nodeexportercollectorprocessesconfig) | Defines the configuration of the `processes` collector, which collects statistics from processes and threads running in the system. Disabled by default. |
 | systemd | [NodeExporterCollectorSystemdConfig](#nodeexportercollectorsystemdconfig) | Defines the configuration of the `systemd` collector, which collects statistics on the systemd daemon and its managed services. Disabled by default. |
+| softirqs | [NodeExporterCollectorSoftirqsConfig](#nodeexportercollectorsoftirqsconfig) | Defines the configuration of the `softirqs` collector, which exposes detailed softirq metrics from `/proc/softirqs`. Disabled by default. |
+| zoneinfo | [NodeExporterCollectorZoneinfoConfig](#nodeexportercollectorzoneinfoconfig) | Defines the configuration of the `zoneinfo` collector, which exposes detailed memory zone statistics from `/proc/zoneinfo`. Disabled by default. |
+| interrupts | [NodeExporterCollectorInterruptsConfig](#nodeexportercollectorinterruptsconfig) | Defines the configuration of the `interrupts` collector, which exposes interrupt counts from `/proc/interrupts`. Disabled by default. |
 
 [Back to TOC](#table-of-contents)
 
@@ -282,6 +288,21 @@ The `NodeExporterCollectorEthtoolConfig` resource works as an on/off switch for 
 | Property | Type | Description |
 | -------- | ---- | ----------- |
 | enabled | bool | A Boolean flag that enables or disables the `ethtool` collector. |
+
+[Back to TOC](#table-of-contents)
+
+## NodeExporterCollectorInterruptsConfig
+
+#### Description
+
+The `NodeExporterCollectorInterruptsConfig` resource works as an on/off switch for the `interrupts` collector of the `node-exporter` agent. By default, the `interrupts` collector is disabled.
+
+
+<em>appears in: [NodeExporterCollectorConfig](#nodeexportercollectorconfig)</em>
+
+| Property | Type | Description |
+| -------- | ---- | ----------- |
+| enabled | bool | A Boolean flag that enables or disables the `interrupts` collector. |
 
 [Back to TOC](#table-of-contents)
 
@@ -361,6 +382,21 @@ The `NodeExporterCollectorProcessesConfig` resource works as an on/off switch fo
 
 [Back to TOC](#table-of-contents)
 
+## NodeExporterCollectorSoftirqsConfig
+
+#### Description
+
+The `NodeExporterCollectorSoftirqsConfig` resource works as an on/off switch for the `softirqs` collector of the `node-exporter` agent. By default, the `softirqs` collector is disabled.
+
+
+<em>appears in: [NodeExporterCollectorConfig](#nodeexportercollectorconfig)</em>
+
+| Property | Type | Description |
+| -------- | ---- | ----------- |
+| enabled | bool | A Boolean flag that enables or disables the `softirqs` collector. |
+
+[Back to TOC](#table-of-contents)
+
 ## NodeExporterCollectorSystemdConfig
 
 #### Description
@@ -389,6 +425,21 @@ The `NodeExporterCollectorTcpStatConfig` resource works as an on/off switch for 
 | Property | Type | Description |
 | -------- | ---- | ----------- |
 | enabled | bool | A Boolean flag that enables or disables the `tcpstat` collector. |
+
+[Back to TOC](#table-of-contents)
+
+## NodeExporterCollectorZoneinfoConfig
+
+#### Description
+
+The `NodeExporterCollectorZoneinfoConfig` resource works as an on/off switch for the `zoneinfo` collector of the `node-exporter` agent. By default, the `zoneinfo` collector is disabled.
+
+
+<em>appears in: [NodeExporterCollectorConfig](#nodeexportercollectorconfig)</em>
+
+| Property | Type | Description |
+| -------- | ---- | ----------- |
+| enabled | bool | A Boolean flag that enables or disables the `zoneinfo` collector. |
 
 [Back to TOC](#table-of-contents)
 

@@ -38,6 +38,12 @@ Appears in: link:nodeexporterconfig.adoc[NodeExporterConfig]
 
 |systemd|link:nodeexportercollectorsystemdconfig.adoc[NodeExporterCollectorSystemdConfig]|Defines the configuration of the `systemd` collector, which collects statistics on the systemd daemon and its managed services. Disabled by default.
 
+|softirqs|link:nodeexportercollectorsoftirqsconfig.adoc[NodeExporterCollectorSoftirqsConfig]|Defines the configuration of the `softirqs` collector, which exposes detailed softirq metrics from `/proc/softirqs`. Disabled by default.
+
+|zoneinfo|link:nodeexportercollectorzoneinfoconfig.adoc[NodeExporterCollectorZoneinfoConfig]|Defines the configuration of the `zoneinfo` collector, which exposes detailed memory zone statistics from `/proc/zoneinfo`. Disabled by default.
+
+|interrupts|link:nodeexportercollectorinterruptsconfig.adoc[NodeExporterCollectorInterruptsConfig]|Defines the configuration of the `interrupts` collector, which exposes interrupt counts from `/proc/interrupts`. Disabled by default.
+
 |===
 
 link:../index.adoc[Back to TOC]
