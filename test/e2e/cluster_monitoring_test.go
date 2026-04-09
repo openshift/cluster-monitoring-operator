@@ -149,7 +149,8 @@ func TestClusterMonitoringUserDefined(t *testing.T) {
 		return true, nil
 	})
 	if err != nil {
-		t.Skipf("prometheus-user-workload did not appear after 5m - cluster CMO may not support ClusterMonitoring CRD UserDefined (need ClusterMonitoringConfig feature gate and CMO with merge logic): %v", err)
+t.Fatalf("prometheus-user-workload did not appear after enabling UserDefined=NamespaceIsolated via ClusterMonitoring CRD: %v", err)
+
 	}
 	f.AssertStatefulSetExistsAndRolloutFunc("prometheus-user-workload", f.UserWorkloadMonitoringNs)(t)
 }
@@ -176,7 +177,18 @@ func TestConfigMapEnableUserWorkloadOverridesCRD(t *testing.T) {
 		f.MustCreateOrUpdateClusterMonitoring(t, cmCR)
 	})
 
-	cmoConfigMap := f.BuildCMOConfigMap(t, "enableUserWorkload: true")
+// Establish disabled baseline before asserting ConfigMap override.
+f.MustCreateOrUpdateConfigMap(t, f.BuildCMOConfigMap(t, "{}"))
+err := wait.PollUntilContextTimeout(ctx, 5*time.Second, 3*time.Minute, true, func(context.Context) (bool, error) {
+    _, err := f.KubeClient.AppsV1().StatefulSets(f.UserWorkloadMonitoringNs).Get(ctx, "prometheus-user-workload", metav1.GetOptions{})
+    if apierrors.IsNotFound(err) {
+        return true, nil
+    }
+    return false, nil
+})
+if err != nil {
+    t.Fatalf("failed to establish disabled baseline: prometheus-user-workload still present: %v", err)
+}
 	f.MustCreateOrUpdateConfigMap(t, cmoConfigMap)
 	t.Cleanup(func() {
 		f.MustCreateOrUpdateConfigMap(t, f.BuildCMOConfigMap(t, "{}"))

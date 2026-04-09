@@ -151,7 +151,7 @@ func (c *Config) mergeMetricsServerConfiguration(msc configv1alpha1.MetricsServe
 		if cfg.Audit == nil {
 			cfg.Audit = &Audit{}
 		}
-		cfg.Audit.Profile = auditv1.Level((string(msc.Audit.Profile)))
+		cfg.Audit.Profile = auditv1.Level(string(msc.Audit.Profile))
 	}
 	cfg.TopologySpreadConstraints = msc.TopologySpreadConstraints
 }
