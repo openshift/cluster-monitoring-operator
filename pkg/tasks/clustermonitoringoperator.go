@@ -18,6 +18,7 @@ import (
 	"context"
 	"fmt"
 
+	"github.com/openshift/library-go/pkg/pki"
 	rbacv1 "k8s.io/api/rbac/v1"
 	apierrors "k8s.io/apimachinery/pkg/api/errors"
 	"k8s.io/klog/v2"
@@ -27,20 +28,23 @@ import (
 )
 
 type ClusterMonitoringOperatorTask struct {
-	client  *client.Client
-	factory *manifests.Factory
-	config  *manifests.Config
+	client             *client.Client
+	factory            *manifests.Factory
+	config             *manifests.Config
+	pkiProfileProvider pki.PKIProfileProvider
 }
 
 func NewClusterMonitoringOperatorTask(
 	client *client.Client,
 	factory *manifests.Factory,
 	config *manifests.Config,
+	pkiProfileProvider pki.PKIProfileProvider,
 ) *ClusterMonitoringOperatorTask {
 	return &ClusterMonitoringOperatorTask{
-		client:  client,
-		factory: factory,
-		config:  config,
+		client:             client,
+		factory:            factory,
+		config:             config,
+		pkiProfileProvider: pkiProfileProvider,
 	}
 }
 
@@ -168,7 +172,7 @@ func (t *ClusterMonitoringOperatorTask) Run(ctx context.Context) error {
 		return fmt.Errorf("error reading Cluster Monitoring Operator GRPC TLS secret: %w", err)
 	}
 
-	err = manifests.RotateGRPCSecret(s)
+	err = manifests.RotateGRPCSecret(s, t.pkiProfileProvider)
 	if err != nil {
 		return fmt.Errorf("error rotating Cluster Monitoring Operator GRPC TLS secret: %w", err)
 	}

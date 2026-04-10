@@ -252,6 +252,13 @@ function(params) {
         resources: ['clustermonitorings'],
         verbs: ['get', 'list', 'watch'],
       },
+      // The operator needs to read PKI configuration to resolve key algorithms
+      // for GRPC TLS certificates when the ConfigurablePKI feature gate is enabled.
+      {
+        apiGroups: ['config.openshift.io'],
+        resources: ['pkis'],
+        verbs: ['get', 'list', 'watch'],
+      },
       {
         apiGroups: ['certificates.k8s.io'],
         resources: ['certificatesigningrequests'],
