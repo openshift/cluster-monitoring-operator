@@ -26,8 +26,9 @@ reviews:
             `{__name__="foo", bar="baz"}`).
           - "Affected selectors" = every new or modified selector in the PR.
 
-          Run below checks in order. Stop at the first **fail**. Do NOT add commentary,
-          suggestions, or analysis beyond what each check explicitly asks for.
+          Run ALL checks below in order, regardless of failures. Report the result of every
+          check independently. Do NOT stop early, do NOT add commentary, suggestions, or
+          analysis beyond what each check explicitly asks for.
 
           **1. No selector removals**
           Scan the diff for deleted selectors. If any selector was removed, **fail**.
