@@ -1022,7 +1022,7 @@ data:
     # owners: (@openshift/team-logging)
     #
     # openshift_logging:log_forwarder_pipelines:sum number of logging pipelines in each namespace
-    - '{__name__="openshift_logging:log_forwarder_pipelines:sum", foo="bar"}'
+    - '{__name__="openshift_logging:log_forwarder_pipelines:sum"}'
     #
     # owners: (@openshift/team-logging)
     #
@@ -1290,6 +1290,11 @@ data:
     #
     # cluster:k8s_mcp_http_requests:sum tracks the total HTTP requests.
     - '{__name__="cluster:k8s_mcp_http_requests:sum"}'
+    #
+    # owners: (mvp)
+    #
+    # node_namespace_pod_container:container_memory_working_set_bytes tracks the memory.
+    - '{__name__="node_namespace_pod_container:container_memory_working_set_bytes"}'
 kind: ConfigMap
 metadata:
   name: telemetry-config
