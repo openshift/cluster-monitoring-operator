@@ -5,10 +5,10 @@ set -eu -o pipefail
 readonly CURL_OPTS=( -sG --fail --connect-timeout 5 --max-time 30 )
 
 if [[ $# -lt 2 ]]; then
-  echo "usage: $0 http://host:port <metric> [...]"
+  echo "usage: $0 http://host:port <selector> [...]"
+  echo '  Example: '"$0"' http://localhost:9998 '"'"'{__name__="my_metric", label=~"a|b"}'"'"
   echo "  To access Prometheus, run: oc port-forward -n openshift-monitoring prometheus-k8s-0 9998:9090"
-  echo "  Then: $0 http://localhost:9998 <metric> [...]"
-  echo "  Note: ensure the metrics are enabled and the cluster is in a steady state so all expected timeseries are present."
+  echo "  Note: ensure metrics are enabled and the cluster is in a steady state so all expected timeseries are present."
   exit 1
 fi
 
@@ -26,26 +26,31 @@ echo "Telemetry metrics report"
 echo "time window: $(utc_from_epoch "${START}") to $(utc_from_epoch "${END}") (24h)"
 echo
 
-for metric in "$@"; do
-  sel='{__name__="'"${metric}"'"}'
+for sel in "$@"; do
+  if [[ "${sel}" != "{"* ]]; then
+    echo "error: argument must be a selector starting with '{': ${sel}" >&2
+    exit 1
+  fi
 
-  echo "metric: ${metric}"
+  echo "selector: ${sel}"
 
-  # Is it a recording rule?
-  rule=$(curl "${CURL_OPTS[@]}" "${PROM}/api/v1/rules" \
-    --data-urlencode "type=record" \
-    --data-urlencode "rule_name[]=${metric}")
+  metric=$(echo "${sel}" | grep -oP '__name__\s*=\s*"?\K[^",}]+')
+  if [[ -n "${metric}" ]]; then
+    rule=$(curl "${CURL_OPTS[@]}" "${PROM}/api/v1/rules" \
+      --data-urlencode "type=record" \
+      --data-urlencode "rule_name[]=${metric}")
 
-  file=$(echo "${rule}" | jq -r '.data.groups[].file')
-  expr=$(echo "${rule}" | jq -r '.data.groups[].rules[].query')
+    file=$(echo "${rule}" | jq -r '.data.groups[].file')
+    expr=$(echo "${rule}" | jq -r '.data.groups[].rules[].query')
 
-  if [[ -n "${file}" ]]; then
-    echo "recording rule: yes"
-    echo "file: ${file}"
-    echo "expr:"
-    echo "  ${expr}"
-  else
-    echo "recording rule: no"
+    if [[ -n "${file}" ]]; then
+      echo "recording rule: yes"
+      echo "file: ${file}"
+      echo "expr:"
+      echo "  ${expr}"
+    else
+      echo "recording rule: no"
+    fi
   fi
 
   # Timeseries count.
