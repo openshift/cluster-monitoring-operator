@@ -8,7 +8,7 @@ if [[ $# -lt 2 ]]; then
   echo "usage: $0 http://host:port <metric> [...]"
   echo "  To access Prometheus, run: oc port-forward -n openshift-monitoring prometheus-k8s-0 9998:9090"
   echo "  Then: $0 http://localhost:9998 <metric> [...]"
-  echo "  Note: ensure the metrics are enabled and the cluster is in a steady state so all expected series are present."
+  echo "  Note: ensure the metrics are enabled and the cluster is in a steady state so all expected timeseries are present."
   exit 1
 fi
 
@@ -48,14 +48,14 @@ for metric in "$@"; do
     echo "recording rule: no"
   fi
 
-  # Series count.
+  # Timeseries count.
   count=$(curl "${CURL_OPTS[@]}" "${PROM}/api/v1/series" \
     --data-urlencode "match[]=${sel}" \
     --data-urlencode "start=${START}" \
     --data-urlencode "end=${END}" \
     | jq '.data | length')
 
-  echo "series count: ${count}"
+  echo "timeseries count: ${count}"
 
   # Label names and distinct value counts.
   labels=$(curl "${CURL_OPTS[@]}" "${PROM}/api/v1/labels" \
