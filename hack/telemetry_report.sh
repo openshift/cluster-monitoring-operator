@@ -48,7 +48,7 @@ for selector in "$@"; do
   if [[ -n "${file}" ]]; then
     echo "metric is from a recording rule: yes"
     echo "file: ${file}"
-    echo "rule expression:"
+    echo "metric rule expression:"
     echo "  ${rule_expr}"
   else
     echo "metric is not from a recording rule: no"

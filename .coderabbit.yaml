@@ -52,7 +52,7 @@ reviews:
             selector: {__name__="<name>", <label>=<value>}
             metric is from a recording rule: yes
             file: <path>
-            rule expression:
+            metric rule expression:
               <expression>
             timeseries count: <n>
             labels count:
