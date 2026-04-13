@@ -31,8 +31,7 @@ reviews:
               - '{__name__="metric", <label>=<value>}'
               ```
             Descriptions may span multiple `#` lines. **Fail** if owners or description are absent,
-            incomplete, or clearly inconsistent with nearby examples; tell the author what is
-            missing and point them at similar entries in the same file.
+            incomplete, or clearly inconsistent with nearby examples.
 
           **2. hack/metric_report.sh output:**
             Verify the PR description MUST contain the full stdout of `hack/metric_report.sh` for

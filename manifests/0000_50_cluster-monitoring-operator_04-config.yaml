@@ -1291,9 +1291,11 @@ data:
     # cluster:k8s_mcp_http_requests:sum tracks the total HTTP requests.
     - '{__name__="cluster:k8s_mcp_http_requests:sum"}'
     #
-    # owners: (mvp)
+    # owners: (https://github.com/containers/kubernetes-mcp-server)
     #
-    # node_namespace_pod_container:container_memory_working_set_bytes tracks the memory.
+    # node_namespace_pod_container:container_memory_working_set_bytes tracks the working set
+    # memory (bytes) per container, broken down by node, namespace, and pod. Useful for
+    # identifying memory pressure and right-sizing container limits.
     - '{__name__="node_namespace_pod_container:container_memory_working_set_bytes"}'
 kind: ConfigMap
 metadata:
