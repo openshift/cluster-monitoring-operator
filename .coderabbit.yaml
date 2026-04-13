@@ -9,7 +9,7 @@ reviews:
   enable_prompt_for_ai_agents: false
   pre_merge_checks:
     custom_checks:
-      - name: "Telemetry Cardinality Protection"
+      - name: "Telemetry checks - errors"
         mode: error
         instructions: |
           When reviewing PRs that add or modify telemetry/telemeter configuration in
@@ -19,7 +19,39 @@ reviews:
           including adding or removing label matchers (e.g. changing
           `{__name__="foo"}` to `{__name__="foo", bar="baz"}`).
 
-          **1. Owner and description requirements:**
+          Verify the PR description contains the full stdout of `hack/metric_report.sh` for
+          every affected metric. The expected shape is:
+          ```
+          Telemetry metrics report
+          time window: <start> to <end> (24h)
+
+          metric: <name>
+          recording rule: yes|no
+          file: <path>
+          expr:
+            <expression>
+          series count: <n>
+          labels count:
+            <label>: <n>
+            ...
+
+          metric: <other-name>
+          recording rule: yes|no
+          series count: <n>
+          labels: (none)
+          ...
+          ```
+          If this output is missing from the PR body, **fail**. Ask the author to run
+          `hack/metric_report.sh` (no arguments) for usage, then paste the full report
+          into the PR description in a code block for all affected metrics.
+
+      - name: "Telemetry checks - warnings"
+        mode: warning
+        instructions: |
+          When reviewing PRs that add or modify telemetry/telemeter configuration in
+          manifests/0000_50_cluster-monitoring-operator_04-config.yaml, check the following.
+
+          **1. Owner and description:**
             For each new or changed telemetry selector in that file, check that structured
             comments appear immediately above the selector and match this repository's pattern
             (compare with existing entries in the same file). Expected shape:
@@ -30,41 +62,14 @@ reviews:
               # <name> <what it measures and why it belongs in telemetry>.
               - '{__name__="metric", <label>=<value>}'
               ```
-            Descriptions may span multiple `#` lines. **Fail** if owners or description are absent,
-            incomplete, or clearly inconsistent with nearby examples.
+            Descriptions may span multiple `#` lines. **Fail** if owners or description are
+            absent, incomplete, or clearly inconsistent with nearby examples.
 
-          **2. hack/metric_report.sh output:**
-            Verify the PR description MUST contain the full stdout of `hack/metric_report.sh` for
-            every affected metric. The expected shape is:
-            ```
-            Telemetry metrics report
-            time window: <start> to <end> (24h)
-
-            metric: <name>
-            recording rule: yes|no
-            file: <path>
-            expr:
-              <expression>
-            series count: <n>
-            labels count:
-              <label>: <n>
-              ...
-
-            metric: <other-name>
-            recording rule: yes|no
-            series count: <n>
-            labels: (none)
-            ...
-            ```
-            If this output is missing from the PR body, **fail**. Ask the author to
-            run `bash hack/metric_report.sh` (no arguments) for usage, then paste the full
-            report into the PR description for all affected metrics.
-
-            Do NOT assess section **3** until section **2** is satisfied.
-
-          **3. Cardinality and privacy (uses the report from **2.**):**
-            - Recommended limits: at most 1-3 new metrics; at most 1-10 timeseries
-              per metric (`series count`); at most 10 timeseries total. Flag PRs that
-              exceed these but do not automatically fail — ask for justification.
-            - Metrics MUST NOT contain personally identifiable information: no names,
-              email addresses, or information about specific user workloads.
+          **2. Cardinality and privacy:**
+            If the PR description contains the output of `hack/metric_report.sh` (see the
+            "Telemetry checks - errors" check), use `series count` and `labels count` from each
+            block. Recommended limits: at most 1-3 new metrics; at most 1-10 timeseries per
+            metric; at most 10 timeseries total. **Fail** if these are exceeded.
+            If the report is absent, **fail** this check as well.
+            Metrics MUST NOT contain personally identifiable information: no names, email
+            addresses, or information about specific user workloads.
