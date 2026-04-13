@@ -12,6 +12,14 @@ reviews:
       - name: "Telemetry checks"
         mode: error
         instructions: |
+          When reporting check results, for every check that fails or flags, include:
+          - The exact selector string (quoted, as it appears in the diff or file).
+          - The file name and line number where the selector appears.
+          - The specific failing sub-check (e.g. "check 4a: timeseries count 12 > 10").
+          - A concrete resolution step, including the exact command to run if applicable
+            (e.g. `hack/telemetry_report.sh <PROM_URL> '<selector>'`).
+          Do NOT produce a summary-only result; report per-selector, per-check granularity.
+
           Scope: PRs that add, modify, or remove telemetry selectors in
           `manifests/0000_50_cluster-monitoring-operator_04-config.yaml`.
 
@@ -84,6 +92,7 @@ reviews:
           and paste the output into the PR description.
 
           **4. Cardinality, selector hygiene, and privacy**
+          If the report data from **3.** is missing, **fail**.
           Read the report data from the PR description and apply these sub-checks:
           a) **Cardinality limits**: Tt most 1-3 new selectors per PR; at most 1-10
              timeseries per selector; at most 10 new timeseries total across all selectors.
@@ -103,7 +112,8 @@ reviews:
              **Fail** if identifying data is present.
 
           **5. Recording rule conventions**
-          For each metric marked as a recording rule in the report data:
+          If the report data from **3.** is missing, **fail**.
+          For each matched metric that is marked as a recording rule in the report data:
           a) **Naming**: The name MUST follow `level:metric_name:aggregation`
              (e.g. `cluster:my_metric:sum`). The suffix MUST match the aggregation function
              used: `:sum`, `:max`, `:count`, `:info`, or `:histogram_quantile`. Do not use
@@ -111,7 +121,7 @@ reviews:
           b) **Expression correctness**: When the expression aggregates counters, `rate()`
              MUST be applied before `sum()`. Summing raw counters produces wrong results on
              resets. Check this in the expression from the report.
-          **Fail** if (a) or (b) is violated.
+          **Fail** if any of the above is violated.
 
           **6. Redundancy check**
           For every new selector, verify the signal is not already captured by an existing
