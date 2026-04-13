@@ -18,8 +18,7 @@ reviews:
           A selector is **modified** if any of its matchers change (e.g. `{__name__="foo"}` becoming
           `{__name__="foo", bar="baz"}`).
 
-          While reviewing such PRs, DO NOT execute any shell commands and DO NOT perform any
-          checks beyond the ones listed below.
+          DO NOT add independent analysis, inferences, or suggestions beyond the checks listed below.
 
           **1. No regex `__name__` matchers in new selectors:**
           New selectors MUST use exact match (`__name__="..."`), not regex (`__name__=~"..."`).
@@ -43,13 +42,18 @@ reviews:
           Descriptions may span multiple `#` lines. **Fail** if owners or description are absent,
           incomplete, or clearly inconsistent with nearby examples.
 
-          **4. hack/telemetry_report.sh output:**
-          The PR description MUST contain the full stdout of `hack/telemetry_report.sh` for every
-          affected selector. Expected shape:
+          **4. Telemetry report data:**
+          The PR description MUST contain, for every affected selector, the data produced by
+          `hack/telemetry_report.sh`. Accept any format that includes all of the following
+          required data points:
+            - selector string
+            - whether the metric comes from a recording rule (yes/no)
+            - recording rule file path (if applicable)
+            - recording rule expression (if applicable)
+            - timeseries count
+            - label names and their distinct-value counts
+          Example shape (exact wording may vary):
             ```
-            Telemetry selectors report
-            time window: <start> to <end> (24h)
-
             selector: {__name__="<name>", <label>=<value>}
             metric is from a recording rule: yes
             file: <path>
@@ -59,12 +63,6 @@ reviews:
             labels count:
               <label>: <n>
               ...
-
-            selector: {__name__="<other-name>", <label>=<value>}
-            metric is not from a recording rule: no
-            timeseries count: <n>
-            labels: (none)
-            ...
             ```
           If the PR description text does not contain this data for one or more affected
           selectors, **fail**. Ask the author to run
