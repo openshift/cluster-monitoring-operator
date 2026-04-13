@@ -1,6 +1,8 @@
 #!/bin/bash
 
-set -u -o pipefail
+set -eu -o pipefail
+
+readonly CURL_OPTS=( -sG --fail --connect-timeout 5 --max-time 30 )
 
 if [[ $# -lt 2 ]]; then
   echo "usage: $0 http://host:port <metric> [...]"
@@ -17,13 +19,7 @@ END=$(date +%s)
 START=$((END - 86400)) # 24h
 
 utc_from_epoch() {
-  local epoch="$1"
-  local out
-  if out=$(date -u -d "@${epoch}" +"%Y-%m-%d %H:%M:%S UTC" 2>/dev/null); then
-    echo "${out}"
-  else
-    date -u -r "${epoch}" +"%Y-%m-%d %H:%M:%S UTC"
-  fi
+  date -u -d "@$1" +"%Y-%m-%d %H:%M:%S UTC" 2>/dev/null || date -u -r "$1" +"%Y-%m-%d %H:%M:%S UTC"
 }
 
 echo "Telemetry metrics report"
@@ -36,7 +32,7 @@ for metric in "$@"; do
   echo "metric: ${metric}"
 
   # Is it a recording rule?
-  rule=$(curl -sG --fail --connect-timeout 5 "${PROM}/api/v1/rules" \
+  rule=$(curl "${CURL_OPTS[@]}" "${PROM}/api/v1/rules" \
     --data-urlencode "type=record" \
     --data-urlencode "rule_name[]=${metric}")
 
@@ -53,7 +49,7 @@ for metric in "$@"; do
   fi
 
   # Series count.
-  count=$(curl -sG --fail --connect-timeout 5 "${PROM}/api/v1/series" \
+  count=$(curl "${CURL_OPTS[@]}" "${PROM}/api/v1/series" \
     --data-urlencode "match[]=${sel}" \
     --data-urlencode "start=${START}" \
     --data-urlencode "end=${END}" \
@@ -62,7 +58,7 @@ for metric in "$@"; do
   echo "series count: ${count}"
 
   # Label names and distinct value counts.
-  labels=$(curl -sG --fail --connect-timeout 5 "${PROM}/api/v1/labels" \
+  labels=$(curl "${CURL_OPTS[@]}" "${PROM}/api/v1/labels" \
     --data-urlencode "match[]=${sel}" \
     --data-urlencode "start=${START}" \
     --data-urlencode "end=${END}" \
@@ -73,7 +69,7 @@ for metric in "$@"; do
   else
     echo "labels count:"
     while IFS= read -r l; do
-      n=$(curl -sG --fail --connect-timeout 5 "${PROM}/api/v1/label/${l}/values" \
+      n=$(curl "${CURL_OPTS[@]}" "${PROM}/api/v1/label/${l}/values" \
         --data-urlencode "match[]=${sel}" \
         --data-urlencode "start=${START}" \
         --data-urlencode "end=${END}" \
