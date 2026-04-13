@@ -12,6 +12,11 @@ reviews:
       - name: "Telemetry checks"
         mode: error
         instructions: |
+          IMPORTANT: Whenever these instructions refer to "PR description", this means the PR
+          body field exclusively, not commit messages, not the PR title.
+
+          The PR description can be fetched with: `gh pr view <PR_NUMBER> --repo <OWNER/REPO> --json body -q .body`
+
           When reviewing PRs that add or modify telemetry/telemeter selectors in
           manifests/0000_50_cluster-monitoring-operator_04-config.yaml, enforce the following checks.
 
@@ -43,9 +48,11 @@ reviews:
           incomplete, or clearly inconsistent with nearby examples.
 
           **4. Telemetry report data:**
-          The PR description MUST contain, for every affected selector, the data produced by
-          `hack/telemetry_report.sh`. Accept any format that includes all of the following
-          required data points:
+          The PR description MUST contain, for every affected selector using exact metric-name
+          matching (`{__name__="..."}`), the data produced by `hack/telemetry_report.sh`.
+          For affected regex selectors (`{__name__=~"..."}`), require equivalent manually
+          provided evidence for timeseries/cardinality until script support exists.
+          Accept any format that includes all of the following required data points:
             - selector string
             - whether the metric comes from a recording rule (yes/no)
             - recording rule file path (if applicable)
