@@ -15,7 +15,8 @@ reviews:
           When metrics are added or modified in the telemetry/telemeter configuration,
           enforce the following:
 
-          **1. The PR description must provide necessary details about the metrics being added or modified.**
-
-          The PR description must provide a link to the metric definition in a PrometheusRule that must be already be in
-          master/main and the metric must not have more than 2 labels.
+          **1. PR description requirements (all required):**
+            - Include a link to the corresponding PrometheusRule definition on `main/master`.
+          
+          **2. Cardinality requirement:**
+            - The referenced metric must expose no more than 2 output labels.

@@ -1294,7 +1294,7 @@ data:
     # owners: (https://github.com/containers/kubernetes-mcp-server)
     #
     # xxx.
-    - '{__name__="pod_interface_network:container_network_receive_bytes:irate5m"}'
+    - '{__name__="openshift_logging:log_forwarder_pipelines:sum"}'
 kind: ConfigMap
 metadata:
   name: telemetry-config
