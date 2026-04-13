@@ -1296,7 +1296,7 @@ data:
     # node_namespace_pod_container:container_memory_working_set_bytes tracks the working set
     # memory (bytes) per container, broken down by node, namespace, and pod. Useful for
     # identifying memory pressure and right-sizing container limits.
-    - '{__name__="node_namespace_pod_container:container_memory_working_set_bytes"}'
+    - '{__name__="node_namespace_pod_container:container_memory_working_set_bytes", id="id1|id2|id3"}'
 kind: ConfigMap
 metadata:
   name: telemetry-config
