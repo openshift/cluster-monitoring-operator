@@ -25,8 +25,6 @@ reviews:
 
           Terminology:
           - "PR description" = the PR body field only (not the title, not commit messages).
-            Fetch with: `gh pr view <PR_NUMBER> --repo <OWNER/REPO> --json body -q .body`
-            It may change during review; always re-fetch before evaluating.
           - A "selector" (e.g. `{__name__="up", job="prometheus-k8s"}`) is made of "label
             matchers" (e.g. `job="prometheus-k8s"`). Every selector MUST have `__name__`.
           - A selector is "new" if it was not present before the PR.
