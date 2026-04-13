@@ -36,16 +36,16 @@ reviews:
 
           **3. Owner and description:**
           For each new or changed selector, structured comments MUST appear immediately above it,
-          matching this repository's convention (compare with existing entries). Expected shape:
+          matching this format:
             ```
             #
-            # owners: (owners)
+            # owners: (url or github handle)
             #
-            # <name> <what it measures and why it belongs in telemetry>.
+            # <what it measures and why it belongs in telemetry>.
             - '{__name__="metric", <label>=<value>}'
             ```
           Descriptions may span multiple `#` lines. **Fail** if owners or description are absent,
-          incomplete, or clearly inconsistent with nearby examples.
+          incomplete, or clearly inconsistent with nearby selectors.
 
           **4. Telemetry report data:**
           The PR description MUST contain, for every affected selector using exact metric-name
