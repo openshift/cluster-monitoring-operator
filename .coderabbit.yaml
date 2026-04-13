@@ -26,8 +26,9 @@ reviews:
             `{__name__="foo", bar="baz"}`).
           - "Affected selectors" = every new or modified selector in the PR.
         
-          Always re-fetch all inputs fresh before evaluating: re-fetch the PR description, re-read
-          the diff, and re-read the manifest file. Do not reuse any data from previous check runs.
+          Each time you are asked to evaluate these checks, treat it as a completely fresh
+          run: re-fetch the PR description, re-read the diff, and re-read the file. Never reuse
+          or carry over results from a previous evaluation.
 
           Run ALL checks below in order, regardless of failures. Report the result of every
           check independently. Do NOT stop early, do NOT add commentary, suggestions, or
@@ -86,15 +87,15 @@ reviews:
           Read the report data from the PR description and apply these sub-checks:
           a) **Cardinality limits**: Tt most 1-3 new selectors per PR; at most 1-10
              timeseries per selector; at most 10 new timeseries total across all selectors.
-             If any limit is exceeded, **flag** (do not fail) and ask the author to add a
+             If any limit is exceeded, **fail** and ask the author to add a
              justification to the PR description.
           b) **Exact over regex**: Prefer `__name__="..."` over `__name__=~"..."`. A regex
              selector is acceptable only if the author justifies that its cardinality is within
-             the limits in (a). If not, **flag**.
+             the limits in (a). If not, **fail**.
           c) **Restrictive matchers**: Every label matcher in a selector MUST constrain
              values to a known, bounded set. This is defense-in-depth: even if current
              cardinality is low, open-ended matchers risk explosions if the underlying metric
-             or recording rule changes later. **Flag** selectors that have open-ended or
+             or recording rule changes later. **Fail** if selectors have open-ended or
              missing matchers.
           d) **No identifying data**: Selectors MUST NOT expose information that identifies
              individuals, companies, customers, or specific workloads (e.g. personal names,
@@ -117,5 +118,5 @@ reviews:
           entry in the config: a broader regex selector (e.g. `{__name__=~"cluster:usage:.*"}`),
           an aggregated selector (`count:up0`, `count:up1`), `cluster_operator_conditions`, or
           an alert (alerts are already pushed to telemetry).
-          **Flag** any selector that appears redundant and ask the author to justify why a
+          **Fail** if any selector that appears redundant and ask the author to justify why a
           separate selector is needed.
