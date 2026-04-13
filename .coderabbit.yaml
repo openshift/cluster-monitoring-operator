@@ -7,3 +7,15 @@ reviews:
   sequence_diagrams: false
   changed_files_summary: false
   enable_prompt_for_ai_agents: false
+  pre_merge_checks:
+    custom_checks:
+      - name: "Telemetry Cardinality Protection"
+        mode: error
+        instructions: |
+          When metrics are added or modified in the telemetry/telemeter configuration,
+          enforce the following:
+
+          **1. The PR description must provide necessary details about the metrics being added or modified.**
+
+          The PR description must provide a link to the metric definition in a PrometheusRule that must be already be in
+          master/main and the metric must not have more than 2 labels.
