@@ -27,43 +27,53 @@ echo "time window: $(utc_from_epoch "${START}") to $(utc_from_epoch "${END}") (2
 echo
 
 for selector in "$@"; do
-  if [[ "${selector}" != '{__name__="'* ]]; then
-    echo "error: selector must start with '{__name__=\"...\"', got: ${selector}" >&2
+  if [[ "${selector}" != "{"* ]]; then
+    echo "error: selector must be a PromQL matcher like '{__name__=\"...\"}', got: ${selector}" >&2
     exit 1
   fi
 
   echo "selector: ${selector}"
 
-  # Strip the '{__name__="' prefix validated above, then everything from the next '"'.
-  metric="${selector#\{__name__=\"}"
-  metric="${metric%%\"*}"
-
-  rule=$(curl "${CURL_OPTS[@]}" "${PROM}/api/v1/rules" \
-    --data-urlencode "type=record" \
-    --data-urlencode "rule_name[]=${metric}")
-
-  file=$(echo "${rule}" | jq -r '.data.groups[].file')
-  rule_expr=$(echo "${rule}" | jq -r '.data.groups[].rules[].query')
-
-  if [[ -n "${file}" ]]; then
-    echo "metric is from a recording rule: yes"
-    echo "file: ${file}"
-    echo "metric rule expression:"
-    echo "  ${rule_expr}"
-  else
-    echo "metric is not from a recording rule: no"
-  fi
-
-  # Timeseries count.
-  count=$(curl "${CURL_OPTS[@]}" "${PROM}/api/v1/series" \
+  # Step 1: /series gives us metric names + count.
+  series=$(curl "${CURL_OPTS[@]}" "${PROM}/api/v1/series" \
     --data-urlencode "match[]=${selector}" \
     --data-urlencode "start=${START}" \
-    --data-urlencode "end=${END}" \
-    | jq '.data | length')
+    --data-urlencode "end=${END}")
+
+  metrics=$(echo "${series}" | jq -r '.data | map(.__name__) | unique[]')
+  count=$(echo "${series}" | jq '.data | length')
+
+  echo "matched metrics:"
+  if [[ -z "${metrics}" ]]; then
+    echo "  (none)"
+  else
+    while IFS= read -r m; do echo "  - ${m}"; done <<< "${metrics}"
+  fi
 
   echo "timeseries count: ${count}"
 
-  # Label names and distinct value counts.
+  # Step 2: /rules for each metric name from step 1.
+  if [[ -n "${metrics}" ]]; then
+    echo "recording rules:"
+    while IFS= read -r m; do
+      rule=$(curl "${CURL_OPTS[@]}" "${PROM}/api/v1/rules" \
+        --data-urlencode "type=record" \
+        --data-urlencode "rule_name[]=${m}")
+
+      file=$(echo "${rule}" | jq -r '.data.groups[].file')
+      rule_expr=$(echo "${rule}" | jq -r '.data.groups[].rules[].query')
+
+      if [[ -n "${file}" ]]; then
+        echo "  - ${m} (recording rule)"
+        echo "    file: ${file}"
+        echo "    expression: ${rule_expr}"
+      else
+        echo "  - ${m} (not a recording rule)"
+      fi
+    done <<< "${metrics}"
+  fi
+
+  # Step 3: label cardinality using the original selector.
   labels=$(curl "${CURL_OPTS[@]}" "${PROM}/api/v1/labels" \
     --data-urlencode "match[]=${selector}" \
     --data-urlencode "start=${START}" \

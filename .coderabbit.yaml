@@ -12,75 +12,97 @@ reviews:
       - name: "Telemetry checks"
         mode: error
         instructions: |
-          IMPORTANT: Whenever these instructions refer to "PR description", this means the PR
-          body field exclusively, not commit messages, not the PR title.
+          These checks apply to PRs that add or modify telemetry selectors in
+          manifests/0000_50_cluster-monitoring-operator_04-config.yaml.
 
-          The PR description can be fetched with: `gh pr view <PR_NUMBER> --repo <OWNER/REPO> --json body -q .body`
+          Definitions:
+          - "PR description" means the PR body field exclusively (not title, not commits).
+            Fetch it with: `gh pr view <PR_NUMBER> --repo <OWNER/REPO> --json body -q .body`
+            The PR description may be updated during review; always fetch the latest version.
+          - A selector is "new" if it did not exist before the PR.
+          - A selector is "modified" if any of its matchers changed (e.g. `{__name__="foo"}`
+            becoming `{__name__="foo", bar="baz"}`).
+          - "Affected selectors" means all new and modified selectors in the PR.
 
-          When reviewing PRs that add or modify telemetry/telemeter selectors in
-          manifests/0000_50_cluster-monitoring-operator_04-config.yaml, enforce the following checks.
+          Run checks **1** through **6** in order. DO NOT add analysis, inferences, or
+          suggestions beyond what these checks require.
 
-          A selector is **modified** if any of its matchers change (e.g. `{__name__="foo"}` becoming
-          `{__name__="foo", bar="baz"}`).
+          **1. No selector removals:**
+          If the PR removes any selector from the allow-list, **fail**. Removing a selector
+          blocks that metric for all cluster versions because this configuration is shared with
+          the Telemeter server. Removal MUST be coordinated with the monitoring team.
 
-          DO NOT add independent analysis, inferences, or suggestions beyond the checks listed below.
-
-          **1. No regex `__name__` matchers in new selectors:**
-          New selectors MUST use exact match (`__name__="..."`), not regex (`__name__=~"..."`).
-          **Fail** if a newly added selector uses `__name__=~`.
-
-          **2. No selector removals:**
-          If the PR removes a selector from the allow-list, **fail**. Explain that this
-          configuration is shared with the Telemeter server and removal must be coordinated
-          with the monitoring team.
-
-          **3. Owner and description:**
-          For each new or changed selector, structured comments MUST appear immediately above it,
-          matching this format:
+          **2. Owner and description:**
+          For every affected selector, structured comments MUST appear directly above it:
             ```
             #
-            # owners: (url or github handle)
+            # owners: <url or github handle>
             #
-            # <what it measures and why it belongs in telemetry>.
+            # <description>.
             - '{__name__="metric", <label>=<value>}'
             ```
-          Descriptions may span multiple `#` lines. **Fail** if owners or description are absent,
-          incomplete, or clearly inconsistent with nearby selectors.
+          Descriptions may span multiple `#` lines and MUST:
+          - Explain the business purpose — why this data is collected and how Red Hat will
+            use it.
+          - Spell out abbreviations (e.g. "OBC" means "ObjectBucketClaim").
+          - Be unique and accurate per selector, no copy-paste between selectors (e.g. do
+            not write "resources" when the selector only covers "memory").
+          **Fail** if owners or description are absent or incomplete.
 
-          **4. Telemetry report data:**
-          The PR description MUST contain, for every affected selector using exact metric-name
-          matching (`{__name__="..."}`), the data produced by `hack/telemetry_report.sh`.
-          For affected regex selectors (`{__name__=~"..."}`), require equivalent manually
-          provided evidence for timeseries/cardinality until script support exists.
-          Accept any format that includes all of the following required data points:
-            - selector string
-            - whether the metric comes from a recording rule (yes/no)
-            - recording rule file path (if applicable)
-            - recording rule expression (if applicable)
+          **3. Telemetry report data (gate for 4, 5, and 6):**
+          The PR description MUST contain the output of `hack/telemetry_report.sh` for every
+          affected selector. All of the following data points MUST be present per selector:
+            - the selector string
+            - matched metric names
             - timeseries count
-            - label names and their distinct-value counts
-          The PR description may be updated; always fetch and use the latest version.
-          Example shape (exact wording may vary):
+            - per-metric recording rule status (file path, expression)
+            - label names with their distinct-value counts
+          Example output (exact wording may vary):
             ```
             selector: {__name__="<name>", <label>=<value>}
-            metric is from a recording rule: yes
-            file: <path>
-            metric rule expression:
-              <expression>
+            matched metrics:
+              - <name>
             timeseries count: <n>
+            recording rules:
+              - <name> (recording rule)
+                file: <path>
+                expression: <expr>
             labels count:
               <label>: <n>
-              ...
             ```
-          If the PR description text does not contain this data for one or more affected
-          selectors, **fail**. Ask the author to run
-          `hack/telemetry_report.sh <PROM_URL> <selector1> <selector2> ...` and include the above data points
-          in the PR description. Do NOT assess **5** until **4** is satisfied.
+          If any affected selector is missing this data, **fail** and ask the author to run:
+          `hack/telemetry_report.sh <PROM_URL> '<selector>' ...`
 
-          **5. Cardinality and privacy (read from the PR description data in 4):**
-          Recommended limits: at most 1-3 new selectors per PR; at most 1-10 timeseries per
-          selector; at most 10 timeseries total. If these limits are exceeded, **do not fail
-          automatically** — instead flag it and ask the author for justification (e.g. why the
-          higher cardinality is acceptable). Selectors MUST NOT match personally identifiable
-          information: no names, email addresses, or data about specific user workloads.
-          **Fail** only if PII is present.
+          **4. Cardinality, selector hygiene, and privacy (requires 3):**
+          Using the report data from **3.**:
+          a) Cardinality limits: at most 1-3 new selectors per PR, at most 1-10 timeseries
+             per selector, at most 10 new timeseries total. If exceeded, do not fail — **flag**
+             and ask the author to add a justification in the PR description.
+          b) Prefer exact `__name__="..."` over regex `__name__=~"..."`. Regex selectors are
+             acceptable only when the author proves cardinality stays within the limits in
+             (a). Otherwise **flag**.
+          c) All label matchers in a selector MUST restrict values to known/expected sets. This
+             is defense-in-depth: even if current cardinality in the report looks fine, open-ended
+             matchers risk cardinality explosions if the underlying metric or recording rule changes.
+             **Flag** selectors with open-ended or missing label matchers.
+          d) Selectors MUST NOT expose identifying information (e.g. names, emails, org names,
+             that reveal tenant identity). **Fail** if identifying data is present.
+
+          **5. Recording rule conventions (requires 3):**
+          For each metric flagged as a recording rule in the report data from **3.**, check:
+          a) The metric name MUST follow `level:metric_name:aggregation`
+             (e.g. `cluster:my_metric:sum`). The suffix MUST match the actual aggregation
+             function: `:sum`, `:max`, `:count`, `:info`, `:histogram_quantile`. Do not use
+             `:total` (reserved for raw counters). Only recording rule names may contain
+             colons; raw metric names MUST use underscores.
+          b) In the recording rule expression, `rate()` MUST be applied before `sum()` when
+             aggregating counters — summing counters directly produces wrong results on resets.
+             Verify this in the expression from the report.
+          **Fail** if (a) or (b) is violated.
+
+          **6. Redundancy check (requires 3):**
+          Before accepting a new selector, verify the signal is not already captured by:
+          existing regex selectors (e.g. `{__name__=~"cluster:usage:.*"}`), existing aggregated
+          selectors (`count:up0`, `count:up1`), `cluster_operator_conditions`, or alerts (which
+          are already pushed to telemetry). **Flag** potentially redundant selectors and ask
+          the author to justify why a new selector is needed.
