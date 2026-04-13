@@ -52,6 +52,7 @@ reviews:
             - recording rule expression (if applicable)
             - timeseries count
             - label names and their distinct-value counts
+          The PR description may be updated; always fetch and use the latest version.
           Example shape (exact wording may vary):
             ```
             selector: {__name__="<name>", <label>=<value>}
