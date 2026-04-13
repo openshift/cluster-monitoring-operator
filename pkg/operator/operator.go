@@ -41,7 +41,6 @@ import (
 	"k8s.io/client-go/tools/cache"
 	"k8s.io/client-go/util/workqueue"
 	"k8s.io/klog/v2"
-	"k8s.io/utils/ptr"
 
 	"github.com/openshift/cluster-monitoring-operator/pkg/alert"
 	"github.com/openshift/cluster-monitoring-operator/pkg/client"
@@ -994,23 +993,17 @@ func (o *Operator) Config(ctx context.Context) (*manifests.Config, []string, err
 		manifests.SupportedCollectionProfiles.StringSlice(),
 	)
 
-	// Merge ClusterMonitoring CRD configuration if feature gate is enabled
+	// Always merge ClusterMonitoring CR (nil when FG is off or CR is missing).
+	// manifests.Config applies safe defaults inside MergeClusterMonitoringCRD.
+	var cm *configv1alpha1.ClusterMonitoring
 	if o.ClusterMonitoringConfigEnabled {
-		cm, getErr := o.client.GetClusterMonitoring(ctx, "cluster")
+		var getErr error
+		cm, getErr = o.client.GetClusterMonitoring(ctx, "cluster")
 		if getErr != nil && !apierrors.IsNotFound(getErr) {
 			return nil, warnings, fmt.Errorf("failed to get ClusterMonitoring CRD: %w", getErr)
 		}
-		c, err = o.mergeClusterMonitoringCRD(c, cm)
-		if err != nil {
-			return nil, warnings, fmt.Errorf("failed to merge ClusterMonitoring CRD: %w", err)
-		}
 	}
-
-	// Default UserWorkloadEnabled to false when neither ConfigMap nor CRD set it
-	// (Config leaves it nil so CRD merge can apply when the feature gate is on).
-	if c.ClusterMonitoringConfiguration.UserWorkloadEnabled == nil {
-		c.ClusterMonitoringConfiguration.UserWorkloadEnabled = ptr.To(false)
-	}
+	c.MergeClusterMonitoringCRD(cm)
 
 	// Only use User Workload Monitoring ConfigMap from user ns and populate if
 	// it's enabled by admin via Cluster Monitoring ConfigMap.  The above
@@ -1048,39 +1041,6 @@ func (o *Operator) Config(ctx context.Context) (*manifests.Config, []string, err
 		}
 	}
 	return c, warnings, nil
-}
-
-// mergeClusterMonitoringCRD merges ClusterMonitoring CRD spec into the ConfigMap-derived config.
-// Phase 1 merge rule for top-level fields: if a field is nil in the ConfigMap, use the CRD value;
-// otherwise keep the ConfigMap value.
-func (o *Operator) mergeClusterMonitoringCRD(c *manifests.Config, cm *configv1alpha1.ClusterMonitoring) (*manifests.Config, error) {
-	if cm == nil {
-		return c, nil
-	}
-
-	if c.ClusterMonitoringConfiguration == nil {
-		c.ClusterMonitoringConfiguration = &manifests.ClusterMonitoringConfiguration{}
-	}
-
-	// UserDefined (CRD) -> UserWorkloadEnabled (ConfigMap): only set from CRD when ConfigMap has no opinion.
-	if c.ClusterMonitoringConfiguration.UserWorkloadEnabled == nil && cm.Spec.UserDefined.Mode != "" {
-		if userWorkloadEnabled := applyUserDefinedMode(cm.Spec.UserDefined); userWorkloadEnabled != nil {
-			c.ClusterMonitoringConfiguration.UserWorkloadEnabled = userWorkloadEnabled
-		}
-	}
-
-	return c, nil
-}
-
-func applyUserDefinedMode(udm configv1alpha1.UserDefinedMonitoring) *bool {
-	switch udm.Mode {
-	case configv1alpha1.UserDefinedDisabled:
-		return ptr.To(false)
-	case configv1alpha1.UserDefinedNamespaceIsolated:
-		return ptr.To(true)
-	default:
-		return nil
-	}
 }
 
 // storageNotConfiguredMessage returns the message to be set if a pvc has not

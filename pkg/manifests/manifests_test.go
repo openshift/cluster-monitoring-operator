@@ -34,6 +34,7 @@ import (
 	policyv1 "k8s.io/api/policy/v1"
 	"k8s.io/apimachinery/pkg/api/resource"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	auditv1 "k8s.io/apiserver/pkg/apis/audit/v1"
 	"k8s.io/utils/ptr"
 )
 
@@ -2934,6 +2935,13 @@ metricsServer:
 			if err != nil {
 				t.Logf("%s\n\n", test.config)
 				t.Fatal(err)
+			}
+			// When ConfigMap does not set metricsServer, the operator sets a default before building manifests.
+			// Simulate that for tests that expect default audit (metadata profile).
+			if c.ClusterMonitoringConfiguration.MetricsServerConfig == nil && test.err == nil {
+				c.ClusterMonitoringConfiguration.MetricsServerConfig = &MetricsServerConfig{
+					Audit: &Audit{Profile: auditv1.LevelMetadata},
+				}
 			}
 
 			f := NewFactory("openshift-monitoring", "openshift-user-workload-monitoring",
