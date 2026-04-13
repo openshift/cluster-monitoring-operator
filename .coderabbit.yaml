@@ -25,6 +25,9 @@ reviews:
           - A selector is "modified" if any matcher changed (e.g. `{__name__="foo"}` became
             `{__name__="foo", bar="baz"}`).
           - "Affected selectors" = every new or modified selector in the PR.
+        
+          Always re-fetch all inputs fresh before evaluating: re-fetch the PR description, re-read
+          the diff, and re-read the manifest file. Do not reuse any data from previous check runs.
 
           Run ALL checks below in order, regardless of failures. Report the result of every
           check independently. Do NOT stop early, do NOT add commentary, suggestions, or
@@ -79,7 +82,7 @@ reviews:
             `hack/telemetry_report.sh <PROM_URL> '<selector1>' '<selector2>' ...`
           and paste the output into the PR description.
 
-          **4. Cardinality, selector hygiene, and privacy** *(requires 3)*
+          **4. Cardinality, selector hygiene, and privacy**
           Read the report data from the PR description and apply these sub-checks:
           a) **Cardinality limits**: Tt most 1-3 new selectors per PR; at most 1-10
              timeseries per selector; at most 10 new timeseries total across all selectors.
@@ -98,7 +101,7 @@ reviews:
              emails, org names that reveal tenant identity).
              **Fail** if identifying data is present.
 
-          **5. Recording rule conventions** *(requires 3)*
+          **5. Recording rule conventions**
           For each metric marked as a recording rule in the report data:
           a) **Naming**: The name MUST follow `level:metric_name:aggregation`
              (e.g. `cluster:my_metric:sum`). The suffix MUST match the aggregation function
@@ -109,7 +112,7 @@ reviews:
              resets. Check this in the expression from the report.
           **Fail** if (a) or (b) is violated.
 
-          **6. Redundancy check** *(requires 3)*
+          **6. Redundancy check**
           For every new selector, verify the signal is not already captured by an existing
           entry in the config: a broader regex selector (e.g. `{__name__=~"cluster:usage:.*"}`),
           an aggregated selector (`count:up0`, `count:up1`), `cluster_operator_conditions`, or
