@@ -26,36 +26,37 @@ echo "Telemetry selectors report"
 echo "time window: $(utc_from_epoch "${START}") to $(utc_from_epoch "${END}") (24h)"
 echo
 
-for sel in "$@"; do
-  if [[ "${sel}" != "{"* ]]; then
-    echo "error: argument must be a selector starting with '{': ${sel}" >&2
+for selector in "$@"; do
+  if [[ "${selector}" != '{__name__="'* ]]; then
+    echo "error: selector must start with '{__name__=\"...\"', got: ${selector}" >&2
     exit 1
   fi
 
-  echo "selector: ${sel}"
+  echo "selector: ${selector}"
 
-  metric=$(echo "${sel}" | grep -oP '__name__\s*=\s*"?\K[^",}]+')
-  if [[ -n "${metric}" ]]; then
-    rule=$(curl "${CURL_OPTS[@]}" "${PROM}/api/v1/rules" \
-      --data-urlencode "type=record" \
-      --data-urlencode "rule_name[]=${metric}")
+  # Strip the '{__name__="' prefix validated above, then everything from the next '"'.
+  metric="${selector#\{__name__=\"}"
+  metric="${metric%%\"*}"
 
-    file=$(echo "${rule}" | jq -r '.data.groups[].file')
-    expr=$(echo "${rule}" | jq -r '.data.groups[].rules[].query')
+  rule=$(curl "${CURL_OPTS[@]}" "${PROM}/api/v1/rules" \
+    --data-urlencode "type=record" \
+    --data-urlencode "rule_name[]=${metric}")
 
-    if [[ -n "${file}" ]]; then
-      echo "recording rule: yes"
-      echo "file: ${file}"
-      echo "expr:"
-      echo "  ${expr}"
-    else
-      echo "recording rule: no"
-    fi
+  file=$(echo "${rule}" | jq -r '.data.groups[].file')
+  rule_expr=$(echo "${rule}" | jq -r '.data.groups[].rules[].query')
+
+  if [[ -n "${file}" ]]; then
+    echo "metric is from a recording rule: yes"
+    echo "file: ${file}"
+    echo "rule expression:"
+    echo "  ${rule_expr}"
+  else
+    echo "metric is not from a recording rule: no"
   fi
 
   # Timeseries count.
   count=$(curl "${CURL_OPTS[@]}" "${PROM}/api/v1/series" \
-    --data-urlencode "match[]=${sel}" \
+    --data-urlencode "match[]=${selector}" \
     --data-urlencode "start=${START}" \
     --data-urlencode "end=${END}" \
     | jq '.data | length')
@@ -64,7 +65,7 @@ for sel in "$@"; do
 
   # Label names and distinct value counts.
   labels=$(curl "${CURL_OPTS[@]}" "${PROM}/api/v1/labels" \
-    --data-urlencode "match[]=${sel}" \
+    --data-urlencode "match[]=${selector}" \
     --data-urlencode "start=${START}" \
     --data-urlencode "end=${END}" \
     | jq -r '.data[] | select(. != "__name__")')
@@ -75,7 +76,7 @@ for sel in "$@"; do
     echo "labels count:"
     while IFS= read -r l; do
       n=$(curl "${CURL_OPTS[@]}" "${PROM}/api/v1/label/${l}/values" \
-        --data-urlencode "match[]=${sel}" \
+        --data-urlencode "match[]=${selector}" \
         --data-urlencode "start=${START}" \
         --data-urlencode "end=${END}" \
         | jq '.data | length')

@@ -46,7 +46,7 @@ reviews:
           The PR description MUST contain the full stdout of `hack/telemetry_report.sh` for every
           affected selector. Expected shape:
             ```
-            Telemetry metrics report
+            Telemetry selectors report
             time window: <start> to <end> (24h)
 
             selector: {__name__="<name>", <label>=<value>}
