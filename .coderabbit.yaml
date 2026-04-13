@@ -12,11 +12,39 @@ reviews:
       - name: "Telemetry Cardinality Protection"
         mode: error
         instructions: |
-          When metrics are added or modified in the telemetry/telemeter configuration,
-          enforce the following:
+          When metrics are added or modified in the telemetry/telemeter configuration, for
+          example in manifests/0000_50_cluster-monitoring-operator_04-config.yaml or
+          Documentation/telemetry/telemeter_query, enforce the following:
 
-          **1. PR description requirements (all required):**
-            - Include a link to the corresponding PrometheusRule definition on `main/master`.
-          
-          **2. Cardinality requirement:**
-            - The referenced metric must expose no more than 2 output labels.
+          **1. PR description requirements:**
+            - Include the output of `hack/metric_report.sh` for each affected metric. Example
+              shape:
+              ```
+              Telemetry metrics report
+              time window: 2026-04-12 14:42:53 UTC to 2026-04-13 14:42:53 UTC (24h)
+
+              metric: openshift:prometheus_tsdb_head_series:sum
+              recording rule: yes
+              file: /etc/prometheus/rules/.../prometheus-rules-<id>.yaml
+              expr:
+                sum by (job, namespace) (max without (instance) (prometheus_tsdb_head_series{...}))
+              series count: 1
+              labels count:
+                job: 1
+                namespace: 1
+              ```
+              If that output is missing, fail. Ask the author to run `bash hack/metric_report.sh`
+              with no arguments for usage (including `oc port-forward` to Prometheus), run it for
+              all metrics, and paste the full report into the PR description.
+            - For each new or changed metric, the PR must name the owning team (OpenShift component
+              or squad) and give a short description of what the metric measures and why it is
+              appropriate for telemetry. If owner or description is missing, fail.
+
+          **2. Cardinality and privacy (uses the report from **1.**):**
+            - Do not assess this section until **1.** is satisfied (pasted report present);
+              otherwise fail.
+            - Using that report only: we recommend at most 1–3 new metrics; at most 1–10
+              timeseries per metric (`series count`); and at most 10 timeseries total.
+              Flag PRs that exceed these. Use `series count` and `labels count` from each block.
+            - Metrics MUST NOT contain personally identifiable information: no names, email
+              addresses, or information about specific user workloads.
