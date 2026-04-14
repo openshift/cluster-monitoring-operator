@@ -7,6 +7,8 @@ reviews:
   sequence_diagrams: false
   changed_files_summary: false
   enable_prompt_for_ai_agents: false
+  # TODO: maybe still need to make coderabbitai job a blocker
+  request_changes_workflow: true
   pre_merge_checks:
     custom_checks:
       - name: "Telemetry checks"
