@@ -12,14 +12,6 @@ reviews:
       - name: "Telemetry checks"
         mode: error
         instructions: |
-          When reporting check results, for every check that fails or flags, include:
-          - The exact selector string (quoted, as it appears in the diff or file).
-          - The file name and line number where the selector appears.
-          - The specific failing sub-check (e.g. "check 4a: timeseries count 12 > 10").
-          - A concrete resolution step, including the exact command to run if applicable
-            (e.g. `hack/telemetry_report.sh <PROM_URL> '<selector>'`).
-          Do NOT produce a summary-only result; report per-selector, per-check granularity.
-
           Scope: PRs that add, modify, or remove telemetry selectors in
           `manifests/0000_50_cluster-monitoring-operator_04-config.yaml`.
 
@@ -92,7 +84,7 @@ reviews:
           **4. Cardinality, selector hygiene, and privacy**
           If the report data from **3.** is missing, **fail**.
           Read the report data from the PR description and apply these sub-checks:
-          a) **Cardinality limits**: Tt most 1-3 new selectors per PR; at most 1-10
+          a) **Cardinality limits**: At most 1-3 new selectors per PR; at most 1-10
              timeseries per selector; at most 10 new timeseries total across all selectors.
              If any limit is exceeded, **fail** and ask the author to add a
              justification to the PR description.
