@@ -3455,6 +3455,7 @@ func TestNodeExporterCollectorSettings(t *testing.T) {
 			argsPresent: []string{"--no-collector.cpufreq",
 				"--no-collector.tcpstat",
 				"--no-collector.ethtool",
+				"--no-collector.interrupts",
 				"--no-collector.softirqs",
 				"--no-collector.zoneinfo",
 				"--collector.netdev",
@@ -3472,6 +3473,7 @@ func TestNodeExporterCollectorSettings(t *testing.T) {
 			argsAbsent: []string{"--collector.cpufreq",
 				"--collector.tcpstat",
 				"--collector.ethtool",
+				"--collector.interrupts",
 				"--collector.softirqs",
 				"--collector.zoneinfo",
 				"--no-collector.netdev",
@@ -3528,6 +3530,41 @@ nodeExporter:
 `,
 			argsPresent: []string{"--collector.ethtool", "--collector.ethtool.device-exclude=^(br-int|lo)$"},
 			argsAbsent:  []string{"--no-collector.ethtool"},
+		},
+		{
+			name: "enable interrupts collector with include pattern",
+			config: `
+nodeExporter:
+  collectors:
+    interrupts:
+      include: ["LOC;.*"]
+`,
+			argsPresent: []string{"--collector.interrupts",
+				"--collector.interrupts.name-include=^(LOC;.*)$"},
+			argsAbsent: []string{"--no-collector.interrupts"},
+		},
+		{
+			name: "enable interrupts collector with include patterns",
+			config: `
+nodeExporter:
+  collectors:
+    interrupts:
+      include: ["LOC;.*", "NMI;.*"]
+`,
+			argsPresent: []string{"--collector.interrupts",
+				"--collector.interrupts.name-include=^(LOC;.*|NMI;.*)$"},
+			argsAbsent: []string{"--no-collector.interrupts"},
+		},
+		{
+			name: "disable interrupts collector when include is empty",
+			config: `
+nodeExporter:
+  collectors:
+    interrupts:
+      include: []
+`,
+			argsPresent: []string{"--no-collector.interrupts"},
+			argsAbsent:  []string{"--collector.interrupts"},
 		},
 		{
 			name: "enable softirqs collector",

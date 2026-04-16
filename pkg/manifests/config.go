@@ -446,6 +446,11 @@ func validateNodeExporterConfig(config *NodeExporterConfig) error {
 			}
 		}
 	}
+	for _, pattern := range config.Collectors.Interrupts.Include {
+		if _, err := regexp.Compile(pattern); err != nil {
+			return fmt.Errorf("interrupts: invalid regexp pattern: %s", pattern)
+		}
+	}
 	return nil
 }
 
