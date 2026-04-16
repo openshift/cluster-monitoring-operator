@@ -3418,6 +3418,7 @@ func TestNodeExporterCollectorSettings(t *testing.T) {
 			argsPresent: []string{"--no-collector.cpufreq",
 				"--no-collector.tcpstat",
 				"--no-collector.ethtool",
+				"--no-collector.softirqs",
 				"--collector.netdev",
 				"--collector.netclass",
 				"--collector.netclass.netlink",
@@ -3431,6 +3432,7 @@ func TestNodeExporterCollectorSettings(t *testing.T) {
 			argsAbsent: []string{"--collector.cpufreq",
 				"--collector.tcpstat",
 				"--collector.ethtool",
+				"--collector.softirqs",
 				"--no-collector.netdev",
 				"--no-collector.netclass",
 				"--collector.buddyinfo",
@@ -3483,6 +3485,17 @@ nodeExporter:
 `,
 			argsPresent: []string{"--collector.ethtool", "--collector.ethtool.device-exclude=^(br-int|lo)$"},
 			argsAbsent:  []string{"--no-collector.ethtool"},
+		},
+		{
+			name: "enable softirqs collector",
+			config: `
+nodeExporter:
+  collectors:
+    softirqs:
+      enabled: true
+`,
+			argsPresent: []string{"--collector.softirqs"},
+			argsAbsent:  []string{"--no-collector.softirqs"},
 		},
 		{
 			name: "disable netdev collector",

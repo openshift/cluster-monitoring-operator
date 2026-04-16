@@ -38,6 +38,8 @@ Appears in: link:nodeexporterconfig.adoc[NodeExporterConfig]
 
 |systemd|link:nodeexportercollectorsystemdconfig.adoc[NodeExporterCollectorSystemdConfig]|Defines the configuration of the `systemd` collector, which collects statistics on the systemd daemon and its managed services. Disabled by default.
 
+|softirqs|link:nodeexportercollectorsoftirqsconfig.adoc[NodeExporterCollectorSoftirqsConfig]|Defines the configuration of the `softirqs` collector, which exposes detailed softirq metrics from `/proc/softirqs`. Disabled by default.
+
 |===
 
 link:../index.adoc[Back to TOC]

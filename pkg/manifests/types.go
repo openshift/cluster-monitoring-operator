@@ -412,6 +412,9 @@ type NodeExporterCollectorConfig struct {
 	// Defines the configuration of the `systemd` collector, which collects statistics on the systemd daemon and its managed services.
 	// Disabled by default.
 	Systemd NodeExporterCollectorSystemdConfig `json:"systemd,omitempty"`
+	// Defines the configuration of the `softirqs` collector, which exposes detailed softirq metrics from `/proc/softirqs`.
+	// Disabled by default.
+	Softirqs NodeExporterCollectorSoftirqsConfig `json:"softirqs,omitempty"`
 }
 
 // The `NodeExporterCollectorCpufreqConfig` resource works as an on/off switch for
@@ -575,6 +578,14 @@ type NodeExporterCollectorSystemdConfig struct {
 	// A list of regular expression (regex) patterns that match systemd units to be included by the `systemd` collector.
 	// By default, the list is empty, so the collector exposes no metrics for systemd units.
 	Units []string `json:"units,omitempty"`
+}
+
+// The `NodeExporterCollectorSoftirqsConfig` resource works as an on/off switch for
+// the `softirqs` collector of the `node-exporter` agent.
+// By default, the `softirqs` collector is disabled.
+type NodeExporterCollectorSoftirqsConfig struct {
+	// A Boolean flag that enables or disables the `softirqs` collector.
+	Enabled bool `json:"enabled,omitempty"`
 }
 
 // The `UserWorkloadConfiguration` resource defines the settings

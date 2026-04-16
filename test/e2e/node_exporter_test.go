@@ -54,6 +54,14 @@ nodeExporter:
       enabled: true`,
 		},
 		{
+			nameCollector: "softirqs",
+			config: `
+nodeExporter:
+  collectors:
+    softirqs:
+      enabled: true`,
+		},
+		{
 			nameCollector: "buddyinfo",
 			config: `
 nodeExporter:
