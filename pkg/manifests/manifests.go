@@ -965,6 +965,12 @@ func (f *Factory) updateNodeExporterArgs(args []string) ([]string, error) {
 		args = setArg(args, "--no-collector.ethtool", "")
 	}
 
+	if f.config.ClusterMonitoringConfiguration.NodeExporterConfig.Collectors.Interrupts.Enabled {
+		args = setArg(args, "--collector.interrupts", "")
+	} else {
+		args = setArg(args, "--no-collector.interrupts", "")
+	}
+
 	if f.config.ClusterMonitoringConfiguration.NodeExporterConfig.Collectors.Softirqs.Enabled {
 		args = setArg(args, "--collector.softirqs", "")
 	} else {
