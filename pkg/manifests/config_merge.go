@@ -21,88 +21,46 @@ import (
 	"k8s.io/utils/ptr"
 )
 
-// MergeClusterMonitoringCRD merges the ClusterMonitoring CR spec into the ConfigMap-derived
+// mergeClusterMonitoringCRD merges the ClusterMonitoring CR spec into the ConfigMap-derived
 // config when clusterMonitoring is non-nil. Phase 1 (pre-GA): for each top-level field, if the
 // ConfigMap did not set it, use the CR; otherwise keep the ConfigMap and ignore the CR for that field.
-//
-// The operator should always call this with nil when the feature gate is off or the CR is missing.
-// EnsureSafeDefaults runs at the end here so callers do not need to invoke it separately.
-func (c *Config) MergeClusterMonitoringCRD(clusterMonitoring *configv1alpha1.ClusterMonitoring) {
-	if clusterMonitoring != nil {
-		if c.ClusterMonitoringConfiguration == nil {
-			c.ClusterMonitoringConfiguration = &ClusterMonitoringConfiguration{}
-		}
-
-		// User workload: use the CR only if the ConfigMap did not set enableUserWorkload.
-		if c.ClusterMonitoringConfiguration.UserWorkloadEnabled == nil && clusterMonitoring.Spec.UserDefined.Mode != "" {
-			if v := applyUserDefinedMode(clusterMonitoring.Spec.UserDefined); v != nil {
-				c.ClusterMonitoringConfiguration.UserWorkloadEnabled = v
-			}
-		}
-
-		// Metrics Server (Phase 1): if the ConfigMap already has metricsServer, mergeMetricsServerConfiguration
-		// is a no-op. Spec.MetricsServerConfig is a struct value—unset in YAML is a zero struct in Go, not nil—
-		// so only merge when the CR author set at least one field (avoids allocating an empty MetricsServerConfig).
-		if clusterMonitoringMetricsServerSpecNonEmpty(clusterMonitoring.Spec.MetricsServerConfig) {
-			c.mergeMetricsServerConfiguration(clusterMonitoring.Spec.MetricsServerConfig)
-		}
-	}
-	c.EnsureSafeDefaults()
-}
-
-// EnsureSafeDefaults sets safe defaults for fields that may be nil when neither ConfigMap nor CR
-// set them. MergeClusterMonitoringCRD invokes this at the end; direct use is for tests or special cases.
-func (c *Config) EnsureSafeDefaults() {
-	if c.ClusterMonitoringConfiguration == nil {
+func (c *Config) mergeClusterMonitoringCRD(clusterMonitoring *configv1alpha1.ClusterMonitoring) {
+	if clusterMonitoring == nil {
 		return
 	}
-	if c.ClusterMonitoringConfiguration.UserWorkloadEnabled == nil {
-		c.ClusterMonitoringConfiguration.UserWorkloadEnabled = ptr.To(false)
+
+	// User workload: use the CR only if the ConfigMap did not set enableUserWorkload.
+	if c.ClusterMonitoringConfiguration.UserWorkloadEnabled == nil && clusterMonitoring.Spec.UserDefined.Mode != "" {
+		c.ClusterMonitoringConfiguration.UserWorkloadEnabled = ptr.To(clusterMonitoring.Spec.UserDefined.Mode == configv1alpha1.UserDefinedNamespaceIsolated)
 	}
-	if c.ClusterMonitoringConfiguration.MetricsServerConfig == nil {
-		c.ClusterMonitoringConfiguration.MetricsServerConfig = &MetricsServerConfig{
-			Audit: &Audit{Profile: auditv1.LevelMetadata},
-		}
-	} else if c.ClusterMonitoringConfiguration.MetricsServerConfig.Audit == nil {
-		c.ClusterMonitoringConfiguration.MetricsServerConfig.Audit = &Audit{Profile: auditv1.LevelMetadata}
-	} else if c.ClusterMonitoringConfiguration.MetricsServerConfig.Audit.Profile == "" {
-		c.ClusterMonitoringConfiguration.MetricsServerConfig.Audit.Profile = auditv1.LevelMetadata
-	}
+
+	c.mergeMetricsServerConfiguration(clusterMonitoring.Spec.MetricsServerConfig)
 }
 
-func applyUserDefinedMode(udm configv1alpha1.UserDefinedMonitoring) *bool {
-	switch udm.Mode {
-	case configv1alpha1.UserDefinedDisabled:
-		return ptr.To(false)
-	case configv1alpha1.UserDefinedNamespaceIsolated:
-		return ptr.To(true)
-	default:
-		return nil
-	}
-}
-
-// clusterMonitoringMetricsServerSpecNonEmpty reports whether the CR's metricsServer stanza contains any
-// user-set field. The API uses a value type, so omitted in the manifest is always the zero struct here.
-func clusterMonitoringMetricsServerSpecNonEmpty(msc configv1alpha1.MetricsServerConfig) bool {
+// clusterMonitoringMetricsServerSpecEmpty reports whether the CR's
+// metricsServer stanza contains no user-set field. The API uses a value type,
+// so omitted in the manifest is always the zero struct here.
+func clusterMonitoringMetricsServerSpecEmpty(msc configv1alpha1.MetricsServerConfig) bool {
 	if msc.Verbosity != "" {
-		return true
+		return false
 	}
 	if len(msc.NodeSelector) > 0 {
-		return true
+		return false
 	}
 	if len(msc.Tolerations) > 0 {
-		return true
+		return false
 	}
 	if len(msc.Resources) > 0 {
-		return true
+		return false
 	}
 	if msc.Audit.Profile != "" {
-		return true
+		return false
 	}
 	if len(msc.TopologySpreadConstraints) > 0 {
-		return true
+		return false
 	}
-	return false
+
+	return true
 }
 
 func verbosityLevelToNumeric(level configv1alpha1.VerbosityLevel) uint8 {
@@ -121,17 +79,28 @@ func verbosityLevelToNumeric(level configv1alpha1.VerbosityLevel) uint8 {
 }
 
 func (c *Config) mergeMetricsServerConfiguration(msc configv1alpha1.MetricsServerConfig) {
+	// Metrics Server (Phase 1): if the ConfigMap already has metricsServer, mergeMetricsServerConfiguration
+	// is a no-op.
 	if c.ClusterMonitoringConfiguration.MetricsServerConfig != nil {
 		return
 	}
-	c.ClusterMonitoringConfiguration.MetricsServerConfig = &MetricsServerConfig{}
-	cfg := c.ClusterMonitoringConfiguration.MetricsServerConfig
+
+	// Spec.MetricsServerConfig is a struct value—unset in YAML is a zero
+	// struct in Go, not nil— so only merge when the CR author defined at least
+	// one field.
+	if clusterMonitoringMetricsServerSpecEmpty(msc) {
+		return
+	}
+
+	cfg := &MetricsServerConfig{}
 
 	if msc.Verbosity != "" {
 		cfg.Verbosity = verbosityLevelToNumeric(msc.Verbosity)
 	}
+
 	cfg.NodeSelector = msc.NodeSelector
 	cfg.Tolerations = msc.Tolerations
+
 	if len(msc.Resources) > 0 {
 		resources := &v1.ResourceRequirements{
 			Requests: v1.ResourceList{},
@@ -147,11 +116,14 @@ func (c *Config) mergeMetricsServerConfiguration(msc configv1alpha1.MetricsServe
 		}
 		cfg.Resources = resources
 	}
+
 	if msc.Audit.Profile != "" {
-		if cfg.Audit == nil {
-			cfg.Audit = &Audit{}
+		cfg.Audit = &Audit{
+			Profile: auditv1.Level(string(msc.Audit.Profile)),
 		}
-		cfg.Audit.Profile = auditv1.Level(string(msc.Audit.Profile))
 	}
+
 	cfg.TopologySpreadConstraints = msc.TopologySpreadConstraints
+
+	c.ClusterMonitoringConfiguration.MetricsServerConfig = cfg
 }

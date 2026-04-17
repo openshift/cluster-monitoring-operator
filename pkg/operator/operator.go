@@ -171,13 +171,13 @@ const (
 type Operator struct {
 	namespace, namespaceUserWorkload string
 
-	configMapName                  string
-	userWorkloadConfigMapName      string
-	images                         map[string]string
-	telemetryMatches               []string
-	remoteWrite                    bool
-	ClusterMonitoringConfigEnabled bool
-	pkiProfileProvider             pki.PKIProfileProvider
+	configMapName             string
+	userWorkloadConfigMapName string
+	images                    map[string]string
+	telemetryMatches          []string
+	remoteWrite               bool
+	clusterMonitoringConfig   bool
+	pkiProfileProvider        pki.PKIProfileProvider
 
 	apiServerConfig *manifests.APIServerConfig
 
@@ -437,7 +437,7 @@ func New(
 		if err != nil {
 			return nil, err
 		}
-		o.ClusterMonitoringConfigEnabled = featureGates.Enabled(features.FeatureGateClusterMonitoringConfig)
+		o.clusterMonitoringConfig = featureGates.Enabled(features.FeatureGateClusterMonitoringConfig)
 		if featureGates.Enabled(features.FeatureGateConfigurablePKI) {
 			// Only register the PKI informer when the feature gate is enabled, since the PKI
 			// CRD only exists when the feature gate is active.
@@ -454,8 +454,8 @@ func New(
 		return nil, fmt.Errorf("timed out waiting for FeatureGate detection")
 	}
 
-	// Watch the ClusterMonitoring config resource if the feature gate is enabled
-	if o.ClusterMonitoringConfigEnabled {
+	// Watch the ClusterMonitoring config resource if the feature gate is enabled.
+	if o.clusterMonitoringConfig {
 		informer = cache.NewSharedIndexInformer(
 			o.client.ClusterMonitoringListWatch(),
 			&configv1alpha1.ClusterMonitoring{},
@@ -975,7 +975,7 @@ func (o *Operator) loadUserWorkloadConfig(ctx context.Context) (*manifests.UserW
 	return manifests.NewUserWorkloadConfigFromConfigMap(userCM)
 }
 
-func (o *Operator) loadConfig() (*manifests.Config, error) {
+func (o *Operator) loadConfig(cm *configv1alpha1.ClusterMonitoring) (*manifests.Config, error) {
 	obj, found, err := o.cmapInf.GetStore().GetByKey(o.cmoConfigMap())
 	if err != nil {
 		return nil, fmt.Errorf("an error occurred when retrieving the Cluster Monitoring ConfigMap: %w", err)
@@ -983,17 +983,31 @@ func (o *Operator) loadConfig() (*manifests.Config, error) {
 
 	if !found {
 		klog.Warning("No Cluster Monitoring ConfigMap was found. Using defaults.")
-		return manifests.NewConfigFromString("{}")
+		return manifests.NewConfigFromStringAndClusterMonitoringResource("{}", cm)
 	}
 
 	cmap := obj.(*v1.ConfigMap)
-	return manifests.NewConfigFromConfigMap(cmap)
+	return manifests.NewConfigFromConfigMapAndClusterMonitoringResource(cmap, cm)
 }
 
+// Config returns the final configuration which is aggregated from
+// - the openshift-monitoring/cluster-monitoring-config configmap.
+// - the openshift-user-workload-monitoring/user-workload-monitoring-config configmap.
+// - the ClusterMonitoring custom resource (when the ClusterMonitoringConfig feature gate is enabled).
 func (o *Operator) Config(ctx context.Context) (*manifests.Config, []string, error) {
 	var warnings []string
 
-	c, err := o.loadConfig()
+	// Always merge ClusterMonitoring CR (nil when FG is off or CR is missing).
+	var cm *configv1alpha1.ClusterMonitoring
+	if o.clusterMonitoringConfig {
+		var getErr error
+		cm, getErr = o.client.GetClusterMonitoring(ctx, "cluster")
+		if getErr != nil && !apierrors.IsNotFound(getErr) {
+			return nil, warnings, fmt.Errorf("failed to get ClusterMonitoring CRD: %w", getErr)
+		}
+	}
+
+	c, err := o.loadConfig(cm)
 	if err != nil {
 		return nil, warnings, err
 	}
@@ -1006,18 +1020,6 @@ func (o *Operator) Config(ctx context.Context) (*manifests.Config, []string, err
 		string(c.ClusterMonitoringConfiguration.PrometheusK8sConfig.CollectionProfile),
 		manifests.SupportedCollectionProfiles.StringSlice(),
 	)
-
-	// Always merge ClusterMonitoring CR (nil when FG is off or CR is missing).
-	// manifests.Config applies safe defaults inside MergeClusterMonitoringCRD.
-	var cm *configv1alpha1.ClusterMonitoring
-	if o.ClusterMonitoringConfigEnabled {
-		var getErr error
-		cm, getErr = o.client.GetClusterMonitoring(ctx, "cluster")
-		if getErr != nil && !apierrors.IsNotFound(getErr) {
-			return nil, warnings, fmt.Errorf("failed to get ClusterMonitoring CRD: %w", getErr)
-		}
-	}
-	c.MergeClusterMonitoringCRD(cm)
 
 	// Only use User Workload Monitoring ConfigMap from user ns and populate if
 	// it's enabled by admin via Cluster Monitoring ConfigMap.  The above
