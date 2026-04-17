@@ -7,3 +7,74 @@ reviews:
   sequence_diagrams: false
   changed_files_summary: false
   enable_prompt_for_ai_agents: false
+  pre_merge_checks:
+    custom_checks:
+      - name: "Telemetry checks"
+        mode: error
+        instructions: |
+          When reviewing PRs that add or modify telemetry/telemeter selectors in
+          manifests/0000_50_cluster-monitoring-operator_04-config.yaml, enforce the following checks.
+
+          A selector is **modified** if any of its matchers change (e.g. `{__name__="foo"}` becoming
+          `{__name__="foo", bar="baz"}`).
+
+          While reviewing such PRs, DO NOT execute any shell commands and DO NOT perform any
+          checks beyond the ones listed below.
+
+          **1. No regex `__name__` matchers in new selectors:**
+          New selectors MUST use exact match (`__name__="..."`), not regex (`__name__=~"..."`).
+          **Fail** if a newly added selector uses `__name__=~`.
+
+          **2. No selector removals:**
+          If the PR removes a selector from the allow-list, **fail**. Explain that this
+          configuration is shared with the Telemeter server and removal must be coordinated
+          with the monitoring team.
+
+          **3. Owner and description:**
+          For each new or changed selector, structured comments MUST appear immediately above it,
+          matching this repository's convention (compare with existing entries). Expected shape:
+            ```
+            #
+            # owners: (owners)
+            #
+            # <name> <what it measures and why it belongs in telemetry>.
+            - '{__name__="metric", <label>=<value>}'
+            ```
+          Descriptions may span multiple `#` lines. **Fail** if owners or description are absent,
+          incomplete, or clearly inconsistent with nearby examples.
+
+          **4. hack/telemetry_report.sh output:**
+          The PR description MUST contain the full stdout of `hack/telemetry_report.sh` for every
+          affected selector. Expected shape:
+            ```
+            Telemetry selectors report
+            time window: <start> to <end> (24h)
+
+            selector: {__name__="<name>", <label>=<value>}
+            metric is from a recording rule: yes
+            file: <path>
+            metric rule expression:
+              <expression>
+            timeseries count: <n>
+            labels count:
+              <label>: <n>
+              ...
+
+            selector: {__name__="<other-name>", <label>=<value>}
+            metric is not from a recording rule: no
+            timeseries count: <n>
+            labels: (none)
+            ...
+            ```
+          If the PR description text does not contain this data for one or more affected
+          selectors, **fail**. Ask the author to run
+          `hack/telemetry_report.sh <PROM_URL> <selector1> <selector2> ...` and include the above data points
+          in the PR description. Do NOT assess **5** until **4** is satisfied.
+
+          **5. Cardinality and privacy (read from the PR description data in 4):**
+          Recommended limits: at most 1-3 new selectors per PR; at most 1-10 timeseries per
+          selector; at most 10 timeseries total. If these limits are exceeded, **do not fail
+          automatically** — instead flag it and ask the author for justification (e.g. why the
+          higher cardinality is acceptable). Selectors MUST NOT match personally identifiable
+          information: no names, email addresses, or data about specific user workloads.
+          **Fail** only if PII is present.
