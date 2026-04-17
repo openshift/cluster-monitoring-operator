@@ -3330,6 +3330,13 @@ func (f *Factory) ThanosRulerCustomResource(
 		}
 	}
 
+	// Configure the TLS settings for the Thanos gRPC server.
+	grpcTLSVersion, err := convertTLSVersionToMonitoringV1(f.APIServerConfig.MinTLSVersion())
+	if err != nil {
+		return nil, err
+	}
+	t.Spec.GRPCServerTLSConfig.SafeTLSConfig.MinVersion = grpcTLSVersion
+
 	// Mounting TLS secret to thanos-ruler
 	if grpcTLS == nil {
 		return nil, errors.New("could not generate thanos ruler CRD: GRPC TLS secret was not found")
