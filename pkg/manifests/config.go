@@ -363,7 +363,48 @@ func NewConfigFromString(content string) (*Config, error) {
 		)
 	}
 
+	// Validate additional resource labels for KSM.
+	if err := validateAdditionalResourceLabels(c.ClusterMonitoringConfiguration.KubeStateMetricsConfig); err != nil {
+		return nil, err
+	}
+
 	return &c, nil
+}
+
+var supportedResourceLabelsResources = []string{"jobs", "cronjobs"}
+
+func validateAdditionalResourceLabels(ksm *KubeStateMetricsConfig) error {
+	if ksm == nil {
+		return nil
+	}
+
+	seenResources := map[string]bool{}
+	for _, rl := range ksm.AdditionalResourceLabels {
+		if rl.Resource == "" {
+			return fmt.Errorf("%w: additionalResourceLabels: resource name must not be empty", ErrConfigValidation)
+		}
+		if !slices.Contains(supportedResourceLabelsResources, rl.Resource) {
+			return fmt.Errorf("%w: additionalResourceLabels: unsupported resource %q, supported resources are: %v", ErrConfigValidation, rl.Resource, supportedResourceLabelsResources)
+		}
+		if seenResources[rl.Resource] {
+			return fmt.Errorf("%w: additionalResourceLabels: duplicate resource %q", ErrConfigValidation, rl.Resource)
+		}
+		seenResources[rl.Resource] = true
+		if len(rl.Labels) == 0 {
+			return fmt.Errorf("%w: additionalResourceLabels: resource %q must have at least one label", ErrConfigValidation, rl.Resource)
+		}
+		if slices.Contains(rl.Labels, "") {
+			return fmt.Errorf("%w: additionalResourceLabels: resource %q has an empty label value", ErrConfigValidation, rl.Resource)
+		}
+		seenLabels := map[string]bool{}
+		for _, l := range rl.Labels {
+			if seenLabels[l] {
+				return fmt.Errorf("%w: additionalResourceLabels: resource %q has duplicate label %q", ErrConfigValidation, rl.Resource, l)
+			}
+			seenLabels[l] = true
+		}
+	}
+	return nil
 }
 
 func (c *Config) applyDefaults() {

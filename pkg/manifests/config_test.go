@@ -753,6 +753,119 @@ func TestCollectionProfileValues(t *testing.T) {
 	}
 }
 
+func TestAdditionalResourceLabelsValidation(t *testing.T) {
+	for _, tc := range []struct {
+		name        string
+		config      string
+		expectError bool
+	}{
+		{
+			name:        "no additional resource labels",
+			config:      "",
+			expectError: false,
+		},
+		{
+			name: "valid jobs resource",
+			config: `kubeStateMetrics:
+  additionalResourceLabels:
+  - resource: jobs
+    labels:
+    - foo`,
+			expectError: false,
+		},
+		{
+			name: "valid cronjobs resource",
+			config: `kubeStateMetrics:
+  additionalResourceLabels:
+  - resource: cronjobs
+    labels:
+    - bar`,
+			expectError: false,
+		},
+		{
+			name: "valid multiple resources",
+			config: `kubeStateMetrics:
+  additionalResourceLabels:
+  - resource: jobs
+    labels:
+    - foo
+  - resource: cronjobs
+    labels:
+    - bar`,
+			expectError: false,
+		},
+		{
+			name: "unsupported resource",
+			config: `kubeStateMetrics:
+  additionalResourceLabels:
+  - resource: pods
+    labels:
+    - foo`,
+			expectError: true,
+		},
+		{
+			name: "empty resource name",
+			config: `kubeStateMetrics:
+  additionalResourceLabels:
+  - resource: ""
+    labels:
+    - foo`,
+			expectError: true,
+		},
+		{
+			name: "duplicate resource",
+			config: `kubeStateMetrics:
+  additionalResourceLabels:
+  - resource: jobs
+    labels:
+    - foo
+  - resource: jobs
+    labels:
+    - bar`,
+			expectError: true,
+		},
+		{
+			name: "no labels",
+			config: `kubeStateMetrics:
+  additionalResourceLabels:
+  - resource: jobs
+    labels: []`,
+			expectError: true,
+		},
+		{
+			name: "empty label value",
+			config: `kubeStateMetrics:
+  additionalResourceLabels:
+  - resource: jobs
+    labels:
+    - foo
+    - ""`,
+			expectError: true,
+		},
+		{
+			name: "duplicate label",
+			config: `kubeStateMetrics:
+  additionalResourceLabels:
+  - resource: jobs
+    labels:
+    - foo
+    - bar
+    - foo`,
+			expectError: true,
+		},
+	} {
+		t.Run(tc.name, func(t *testing.T) {
+			_, err := NewConfigFromString(tc.config)
+			if tc.expectError {
+				require.Error(t, err)
+				require.ErrorIs(t, err, ErrConfigValidation)
+			} else {
+				require.NoError(t, err)
+			}
+		})
+	}
+}
+
 func TestDeprecatedConfig(t *testing.T) {
 	for _, tc := range []struct {
 		name                string

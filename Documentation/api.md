@@ -44,6 +44,7 @@ Configuring Cluster Monitoring is optional. If the config does not exist or is e
 * [PrometheusOperatorConfig](#prometheusoperatorconfig)
 * [PrometheusRestrictedConfig](#prometheusrestrictedconfig)
 * [RemoteWriteSpec](#remotewritespec)
+* [ResourceLabels](#resourcelabels)
 * [TLSConfig](#tlsconfig)
 * [TelemeterClientConfig](#telemeterclientconfig)
 * [ThanosQuerierConfig](#thanosquerierconfig)
@@ -175,6 +176,7 @@ The `KubeStateMetricsConfig` resource defines settings for the `kube-state-metri
 | resources | *[v1.ResourceRequirements](https://kubernetes.io/docs/reference/generated/kubernetes-api/v1.35/#resourcerequirements-v1-core) | Defines resource requests and limits for the KubeStateMetrics container. |
 | tolerations | [][v1.Toleration](https://kubernetes.io/docs/reference/generated/kubernetes-api/v1.35/#toleration-v1-core) | Defines tolerations for the pods. |
 | topologySpreadConstraints | []v1.TopologySpreadConstraint | Defines a pod's topology spread constraints. |
+| additionalResourceLabels | [][ResourceLabels](#resourcelabels) | Defines additional resource labels to expose as metrics in addition to the default labels. Currently, only `jobs` and `cronjobs` resources are supported due to cardinality concerns. Each entry specifies a resource name and a list of label names (use `*` to expose all labels). |
 
 [Back to TOC](#table-of-contents)
 
@@ -552,6 +554,25 @@ The `RemoteWriteSpec` resource defines the settings for remote write storage.
 | tlsConfig | *[monv1.SafeTLSConfig](https://github.com/prometheus-operator/prometheus-operator/blob/v0.87.0/Documentation/api.md#safetlsconfig) | Defines TLS authentication settings for the remote write endpoint. |
 | url | string | Defines the URL of the remote write endpoint to which samples will be sent. |
 | writeRelabelConfigs | [][monv1.RelabelConfig](https://github.com/prometheus-operator/prometheus-operator/blob/v0.87.0/Documentation/api.md#relabelconfig) | Defines the list of remote write relabel configurations. |
+
+[Back to TOC](#table-of-contents)
+
+## ResourceLabels
+
+#### Description
+
+The `ResourceLabels` resource defines which Kubernetes labels to expose as metrics for a given resource type.
+
+#### Required
+   - ` resource `
+   - ` labels `
+
+<em>appears in: [KubeStateMetricsConfig](#kubestatemetricsconfig)</em>
+
+| Property | Type | Description |
+| -------- | ---- | ----------- |
+| resource | string | Defines the Kubernetes resource name (for example, `jobs` or `cronjobs`). |
+| labels | []string | Defines the list of Kubernetes labels to expose as metrics for this resource. Use `*` to expose all labels. |
 
 [Back to TOC](#table-of-contents)
 

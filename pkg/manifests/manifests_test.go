@@ -3842,6 +3842,83 @@ func TestKubeStateMetrics(t *testing.T) {
 	}
 }
 
+func TestKubeStateMetricsAdditionalResourceLabels(t *testing.T) {
+	defaultAllowList := "--metric-labels-allowlist=pods=[*],nodes=[*],namespaces=[*],persistentvolumes=[*],persistentvolumeclaims=[*],poddisruptionbudgets=[*]"
+
+	tests := []struct {
+		name        string
+		config      string
+		expectedArg string
+	}{
+		{
+			name:        "no additional resource labels",
+			config:      "",
+			expectedArg: defaultAllowList,
+		},
+		{
+			name: "single resource with specific labels",
+			config: `kubeStateMetrics:
+  additionalResourceLabels:
+  - resource: jobs
+    labels:
+    - foo
+    - bar`,
+			expectedArg: defaultAllowList + ",jobs=[foo,bar]",
+		},
+		{
+			name: "multiple resources",
+			config: `kubeStateMetrics:
+  additionalResourceLabels:
+  - resource: jobs
+    labels:
+    - foo
+  - resource: cronjobs
+    labels:
+    - bar
+    - baz`,
+			expectedArg: defaultAllowList + ",jobs=[foo],cronjobs=[bar,baz]",
+		},
+		{
+			name: "wildcard labels",
+			config: `kubeStateMetrics:
+  additionalResourceLabels:
+  - resource: cronjobs
+    labels:
+    - "*"`,
+			expectedArg: defaultAllowList + ",cronjobs=[*]",
+		},
+	}
+
+	for _, tc := range tests {
+		t.Run(tc.name, func(t *testing.T) {
+			c, err := NewConfigFromString(tc.config)
+			require.NoError(t, err)
+			c.SetImages(map[string]string{
+				"kube-state-metrics": "docker.io/openshift/origin-kube-state-metrics:latest",
+				"kube-rbac-proxy":    "docker.io/openshift/origin-kube-rbac-proxy:latest",
+			})
+
+			f := NewFactory("openshift-monitoring", "openshift-user-workload-monitoring", c, defaultInfrastructureReader(), &fakeProxyReader{}, NewAssets(assetsPath), &APIServerConfig{}, &configv1.Console{})
+
+			d, err := f.KubeStateMetricsDeployment()
+			require.NoError(t, err)
+
+			found := false
+			for _, container := range d.Spec.Template.Spec.Containers {
+				if container.Name == "kube-state-metrics" {
+					for _, arg := range container.Args {
+						if strings.HasPrefix(arg, "--metric-labels-allowlist=") {
+							found = true
+							require.Equal(t, tc.expectedArg, arg)
+						}
+					}
+				}
+			}
+			require.True(t, found, "--metric-labels-allowlist arg not found in kube-state-metrics container")
+		})
+	}
+}
+
 func TestOpenShiftStateMetrics(t *testing.T) {
 	config := `openshiftStateMetrics:
   resources:
