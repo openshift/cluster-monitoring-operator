@@ -176,7 +176,7 @@ function(params)
 
     minimalServiceMonitor: generateServiceMonitor.serviceMonitorForMinimalProfile(
       generateServiceMonitor.keepOnlyMetrics(
-        super.serviceMonitor,
+        self.serviceMonitor,
         [
           'node_cpu_info',
           'node_cpu_seconds_total',
@@ -228,7 +228,7 @@ function(params)
 
     telemetryServiceMonitor: generateServiceMonitor.serviceMonitorForTelemetryProfile(
       generateServiceMonitor.keepOnlyMetrics(
-        super.serviceMonitor,
+        self.serviceMonitor,
         [
           'node_accelerator_card_info',
           'node_cpu_info',
