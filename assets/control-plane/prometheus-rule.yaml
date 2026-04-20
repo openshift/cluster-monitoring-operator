@@ -513,6 +513,15 @@ spec:
       for: 15m
       labels:
         severity: warning
+    - alert: KubeletInstanceUnreachable
+      annotations:
+        description: A Kubelet instance has been unreachable for more than 15 minutes.
+        summary: Kubelet instance is unreachable.
+      expr: |
+        up{job="kubelet", metrics_path="/metrics"} == 0
+      for: 15m
+      labels:
+        severity: warning
     - alert: KubeletDown
       annotations:
         description: Kubelet has disappeared from Prometheus target discovery.
