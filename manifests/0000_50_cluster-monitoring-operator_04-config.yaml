@@ -546,6 +546,20 @@ data:
     # route type (static/dynamic).
     - '{__name__="cluster:kubernetes_nmstate_routes:sum"}'
     #
+    # owners: (@openshift/networking)
+    #
+    # cluster:ovnkube_clustermanager_user_defined_networks:max gives the count of
+    # UserDefinedNetworks objects in the cluster, broken down by role and
+    # topology.
+    - '{__name__="cluster:ovnkube_clustermanager_user_defined_networks:max",role=~"Primary|Secondary",topology=~"Layer2|Layer3"}'
+    #
+    # owners: (@openshift/networking)
+    #
+    # cluster:ovnkube_clustermanager_cluster_user_defined_networks:max gives the count of
+    # ClusterUserDefinedNetworks objects in the cluster, broken down by role and
+    # topology.
+    - '{__name__="cluster:ovnkube_clustermanager_cluster_user_defined_networks:max",role=~"Primary|Secondary",topology=~"Layer2|Layer3"}'
+    #
     # owners: (@openshift/network-edge)
     #
     # cluster:ingress_controller_aws_nlb_active:sum informs how many NLBs are active in AWS.
