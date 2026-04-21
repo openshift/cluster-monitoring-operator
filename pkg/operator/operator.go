@@ -30,6 +30,7 @@ import (
 	"github.com/openshift/library-go/pkg/operator/certrotation"
 	"github.com/openshift/library-go/pkg/operator/configobserver/featuregates"
 	"github.com/openshift/library-go/pkg/operator/csr"
+	"github.com/openshift/library-go/pkg/pki"
 	certapiv1 "k8s.io/api/certificates/v1"
 	v1 "k8s.io/api/core/v1"
 	apierrors "k8s.io/apimachinery/pkg/api/errors"
@@ -176,6 +177,7 @@ type Operator struct {
 	telemetryMatches               []string
 	remoteWrite                    bool
 	ClusterMonitoringConfigEnabled bool
+	pkiProfileProvider             pki.PKIProfileProvider
 
 	apiServerConfig *manifests.APIServerConfig
 
@@ -436,6 +438,18 @@ func New(
 			return nil, err
 		}
 		o.ClusterMonitoringConfigEnabled = featureGates.Enabled(features.FeatureGateClusterMonitoringConfig)
+		if featureGates.Enabled(features.FeatureGateConfigurablePKI) {
+			// Only register the PKI informer when the feature gate is enabled, since the PKI
+			// CRD only exists when the feature gate is active.
+			//
+			// The informer's lister provides cached reads for the PKI profile provider. No
+			// event handler is registered because PKI profile changes don't require
+			// immediate reconciliation, instead they are picked up at the next certificate
+			// rotation cycle.
+			pkiInformer := configInformers.Config().V1alpha1().PKIs()
+			o.informers = append(o.informers, pkiInformer.Informer())
+			o.pkiProfileProvider = pki.NewClusterPKIProfileProvider(pkiInformer.Lister())
+		}
 	case <-time.After(1 * time.Minute):
 		return nil, fmt.Errorf("timed out waiting for FeatureGate detection")
 	}
@@ -818,7 +832,7 @@ func (o *Operator) sync(ctx context.Context) error {
 			}),
 		tasks.NewTaskGroup(
 			[]*tasks.TaskSpec{
-				newTaskSpec("ClusterMonitoringOperatorDeps", tasks.NewClusterMonitoringOperatorTask(o.client, factory, config)),
+				newTaskSpec("ClusterMonitoringOperatorDeps", tasks.NewClusterMonitoringOperatorTask(o.client, factory, config, o.pkiProfileProvider)),
 				newTaskSpec("Prometheus", tasks.NewPrometheusTask(o.client, factory, config)),
 				newTaskSpec("Alertmanager", tasks.NewAlertmanagerTask(o.client, factory, config)),
 				newTaskSpec("NodeExporter", tasks.NewNodeExporterTask(o.client, factory)),

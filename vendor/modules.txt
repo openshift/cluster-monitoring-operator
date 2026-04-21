@@ -506,7 +506,7 @@ github.com/openshift-eng/openshift-tests-extension/pkg/flags
 github.com/openshift-eng/openshift-tests-extension/pkg/ginkgo
 github.com/openshift-eng/openshift-tests-extension/pkg/util/sets
 github.com/openshift-eng/openshift-tests-extension/pkg/version
-# github.com/openshift/api v0.0.0-20260302174620-dcac36b908db
+# github.com/openshift/api v0.0.0-20260408160412-464776f95207
 ## explicit; go 1.25.0
 github.com/openshift/api
 github.com/openshift/api/annotations
@@ -529,6 +529,7 @@ github.com/openshift/api/config/v1alpha2
 github.com/openshift/api/console
 github.com/openshift/api/console/v1
 github.com/openshift/api/etcd
+github.com/openshift/api/etcd/v1
 github.com/openshift/api/etcd/v1alpha1
 github.com/openshift/api/features
 github.com/openshift/api/helm
@@ -584,7 +585,7 @@ github.com/openshift/api/template
 github.com/openshift/api/template/v1
 github.com/openshift/api/user
 github.com/openshift/api/user/v1
-# github.com/openshift/client-go v0.0.0-20260302182750-20813ce71ca6
+# github.com/openshift/client-go v0.0.0-20260330134249-7e1499aaacd7
 ## explicit; go 1.25.0
 github.com/openshift/client-go/config/applyconfigurations/config/v1
 github.com/openshift/client-go/config/applyconfigurations/config/v1alpha1
@@ -637,7 +638,7 @@ github.com/openshift/client-go/security/clientset/versioned/fake
 github.com/openshift/client-go/security/clientset/versioned/scheme
 github.com/openshift/client-go/security/clientset/versioned/typed/security/v1
 github.com/openshift/client-go/security/clientset/versioned/typed/security/v1/fake
-# github.com/openshift/library-go v0.0.0-20260311094140-ac826d10cb40
+# github.com/openshift/library-go v0.0.0-20260409165127-c57da2bf5720
 ## explicit; go 1.25.0
 github.com/openshift/library-go/pkg/apiserver/jsonpatch
 github.com/openshift/library-go/pkg/authorization/hardcodedauthorizer
@@ -659,6 +660,7 @@ github.com/openshift/library-go/pkg/operator/resource/resourcemerge
 github.com/openshift/library-go/pkg/operator/resource/resourceread
 github.com/openshift/library-go/pkg/operator/resourcesynccontroller
 github.com/openshift/library-go/pkg/operator/v1helpers
+github.com/openshift/library-go/pkg/pki
 # github.com/pkg/browser v0.0.0-20240102092130-5ac0b6a4141c
 ## explicit; go 1.14
 github.com/pkg/browser
