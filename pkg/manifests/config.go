@@ -25,6 +25,7 @@ import (
 
 	"github.com/alecthomas/units"
 	configv1 "github.com/openshift/api/config/v1"
+	configv1alpha1 "github.com/openshift/api/config/v1alpha1"
 	"github.com/prometheus/common/model"
 	v1 "k8s.io/api/core/v1"
 	jsonutil "k8s.io/apimachinery/pkg/util/json"
@@ -326,7 +327,15 @@ func UnmarshalStrict(data []byte, v interface{}) error {
 	}
 }
 
+// NewConfigFromString returns the Config initialized from the provided string.
 func NewConfigFromString(content string) (*Config, error) {
+	return NewConfigFromStringAndClusterMonitoringResource(content, nil)
+}
+
+// NewConfigFromStringAndClusterMonitoringResource returns the Config
+// initialized from the provided string and merged with the ClusterMonitoring
+// resource.
+func NewConfigFromStringAndClusterMonitoringResource(content string, cmr *configv1alpha1.ClusterMonitoring) (*Config, error) {
 	cmc := ClusterMonitoringConfiguration{
 		NodeExporterConfig: NodeExporterConfig{
 			Collectors: NodeExporterCollectorConfig{
@@ -352,6 +361,8 @@ func NewConfigFromString(content string) (*Config, error) {
 		ClusterMonitoringConfiguration: &cmc,
 		UserWorkloadConfiguration:      NewDefaultUserWorkloadMonitoringConfig(),
 	}
+	c.mergeClusterMonitoringCRD(cmr)
+
 	c.applyDefaults()
 
 	// Validate the configured collection profile.
@@ -411,28 +422,38 @@ func (c *Config) applyDefaults() {
 	if c.Images == nil {
 		c.Images = &Images{}
 	}
+
 	if c.ClusterMonitoringConfiguration == nil {
 		c.ClusterMonitoringConfiguration = &ClusterMonitoringConfiguration{}
 	}
+
+	if c.ClusterMonitoringConfiguration.UserWorkloadEnabled == nil {
+		c.ClusterMonitoringConfiguration.UserWorkloadEnabled = ptr.To(false)
+	}
+
 	if c.ClusterMonitoringConfiguration.PrometheusOperatorConfig == nil {
 		c.ClusterMonitoringConfiguration.PrometheusOperatorConfig = &PrometheusOperatorConfig{}
 	}
+
 	if c.ClusterMonitoringConfiguration.PrometheusOperatorAdmissionWebhookConfig == nil {
 		c.ClusterMonitoringConfiguration.PrometheusOperatorAdmissionWebhookConfig = &PrometheusOperatorAdmissionWebhookConfig{}
 	}
+
 	if c.ClusterMonitoringConfiguration.PrometheusK8sConfig == nil {
 		c.ClusterMonitoringConfiguration.PrometheusK8sConfig = &PrometheusK8sConfig{}
 	}
+
 	if c.ClusterMonitoringConfiguration.PrometheusK8sConfig.Retention == "" && c.ClusterMonitoringConfiguration.PrometheusK8sConfig.RetentionSize == "" {
 		c.ClusterMonitoringConfiguration.PrometheusK8sConfig.Retention = DefaultRetentionValue
 	}
+
+	if c.ClusterMonitoringConfiguration.PrometheusK8sConfig.CollectionProfile == "" {
+		c.ClusterMonitoringConfiguration.PrometheusK8sConfig.CollectionProfile = FullCollectionProfile
+	}
+
 	if c.ClusterMonitoringConfiguration.AlertmanagerMainConfig == nil {
 		c.ClusterMonitoringConfiguration.AlertmanagerMainConfig = &AlertmanagerMainConfig{}
 	}
-
-	// UserWorkloadEnabled is left nil when not set by ConfigMap so the operator can
-	// apply ClusterMonitoring CRD merge (UserDefined mode) when the feature gate is on.
-	// The operator defaults it to false after merge when still nil.
 
 	if c.ClusterMonitoringConfiguration.UserWorkload == nil {
 		c.ClusterMonitoringConfiguration.UserWorkload = &UserWorkloadConfig{}
@@ -445,34 +466,33 @@ func (c *Config) applyDefaults() {
 	if c.ClusterMonitoringConfiguration.ThanosQuerierConfig == nil {
 		c.ClusterMonitoringConfiguration.ThanosQuerierConfig = &ThanosQuerierConfig{}
 	}
+
 	if c.ClusterMonitoringConfiguration.KubeStateMetricsConfig == nil {
 		c.ClusterMonitoringConfiguration.KubeStateMetricsConfig = &KubeStateMetricsConfig{}
 	}
+
 	if c.ClusterMonitoringConfiguration.OpenShiftMetricsConfig == nil {
 		c.ClusterMonitoringConfiguration.OpenShiftMetricsConfig = &OpenShiftStateMetricsConfig{}
 	}
+
 	if c.ClusterMonitoringConfiguration.HTTPConfig == nil {
 		c.ClusterMonitoringConfiguration.HTTPConfig = &HTTPConfig{}
 	}
+
 	if c.ClusterMonitoringConfiguration.TelemeterClientConfig == nil {
 		c.ClusterMonitoringConfiguration.TelemeterClientConfig = &TelemeterClientConfig{
 			TelemeterServerURL: "https://infogw.api.openshift.com/",
 		}
 	}
 
-	// MetricsServerConfig is left nil when not set by ConfigMap so the operator can
-	// apply ClusterMonitoring CRD merge (MetricsServerConfig from CR) when the feature gate is on.
-
-	if c.ClusterMonitoringConfiguration.MetricsServerConfig != nil {
-		if c.ClusterMonitoringConfiguration.MetricsServerConfig.Audit == nil {
-			c.ClusterMonitoringConfiguration.MetricsServerConfig.Audit = &Audit{}
-		}
-		if c.ClusterMonitoringConfiguration.MetricsServerConfig.Audit.Profile == "" {
-			c.ClusterMonitoringConfiguration.MetricsServerConfig.Audit.Profile = auditv1.LevelMetadata
-		}
+	if c.ClusterMonitoringConfiguration.MetricsServerConfig == nil {
+		c.ClusterMonitoringConfiguration.MetricsServerConfig = &MetricsServerConfig{}
 	}
-	if c.ClusterMonitoringConfiguration.PrometheusK8sConfig.CollectionProfile == "" {
-		c.ClusterMonitoringConfiguration.PrometheusK8sConfig.CollectionProfile = FullCollectionProfile
+	if c.ClusterMonitoringConfiguration.MetricsServerConfig.Audit == nil {
+		c.ClusterMonitoringConfiguration.MetricsServerConfig.Audit = &Audit{}
+	}
+	if c.ClusterMonitoringConfiguration.MetricsServerConfig.Audit.Profile == "" {
+		c.ClusterMonitoringConfiguration.MetricsServerConfig.Audit.Profile = auditv1.LevelMetadata
 	}
 
 	if c.ClusterMonitoringConfiguration.NodeExporterConfig.IgnoredNetworkDevices == nil {
@@ -653,7 +673,15 @@ func calculateBodySizeLimit(podCapacity int) string {
 	return fmt.Sprintf("%dMB", int(math.Ceil(float64(bodySize)/(1024*1024))))
 }
 
+// NewConfigFromConfigMap returns the Config initialized from the provided ConfigMap.
 func NewConfigFromConfigMap(c *v1.ConfigMap) (*Config, error) {
+	return NewConfigFromConfigMapAndClusterMonitoringResource(c, nil)
+}
+
+// NewConfigFromConfigMapAndClusterMonitoringResource returns the Config
+// initialized from the provided ConfigMap and merged with the
+// ClusterMonitoring resource.
+func NewConfigFromConfigMapAndClusterMonitoringResource(c *v1.ConfigMap, cmr *configv1alpha1.ClusterMonitoring) (*Config, error) {
 	configContent, found := c.Data[configKey]
 	if !found {
 		return nil, fmt.Errorf("%q key not found in the configmap", configKey)
@@ -664,7 +692,7 @@ func NewConfigFromConfigMap(c *v1.ConfigMap) (*Config, error) {
 		configContent = "{}"
 	}
 
-	cParsed, err := NewConfigFromString(configContent)
+	cParsed, err := NewConfigFromStringAndClusterMonitoringResource(configContent, cmr)
 	if err != nil {
 		return nil, fmt.Errorf("failed to parse data at key %q: %w", configKey, err)
 	}

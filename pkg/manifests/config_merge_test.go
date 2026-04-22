@@ -19,138 +19,78 @@ import (
 
 	configv1alpha1 "github.com/openshift/api/config/v1alpha1"
 	"github.com/stretchr/testify/require"
-	"k8s.io/utils/ptr"
 )
 
-func TestApplyUserDefinedMode(t *testing.T) {
+func TestConfig_MergeClusterMonitoringCRD(t *testing.T) {
 	for _, tc := range []struct {
 		name     string
-		udm      configv1alpha1.UserDefinedMonitoring
-		expected *bool
+		c        string
+		cm       *configv1alpha1.ClusterMonitoring
+		expected bool
 	}{
 		{
-			name:     "Disabled",
-			udm:      configv1alpha1.UserDefinedMonitoring{Mode: configv1alpha1.UserDefinedDisabled},
-			expected: ptr.To(false),
-		},
-		{
-			name:     "NamespaceIsolated",
-			udm:      configv1alpha1.UserDefinedMonitoring{Mode: configv1alpha1.UserDefinedNamespaceIsolated},
-			expected: ptr.To(true),
-		},
-		{
-			name:     "empty mode",
-			udm:      configv1alpha1.UserDefinedMonitoring{},
-			expected: nil,
-		},
-		{
-			name:     "unknown mode",
-			udm:      configv1alpha1.UserDefinedMonitoring{Mode: "Unknown"},
-			expected: nil,
-		},
-	} {
-		t.Run(tc.name, func(t *testing.T) {
-			got := applyUserDefinedMode(tc.udm)
-			if tc.expected == nil {
-				require.Nil(t, got)
-				return
-			}
-			require.NotNil(t, got)
-			require.Equal(t, *tc.expected, *got)
-		})
-	}
-}
-
-func TestConfig_MergeClusterMonitoringCRD(t *testing.T) {
-	ptrFalse := ptr.To(false)
-	ptrTrue := ptr.To(true)
-
-	for _, tc := range []struct {
-		name        string
-		c           *Config
-		cm          *configv1alpha1.ClusterMonitoring
-		expectValue *bool
-	}{
-		{
-			name: "cm nil leaves config unchanged",
-			c:    &Config{},
-			cm:   nil,
-		},
-		{
-			name: "cm with empty UserDefined Mode",
-			c:    &Config{},
+			name: "cm with invalid UserDefined Mode defaults to false",
+			c:    "{}",
 			cm: &configv1alpha1.ClusterMonitoring{
 				Spec: configv1alpha1.ClusterMonitoringSpec{
-					UserDefined: configv1alpha1.UserDefinedMonitoring{Mode: ""},
+					UserDefined: configv1alpha1.UserDefinedMonitoring{Mode: "FooBar"},
 				},
 			},
+			expected: false,
 		},
 		{
 			name: "UserDefinedDisabled sets UserWorkloadEnabled to false",
-			c:    &Config{},
+			c:    "{}",
 			cm: &configv1alpha1.ClusterMonitoring{
 				Spec: configv1alpha1.ClusterMonitoringSpec{
 					UserDefined: configv1alpha1.UserDefinedMonitoring{Mode: configv1alpha1.UserDefinedDisabled},
 				},
 			},
-			expectValue: ptrFalse,
+			expected: false,
 		},
 		{
 			name: "UserDefinedNamespaceIsolated sets UserWorkloadEnabled to true",
-			c:    &Config{},
+			c:    "{}",
 			cm: &configv1alpha1.ClusterMonitoring{
 				Spec: configv1alpha1.ClusterMonitoringSpec{
 					UserDefined: configv1alpha1.UserDefinedMonitoring{Mode: configv1alpha1.UserDefinedNamespaceIsolated},
 				},
 			},
-			expectValue: ptrTrue,
+			expected: true,
 		},
 		{
 			name: "ConfigMap UserWorkloadEnabled wins over CRD",
-			c: &Config{
-				ClusterMonitoringConfiguration: &ClusterMonitoringConfiguration{
-					UserWorkloadEnabled: ptrTrue,
-				},
-			},
+			c:    "{enableUserWorkload: true}",
 			cm: &configv1alpha1.ClusterMonitoring{
 				Spec: configv1alpha1.ClusterMonitoringSpec{
 					UserDefined: configv1alpha1.UserDefinedMonitoring{Mode: configv1alpha1.UserDefinedDisabled},
 				},
 			},
-			expectValue: ptrTrue,
+			expected: true,
 		},
 	} {
 		t.Run(tc.name, func(t *testing.T) {
-			tc.c.MergeClusterMonitoringCRD(tc.cm)
-			if tc.expectValue == nil {
-				// Only a nil CR skips merge and leaves ClusterMonitoringConfiguration unset (EnsureSafeDefaults no-ops).
-				if tc.cm == nil {
-					require.Nil(t, tc.c.ClusterMonitoringConfiguration)
-				}
-				return
-			}
-			require.NotNil(t, tc.c.ClusterMonitoringConfiguration)
-			require.NotNil(t, tc.c.ClusterMonitoringConfiguration.UserWorkloadEnabled)
-			require.Equal(t, *tc.expectValue, *tc.c.ClusterMonitoringConfiguration.UserWorkloadEnabled)
+			c, err := NewConfigFromStringAndClusterMonitoringResource(tc.c, tc.cm)
+			require.NoError(t, err)
+			require.NotNil(t, c.ClusterMonitoringConfiguration)
+			require.NotNil(t, c.ClusterMonitoringConfiguration.UserWorkloadEnabled)
+			require.Equal(t, tc.expected, *c.ClusterMonitoringConfiguration.UserWorkloadEnabled)
 		})
 	}
 }
 
-func TestClusterMonitoringMetricsServerSpecNonEmpty(t *testing.T) {
-	require.False(t, clusterMonitoringMetricsServerSpecNonEmpty(configv1alpha1.MetricsServerConfig{}))
-	require.True(t, clusterMonitoringMetricsServerSpecNonEmpty(configv1alpha1.MetricsServerConfig{
+func TestClusterMonitoringMetricsServerSpecEmpty(t *testing.T) {
+	require.True(t, clusterMonitoringMetricsServerSpecEmpty(configv1alpha1.MetricsServerConfig{}))
+	require.False(t, clusterMonitoringMetricsServerSpecEmpty(configv1alpha1.MetricsServerConfig{
 		Verbosity: configv1alpha1.VerbosityLevelInfo,
 	}))
-	require.True(t, clusterMonitoringMetricsServerSpecNonEmpty(configv1alpha1.MetricsServerConfig{
+	require.False(t, clusterMonitoringMetricsServerSpecEmpty(configv1alpha1.MetricsServerConfig{
 		Audit: configv1alpha1.Audit{Profile: configv1alpha1.AuditProfileMetadata},
 	}))
 }
 
 func TestConfig_MergeClusterMonitoringCRD_MetricsServerConfigPhase1(t *testing.T) {
 	t.Run("CR applies when ConfigMap left MetricsServerConfig nil", func(t *testing.T) {
-		c := &Config{
-			ClusterMonitoringConfiguration: &ClusterMonitoringConfiguration{},
-		}
 		cm := &configv1alpha1.ClusterMonitoring{
 			Spec: configv1alpha1.ClusterMonitoringSpec{
 				MetricsServerConfig: configv1alpha1.MetricsServerConfig{
@@ -158,18 +98,12 @@ func TestConfig_MergeClusterMonitoringCRD_MetricsServerConfigPhase1(t *testing.T
 				},
 			},
 		}
-		c.MergeClusterMonitoringCRD(cm)
+		c, err := NewConfigFromStringAndClusterMonitoringResource("{}", cm)
+		require.NoError(t, err)
 		require.NotNil(t, c.ClusterMonitoringConfiguration.MetricsServerConfig)
 		require.Equal(t, uint8(2), c.ClusterMonitoringConfiguration.MetricsServerConfig.Verbosity)
 	})
 	t.Run("CR ignored when ConfigMap already set MetricsServerConfig", func(t *testing.T) {
-		c := &Config{
-			ClusterMonitoringConfiguration: &ClusterMonitoringConfiguration{
-				MetricsServerConfig: &MetricsServerConfig{
-					Verbosity: 1,
-				},
-			},
-		}
 		cm := &configv1alpha1.ClusterMonitoring{
 			Spec: configv1alpha1.ClusterMonitoringSpec{
 				MetricsServerConfig: configv1alpha1.MetricsServerConfig{
@@ -177,28 +111,8 @@ func TestConfig_MergeClusterMonitoringCRD_MetricsServerConfigPhase1(t *testing.T
 				},
 			},
 		}
-		c.MergeClusterMonitoringCRD(cm)
+		c, err := NewConfigFromStringAndClusterMonitoringResource("{metricsServer: {verbosity: 1}}", cm)
+		require.NoError(t, err)
 		require.Equal(t, uint8(1), c.ClusterMonitoringConfiguration.MetricsServerConfig.Verbosity)
-	})
-}
-
-func TestConfig_EnsureSafeDefaults(t *testing.T) {
-	t.Run("sets UserWorkloadEnabled to false when nil", func(t *testing.T) {
-		c := &Config{ClusterMonitoringConfiguration: &ClusterMonitoringConfiguration{}}
-		c.EnsureSafeDefaults()
-		require.NotNil(t, c.ClusterMonitoringConfiguration.UserWorkloadEnabled)
-		require.False(t, *c.ClusterMonitoringConfiguration.UserWorkloadEnabled)
-	})
-	t.Run("sets MetricsServerConfig with Audit default when nil", func(t *testing.T) {
-		c := &Config{ClusterMonitoringConfiguration: &ClusterMonitoringConfiguration{}}
-		c.EnsureSafeDefaults()
-		require.NotNil(t, c.ClusterMonitoringConfiguration.MetricsServerConfig)
-		require.NotNil(t, c.ClusterMonitoringConfiguration.MetricsServerConfig.Audit)
-		require.NotEmpty(t, c.ClusterMonitoringConfiguration.MetricsServerConfig.Audit.Profile)
-	})
-	t.Run("no-op when ClusterMonitoringConfiguration is nil", func(t *testing.T) {
-		c := &Config{}
-		c.EnsureSafeDefaults()
-		require.Nil(t, c.ClusterMonitoringConfiguration)
 	})
 }
