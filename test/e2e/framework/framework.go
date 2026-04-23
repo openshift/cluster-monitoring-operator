@@ -585,12 +585,22 @@ func (f *Framework) CreateRoleBindingFromRoleOtherNamespace(saNamespace, service
 	}, nil
 }
 
-func (f *Framework) ForwardPort(t *testing.T, ns, svc string, port int) (string, func(), error) {
+// ForwardServicePort starts an "oc port-forward" to a service and returns host:port.
+func (f *Framework) ForwardServicePort(t *testing.T, ns, svc string, port int) (string, func(), error) {
+	return f.forwardPort(t, ns, "service/"+svc, port)
+}
+
+// ForwardPodPort starts an "oc port-forward" to a pod and returns host:port.
+func (f *Framework) ForwardPodPort(t *testing.T, ns, pod string, port int) (string, func(), error) {
+	return f.forwardPort(t, ns, "pod/"+pod, port)
+}
+
+func (f *Framework) forwardPort(t *testing.T, ns, resource string, port int) (string, func(), error) {
 	t.Helper()
 
 	ctx, cancel := context.WithCancel(context.Background())
 	// Taken from github.com/openshift/origin/test/extended/etcd/etcd_test_runner.go
-	cmd := exec.CommandContext(ctx, "oc", "port-forward", fmt.Sprintf("service/%s", svc), fmt.Sprintf(":%d", port), "-n", ns, "--kubeconfig", f.KubeConfigPath)
+	cmd := exec.CommandContext(ctx, "oc", "port-forward", resource, fmt.Sprintf(":%d", port), "-n", ns, "--kubeconfig", f.KubeConfigPath)
 
 	cleanUp := func() {
 		cancel()

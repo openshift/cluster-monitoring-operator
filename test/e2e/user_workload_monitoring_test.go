@@ -640,7 +640,7 @@ func assertTenancyForMetrics(t *testing.T) {
 			err = framework.Poll(5*time.Second, time.Minute, func() error {
 				// The tenancy port (9092) is only exposed in-cluster, so we need to use
 				// port forwarding to access kube-rbac-proxy.
-				host, cleanUp, err := f.ForwardPort(t, f.Ns, "thanos-querier", 9092)
+				host, cleanUp, err := f.ForwardServicePort(t, f.Ns, "thanos-querier", 9092)
 				if err != nil {
 					t.Fatal(err)
 				}
@@ -708,7 +708,7 @@ func assertTenancyForMetrics(t *testing.T) {
 		err = framework.Poll(5*time.Second, time.Minute, func() error {
 			// The tenancy port (9092) is only exposed in-cluster, so we need to use
 			// port forwarding to access kube-rbac-proxy.
-			host, cleanUp, err := f.ForwardPort(t, f.Ns, "thanos-querier", 9092)
+			host, cleanUp, err := f.ForwardServicePort(t, f.Ns, "thanos-querier", 9092)
 			if err != nil {
 				t.Fatal(err)
 			}
@@ -822,7 +822,7 @@ func assertTenancyForMetrics(t *testing.T) {
 			}()
 
 			// Forward the tenancy port.
-			host, cleanUp, err := f.ForwardPort(t, f.Ns, "thanos-querier", 9092)
+			host, cleanUp, err := f.ForwardServicePort(t, f.Ns, "thanos-querier", 9092)
 			if err != nil {
 				t.Fatal(err)
 			}
@@ -899,7 +899,7 @@ func assertTenancyForRulesAndAlerts(t *testing.T) {
 
 	// The tenancy port (9093) is only exposed in-cluster, so we need to use
 	// port forwarding to access kube-rbac-proxy.
-	host, cleanUp, err := f.ForwardPort(t, f.Ns, "thanos-querier", 9093)
+	host, cleanUp, err := f.ForwardServicePort(t, f.Ns, "thanos-querier", 9093)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -1159,7 +1159,7 @@ func assertUWMFederateEndpoint(t *testing.T) {
 		}
 		// The federate port (9092) is only exposed in-cluster, so we need to use
 		// port forwarding to access kube-rbac-proxy.
-		host, cleanUp, err := f.ForwardPort(t, f.UserWorkloadMonitoringNs, "prometheus-user-workload", 9092)
+		host, cleanUp, err := f.ForwardServicePort(t, f.UserWorkloadMonitoringNs, "prometheus-user-workload", 9092)
 		if err != nil {
 			return err
 		}
@@ -1226,7 +1226,7 @@ func assertTenancyForSeriesMetadata(t *testing.T) {
 	err = framework.Poll(5*time.Second, time.Minute, func() error {
 		// The tenancy port (9092) is only exposed in-cluster, so we need to use
 		// port forwarding to access kube-rbac-proxy.
-		host, cleanUp, err := f.ForwardPort(t, f.Ns, "thanos-querier", 9092)
+		host, cleanUp, err := f.ForwardServicePort(t, f.Ns, "thanos-querier", 9092)
 		if err != nil {
 			return err
 		}
@@ -1280,7 +1280,7 @@ func assertTenancyForSeriesMetadata(t *testing.T) {
 	err = framework.Poll(5*time.Second, time.Minute, func() error {
 		// The tenancy port (9092) is only exposed in-cluster, so we need to use
 		// port forwarding to access kube-rbac-proxy.
-		host, cleanUp, err := f.ForwardPort(t, f.Ns, "thanos-querier", 9092)
+		host, cleanUp, err := f.ForwardServicePort(t, f.Ns, "thanos-querier", 9092)
 		if err != nil {
 			return err
 		}
@@ -1334,7 +1334,7 @@ func assertTenancyForSeriesMetadata(t *testing.T) {
 	err = framework.Poll(5*time.Second, time.Minute, func() error {
 		// The tenancy port (9092) is only exposed in-cluster, so we need to use
 		// port forwarding to access kube-rbac-proxy.
-		host, cleanUp, err := f.ForwardPort(t, f.Ns, "thanos-querier", 9092)
+		host, cleanUp, err := f.ForwardServicePort(t, f.Ns, "thanos-querier", 9092)
 		if err != nil {
 			return err
 		}
