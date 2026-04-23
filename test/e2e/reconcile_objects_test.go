@@ -14,6 +14,7 @@ import (
 	v1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/types"
+	"k8s.io/client-go/util/retry"
 )
 
 // TestSecretsReconciliation tests whether the secrets created by the operator are reconciled correctly. These include:
@@ -53,14 +54,12 @@ func TestSecretsReconciliation(t *testing.T) {
 		},
 	}
 
-	restoreSecrets := func(secrets []types.NamespacedName) {
-		for _, secret := range secrets {
+	// Restore unsynced secrets to their original state after the test.
+	// Synced secrets don't need restoration since the operator reconciles those.
+	t.Cleanup(func() {
+		for _, secret := range unsyncedSecrets {
 			gotSecret, err := f.KubeClient.CoreV1().Secrets(secret.Namespace).Get(context.Background(), secret.Name, metav1.GetOptions{})
-			if err != nil {
-				// Secret may have been rotated (e.g. hash-suffixed TLS secrets).
-				t.Logf("skipping restore of %s: %v", secret.String(), err)
-				continue
-			}
+			require.NoError(t, err)
 			data := gotSecret.Data
 			for k, v := range data {
 				if isSecretDataJSONEncoded(gotSecret) {
@@ -78,70 +77,70 @@ func TestSecretsReconciliation(t *testing.T) {
 			_, err = f.KubeClient.CoreV1().Secrets(secret.Namespace).Update(context.Background(), gotSecret, metav1.UpdateOptions{})
 			require.NoError(t, err)
 		}
-	}
+	})
 
-	var syncedSecrets []types.NamespacedName
 	// Fetch all secrets since we are responsible for the whole namespace.
+	var syncedSecrets []types.NamespacedName
 	secretsNS, err := f.KubeClient.CoreV1().Secrets(f.Ns).List(context.Background(), metav1.ListOptions{})
 	require.NoError(t, err)
-
 	secretsUWMNS, err := f.KubeClient.CoreV1().Secrets(f.UserWorkloadMonitoringNs).List(context.Background(), metav1.ListOptions{})
 	require.NoError(t, err)
 
 	for _, secret := range append(secretsNS.Items, secretsUWMNS.Items...) {
-		secretNamespacedName := types.NamespacedName{
+		nn := types.NamespacedName{
 			Name:      secret.Name,
 			Namespace: secret.Namespace,
 		}
-		if slices.Contains(unsyncedSecrets, secretNamespacedName) {
+		if slices.Contains(unsyncedSecrets, nn) {
 			continue
 		}
-		syncedSecrets = append(syncedSecrets, secretNamespacedName)
+		// Skip TLS secrets since they have hash suffixes and get rotated (replaced, not updated in-place).
+		if strings.Contains(secret.Name, "tls") {
+			continue
+		}
+		syncedSecrets = append(syncedSecrets, nn)
 	}
 	require.NotEmpty(t, syncedSecrets)
 
 	secrets := append(syncedSecrets, unsyncedSecrets...)
 
-	t.Cleanup(func() { restoreSecrets(secrets) })
-
 	// Update the aforementioned secrets' data.
-	var mutatedSecrets []types.NamespacedName
 	for _, secret := range secrets {
-		var gotSecret *v1.Secret
-		gotSecret, err = f.KubeClient.CoreV1().Secrets(secret.Namespace).Get(context.Background(), secret.Name, metav1.GetOptions{})
-		if err != nil {
-			// Secret may have been rotated (e.g. hash-suffixed TLS secrets).
-			t.Logf("skipping mutation of %s: %v", secret.String(), err)
-			continue
-		}
-		data := gotSecret.Data
-		for k, v := range data {
-			if isSecretDataJSONEncoded(gotSecret) {
-				var jsonData map[string]interface{}
-				err = json.Unmarshal(v, &jsonData)
-				require.NoError(t, err)
-				jsonData[t.Name()] = t.Name()
-				v, err = json.Marshal(jsonData)
-				require.NoError(t, err)
-				data[k] = v
-			} else {
-				data[k] = []byte(t.Name() + string(v))
+		err := retry.RetryOnConflict(retry.DefaultRetry, func() error {
+			gotSecret, err := f.KubeClient.CoreV1().Secrets(secret.Namespace).Get(context.Background(), secret.Name, metav1.GetOptions{})
+			if err != nil {
+				return err
 			}
-			break
-		}
-
-		_, err = f.KubeClient.CoreV1().Secrets(secret.Namespace).Update(context.Background(), gotSecret, metav1.UpdateOptions{})
+			data := gotSecret.Data
+			for k, v := range data {
+				if isSecretDataJSONEncoded(gotSecret) {
+					var jsonData map[string]interface{}
+					if err := json.Unmarshal(v, &jsonData); err != nil {
+						return err
+					}
+					jsonData[t.Name()] = t.Name()
+					v, err = json.Marshal(jsonData)
+					if err != nil {
+						return err
+					}
+					data[k] = v
+				} else {
+					data[k] = []byte(t.Name() + string(v))
+				}
+				break
+			}
+			_, err = f.KubeClient.CoreV1().Secrets(secret.Namespace).Update(context.Background(), gotSecret, metav1.UpdateOptions{})
+			return err
+		})
 		require.NoError(t, err)
-		mutatedSecrets = append(mutatedSecrets, secret)
 	}
 
 	// Check for reconciliation of secrets.
-	for _, secret := range mutatedSecrets {
-		// Check if the secrets were reconciled as expected.
+	for _, secret := range secrets {
+		// Synced secrets should be reconciled, i.e., the test prefix must be removed.
 		if slices.Contains(syncedSecrets, secret) {
-			err = framework.Poll(10*time.Second, 5*time.Minute, func() error {
-				var updatedSecret *v1.Secret
-				updatedSecret, err = f.KubeClient.CoreV1().Secrets(secret.Namespace).Get(context.Background(), secret.Name, metav1.GetOptions{})
+			err := framework.Poll(10*time.Second, 5*time.Minute, func() error {
+				updatedSecret, err := f.KubeClient.CoreV1().Secrets(secret.Namespace).Get(context.Background(), secret.Name, metav1.GetOptions{})
 				if err != nil {
 					return err
 				}
@@ -152,7 +151,8 @@ func TestSecretsReconciliation(t *testing.T) {
 						if strings.HasPrefix(string(v), t.Name()) {
 							return fmt.Errorf("secret %s has unexpected data: %v", secret.String(), string(v))
 						}
-						// Don't return early. Since map iteration order is non-deterministic, the mutated entry may not be the first one visited here.
+						// Don't return early. Since map iteration order is non-deterministic,
+						// the mutated entry may not be the first one visited here.
 						continue
 					}
 
@@ -168,15 +168,13 @@ func TestSecretsReconciliation(t *testing.T) {
 
 				return nil
 			})
-
 			require.NoError(t, err)
 		}
 
-		// Check if the secrets were reconciled unexpectedly.
-		// Only one entry was mutated, so we verify at least one entry still carries the test prefix.
+		// Unsynced secrets should NOT be reconciled, i.e., the test prefix must still be present.
+		// Only one entry was mutated, so we verify at least one entry still carries it.
 		if slices.Contains(unsyncedSecrets, secret) {
-			var updatedSecret *v1.Secret
-			updatedSecret, err = f.KubeClient.CoreV1().Secrets(secret.Namespace).Get(context.Background(), secret.Name, metav1.GetOptions{})
+			updatedSecret, err := f.KubeClient.CoreV1().Secrets(secret.Namespace).Get(context.Background(), secret.Name, metav1.GetOptions{})
 			require.NoError(t, err)
 			data := updatedSecret.Data
 			found := false
