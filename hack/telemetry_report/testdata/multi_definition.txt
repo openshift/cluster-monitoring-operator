@@ -1,0 +1,21 @@
+# Telemetry selectors report (1d)
+# args: {__name__="e2etelemetry:etcd_multi_def:max"}
+# Results depend on the queried Prometheus instance and may differ elsewhere.
+selectors:
+  - selector: '{__name__="e2etelemetry:etcd_multi_def:max"}'
+    metrics:
+      - name: e2etelemetry:etcd_multi_def:max
+        peak_series: N
+        value_range: V
+        recording_rule:
+          file: RULEFILE
+          expr: max(etcd_server_has_leader{job="etcd"})
+          tree: |-
+            └── etcd_server_has_leader{job="etcd"}
+                  <job: etcd> <value_range: V> <peak_series: N>
+    failing_checks:
+      count: 3
+      messages:
+        - recording rule "e2etelemetry:etcd_multi_def:max" is defined in CMO, it should probably live in the owning component operator
+        - recording rule "e2etelemetry:etcd_multi_def:max" has 2 definitions in Prometheus, the report only shows one, the dependency tree, checks, and stats may be incorrect
+        - recording rule "e2etelemetry:etcd_multi_def:max" uses the same source metrics as alert "etcdNoLeader", ALERTS is already forwarded to telemetry so this metric may be redundant

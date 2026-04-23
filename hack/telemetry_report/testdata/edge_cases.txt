@@ -1,0 +1,117 @@
+# Telemetry selectors report (1d)
+# args: {__name__=~"e2etelemetry:cycle_a:sum|e2etelemetry:self_ref:sum|e2etelemetry:regex_inner:sum|e2etelemetry:no_metrics:gauge|e2etelemetry:counter_mixed:sum|e2etelemetry:process_cpu_seconds_total:max|e2etelemetry:chained_unless:max|e2etelemetry:dead_lhs_and:test"}
+# Results depend on the queried Prometheus instance and may differ elsewhere.
+selectors:
+  - selector: '{__name__=~"e2etelemetry:cycle_a:sum|e2etelemetry:self_ref:sum|e2etelemetry:regex_inner:sum|e2etelemetry:no_metrics:gauge|e2etelemetry:counter_mixed:sum|e2etelemetry:process_cpu_seconds_total:max|e2etelemetry:chained_unless:max|e2etelemetry:dead_lhs_and:test"}'
+    metrics:
+      - name: e2etelemetry:chained_unless:max
+        peak_series: N
+        value_range: V
+        recording_rule:
+          file: RULEFILE
+          expr: |-
+            max(etcd_server_has_leader{job="etcd"}) unless e2e_nonexistent_unless_x
+            unless
+            e2e_nonexistent_unless_y
+          tree: |-
+            ├── etcd_server_has_leader{job="etcd"}
+            │     <job: etcd> <value_range: V> <peak_series: N>
+            ├── e2e_nonexistent_unless_x
+            │     <value_range: V> <peak_series: N>
+            └── e2e_nonexistent_unless_y
+                  <value_range: V> <peak_series: N>
+      - name: e2etelemetry:counter_mixed:sum
+        peak_series: N
+        value_range: V
+        recording_rule:
+          file: RULEFILE
+          expr: sum(rate(process_cpu_seconds_total{job="etcd"}[5m])) + max(process_cpu_seconds_total{job="etcd"})
+          tree: |-
+            └── process_cpu_seconds_total{job="etcd"}
+                  <job: etcd> <value_range: V> <peak_series: N>
+      - name: e2etelemetry:cycle_a:sum
+        peak_series: N
+        value_range: V
+        recording_rule:
+          file: RULEFILE
+          expr: sum(e2etelemetry:cycle_b:max) + etcd_server_has_leader{job="etcd"}
+          tree: |-
+            ├── e2etelemetry:cycle_b:max
+            │     <expr: max(e2etelemetry:cycle_a:sum)>
+            │     <value_range: V> <peak_series: N> <file: RULEFILE>
+            │   └── e2etelemetry:cycle_a:sum
+            │         <expr: sum(e2etelemetry:cycle_b:max) + etcd_server_has_leader{job="etcd"}>
+            │         <peak_series: N> <file: RULEFILE>
+            └── etcd_server_has_leader{job="etcd"}
+                  <job: etcd> <value_range: V> <peak_series: N>
+      - name: e2etelemetry:dead_lhs_and:test
+        peak_series: N
+        value_range: V
+        recording_rule:
+          file: RULEFILE
+          expr: e2e_nonexistent_and_lhs and max(etcd_server_has_leader{job="etcd"})
+          tree: |-
+            ├── e2e_nonexistent_and_lhs
+            │     <value_range: V> <peak_series: N>
+            └── etcd_server_has_leader{job="etcd"}
+                  <job: etcd> <value_range: V> <peak_series: N>
+      - name: e2etelemetry:no_metrics:gauge
+        peak_series: N
+        value_range: V
+        recording_rule:
+          file: RULEFILE
+          expr: hour() + day_of_week()
+      - name: e2etelemetry:process_cpu_seconds_total:max
+        peak_series: N
+        value_range: V
+        recording_rule:
+          file: RULEFILE
+          expr: max(process_cpu_seconds_total{job="etcd"})
+          tree: |-
+            └── process_cpu_seconds_total{job="etcd"}
+                  <job: etcd> <value_range: V> <peak_series: N>
+      - name: e2etelemetry:regex_inner:sum
+        peak_series: N
+        value_range: V
+        recording_rule:
+          file: RULEFILE
+          expr: sum({__name__=~"etcd_server_has_leader|etcd_disk_wal_fsync_duration_seconds_count",job="etcd"})
+          tree: |-
+            └── {__name__=~"etcd_server_has_leader|etcd_disk_wal_fsync_duration_seconds_count",job="etcd"}
+                  <job: etcd> <value_range: V> <peak_series: N>
+      - name: e2etelemetry:self_ref:sum
+        peak_series: N
+        value_range: V
+        recording_rule:
+          file: RULEFILE
+          expr: sum(e2etelemetry:self_ref:sum) + etcd_server_has_leader{job="etcd"}
+          tree: |-
+            ├── e2etelemetry:self_ref:sum
+            │     <expr: sum(e2etelemetry:self_ref:sum) + etcd_server_has_leader{job="etcd"}>
+            │     <value_range: V> <peak_series: N> <file: RULEFILE>
+            └── etcd_server_has_leader{job="etcd"}
+                  <job: etcd> <value_range: V> <peak_series: N>
+    failing_checks:
+      count: 21
+      messages:
+        - metric "e2etelemetry:cycle_a:sum" has 0 timeseries, source metrics may not exist or rule dependencies are not met
+        - metric "e2etelemetry:dead_lhs_and:test" has 0 timeseries, source metrics may not exist or rule dependencies are not met
+        - metric "e2etelemetry:self_ref:sum" has 0 timeseries, source metrics may not exist or rule dependencies are not met
+        - recording rule "e2etelemetry:chained_unless:max" is defined in CMO, it should probably live in the owning component operator
+        - recording rule "e2etelemetry:counter_mixed:sum" is defined in CMO, it should probably live in the owning component operator
+        - recording rule "e2etelemetry:cycle_a:sum" is defined in CMO, it should probably live in the owning component operator
+        - recording rule "e2etelemetry:dead_lhs_and:test" is defined in CMO, it should probably live in the owning component operator
+        - recording rule "e2etelemetry:no_metrics:gauge" is defined in CMO, it should probably live in the owning component operator
+        - recording rule "e2etelemetry:process_cpu_seconds_total:max" is defined in CMO, it should probably live in the owning component operator
+        - recording rule "e2etelemetry:regex_inner:sum" is defined in CMO, it should probably live in the owning component operator
+        - recording rule "e2etelemetry:self_ref:sum" is defined in CMO, it should probably live in the owning component operator
+        - recording rule "e2etelemetry:counter_mixed:sum" uses counter "process_cpu_seconds_total" without rate()/increase(), raw counter values reset on restart and grow unbounded, making them meaningless as-is
+        - recording rule "e2etelemetry:process_cpu_seconds_total:max" uses counter "process_cpu_seconds_total" without rate()/increase(), raw counter values reset on restart and grow unbounded, making them meaningless as-is
+        - recording rule "e2etelemetry:cycle_a:sum" depends on "e2etelemetry:cycle_b:max" which has 0 series, ensure it is exercised within the observation window
+        - recording rule "e2etelemetry:cycle_a:sum" depends on "e2etelemetry:cycle_a:sum" which has 0 series, ensure it is exercised within the observation window
+        - recording rule "e2etelemetry:dead_lhs_and:test" depends on "e2e_nonexistent_and_lhs" which has 0 series, ensure it is exercised within the observation window
+        - recording rule "e2etelemetry:self_ref:sum" depends on "e2etelemetry:self_ref:sum" which has 0 series, ensure it is exercised within the observation window
+        - recording rule "e2etelemetry:chained_unless:max" uses the same source metrics as alert "etcdNoLeader", ALERTS is already forwarded to telemetry so this metric may be redundant
+        - recording rule "e2etelemetry:cycle_a:sum" uses the same source metrics as alert "etcdNoLeader", ALERTS is already forwarded to telemetry so this metric may be redundant
+        - recording rule "e2etelemetry:self_ref:sum" uses the same source metrics as alert "etcdNoLeader", ALERTS is already forwarded to telemetry so this metric may be redundant
+        - matcher __name__=~"e2etelemetry:cycle_a:sum|e2etelemetry:self_ref:sum|e2etelemetry:regex_inner:sum|e2etelemetry:no_metrics:gauge|e2etelemetry:counter_mixed:sum|e2etelemetry:process_cpu_seconds_total:max|e2etelemetry:chained_unless:max|e2etelemetry:dead_lhs_and:test" alternation is unsorted, consider using __name__=~"e2etelemetry:chained_unless:max|e2etelemetry:counter_mixed:sum|e2etelemetry:cycle_a:sum|e2etelemetry:dead_lhs_and:test|e2etelemetry:no_metrics:gauge|e2etelemetry:process_cpu_seconds_total:max|e2etelemetry:regex_inner:sum|e2etelemetry:self_ref:sum"

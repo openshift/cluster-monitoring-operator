@@ -1,0 +1,51 @@
+# Telemetry selectors report (1d)
+# args: {__name__="cluster:ovnkube_clustermanager_user_defined_networks:max",role=~"Primary|Secondary",topology=~"Layer2|Layer3"} {__name__="cluster:ovnkube_clustermanager_cluster_user_defined_networks:max",role=~"Primary|Secondary",topology=~"Layer2|Layer3"}
+# NOTE: TSDB only has 27m0s of data, value_range/peak_series may not be representative of the full 1d window.
+# Results depend on the queried Prometheus instance and may differ elsewhere.
+selectors:
+  - selector: '{__name__="cluster:ovnkube_clustermanager_user_defined_networks:max",role=~"Primary|Secondary",topology=~"Layer2|Layer3"}'
+    metrics:
+      - name: cluster:ovnkube_clustermanager_user_defined_networks:max
+        peak_series: 3
+        value_range: 1, 1
+        recording_rule:
+          file: openshift-ovn-kubernetes-master-rules-61aa524f-d846-4a70-af30-dcbb16fc02b2.yaml
+          expr: max by (role, topology) (ovnkube_clustermanager_user_defined_networks)
+          tree: |-
+            └── ovnkube_clustermanager_user_defined_networks
+                  <job: ovnkube-control-plane> <value_range: 1, 1> <peak_series: 3>
+        labels:
+          - name: role
+            distinct_values: 2
+            sample_values: [Primary, Secondary]
+          - name: topology
+            distinct_values: 2
+            sample_values: [Layer2, Layer3]
+    failing_checks:
+      count: 2
+      messages:
+        - metric "cluster:ovnkube_clustermanager_user_defined_networks:max" is already in the telemetry config file
+        - metric "cluster:ovnkube_clustermanager_cluster_user_defined_networks:max" is already in the telemetry config file
+  - selector: '{__name__="cluster:ovnkube_clustermanager_cluster_user_defined_networks:max",role=~"Primary|Secondary",topology=~"Layer2|Layer3"}'
+    metrics:
+      - name: cluster:ovnkube_clustermanager_cluster_user_defined_networks:max
+        peak_series: 3
+        value_range: 1, 1
+        recording_rule:
+          file: openshift-ovn-kubernetes-master-rules-61aa524f-d846-4a70-af30-dcbb16fc02b2.yaml
+          expr: max by (role, topology) (ovnkube_clustermanager_cluster_user_defined_networks)
+          tree: |-
+            └── ovnkube_clustermanager_cluster_user_defined_networks
+                  <job: ovnkube-control-plane> <value_range: 1, 1> <peak_series: 3>
+        labels:
+          - name: role
+            distinct_values: 2
+            sample_values: [Primary, Secondary]
+          - name: topology
+            distinct_values: 2
+            sample_values: [Layer2, Layer3]
+    failing_checks:
+      count: 2
+      messages:
+        - metric "cluster:ovnkube_clustermanager_user_defined_networks:max" is already in the telemetry config file
+        - metric "cluster:ovnkube_clustermanager_cluster_user_defined_networks:max" is already in the telemetry config file

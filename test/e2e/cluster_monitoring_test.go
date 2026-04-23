@@ -163,7 +163,7 @@ func TestConfigMapEnableUserWorkloadOverridesCRD(t *testing.T) {
 	}
 	ctx := context.Background()
 
-	t.Log("CRD UserDefined=Disabled, ConfigMap enableUserWorkload=true → ConfigMap wins, UWM enabled")
+	t.Log("CRD UserDefined=Disabled, ConfigMap enableUserWorkload=true => ConfigMap wins, UWM enabled")
 	cmCR := &configv1alpha1.ClusterMonitoring{
 		ObjectMeta: metav1.ObjectMeta{Name: clusterMonitoringName},
 		Spec: configv1alpha1.ClusterMonitoringSpec{

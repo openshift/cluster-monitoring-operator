@@ -1,0 +1,75 @@
+# Telemetry selectors report (1d)
+# args: {__name__=~"e2etelemetry:sum_allone:sum|e2etelemetry:sum_mixed:sum|e2etelemetry:max_allone:max|e2etelemetry:sum_bool_eq:gauge"}
+# Results depend on the queried Prometheus instance and may differ elsewhere.
+selectors:
+  - selector: '{__name__=~"e2etelemetry:sum_allone:sum|e2etelemetry:sum_mixed:sum|e2etelemetry:max_allone:max|e2etelemetry:sum_bool_eq:gauge"}'
+    metrics:
+      - name: e2etelemetry:max_allone:max
+        peak_series: N
+        value_range: V
+        recording_rule:
+          file: RULEFILE
+          expr: max(e2etelemetry:allone_bool:gauge)
+          tree: |-
+            └── e2etelemetry:allone_bool:gauge
+                  <expr: label_replace(vector(1), "instance", "a", "", "")
+                    or
+                    label_replace(vector(1), "instance", "b", "", "")>
+                  <value_range: V> <peak_series: N> <file: RULEFILE>
+      - name: e2etelemetry:sum_allone:sum
+        peak_series: N
+        value_range: V
+        recording_rule:
+          file: RULEFILE
+          expr: sum(e2etelemetry:allone_bool:gauge)
+          tree: |-
+            └── e2etelemetry:allone_bool:gauge
+                  <expr: label_replace(vector(1), "instance", "a", "", "")
+                    or
+                    label_replace(vector(1), "instance", "b", "", "")>
+                  <value_range: V> <peak_series: N> <file: RULEFILE>
+      - name: e2etelemetry:sum_bool_eq:gauge
+        peak_series: N
+        value_range: V
+        recording_rule:
+          file: RULEFILE
+          expr: e2etelemetry:allone_bool:gauge and on () (sum(e2etelemetry:allone_bool:gauge) == 2)
+          tree: |-
+            ├── e2etelemetry:allone_bool:gauge
+            │     <expr: label_replace(vector(1), "instance", "a", "", "")
+            │       or
+            │       label_replace(vector(1), "instance", "b", "", "")>
+            │     <value_range: V> <peak_series: N> <file: RULEFILE>
+            └── e2etelemetry:allone_bool:gauge
+                  <expr: label_replace(vector(1), "instance", "a", "", "")
+                    or
+                    label_replace(vector(1), "instance", "b", "", "")>
+                  <value_range: V> <peak_series: N> <file: RULEFILE>
+        labels:
+          - name: instance
+            distinct_values: 2
+            sample_values: [a, b]
+      - name: e2etelemetry:sum_mixed:sum
+        peak_series: N
+        value_range: V
+        recording_rule:
+          file: RULEFILE
+          expr: sum(e2etelemetry:mixed_bool:gauge)
+          tree: |-
+            └── e2etelemetry:mixed_bool:gauge
+                  <expr: label_replace(vector(1), "instance", "a", "", "")
+                    or
+                    label_replace(vector(0), "instance", "b", "", "")>
+                  <value_range: V> <peak_series: N> <file: RULEFILE>
+    failing_checks:
+      count: 9
+      messages:
+        - recording rule "e2etelemetry:max_allone:max" is defined in CMO, it should probably live in the owning component operator
+        - recording rule "e2etelemetry:sum_allone:sum" is defined in CMO, it should probably live in the owning component operator
+        - recording rule "e2etelemetry:sum_bool_eq:gauge" is defined in CMO, it should probably live in the owning component operator
+        - recording rule "e2etelemetry:sum_mixed:sum" is defined in CMO, it should probably live in the owning component operator
+        - recording rule "e2etelemetry:sum_allone:sum" uses sum() on "e2etelemetry:allone_bool:gauge" which currently only has values 0 and 1, if this is a boolean/presence metric, max(), min(), or group() may be more appropriate
+        - recording rule "e2etelemetry:sum_mixed:sum" uses sum() on "e2etelemetry:mixed_bool:gauge" which currently only has values 0 and 1, if this is a boolean/presence metric, max(), min(), or group() may be more appropriate
+        - matcher __name__=~"e2etelemetry:sum_allone:sum|e2etelemetry:sum_mixed:sum|e2etelemetry:max_allone:max|e2etelemetry:sum_bool_eq:gauge" alternation is unsorted, consider using __name__=~"e2etelemetry:max_allone:max|e2etelemetry:sum_allone:sum|e2etelemetry:sum_bool_eq:gauge|e2etelemetry:sum_mixed:sum"
+        - metric "e2etelemetry:sum_bool_eq:gauge" label "instance" has no matcher, consider adding one to bound cardinality, e.g. instance=~"val1|val2"
+        - metric "e2etelemetry:sum_bool_eq:gauge" label "instance" may be sensitive (PII risk), consider aggregating it away in the recording rule

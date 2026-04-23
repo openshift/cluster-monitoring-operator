@@ -1,0 +1,219 @@
+Telemetry Report Tool - Complete Check Message Catalog
+=======================================================
+
+Every possible check message the tool produces, with a realistic example
+and an explanation of when/why it fires.
+
+Total: 45 distinct check messages.
+
+---
+
+== Global Checks (appended to every selector in the run) ==
+
+1.  "5 selectors exceed limit of 3 per run, split by owner or merge related selectors"
+    => Fires when the CLI receives more selectors than maxSelectors (3).
+
+2.  "all selectors combined produce 450 timeseries (limit 10), reduce cardinality in recording rules (e.g. aggregate away high-cardinality labels)"
+    => Sum of peak_series across all selectors in the run exceeds maxTotalTimeseries.
+       Skipped when only 1 selector (the per-metric message is enough).
+
+3.  'metric "cluster:cpu_usage_cores:sum" is already in the telemetry config file'
+    => A metric name from a tested selector already exists in the production config,
+       regardless of whether the selectors have the same extra matchers.
+
+== Liveness / Data Availability ==
+
+4.  "selector matched 0 metrics, verify the selector is correct and the metrics exist"
+    => The selector returned zero series from Prometheus.
+
+5.  'metric "cluster:missing_rule:sum" has 0 timeseries, source metrics may not exist or rule dependencies are not met'
+    => A recording rule exists but produced no data. Upstream metrics are absent or
+       intermediate rules haven't evaluated yet.
+
+6.  'metric "subscription_sync_total" has 0 timeseries, target may not be scraped or feature not enabled'
+    => A raw metric (not a recording rule) has no data. The scrape target may be down
+       or the feature that exposes this metric is not installed.
+
+7.  'metric "level:opentelemetry_collector_extensions:sum" looks like a recording rule (has 2 colons) but was not found among this instance's rules, ensure it is loaded'
+    => Name follows recording rule convention (colons) but no rule definition was found
+       in the /api/v1/rules response. Rule may not be deployed on this cluster.
+
+== Metric Type & Naming ==
+
+8.  'metric "apiserver_request_total" is not a recording rule, consider using one to control cardinality and drop potentially sensitive labels'
+    => Selector references a raw scraped metric directly. Recording rules allow you
+       to aggregate away high-cardinality and sensitive labels before telemetry export.
+
+9.  'metric "http_requests_duration_total" ends with _total but is not a counter, verify the metric type'
+    => The _total suffix is reserved for counters per Prometheus conventions, but
+       metadata says this metric is a gauge or other type.
+
+10. 'recording rule "cluster_cpu" name needs exactly 2 colons for level:metric:operations (has 0)'
+    => Per https://prometheus.io/docs/practices/rules/, recording rule names should
+       follow level:metric:operations format (exactly 2 colons).
+
+11. 'recording rule "cluster:etcd_objects:total" ends with :total (reserved for raw counters)'
+    => :total suffix in the operations segment is reserved for raw counters.
+       Recording rules should use :sum, :rate, etc.
+
+12. 'recording rule "cluster:process_cpu:sum_total" has operations suffix _total (reserved for raw counters, consider :sum or similar)'
+    => Same as above, but _total appears inside the operations part (after the last colon).
+
+13. 'recording rule "e2etelemetry:etcd_wal_fsync:irate5m" uses irate() which is not appropriate for telemetry, consider rate() instead'
+    => irate() only looks at the last two samples, so a single scrape gap can
+       produce a spike or misleading rate. rate() averages over the full range
+       window and is preferred for telemetry.
+
+14. 'recording rule "e2etelemetry:etcd_has_leader:wrong_sum" is defined in CMO, it should probably live in the owning component operator'
+    => Rule file path indicates it belongs to CMO (cluster-monitoring-operator).
+       Rules should be defined in the component that owns the source metrics.
+
+15. 'recording rule "e2etelemetry:etcd_multi_def:max" has 2 definitions in Prometheus, the report only shows one, the dependency tree, checks, and stats may be incorrect'
+    => Same rule name appears in multiple PrometheusRule objects or groups.
+       The tool picks one arbitrarily; stats may not reflect all definitions.
+
+== Suffix / Naming Convention ==
+
+16. 'recording rule "cluster:etcd_has_leader:wrong_sum" has suffix :wrong_sum, expected :max based on the expression'
+    => The operations suffix in the rule name doesn't match the outermost operation.
+       Here the expression uses max() but the name says :wrong_sum.
+       For sum(rate(...)), both :sum and :rate are accepted as suffix prefixes.
+
+== Rate / Counter Usage ==
+
+17. 'recording rule "e2etelemetry:etcd_wal_fsync:deep_rate" applies rate() over "e2etelemetry:etcd_wal_fsync:sum" which uses sum(), consider reversing the order: sum(rate(...)) instead of rate(sum(...))'
+    => rate() is applied to a metric that is itself a sum() aggregation.
+       rate(sum(counter)) is wrong because sum() loses the per-instance monotonicity
+       that rate() relies on. The correct order is sum(rate(counter)).
+
+18. 'recording rule "e2etelemetry:etcd_has_leader:rate_gauge" uses rate() on "etcd_server_has_leader" which is a gauge, not a counter'
+    => rate() is designed for counters. Applying it to a gauge produces meaningless
+       results (derivative of a gauge).
+
+18b. 'recording rule "cluster:mixed_rate:sum" uses rate() on "http_requests_duration" which has conflicting types: counter, gauge'
+     => rate() is applied to a metric with conflicting type metadata. If some sources
+        report it as a gauge, rate() may be inappropriate for those.
+
+19. 'recording rule "e2etelemetry:etcd_wal_fsync:rate_short" uses rate() with range 50s, need at least 1m0s (>= 2x scrape_interval 30s)'
+    => The range vector is shorter than 2x the scrape interval. rate() needs at
+       least 2 samples to compute a meaningful rate.
+
+20. 'recording rule "cluster:process_cpu:max" uses counter "process_cpu_seconds_total" without rate()/increase(), raw counter values reset on restart and grow unbounded, making them meaningless as-is'
+    => A counter is used directly in the expression (e.g. max(counter)) without
+       rate() or increase(). Counter values are monotonically increasing and reset
+       on restart, so raw values are not useful. Only checked on the root rule's
+       own expression, not on referenced recording rules (which we don't control).
+
+21. 'recording rule "cluster:mixed_type:sum" uses "http_requests_duration" (conflicting types: counter, gauge) without rate(), consider rate() if it is a counter'
+    => Metric has conflicting types and is used without rate(). If it is a counter,
+       rate() should be applied.
+
+21b. 'leaf metric "http_requests_duration" has conflicting type metadata: counter, gauge'
+     => A leaf metric in the dependency tree has different TYPE annotations
+        across its sources. This is a data quality issue regardless of how
+        the metric is used.
+
+== Sum Over Boolean Metrics ==
+
+22. 'recording rule "e2etelemetry:sum_allone:sum" uses sum() on "e2etelemetry:allone_bool:gauge" which currently only has values 0 and 1, if this is a boolean/presence metric, max(), min(), or group() may be more appropriate'
+    => sum() on a metric whose values are exclusively 0 and 1 produces a count of
+       "true" instances, which is often not what telemetry consumers expect.
+       max(), min(), or group() preserves the boolean semantics.
+       Does NOT fire when sum() is inside a comparison (e.g. sum(x) == 2), which
+       is a legitimate counting pattern.
+
+== Alert Overlap ==
+
+23. 'recording rule "e2etelemetry:etcd_has_leader:wrong_sum" uses the same source metrics as alert "etcdNoLeader", ALERTS is already forwarded to telemetry so this metric may be redundant'
+    => The recording rule and an alert share the exact same set of leaf metrics.
+       Since ALERTS{} is already in the telemetry config, the alert's firing state
+       is already forwarded, making the recording rule potentially redundant.
+
+== Dead Dependencies ==
+
+24. 'recording rule "cluster:dead_metric:sum" depends on "e2e_this_metric_does_not_exist" which has 0 series, ensure it is exercised within the observation window'
+    => A metric referenced in the rule's dependency tree has no data. The metric
+       may not exist, or may not have been scraped within the observation window.
+       Skipped for optional positions (RHS of "unless"/"or", inside absent()).
+
+== Selector Checks ==
+
+25. "selector has no __name__ matcher, every selector must specify metric names"
+    => Every selector must have a __name__ matcher (= or =~).
+
+26. "selector has 5 matchers (limit 3), consider moving filtering into the recording rule"
+    => Too many label matchers in the selector. Move complex filtering logic into
+       the recording rule expression instead.
+
+27. 'label "job" has multiple matchers, consider combining into one'
+    => The same label name appears in multiple matchers (e.g. job="x", job!="y").
+
+28. 'matcher __name__="" matches empty or missing values, use a positive match instead'
+    => An empty equality match (label="") matches series where the label is missing
+       or has an empty string value. This is usually unintentional.
+
+29. 'matcher job!="prometheus-k8s" is a negative match, consider enumerating allowed values instead'
+    => Negative matchers (!=) allow any new unexpected value to match. Prefer
+       listing the specific values you want.
+
+30. 'matcher job!~"prometheus.*" is a negative regex, consider enumerating allowed values instead'
+    => Same as above but with negative regex (!~).
+
+31. 'matcher __name__=~"^up$" has redundant anchors (Prometheus auto-anchors), use __name__=~"up"'
+    => Prometheus automatically anchors regex with ^ and $. Adding them manually
+       is redundant.
+
+32. 'matcher code=~".+" is open-ended, consider using bounded values'
+    => .+, .*, .*foo.* are unbounded patterns that match any new value that appears.
+
+33. 'matcher job=~"prometheus-k8s" uses unnecessary regexp, use job="prometheus-k8s" instead'
+    => A regex that matches a single literal string should be a plain equality match.
+
+34. 'matcher __name__=~"foo|bar|foo" has duplicate values in alternation, consider removing duplicates'
+    => The alternation list has repeated values.
+
+35. 'matcher __name__=~"up|process_cpu_seconds_total|go_goroutines" alternation is unsorted, consider using __name__=~"go_goroutines|process_cpu_seconds_total|up"'
+    => Sorting alternation values makes selectors easier to read and diff.
+
+== Label Checks ==
+
+36. 'metric "etcd_server_has_leader" label "job" has 1 value (etcd), consider pinning it with job="etcd" or dropping it in the recording rule'
+    => A label always has exactly one value across all series. Pin it in the
+       selector to make intent explicit, or aggregate it away in the recording rule.
+
+37. 'metric "apiserver_request_total" label "code" has no matcher, consider adding one to bound cardinality'
+    => A high-cardinality label has no matcher in the selector. Adding a matcher
+       (e.g. code=~"2..|5..") bounds the timeseries the selector can match.
+
+38. 'metric "apiserver_request_total" label "instance" may be sensitive (PII risk), consider aggregating it away in the recording rule'
+    => Labels like instance, pod, node, container contain infrastructure details
+       that may be considered sensitive. Aggregate them away before export.
+
+39. 'label "env" has mixed-case values in "cluster:http_requests:sum": Production, production; consider label_replace() to normalize'
+    => Same label has values differing only in case. This can cause silent
+       double-counting after aggregation. Use label_replace() to normalize.
+
+== Cardinality Limits ==
+
+40. 'metric "resource:apiserver_storage_objects:max" has 223 timeseries (limit 10), consider aggregating away high-cardinality labels in the recording rule'
+    => Per-metric timeseries count exceeds the configured limit. The recording rule
+       should aggregate away high-cardinality labels (e.g. sum by (resource) instead
+       of preserving instance, pod, etc.).
+
+41. "selector totals 450 timeseries across 3 metrics (limit 10), reduce cardinality in recording rules (e.g. aggregate away high-cardinality labels)"
+    => Total timeseries across all metrics in the selector exceeds the limit.
+       Skipped when there is only 1 metric (the per-metric message is sufficient).
+
+== Config File ==
+
+42. "telemetry config file has no selectors"
+    => The config file fetched from GitHub was parsed successfully but contained
+       no selector entries. Config-dependent checks (overlap, already-present)
+       are skipped.
+
+== Overlap Detection ==
+
+43. 'metric "apiserver_list_watch_request_success_total:rate:sum" shares the same leaf metrics (apiserver_request_total) as existing selector {__name__="code:apiserver_request_total:rate:sum"}, consider whether this is redundant'
+    => Two different selectors resolve to the exact same set of leaf (raw) metrics
+       via their recording rule dependency trees. One of them may be redundant if
+       both are in the telemetry config.

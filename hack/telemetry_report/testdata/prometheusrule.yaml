@@ -1,0 +1,370 @@
+apiVersion: monitoring.coreos.com/v1
+kind: PrometheusRule
+metadata:
+  name: e2etest-telemetry-report
+  namespace: openshift-monitoring
+  labels:
+    app.kubernetes.io/created-by: cmo-e2e-test
+spec:
+  groups:
+    - name: e2etelemetry.rules
+      interval: 3s
+      rules:
+        # All source metrics use etcd_* (sole job: "etcd") so tree
+        # output is fully deterministic across clusters.
+
+        # Modeled after cluster:alertmanager_integrations:max.
+        - record: e2etelemetry:etcd_has_leader:max
+          expr: max(etcd_server_has_leader{job="etcd"})
+
+        # Modeled after instance:etcd_disk_wal_fsync_duration_seconds:histogram_quantile.
+        - record: e2etelemetry:etcd_wal_fsync:histogram_quantile
+          expr: histogram_quantile(0.99, sum by (le) (rate(etcd_disk_wal_fsync_duration_seconds_bucket{job="etcd"}[5m])))
+
+        # Chain: depends on the rule above. Modeled after cluster:node_cpu:ratio.
+        - record: e2etelemetry:etcd_wal_p99_ratio:max
+          expr: e2etelemetry:etcd_wal_fsync:histogram_quantile / e2etelemetry:etcd_has_leader:max
+
+        # Keeps "namespace" label (sensitive, deterministic: "openshift-etcd").
+        # Modeled after monitoring:container_memory_working_set_bytes:sum.
+        - record: e2etelemetry:etcd_db_size_by_ns:sum
+          expr: sum by (namespace) (etcd_mvcc_db_total_size_in_bytes{job="etcd"})
+
+        # Bad naming: 0 colons, violates level:metric:operations.
+        - record: e2etelemetry_badname
+          expr: max(etcd_server_has_leader{job="etcd"})
+
+        # Bad naming: :total suffix reserved for raw counters.
+        - record: e2etelemetry:etcd:total
+          expr: max(etcd_server_has_leader{job="etcd"})
+
+        # Anti-pattern: irate() should be rate() for telemetry.
+        # Modeled after real telemetry rules that accidentally use irate.
+        - record: e2etelemetry:etcd_wal_fsync:irate5m
+          expr: sum(irate(etcd_disk_wal_fsync_duration_seconds_count{job="etcd"}[5m]))
+
+        # vector(0) fallback , tree must show only the real metric, not vector().
+        - record: e2etelemetry:etcd_has_leader:vector_fallback
+          expr: sum(etcd_server_has_leader{job="etcd"}) or vector(0)
+
+        # scalar() , tree must extract metrics from inside scalar() too.
+        - record: e2etelemetry:etcd_has_leader:scalar_ratio
+          expr: max(etcd_server_has_leader{job="etcd"}) / scalar(max(etcd_disk_wal_fsync_duration_seconds_count{job="etcd"}))
+
+        # Binary op between two different raw metrics.
+        - record: e2etelemetry:etcd_wal_ratio:binary
+          expr: max(etcd_disk_wal_fsync_duration_seconds_count{job="etcd"}) / max(etcd_server_has_leader{job="etcd"})
+
+        # Bad naming: 1 colon. No metric selector at all , tree must be empty.
+        - record: e2etelemetry:time_hour
+          expr: hour()
+
+        # Dead branch , references a metric that does not exist.
+        - record: e2etelemetry:dead_metric:sum
+          expr: sum(e2e_this_metric_does_not_exist_at_all{job="etcd"})
+
+        # Same dead metric with two different matchers , both must be
+        # reported as dead deps (tests that dedup uses the full selector,
+        # not just the base metric name).
+        - record: e2etelemetry:double_dead:sum
+          expr: sum(e2e_this_metric_does_not_exist_at_all{label="a"}) + sum(e2e_this_metric_does_not_exist_at_all{label="b"})
+
+        # Deep chain: sum(sum_inner(counter)) for rate_issues 3-level test.
+        - record: e2etelemetry:etcd_wal_fsync:sum_inner
+          expr: sum(etcd_disk_wal_fsync_duration_seconds_count{job="etcd"})
+        - record: e2etelemetry:etcd_wal_fsync:sum_outer
+          expr: sum(e2etelemetry:etcd_wal_fsync:sum_inner)
+        - record: e2etelemetry:etcd_wal_fsync:deep_rate
+          expr: rate(e2etelemetry:etcd_wal_fsync:sum_outer[5m])
+
+        # unless with dead counter RHS , tests two things at once:
+        # 1. Dead dep must NOT flag (RHS of unless is optional)
+        # 2. Counter usage must NOT flag (counter on RHS of unless is safe)
+        # Uses a real counter (process_cpu_seconds_total) with an impossible
+        # selector so the RHS returns 0 series but metadata IS available.
+        - record: e2etelemetry:etcd_has_leader:unless
+          expr: max(etcd_server_has_leader{job="etcd"}) unless process_cpu_seconds_total{job="nonexistent"}
+
+        # group() on counter , must NOT flag (group discards values).
+        - record: e2etelemetry:process_cpu:group
+          expr: group(process_cpu_seconds_total{job="etcd"})
+
+        # absent() wrapping a nonexistent metric , dead dep must NOT
+        # flag because the metric is inside absent() (optional position).
+        - record: e2etelemetry:missing_metric:absent
+          expr: absent(e2e_this_metric_does_not_exist_at_all)
+
+        # offset modifier in expression , tree series count must handle it.
+        - record: e2etelemetry:etcd_has_leader:offset
+          expr: max(etcd_server_has_leader{job="etcd"} offset 5m)
+
+        # increase() on counter , must NOT trigger "counter without rate" check.
+        - record: e2etelemetry:etcd_wal_fsync:increase
+          expr: sum(increase(etcd_disk_wal_fsync_duration_seconds_count{job="etcd"}[1h]))
+
+        # count() on counter , must NOT flag (count discards values).
+        - record: e2etelemetry:etcd_wal_fsync:count
+          expr: count(etcd_disk_wal_fsync_duration_seconds_count{job="etcd"})
+
+        # Anti-pattern: rate() on a gauge metric.
+        - record: e2etelemetry:etcd_has_leader:rate_gauge
+          expr: sum(rate(etcd_server_has_leader{job="etcd"}[5m]))
+
+        # Anti-pattern: rate() with range too short for scrape interval.
+        - record: e2etelemetry:etcd_wal_fsync:rate_short
+          expr: sum(rate(etcd_disk_wal_fsync_duration_seconds_count{job="etcd"}[50s]))
+
+        # Intermediate: sum of a counter without rate() first (for chain test).
+        - record: e2etelemetry:etcd_wal_fsync:sum
+          expr: sum(etcd_disk_wal_fsync_duration_seconds_count{job="etcd"})
+
+        # Anti-pattern: rate(sum(counter)) chain via recording rule.
+        - record: e2etelemetry:etcd_wal_fsync_sum:rate
+          expr: rate(e2etelemetry:etcd_wal_fsync:sum[5m])
+
+        # Anti-pattern: counter used directly without rate/increase.
+        - record: e2etelemetry:process_cpu_seconds:max
+          expr: max(process_cpu_seconds_total{job="etcd"})
+
+        # Bad naming: _total suffix reserved for raw counters. Uses a real
+        # counter source so metadata API confirms the type in the message.
+        - record: e2etelemetry:process_cpu:sum_total
+          expr: sum(process_cpu_seconds_total{job="etcd"})
+
+        # Edge cases
+
+        # or with dead RHS: dead dep must NOT flag (RHS of or is optional).
+        - record: e2etelemetry:etcd_has_leader:or_dead_rhs
+          expr: max(etcd_server_has_leader{job="etcd"}) or e2e_nonexistent_or_rhs{job="etcd"}
+
+        # or with dead LHS + vector(0) fallback: LHS dead dep MUST flag.
+        - record: e2etelemetry:dead_or_fallback:sum
+          expr: sum(e2e_this_metric_does_not_exist_at_all{job="etcd"}) or vector(0)
+
+        # counter > bool 0: counter in binary comparison (not counter-safe).
+        - record: e2etelemetry:process_cpu:gt_zero
+          expr: max(process_cpu_seconds_total{job="etcd"} > bool 0)
+
+        # absent_over_time: dead dep must NOT flag (optional position).
+        - record: e2etelemetry:missing_metric:absent_over_time
+          expr: absent_over_time(e2e_this_metric_does_not_exist_at_all[5m])
+
+        # and with dead RHS: dead dep MUST flag (and requires both sides).
+        - record: e2etelemetry:etcd_and_dead:test
+          expr: max(etcd_server_has_leader{job="etcd"}) and e2e_nonexistent_and_rhs{job="etcd"}
+
+        # double unless: both RHS should be optional (no dead dep flags).
+        - record: e2etelemetry:etcd_double_unless:test
+          expr: max(etcd_server_has_leader{job="etcd"}) unless e2e_nonexistent_unless_a unless e2e_nonexistent_unless_b
+
+        # More edge cases
+
+        # absent_over_time with job label , dead dep must NOT flag inside
+        # absent_over_time (the function is designed for non-existent metrics).
+        - record: e2etelemetry:absent_over_time:test
+          expr: absent_over_time(e2e_nonexistent_aot{job="etcd"}[5m])
+
+        # Histogram _count inside subquery , no false positive expected
+        # because metadata says "histogram".
+        - record: e2etelemetry:counter_subquery:max
+          expr: max(max_over_time(etcd_disk_wal_fsync_duration_seconds_count{job="etcd"}[5m:1m]))
+
+        # Histogram _count inside clamp_max , same: no false positive.
+        - record: e2etelemetry:counter_clamp:sum
+          expr: sum(clamp_max(etcd_disk_wal_fsync_duration_seconds_count{job="etcd"}, 1000))
+
+        # High-cardinality: 15 series (one per le bucket), triggers
+        # per-metric cardinality limit, per-selector total, global total,
+        # and "label has no matcher" for le.
+        - record: e2etelemetry:etcd_wal_fsync_by_le:sum
+          expr: sum by (le) (etcd_disk_wal_fsync_duration_seconds_bucket{job="etcd"})
+
+        # Deep chain pretty-printing
+
+        # 5-level deep tree with branching at multiple levels.
+        # Tests that wide + deep trees render correctly.
+        - record: e2etelemetry:chain_leaf_a:max
+          expr: max(etcd_server_has_leader{job="etcd"})
+        - record: e2etelemetry:chain_leaf_b:sum
+          expr: sum(etcd_disk_wal_fsync_duration_seconds_count{job="etcd"})
+        - record: e2etelemetry:chain_mid:ratio
+          expr: e2etelemetry:chain_leaf_a:max / e2etelemetry:chain_leaf_b:sum
+        - record: e2etelemetry:chain_deep:sum
+          expr: sum(e2etelemetry:chain_mid:ratio) + e2etelemetry:chain_leaf_a:max
+        - record: e2etelemetry:chain_top:max
+          expr: max(e2etelemetry:chain_deep:sum) / e2etelemetry:etcd_has_leader:max
+
+        # Sum over boolean metrics
+
+        # Boolean metrics (values 0 or 1) where sum() is wrong.
+        # Two series with value 1 , sum gives 2, max gives 1.
+        - record: e2etelemetry:allone_bool:gauge
+          expr: label_replace(vector(1), "instance", "a", "", "") or label_replace(vector(1), "instance", "b", "", "")
+        # Two series: one 1 and one 0 , sum gives 1, max gives 1.
+        - record: e2etelemetry:mixed_bool:gauge
+          expr: label_replace(vector(1), "instance", "a", "", "") or label_replace(vector(0), "instance", "b", "", "")
+        # Anti-pattern: sum() on all-1 metric => should suggest max(), min(), or group().
+        - record: e2etelemetry:sum_allone:sum
+          expr: sum(e2etelemetry:allone_bool:gauge)
+        # Anti-pattern: sum() on 0/1 metric => should suggest max(), min(), or group().
+        - record: e2etelemetry:sum_mixed:sum
+          expr: sum(e2etelemetry:mixed_bool:gauge)
+        # Correct: max() on boolean metric => no flag.
+        - record: e2etelemetry:max_allone:max
+          expr: max(e2etelemetry:allone_bool:gauge)
+        # Correct: sum(0/1) == N is a counting pattern => must NOT flag.
+        - record: e2etelemetry:sum_bool_eq:gauge
+          expr: e2etelemetry:allone_bool:gauge and on() (sum(e2etelemetry:allone_bool:gauge) == 2)
+
+        # Label casing
+
+        # Two intermediate rules produce the same label "casing_env" with
+        # different casing. The top rule aggregates them, so the check must
+        # walk the dep tree and detect "production" vs "Production".
+        - record: e2etelemetry:casing_lower:gauge
+          expr: label_replace(vector(1), "casing_env", "production", "", "")
+        - record: e2etelemetry:casing_upper:gauge
+          expr: label_replace(vector(1), "casing_env", "Production", "", "")
+        - record: e2etelemetry:casing_mix:max
+          expr: max(e2etelemetry:casing_lower:gauge) + max(e2etelemetry:casing_upper:gauge)
+
+        # Suffix mismatch
+
+        # Rule name suffix doesn't match the outermost operation.
+        - record: e2etelemetry:etcd_has_leader:wrong_sum
+          expr: max(etcd_server_has_leader{job="etcd"})
+        - record: e2etelemetry:etcd_wal_fsync:wrong_ratio
+          expr: sum(etcd_disk_wal_fsync_duration_seconds_count{job="etcd"})
+        # sum(rate(...)) with :rate suffix , must NOT flag (sum is implicit).
+        - record: e2etelemetry:suffix_ok:rate
+          expr: sum(rate(etcd_disk_wal_fsync_duration_seconds_count{job="etcd"}[5m]))
+        # sum(rate(...)) with :sum suffix , must NOT flag (sum IS the outermost).
+        - record: e2etelemetry:suffix_ok:sum
+          expr: sum(rate(etcd_disk_wal_fsync_duration_seconds_count{job="etcd"}[5m]))
+        # sum(rate(...)) with :rate5m suffix , must NOT flag.
+        - record: e2etelemetry:suffix_ok:rate5m
+          expr: sum(rate(etcd_disk_wal_fsync_duration_seconds_count{job="etcd"}[5m]))
+        # sum(rate(...)) incorrectly named :wrong_max , must flag.
+        - record: e2etelemetry:etcd_wal_fsync:wrong_max
+          expr: sum(rate(etcd_disk_wal_fsync_duration_seconds_count{job="etcd"}[5m]))
+        # max(rate(...)) with :rate5m , must flag because rate-like exception
+        # only applies when the outer op is sum(), not max().
+        - record: e2etelemetry:suffix_max_rate:rate5m
+          expr: max(rate(etcd_disk_wal_fsync_duration_seconds_count{job="etcd"}[5m]))
+        # sum(increase(...)) with :increase1h , must NOT flag because increase
+        # is a rate-like function and sum can be omitted.
+        - record: e2etelemetry:suffix_sum_increase:increase1h
+          expr: sum(increase(etcd_disk_wal_fsync_duration_seconds_count{job="etcd"}[1h]))
+        # Binary / with :sum suffix , must flag, expected :ratio.
+        - record: e2etelemetry:suffix_div:sum
+          expr: max(etcd_server_has_leader{job="etcd"}) / max(etcd_disk_wal_fsync_duration_seconds_count{job="etcd"})
+
+        # More edge cases
+
+        # Cycle: A=>B=>A. Must not infinite-loop; tree collapses the cycle.
+        - record: e2etelemetry:cycle_a:sum
+          expr: sum(e2etelemetry:cycle_b:max) + etcd_server_has_leader{job="etcd"}
+        - record: e2etelemetry:cycle_b:max
+          expr: max(e2etelemetry:cycle_a:sum)
+        # Self-referencing rule.
+        - record: e2etelemetry:self_ref:sum
+          expr: sum(e2etelemetry:self_ref:sum) + etcd_server_has_leader{job="etcd"}
+        # Regex __name__ inside rule expression. Tree must show the selector.
+        - record: e2etelemetry:regex_inner:sum
+          expr: sum({__name__=~"etcd_server_has_leader|etcd_disk_wal_fsync_duration_seconds_count", job="etcd"})
+        # No metric references at all (pure function). Tree must be empty.
+        - record: e2etelemetry:no_metrics:gauge
+          expr: hour() + day_of_week()
+        # Counter used both safely (rate) and unsafely (bare) in same expr.
+        - record: e2etelemetry:counter_mixed:sum
+          expr: sum(rate(process_cpu_seconds_total{job="etcd"}[5m])) + max(process_cpu_seconds_total{job="etcd"})
+        # _total in metric segment, NOT in ops suffix. Must NOT flag _total.
+        - record: e2etelemetry:process_cpu_seconds_total:max
+          expr: max(process_cpu_seconds_total{job="etcd"})
+        # Chained unless: A unless B unless C. B and C are both optional.
+        - record: e2etelemetry:chained_unless:max
+          expr: max(etcd_server_has_leader{job="etcd"}) unless e2e_nonexistent_unless_x unless e2e_nonexistent_unless_y
+        # Dead LHS of "and": LHS has 0 series, must flag.
+        - record: e2etelemetry:dead_lhs_and:test
+          expr: e2e_nonexistent_and_lhs and max(etcd_server_has_leader{job="etcd"})
+
+        # absent() fallback pattern
+
+        # Uses absent(__does_not_exist__) * 0 as a fallback. The leaf
+        # metric set must be {etcd_server_has_leader}, NOT
+        # {etcd_server_has_leader, __does_not_exist__}.
+        - record: e2etelemetry:absent_fallback:ratio
+          expr: max(etcd_server_has_leader{job="etcd"}) or absent(__does_not_exist__) * 0
+
+        # peak_series / value_range consistency
+        # All vector()-based: fully deterministic, no scrape dependency.
+
+        # Single series, value 1. peak_series must be 1, value_range: 1, 1.
+        - record: e2etelemetry:const_one:gauge
+          expr: vector(1)
+
+        # Single series, value 0. peak_series must be 1, value_range: 0, 0.
+        - record: e2etelemetry:const_zero:gauge
+          expr: vector(0)
+
+        # 3 series with values 10, 20, 30. peak_series: 3, value_range: 10, 30.
+        - record: e2etelemetry:const_multi:gauge
+          expr: label_replace(vector(10), "i", "a", "", "") or label_replace(vector(20), "i", "b", "", "") or label_replace(vector(30), "i", "c", "", "")
+
+        # Dead dependency , no data. peak_series: 0, value_range: NaN, NaN.
+        - record: e2etelemetry:const_dead:sum
+          expr: sum(e2e_nonexistent_const_dead)
+
+        # Matcher-aware dep tree
+        # 2-level chain built from real Prometheus metrics:
+        #   Level 0 (leaf): sum by (job, handler) (rate(http_requests[5m]))
+        #   Level 1: sum by (job) (level-0)
+        #   Level 2: rules that reference level-0/1 WITH label matchers
+        # job=etcd is the only job available for etcd_* metrics.
+
+        # Level 0: preserve job from etcd_server_has_leader.
+        # On a real cluster etcd has multiple instances so this has >1 series.
+        - record: e2etelemetry:etcd_by_job:max
+          expr: max by (job) (etcd_server_has_leader)
+
+        # Level 1: reference level 0 with EXISTING job filter.
+        - record: e2etelemetry:etcd_job_exists:max
+          expr: max(e2etelemetry:etcd_by_job:max{job="etcd"})
+
+        # Level 1: reference level 0 with NONEXISTENT job => dead dep.
+        - record: e2etelemetry:etcd_job_ghost:max
+          expr: max(e2etelemetry:etcd_by_job:max{job="ghost"})
+
+        # Level 1: one real + one ghost job filter in same rule.
+        - record: e2etelemetry:etcd_job_mixed:sum
+          expr: sum(e2etelemetry:etcd_by_job:max{job="etcd"}) + sum(e2etelemetry:etcd_by_job:max{job="ghost"})
+
+        # Multiple definitions
+
+        # Same rule name with different expressions: one per-leader, one
+        # per-learner. Tests that the tool detects and warns about this.
+        - record: e2etelemetry:etcd_multi_def:max
+          expr: max(etcd_server_has_leader{job="etcd"})
+        - record: e2etelemetry:etcd_multi_def:max
+          expr: max(etcd_server_is_learner{job="etcd"})
+
+        # Wrong number of colons
+
+        # Violates level:metric:operations (has 3 colons, expected 2).
+        - record: e2etelemetry:etcd:too:many_colons
+          expr: max(etcd_server_has_leader{job="etcd"})
+
+        # Metadata conflict
+
+        # go_memstats_alloc_bytes is reported as "counter" by some sources
+        # and "gauge" by others. The check must flag it.
+        - record: e2etelemetry:memstats_alloc:max
+          expr: max(go_memstats_alloc_bytes)
+
+        # Config overlap
+
+        # Uses sum(up) , leaf metric "up" is shared with count:up0 and
+        # count:up1 from the telemetry config. Tests leaf overlap detection.
+        - record: e2etelemetry:config_overlap:sum
+          expr: sum(up)
+
