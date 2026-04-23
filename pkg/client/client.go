@@ -44,6 +44,7 @@ import (
 	monitoring "github.com/prometheus-operator/prometheus-operator/pkg/client/versioned"
 	admissionv1 "k8s.io/api/admissionregistration/v1"
 	appsv1 "k8s.io/api/apps/v1"
+	authorizationv1 "k8s.io/api/authorization/v1"
 	v1 "k8s.io/api/core/v1"
 	networkingv1 "k8s.io/api/networking/v1"
 	policyv1 "k8s.io/api/policy/v1"
@@ -1846,6 +1847,44 @@ func mergeMetadata(required *metav1.ObjectMeta, existing metav1.ObjectMeta) {
 
 	_ = mergo.Merge(&required.Annotations, existing.Annotations)
 	_ = mergo.Merge(&required.Labels, existing.Labels)
+}
+
+// WaitForSCCAccess waits for the specified serviceaccount to have access to use the specified SCC.
+// This prevents race conditions where workloads are created before RBAC propagates.
+func (c *Client) WaitForSCCAccess(ctx context.Context, serviceAccountName, namespace, sccName string) error {
+	var lastErr error
+	if err := Poll(ctx, func(ctx context.Context) (bool, error) {
+		sar := &authorizationv1.SubjectAccessReview{
+			Spec: authorizationv1.SubjectAccessReviewSpec{
+				ResourceAttributes: &authorizationv1.ResourceAttributes{
+					Namespace: namespace,
+					Verb:      "use",
+					Group:     "security.openshift.io",
+					Resource:  "securitycontextconstraints",
+					Name:      sccName,
+				},
+				User: fmt.Sprintf("system:serviceaccount:%s:%s", namespace, serviceAccountName),
+			},
+		}
+
+		result, err := c.kclient.AuthorizationV1().SubjectAccessReviews().Create(ctx, sar, metav1.CreateOptions{})
+		if err != nil {
+			lastErr = fmt.Errorf("failed to create SubjectAccessReview: %w", err)
+			return false, nil
+		}
+
+		if !result.Status.Allowed {
+			lastErr = fmt.Errorf("serviceaccount %s/%s not yet allowed to use SCC %s: %s", namespace, serviceAccountName, sccName, result.Status.Reason)
+			return false, nil
+		}
+
+		klog.V(4).Infof("ServiceAccount %s/%s successfully granted access to SCC %s", namespace, serviceAccountName, sccName)
+		return true, nil
+	}, WithPollTimeout(2*time.Minute), WithLastError(&lastErr)); err != nil {
+		return fmt.Errorf("timeout waiting for serviceaccount %s/%s to get access to SCC %s: %w", namespace, serviceAccountName, sccName, err)
+	}
+
+	return nil
 }
 
 type jsonPatch struct {

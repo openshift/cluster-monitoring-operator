@@ -168,6 +168,15 @@ func (t *AlertmanagerTask) create(ctx context.Context) error {
 		return fmt.Errorf("reconciling Alertmanager ServiceAccount failed: %w", err)
 	}
 
+	// Wait for the alertmanager-main serviceaccount to have access to the nonroot SCC.
+	// This prevents race conditions where the StatefulSet tries to create pods before
+	// RBAC propagates to the kube-apiserver's authorizer cache.
+	klog.V(3).Info("Waiting for alertmanager-main serviceaccount to get access to nonroot SCC")
+	err = t.client.WaitForSCCAccess(ctx, "alertmanager-main", t.client.Namespace(), "nonroot")
+	if err != nil {
+		return fmt.Errorf("waiting for alertmanager serviceaccount SCC access failed: %w", err)
+	}
+
 	ps, err := t.factory.AlertmanagerRBACProxyWebSecret()
 	if err != nil {
 		return fmt.Errorf("initializing Alertmanager proxy web Secret failed: %w", err)
