@@ -7,3 +7,118 @@ reviews:
   sequence_diagrams: false
   changed_files_summary: false
   enable_prompt_for_ai_agents: false
+  # TODO: maybe still need to make coderabbitai job a blocker
+  request_changes_workflow: true
+  pre_merge_checks:
+    custom_checks:
+      - name: "Telemetry checks"
+        mode: error
+        instructions: |
+          Scope: PRs that add, modify, or remove telemetry selectors in
+          `manifests/0000_50_cluster-monitoring-operator_04-config.yaml`.
+
+          Terminology:
+          - "PR description" = the PR body field only (not the title, not commit messages).
+          - A "selector" (e.g. `{__name__="up", job="prometheus-k8s"}`) is made of "label
+            matchers" (e.g. `job="prometheus-k8s"`). Every selector MUST have `__name__`.
+          - A selector is "new" if it was not present before the PR.
+          - A selector is "modified" if any matcher changed (e.g. `{__name__="foo"}` became
+            `{__name__="foo", bar="baz"}`).
+          - "Affected selectors" = every new or modified selector in the PR.
+        
+          Each time you are asked to evaluate these checks, treat it as a completely fresh
+          run: re-fetch the PR description, re-read the diff, and re-read the file. Never reuse
+          or carry over results from a previous evaluation.
+
+          Run ALL checks below in order, regardless of failures. Report the result of every
+          check independently. Do NOT stop early, do NOT add commentary, suggestions, or
+          analysis beyond what each check explicitly asks for.
+
+          **1. No selector removals**
+          Scan the diff for deleted selectors. If any selector was removed, **fail**.
+          Reason: this config is consumed by the Telemeter server, removing a selector blocks
+          that metric for every cluster version. Removal MUST be coordinated with the
+          monitoring team.
+
+          **2. Owner and description**
+          Every affected selector MUST have structured comments directly above it:
+            ```
+            #
+            # owners: <url or github handle>
+            #
+            # <description>.
+            - '{__name__="metric", <label>=<value>}'
+            ```
+          The description (which may span multiple `#` lines) MUST:
+          - State the business purpose, why this data needs to be collected and how it will be
+            used, clearly enough for someone auditing what data is collected.
+          - Spell out abbreviations on first use (e.g. "OBC (ObjectBucketClaim)").
+          - Be unique per selector, do not duplicate text from other selectors, and do not
+            use vague terms (e.g. "resources" when the selector only covers memory).
+          **Fail** if the `owners:` line or the description is missing, empty, or clearly
+          wrong.
+
+          **3. Telemetry report data**
+          The PR description MUST include the output of `hack/telemetry_report.sh` for every
+          affected selector. Required data points per selector:
+            1. selector string
+            2. matched metric names (extracted by the script via `/api/v1/series`)
+            3. timeseries count
+            4. per-metric recording rule info (yes/no; if yes: file path and expression)
+            5. label names with distinct-value counts
+          Example (exact wording may vary):
+            ```
+            selector: {__name__="my_metric", job="prometheus-k8s"}
+            matched metrics:
+              - my_metric
+            timeseries count: 4
+            recording rules:
+              - my_metric (not a recording rule)
+            labels count:
+              job: 1
+              instance: 4
+            ```
+          **Fail** if any affected selector is missing any of the data points above. Ask
+          the author to run:
+            `hack/telemetry_report.sh <PROM_URL> '<selector1>' '<selector2>' ...`
+          and paste the output into the PR description.
+
+          **4. Cardinality, selector hygiene, and privacy**
+          If the report data from **3.** is missing, **fail**.
+          Read the report data from the PR description and apply these sub-checks:
+          a) **Cardinality limits**: At most 1-3 new selectors per PR; at most 1-10
+             timeseries per selector; at most 10 new timeseries total across all selectors.
+             If any limit is exceeded, **fail** and ask the author to add a
+             justification to the PR description.
+          b) **Exact over regex**: Prefer `__name__="..."` over `__name__=~"..."`. A regex
+             selector is acceptable only if the author justifies that its cardinality is within
+             the limits in (a). If not, **fail**.
+          c) **Restrictive matchers**: Every label matcher in a selector MUST constrain
+             values to a known, bounded set. This is defense-in-depth: even if current
+             cardinality is low, open-ended matchers risk explosions if the underlying metric
+             or recording rule changes later. **Fail** if selectors have open-ended or
+             missing matchers.
+          d) **No identifying data**: Selectors MUST NOT expose information that identifies
+             individuals, companies, customers, or specific workloads (e.g. personal names,
+             emails, org names that reveal tenant identity).
+             **Fail** if identifying data is present.
+
+          **5. Recording rule conventions**
+          If the report data from **3.** is missing, **fail**.
+          For each matched metric that is marked as a recording rule in the report data:
+          a) **Naming**: The name MUST follow `level:metric_name:aggregation`
+             (e.g. `cluster:my_metric:sum`). The suffix MUST match the aggregation function
+             used: `:sum`, `:max`, `:count`, `:info`, or `:histogram_quantile`. Do not use
+             `:total` (reserved for raw counters).
+          b) **Expression correctness**: When the expression aggregates counters, `rate()`
+             MUST be applied before `sum()`. Summing raw counters produces wrong results on
+             resets. Check this in the expression from the report.
+          **Fail** if any of the above is violated.
+
+          **6. Redundancy check**
+          For every new selector, verify the signal is not already captured by an existing
+          entry in the config: a broader regex selector (e.g. `{__name__=~"cluster:usage:.*"}`),
+          an aggregated selector (`count:up0`, `count:up1`), `cluster_operator_conditions`, or
+          an alert (alerts are already pushed to telemetry).
+          **Fail** if any selector that appears redundant and ask the author to justify why a
+          separate selector is needed.
