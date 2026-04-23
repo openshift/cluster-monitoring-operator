@@ -16,3 +16,4 @@ spec:
       app.kubernetes.io/managed-by: cluster-monitoring-operator
       app.kubernetes.io/name: monitoring-plugin
       app.kubernetes.io/part-of: openshift-monitoring
+  unhealthyPodEvictionPolicy: AlwaysAllow
