@@ -3489,8 +3489,22 @@ nodeExporter:
     interrupts:
       enabled: true
 `,
-			argsPresent: []string{"--collector.interrupts"},
-			argsAbsent:  []string{"--no-collector.interrupts"},
+			argsPresent: []string{"--collector.interrupts",
+				"--collector.interrupts.name-include=^()$"},
+			argsAbsent: []string{"--no-collector.interrupts"},
+		},
+		{
+			name: "enable interrupts collector with include patterns",
+			config: `
+nodeExporter:
+  collectors:
+    interrupts:
+      enabled: true
+      include: ["^LOC;.*", "^NMI;.*"]
+`,
+			argsPresent: []string{"--collector.interrupts",
+				"--collector.interrupts.name-include=^(^LOC;.*|^NMI;.*)$"},
+			argsAbsent: []string{"--no-collector.interrupts"},
 		},
 		{
 			name: "enable softirqs collector",

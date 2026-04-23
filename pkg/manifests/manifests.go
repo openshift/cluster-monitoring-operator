@@ -967,6 +967,11 @@ func (f *Factory) updateNodeExporterArgs(args []string) ([]string, error) {
 
 	if f.config.ClusterMonitoringConfiguration.NodeExporterConfig.Collectors.Interrupts.Enabled {
 		args = setArg(args, "--collector.interrupts", "")
+		pattern, err := regexListToArg(f.config.ClusterMonitoringConfiguration.NodeExporterConfig.Collectors.Interrupts.Include)
+		if err != nil {
+			return nil, fmt.Errorf("interrupts include pattern validation error: %w", err)
+		}
+		args = setArg(args, "--collector.interrupts.name-include=", pattern)
 	} else {
 		args = setArg(args, "--no-collector.interrupts", "")
 	}

@@ -295,7 +295,7 @@ The `NodeExporterCollectorEthtoolConfig` resource works as an on/off switch for 
 
 #### Description
 
-The `NodeExporterCollectorInterruptsConfig` resource works as an on/off switch for the `interrupts` collector of the `node-exporter` agent. By default, the `interrupts` collector is disabled.
+The `NodeExporterCollectorInterruptsConfig` resource works as an on/off switch for the `interrupts` collector of the `node-exporter` agent. By default, the `interrupts` collector is disabled. If you enable this collector, use `include` to allow-list which interrupt lines are exposed (each entry is a regular expression; they are combined with OR). This limits metric cardinality compared to exposing every line from `/proc/interrupts`. If `include` is empty, the operator sets a filter that matches nothing (no interrupt series), which is the same pattern as an empty `units` list for the `systemd` collector. To match all interrupt lines (high cardinality), set `include` to one pattern that matches the lines you need; matching every line (high cardinality) requires a broad regexp such as .* .
 
 
 <em>appears in: [NodeExporterCollectorConfig](#nodeexportercollectorconfig)</em>
@@ -303,6 +303,7 @@ The `NodeExporterCollectorInterruptsConfig` resource works as an on/off switch f
 | Property | Type | Description |
 | -------- | ---- | ----------- |
 | enabled | bool | A Boolean flag that enables or disables the `interrupts` collector. |
+| include | []string | A list of regular expression patterns. Each line in `/proc/interrupts` is matched against the same string node-exporter uses: the IRQ name, info, and devices fields joined with `;`, for example `LOC;77;IO-APIC …`. Patterns are combined with OR. An empty list means no lines are included. |
 
 [Back to TOC](#table-of-contents)
 
