@@ -3,22 +3,25 @@ kind: ServiceMonitor
 metadata:
   labels:
     app.kubernetes.io/managed-by: cluster-monitoring-operator
+    app.kubernetes.io/name: cluster-monitoring-operator
     app.kubernetes.io/part-of: openshift-monitoring
-    k8s-app: telemeter-client
-    monitoring.openshift.io/collection-profile: full
-  name: telemeter-client
+    monitoring.openshift.io/collection-profile: minimal
+  name: cluster-monitoring-operator-minimal
   namespace: openshift-monitoring
 spec:
   endpoints:
   - bearerTokenFile: ""
-    interval: 30s
+    metricRelabelings:
+    - action: drop
+      regex: (apiserver|go_sched|workqueue)_.+
+      sourceLabels:
+      - __name__
     port: https
     scheme: https
     tlsConfig:
       insecureSkipVerify: false
-      serverName: telemeter-client.openshift-monitoring.svc
-  jobLabel: k8s-app
+      serverName: cluster-monitoring-operator.openshift-monitoring.svc
   scrapeClass: tls-client-certificate-auth
   selector:
     matchLabels:
-      k8s-app: telemeter-client
+      app.kubernetes.io/name: cluster-monitoring-operator

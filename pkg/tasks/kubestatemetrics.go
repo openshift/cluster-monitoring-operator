@@ -128,11 +128,9 @@ func (t *KubeStateMetricsTask) Run(ctx context.Context) error {
 	if err != nil {
 		return fmt.Errorf("initializing kube-state-metrics ServiceMonitors failed: %w", err)
 	}
-	for _, sm := range sms {
-		err = t.client.CreateOrUpdateServiceMonitor(ctx, sm)
-		if err != nil {
-			return fmt.Errorf("reconciling %s/%s ServiceMonitor failed: %w", sm.Namespace, sm.Name, err)
-		}
+	err = t.client.CreateOrUpdateServiceMonitors(ctx, sms)
+	if err != nil {
+		return fmt.Errorf("reconciling kube-state-metrics ServiceMonitors failed: %w", err)
 	}
 
 	return nil

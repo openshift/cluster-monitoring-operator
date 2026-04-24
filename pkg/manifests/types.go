@@ -16,6 +16,7 @@ package manifests
 
 import (
 	"slices"
+	"strings"
 
 	monv1 "github.com/prometheus-operator/prometheus-operator/pkg/apis/monitoring/v1"
 	v1 "k8s.io/api/core/v1"
@@ -27,15 +28,21 @@ type CollectionProfile string
 type CollectionProfiles []CollectionProfile
 
 const (
-	// FullCollectionProfile collects all metrics.
-	FullCollectionProfile = "full"
-
-	// MinimalCollectionProfile collects only metrics used by recording/alerting, dashboards and Telemetry.
-	MinimalCollectionProfile = "minimal"
+	FullCollectionProfile      = "full"
+	MinimalCollectionProfile   = "minimal"
+	TelemetryCollectionProfile = "telemetry"
 )
 
-// SupportedCollectionProfiles is the list of collection profiles supported by CMO.
-var SupportedCollectionProfiles = CollectionProfiles{FullCollectionProfile, MinimalCollectionProfile}
+var SupportedCollectionProfiles = CollectionProfiles{
+	FullCollectionProfile,
+	MinimalCollectionProfile,
+	TelemetryCollectionProfile,
+}
+
+// String returns a comma-separated string of collection profiles.
+func (cps CollectionProfiles) String() string {
+	return strings.Join(cps.StringSlice(), ", ")
+}
 
 // StringSlice returns the list of collection profiles as []string.
 func (cps CollectionProfiles) StringSlice() []string {
@@ -271,11 +278,16 @@ type PrometheusK8sConfig struct {
 	// Defines the pod's topology spread constraints.
 	TopologySpreadConstraints []v1.TopologySpreadConstraint `json:"topologySpreadConstraints,omitempty"`
 	// Defines the metrics collection profile that Prometheus uses to collect
-	// metrics from the platform components. Supported values are `full` or
-	// `minimal`. In the `full` profile (default), Prometheus collects all
-	// metrics that are exposed by the platform components. In the `minimal`
-	// profile, Prometheus only collects metrics necessary for the default
-	// platform alerts, recording rules, telemetry and console dashboards.
+	// metrics from the platform components. Supported values are `full`,
+	// `minimal`, or `telemetry`. In the `full` profile (default), Prometheus
+	// collects all metrics that are exposed by the platform components. In the
+	// `minimal` profile, Prometheus only collects metrics necessary for the
+	// default platform alerts, recording rules, telemetry and console
+	// dashboards. In the `telemetry` profile, Prometheus collects only
+	// telemetry-scoped metrics intended for remote telemetry reporting.
+	// Please note that:
+	// * the `full` collection profile is a superset of the `minimal` collection profile, and,
+	// * the `minimal` collection profile is a superset of the `telemetry` collection profile.
 	CollectionProfile CollectionProfile `json:"collectionProfile,omitempty"`
 	// Defines persistent storage for Prometheus. Use this setting to
 	// configure the persistent volume claim, including storage class,
