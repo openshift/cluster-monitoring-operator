@@ -7,19 +7,23 @@ OpenShift. CMO is deployed by the Cluster Version Operator (CVO).
 
 ### Jsonnet Manifest Generation
 
-CMO generates Kubernetes manifests using Jsonnet (`jsonnet/`):
+Kubernetes resources managed by CMO are generated using [Jsonnet](https://jsonnet.org/) code.
 
-- Source: `jsonnet/` and vendored upstream jsonnet
-- Output: `assets/` directory with generated YAML manifests (`VERSION` and `manifests/` are also generated)
-- The operator reads manifests from `assets/` at runtime via `pkg/manifests/`
-- Jsonnet dependency updates are documented in `Documentation/development.md`
+- Sources
+  - `jsonnet/main.jsonnet` is the top-level entrypoint putting together all the resources managed by the Cluster Monitoring Operator.
+  - Each `jsonnet/components/<component>.libsonnet` file defines the Kubernetes resources for the corresponding component.
+  - `jsonnet/jsonnetfile.json` defines the jsonnet dependencies. Dependency management is documented in `Documentation/development.md`.
+- Outputs
+  - All files located in the `assets/` directory.
+  - Files located in the `manifests/` directory which contain "DO NOT EDIT".
+- The operator reads the YAML manifests from `assets/` at runtime via `pkg/manifests/`
 
-**Critical**: Changes must be made in jsonnet source files, then regenerated with `make generate`.
-Direct edits to `assets/*.yaml` will be overwritten. **DO NOT** edit them directly.
+**Critical**: Changes must be made to the jsonnet source files, then regenerated with `make jsonnet-fmt generate`.
+Direct edits to `assets/*/*.yaml` will be overwritten. **DO NOT** edit them directly.
 
 ### Configuration API
 
-Two ConfigMaps control monitoring behavior:
+Two ConfigMaps control the configuration of the monitoring components:
 
 - `cluster-monitoring-config` (openshift-monitoring) - Platform monitoring
 - `user-workload-monitoring-config` (openshift-user-workload-monitoring) - User workload monitoring
