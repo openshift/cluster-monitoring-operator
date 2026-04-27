@@ -6,6 +6,7 @@ local removeImageLocations = (import './utils/remove-images.libsonnet').removeIm
 local removeNetworkPolicy = (import './utils/remove-network-policy.libsonnet').removeNetworkPolicy;
 local configureAuthenticationForMonitors = (import './utils/configure-authentication-for-monitors.libsonnet').configureAuthenticationForMonitors;
 local setTerminationMessagePolicy = (import './utils/set-terminationMessagePolicy.libsonnet').setTerminationMessagePolicy;
+local telemetryLib = import './utils/telemetry-allowlist-and-monitors.libsonnet';
 
 local alertmanager = import './components/alertmanager.libsonnet';
 local alertmanagerUserWorkload = import './components/alertmanager-user-workload.libsonnet';
@@ -404,6 +405,10 @@ local inCluster =
     telemeterClient: telemeterClient($.values.telemeterClient),
     monitoringPlugin: monitoringPlugin($.values.monitoringPlugin),
     openshiftStateMetrics: openshiftStateMetrics($.values.openshiftStateMetrics),
+
+    manifests:: {
+      '0000_50_cluster-monitoring-operator_04-config': telemetryLib.whitelist,
+    },
   } +
   (import './utils/anti-affinity.libsonnet') +
   (import 'github.com/prometheus-operator/kube-prometheus/jsonnet/kube-prometheus/addons/ksm-lite.libsonnet') +

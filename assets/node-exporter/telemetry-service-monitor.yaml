@@ -16,7 +16,7 @@ spec:
     interval: 15s
     metricRelabelings:
     - action: keep
-      regex: (node_accelerator_card_info|node_cpu_info|node_cpu_seconds_total|node_memory_MemAvailable_bytes|node_memory_MemTotal_bytes|virt_platform)
+      regex: (node_accelerator_card_info|node_cpu_info|node_cpu_seconds_total|node_memory_MemAvailable_bytes|node_memory_MemTotal_bytes|node_scrape_collector_success|virt_platform)
       sourceLabels:
       - __name__
     port: https

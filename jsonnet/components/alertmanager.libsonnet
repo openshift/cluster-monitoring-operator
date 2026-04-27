@@ -4,6 +4,7 @@ local alertmanager = import 'github.com/prometheus-operator/kube-prometheus/json
 local generateCertInjection = import '../utils/generate-certificate-injection.libsonnet';
 local generateSecret = import '../utils/generate-secret.libsonnet';
 local generateServiceMonitor = import '../utils/generate-service-monitors.libsonnet';
+local telemetryGen = import '../utils/telemetry-allowlist-and-monitors.libsonnet';
 local withDescription = (import '../utils/add-annotations.libsonnet').withDescription;
 local testFilePlaceholder = (import '../utils/add-annotations.libsonnet').testFilePlaceholder;
 local requiredRoles = (import '../utils/add-annotations.libsonnet').requiredRoles;
@@ -237,7 +238,7 @@ function(params)
 
     minimalServiceMonitor: generateServiceMonitor.serviceMonitorForMinimalProfile(self.serviceMonitor),
     telemetryServiceMonitor: generateServiceMonitor.serviceMonitorForTelemetryProfile(
-      generateServiceMonitor.keepOnlyMetrics(self.serviceMonitor, ['alertmanager_integrations'])
+      generateServiceMonitor.keepOnlyMetrics(self.serviceMonitor, telemetryGen.monitorKeysToMetricsMap[cfg.namespace + '/alertmanager-main-telemetry'])
     ),
 
     alertmanager+: {

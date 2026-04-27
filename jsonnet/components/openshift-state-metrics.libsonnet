@@ -1,5 +1,6 @@
 local generateSecret = import '../utils/generate-secret.libsonnet';
 local generateServiceMonitor = import '../utils/generate-service-monitors.libsonnet';
+local telemetryGen = import '../utils/telemetry-allowlist-and-monitors.libsonnet';
 local withDescription = (import '../utils/add-annotations.libsonnet').withDescription;
 
 function(params) {
@@ -108,10 +109,7 @@ function(params) {
   telemetryServiceMonitor: generateServiceMonitor.serviceMonitorForTelemetryProfile(
     generateServiceMonitor.keepOnlyMetrics(
       self.serviceMonitor,
-      [
-        'openshift_build_status_phase_total',
-        'openshift_route_info',
-      ]
+      telemetryGen.monitorKeysToMetricsMap[cfg.namespace + '/openshift-state-metrics-telemetry']
     )
   ),
   networkPolicyDownstream: {
