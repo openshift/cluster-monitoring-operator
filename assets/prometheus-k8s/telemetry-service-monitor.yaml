@@ -8,13 +8,18 @@ metadata:
     app.kubernetes.io/name: prometheus
     app.kubernetes.io/part-of: openshift-monitoring
     app.kubernetes.io/version: 3.9.1
-    monitoring.openshift.io/collection-profile: full
-  name: prometheus-k8s
+    monitoring.openshift.io/collection-profile: telemetry
+  name: prometheus-k8s-telemetry
   namespace: openshift-monitoring
 spec:
   endpoints:
   - bearerTokenFile: ""
     interval: 30s
+    metricRelabelings:
+    - action: keep
+      regex: (ALERTS|prometheus_tsdb_head_samples_appended_total|prometheus_tsdb_head_series)
+      sourceLabels:
+      - __name__
     port: metrics
     scheme: https
     tlsConfig:
