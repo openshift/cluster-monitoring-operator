@@ -163,9 +163,7 @@ func (c *Config) mergeMetricsServerConfiguration(msc configv1alpha1.MetricsServe
 	}
 	cfg.NodeSelector = msc.NodeSelector
 	cfg.Tolerations = msc.Tolerations
-	if res := containerResourcesFromCRD(msc.Resources); res != nil {
-		cfg.Resources = res
-	}
+	cfg.Resources = containerResourcesFromCRD(msc.Resources)
 	if msc.Audit.Profile != "" {
 		cfg.Audit = &Audit{
 			Profile: auditv1.Level(string(msc.Audit.Profile)),
@@ -191,9 +189,7 @@ func (c *Config) mergePrometheusOperatorConfiguration(poc configv1alpha1.Prometh
 	}
 	cfg.NodeSelector = poc.NodeSelector
 	cfg.Tolerations = poc.Tolerations
-	if res := containerResourcesFromCRD(poc.Resources); res != nil {
-		cfg.Resources = res
-	}
+	cfg.Resources = containerResourcesFromCRD(poc.Resources)
 	cfg.TopologySpreadConstraints = poc.TopologySpreadConstraints
 
 	c.ClusterMonitoringConfiguration.PrometheusOperatorConfig = cfg
@@ -228,9 +224,7 @@ func mergeAlertmanagerCustomConfigFromCRD(dst *AlertmanagerMainConfig, cc config
 	if len(cc.NodeSelector) > 0 {
 		dst.NodeSelector = cc.NodeSelector
 	}
-	if res := containerResourcesFromCRD(cc.Resources); res != nil {
-		dst.Resources = res
-	}
+	dst.Resources = containerResourcesFromCRD(cc.Resources)
 	if len(cc.Secrets) > 0 {
 		for _, s := range cc.Secrets {
 			dst.Secrets = append(dst.Secrets, string(s))
@@ -259,6 +253,7 @@ func persistentVolumeClaimToEmbedded(pvc *v1.PersistentVolumeClaim) *monv1.Embed
 	}
 	em.EmbeddedObjectMetadata.Name = pvc.Name
 	em.EmbeddedObjectMetadata.Labels = pvc.Labels
+	em.EmbeddedObjectMetadata.Annotations = pvc.Annotations
 	em.Spec = pvc.Spec
 	return em
 }
