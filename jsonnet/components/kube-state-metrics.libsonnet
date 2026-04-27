@@ -6,6 +6,7 @@ local kubeStateMetrics = import 'github.com/prometheus-operator/kube-prometheus/
 local kubeStateMetricsCRS = import '../utils/kube-state-metrics-custom-resource-state.libsonnet';
 local generateSecret = import '../utils/generate-secret.libsonnet';
 local generateServiceMonitor = import '../utils/generate-service-monitors.libsonnet';
+local telemetryGen = import '../utils/telemetry-allowlist-and-monitors.libsonnet';
 local withDescription = (import '../utils/add-annotations.libsonnet').withDescription;
 
 function(params)
@@ -110,22 +111,7 @@ function(params)
       },
     },
 
-    local telemetryMetrics = [
-      'kube_node_labels',
-      'kube_node_spec_unschedulable',
-      'kube_node_status_capacity',
-      'kube_node_status_condition',
-      'kube_persistentvolume_info',
-      'kube_persistentvolumeclaim_info',
-      'kube_persistentvolumeclaim_resource_requests_storage_bytes',
-      'kube_pod_container_resource_requests',
-      'kube_pod_info',
-      'kube_pod_labels',
-      'kube_pod_restart_policy',
-      'kube_pod_status_phase',
-      'kube_running_pod_ready',
-      'kube_storageclass_info',
-    ],
+    local telemetryMetrics = telemetryGen.monitorKeysToMetricsMap[cfg.namespace + '/kube-state-metrics-telemetry'],
 
     minimalServiceMonitor: generateServiceMonitor.serviceMonitorForMinimalProfile(
       generateServiceMonitor.keepOnlyMetrics(

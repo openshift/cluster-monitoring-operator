@@ -1,6 +1,7 @@
 local generateCertInjection = import '../utils/generate-certificate-injection.libsonnet';
 local generateSecret = import '../utils/generate-secret.libsonnet';
 local generateServiceMonitor = import '../utils/generate-service-monitors.libsonnet';
+local telemetryGen = import '../utils/telemetry-allowlist-and-monitors.libsonnet';
 local withDescription = (import '../utils/add-annotations.libsonnet').withDescription;
 
 function(params) {
@@ -53,10 +54,7 @@ function(params) {
   telemetryServiceMonitor: generateServiceMonitor.serviceMonitorForTelemetryProfile(
     generateServiceMonitor.keepOnlyMetrics(
       self.serviceMonitor,
-      [
-        'federate_filtered_samples',
-        'federate_samples',
-      ]
+      telemetryGen.monitorKeysToMetricsMap[cfg.namespace + '/telemeter-client-telemetry']
     )
   ),
   secret: tc.telemeterClient.secret,

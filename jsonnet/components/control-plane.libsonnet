@@ -1,4 +1,5 @@
 local generateServiceMonitor = import '../utils/generate-service-monitors.libsonnet';
+local telemetryGen = import '../utils/telemetry-allowlist-and-monitors.libsonnet';
 local controlPlane = import 'github.com/prometheus-operator/kube-prometheus/jsonnet/kube-prometheus/components/k8s-control-plane.libsonnet';
 
 function(params)
@@ -124,22 +125,7 @@ function(params)
       },
     },
 
-    local telemetryMetrics = [
-      'apiserver_current_inflight_requests',
-      'apiserver_request_total',
-      'apiserver_storage_objects',
-      'container_cpu_usage_seconds_total',
-      'container_memory_working_set_bytes',
-      'kubelet_containers_per_pod_count_sum',
-      'kubelet_volume_stats_used_bytes',
-      'pv_collector_total_pv_count',
-      'selinux_warning_controller_selinux_volume_conflict',
-      'volume_manager_selinux_pod_context_mismatch_errors_total',
-      'volume_manager_selinux_pod_context_mismatch_warnings_total',
-      'volume_manager_selinux_volume_context_mismatch_errors_total',
-      'volume_manager_selinux_volume_context_mismatch_warnings_total',
-      'volume_manager_selinux_volumes_admitted_total',
-    ],
+    local telemetryMetrics = telemetryGen.monitorKeysToMetricsMap[cfg.namespace + '/kubelet-telemetry'],
 
     minimalServiceMonitorKubelet: generateServiceMonitor.serviceMonitorForMinimalProfile(
       generateServiceMonitor.keepOnlyMetrics(

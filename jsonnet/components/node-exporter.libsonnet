@@ -110,6 +110,7 @@ local acceleratorsConfigData = [
 local nodeExporter = import 'github.com/prometheus-operator/kube-prometheus/jsonnet/kube-prometheus/components/node-exporter.libsonnet';
 local generateSecret = import '../utils/generate-secret.libsonnet';
 local generateServiceMonitor = import '../utils/generate-service-monitors.libsonnet';
+local telemetryGen = import '../utils/telemetry-allowlist-and-monitors.libsonnet';
 local withDescription = (import '../utils/add-annotations.libsonnet').withDescription;
 
 function(params)
@@ -174,14 +175,7 @@ function(params)
       },
     },
 
-    local telemetryMetrics = [
-      'node_accelerator_card_info',
-      'node_cpu_info',
-      'node_cpu_seconds_total',
-      'node_memory_MemAvailable_bytes',
-      'node_memory_MemTotal_bytes',
-      'virt_platform',
-    ],
+    local telemetryMetrics = telemetryGen.monitorKeysToMetricsMap[cfg.namespace + '/node-exporter-telemetry'],
 
     minimalServiceMonitor: generateServiceMonitor.serviceMonitorForMinimalProfile(
       generateServiceMonitor.keepOnlyMetrics(
