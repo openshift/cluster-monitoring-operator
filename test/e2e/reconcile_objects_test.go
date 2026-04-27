@@ -135,6 +135,24 @@ func TestSecretsReconciliation(t *testing.T) {
 		require.NoError(t, err)
 	}
 
+	// Trigger an operator reconciliation by annotating the cluster-monitoring-config
+	// ConfigMap. The operator's event handler only enqueues reconciliation for a
+	// specific set of ConfigMaps/Secrets, so mutating arbitrary secrets won't
+	// trigger a sync on its own.
+	err = retry.RetryOnConflict(retry.DefaultRetry, func() error {
+		cm, err := f.KubeClient.CoreV1().ConfigMaps(f.Ns).Get(context.Background(), framework.ClusterMonitorConfigMapName, metav1.GetOptions{})
+		if err != nil {
+			return err
+		}
+		if cm.Annotations == nil {
+			cm.Annotations = map[string]string{}
+		}
+		cm.Annotations["monitoring.openshift.io/trigger-reconciliation"] = time.Now().Format(time.RFC3339)
+		_, err = f.KubeClient.CoreV1().ConfigMaps(f.Ns).Update(context.Background(), cm, metav1.UpdateOptions{})
+		return err
+	})
+	require.NoError(t, err)
+
 	// Check for reconciliation of secrets.
 	for _, secret := range secrets {
 		// Synced secrets should be reconciled, i.e., the test prefix must be removed.
