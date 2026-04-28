@@ -121,7 +121,7 @@ func createPrometheusRuleWithAlert(t *testing.T, namespace, name, alertName stri
 
 func verifyAlertmanagerReceivedAlerts(t *testing.T, namespace, svc string) {
 	err := framework.Poll(time.Second, 5*time.Minute, func() error {
-		host, cleanUp, err := f.ForwardPort(t, namespace, svc, 9093)
+		host, cleanUp, err := f.ForwardServicePort(t, namespace, svc, 9093)
 		if err != nil {
 			return err
 		}
