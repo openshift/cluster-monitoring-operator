@@ -1,6 +1,5 @@
 local generateCertInjection = import '../utils/generate-certificate-injection.libsonnet';
 local generateSecret = import '../utils/generate-secret.libsonnet';
-local generateServiceMonitor = import '../utils/generate-service-monitors.libsonnet';
 local withDescription = (import '../utils/add-annotations.libsonnet').withDescription;
 
 function(params) {
@@ -34,11 +33,6 @@ function(params) {
     },
   },
   serviceMonitor: tc.telemeterClient.serviceMonitor {
-    metadata+: {
-      labels+: {
-        'monitoring.openshift.io/collection-profile': 'full',
-      },
-    },
     spec+: {
       endpoints: [
         {
@@ -49,16 +43,6 @@ function(params) {
       ],
     },
   },
-  minimalServiceMonitor: generateServiceMonitor.serviceMonitorForMinimalProfile(self.serviceMonitor),
-  telemetryServiceMonitor: generateServiceMonitor.serviceMonitorForTelemetryProfile(
-    generateServiceMonitor.keepOnlyMetrics(
-      self.serviceMonitor,
-      [
-        'federate_filtered_samples',
-        'federate_samples',
-      ]
-    )
-  ),
   secret: tc.telemeterClient.secret,
   servingCertsCABundle: tc.telemeterClient.servingCertsCABundle,
   kubeRbacProxySecret: generateSecret.staticAuthSecret(cfg.namespace, cfg.commonLabels, 'telemeter-client-kube-rbac-proxy-config'),

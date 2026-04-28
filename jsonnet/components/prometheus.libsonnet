@@ -2,7 +2,6 @@ local metrics = import 'github.com/openshift/telemeter/jsonnet/telemeter/metrics
 
 local generateCertInjection = import '../utils/generate-certificate-injection.libsonnet';
 local generateSecret = import '../utils/generate-secret.libsonnet';
-local generateServiceMonitor = import '../utils/generate-service-monitors.libsonnet';
 local prometheus = import 'github.com/prometheus-operator/kube-prometheus/jsonnet/kube-prometheus/components/prometheus.libsonnet';
 local withDescription = (import '../utils/add-annotations.libsonnet').withDescription;
 local requiredClusterRoles = (import '../utils/add-annotations.libsonnet').requiredClusterRoles;
@@ -286,11 +285,6 @@ function(params)
     },
 
     serviceMonitor+: {
-      metadata+: {
-        labels+: {
-          'monitoring.openshift.io/collection-profile': 'full',
-        },
-      },
       spec+: {
         serviceDiscoveryRole: 'EndpointSlice',
         endpoints: [
@@ -302,17 +296,6 @@ function(params)
         ],
       },
     },
-    minimalServiceMonitor: generateServiceMonitor.serviceMonitorForMinimalProfile(self.serviceMonitor),
-    telemetryServiceMonitor: generateServiceMonitor.serviceMonitorForTelemetryProfile(
-      generateServiceMonitor.keepOnlyMetrics(
-        self.serviceMonitor,
-        [
-          'ALERTS',
-          'prometheus_tsdb_head_samples_appended_total',
-          'prometheus_tsdb_head_series',
-        ]
-      )
-    ),
 
     serviceThanosSidecar+: {
       metadata+: {
