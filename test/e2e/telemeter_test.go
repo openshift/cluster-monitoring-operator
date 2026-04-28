@@ -144,3 +144,26 @@ func TestTelemeterClusterMetrics(t *testing.T) {
 		})
 	}
 }
+
+// TestTelemetryCollectionProfile verifies that metrics from the monitoring stack are collected when the telemetry collection profile is enabled.
+func TestTelemetryCollectionProfile(t *testing.T) {
+	cm := f.BuildCMOConfigMap(t, `prometheusK8s:
+  collectionProfile: telemetry
+`)
+	f.MustCreateOrUpdateConfigMap(t, cm)
+	t.Cleanup(func() {
+		f.MustDeleteConfigMap(t, cm)
+	})
+
+	f.PrometheusK8sClient.WaitForQueryReturn(
+		t,
+		5*time.Minute,
+		`sum(scrape_samples_post_metric_relabeling{namespace="openshift-monitoring"})`,
+		func(v float64) error {
+			if v == 0 {
+				return fmt.Errorf("expecting scraped samples but got none")
+			}
+			return nil
+		},
+	)
+}
