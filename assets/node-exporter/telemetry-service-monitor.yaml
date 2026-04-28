@@ -15,6 +15,14 @@ spec:
   - bearerTokenFile: ""
     interval: 15s
     metricRelabelings:
+    - action: replace
+      regex: (node_mountstats_nfs_read_bytes_total|node_mountstats_nfs_write_bytes_total|node_mountstats_nfs_operations_requests_total)
+      replacement: "true"
+      sourceLabels:
+      - __name__
+      targetLabel: __tmp_keep
+    - action: labeldrop
+      regex: __tmp_keep
     - action: keep
       regex: (node_accelerator_card_info|node_cpu_info|node_cpu_seconds_total|node_memory_MemAvailable_bytes|node_memory_MemTotal_bytes|node_scrape_collector_success|virt_platform)
       sourceLabels:
@@ -38,3 +46,4 @@ spec:
       app.kubernetes.io/component: exporter
       app.kubernetes.io/name: node-exporter
       app.kubernetes.io/part-of: openshift-monitoring
+  serviceDiscoveryRole: EndpointSlice
