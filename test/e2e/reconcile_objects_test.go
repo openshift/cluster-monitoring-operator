@@ -95,11 +95,18 @@ func TestSecretsReconciliation(t *testing.T) {
 			continue
 		}
 		// Skip TLS secrets since they are managed by the service-ca controller, not CMO.
-		// Skip hashed secrets since they are replaced (not updated in-place) on rotation.
 		if secret.Type == v1.SecretTypeTLS {
 			continue
 		}
+		// Skip hashed secrets since they are replaced (not updated in-place) on rotation.
 		if _, ok := secret.Labels["monitoring.openshift.io/hash"]; ok {
+			continue
+		}
+		// Skip dynamically-managed cert secrets. These use a read-modify-write
+		// pattern (load existing → maybe rotate → write back) rather than
+		// reconciling to a static desired state from an asset, so mutating
+		// non-CA keys won't be detected or corrected.
+		if _, hasCACert := secret.Data["ca.crt"]; hasCACert {
 			continue
 		}
 		syncedSecrets = append(syncedSecrets, nn)
