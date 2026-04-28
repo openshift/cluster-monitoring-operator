@@ -94,8 +94,8 @@ func TestSecretsReconciliation(t *testing.T) {
 		if slices.Contains(unsyncedSecrets, nn) {
 			continue
 		}
-		// Skip TLS secrets since they have hash suffixes and get rotated (replaced, not updated in-place).
-		if strings.Contains(secret.Name, "tls") {
+		// Skip TLS secrets since they are managed by the service-ca controller, not CMO.
+		if secret.Type == v1.SecretTypeTLS {
 			continue
 		}
 		syncedSecrets = append(syncedSecrets, nn)
@@ -167,7 +167,7 @@ func TestSecretsReconciliation(t *testing.T) {
 				for _, v := range data {
 					if !isSecretDataJSONEncoded(updatedSecret) {
 						if strings.HasPrefix(string(v), t.Name()) {
-							return fmt.Errorf("secret %s has unexpected data: %v", secret.String(), string(v))
+							return fmt.Errorf("secret %s still has the test prefix in its data", secret.String())
 						}
 						// Don't return early. Since map iteration order is non-deterministic,
 						// the mutated entry may not be the first one visited here.
