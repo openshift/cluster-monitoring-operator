@@ -248,7 +248,7 @@ func TestUnconfiguredManifests(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	_, err = f.AlertmanagerServiceMonitors()
+	_, err = f.AlertmanagerServiceMonitor()
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -268,7 +268,7 @@ func TestUnconfiguredManifests(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	_, err = f.KubeStateMetricsServiceMonitors()
+	_, err = f.KubeStateMetricsServiceMonitor()
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -298,7 +298,7 @@ func TestUnconfiguredManifests(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	_, err = f.OpenShiftStateMetricsServiceMonitors()
+	_, err = f.OpenShiftStateMetricsServiceMonitor()
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -318,7 +318,7 @@ func TestUnconfiguredManifests(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	_, err = f.NodeExporterServiceMonitors()
+	_, err = f.NodeExporterServiceMonitor()
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -388,7 +388,7 @@ func TestUnconfiguredManifests(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	_, err = f.PrometheusK8sPrometheusServiceMonitors()
+	_, err = f.PrometheusK8sPrometheusServiceMonitor()
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -560,12 +560,12 @@ func TestUnconfiguredManifests(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	_, err = f.ClusterMonitoringOperatorServiceMonitors()
+	_, err = f.ClusterMonitoringOperatorServiceMonitor()
 	if err != nil {
 		t.Fatal(err)
 	}
 
-	_, err = f.ControlPlaneKubeletServiceMonitors()
+	_, err = f.ControlPlaneKubeletServiceMonitor()
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -1880,7 +1880,7 @@ func TestPrometheusCollectionProfile(t *testing.T) {
 					{
 						Key:      "monitoring.openshift.io/collection-profile",
 						Operator: metav1.LabelSelectorOpNotIn,
-						Values:   []string{"minimal", "telemetry"},
+						Values:   []string{"minimal"},
 					},
 				},
 			},
@@ -1893,20 +1893,7 @@ func TestPrometheusCollectionProfile(t *testing.T) {
 					{
 						Key:      "monitoring.openshift.io/collection-profile",
 						Operator: metav1.LabelSelectorOpNotIn,
-						Values:   []string{"full", "telemetry"},
-					},
-				},
-			},
-		},
-		{
-			name:              "telemetry_collection_profile",
-			collectionProfile: "telemetry",
-			expectedLabelSelector: &metav1.LabelSelector{
-				MatchExpressions: []metav1.LabelSelectorRequirement{
-					{
-						Key:      "monitoring.openshift.io/collection-profile",
-						Operator: metav1.LabelSelectorOpNotIn,
-						Values:   []string{"full", "minimal"},
+						Values:   []string{"full"},
 					},
 				},
 			},
@@ -4688,71 +4675,71 @@ func TestNonHighlyAvailableInfrastructureServiceMonitors(t *testing.T) {
 		{
 			name: "Alermanager Service Monitor",
 			getEndpoints: func(f *Factory) ([]monv1.Endpoint, error) {
-				sms, err := f.AlertmanagerServiceMonitors()
+				pt, err := f.AlertmanagerServiceMonitor()
 				if err != nil {
 					return nil, err
 				}
-				return sms[0].Spec.Endpoints, nil
+				return pt.Spec.Endpoints, nil
 			},
 		},
 		{
 			name: "CMO Service Monitor",
 			getEndpoints: func(f *Factory) ([]monv1.Endpoint, error) {
-				sms, err := f.ClusterMonitoringOperatorServiceMonitors()
+				pt, err := f.ClusterMonitoringOperatorServiceMonitor()
 				if err != nil {
 					return nil, err
 				}
-				return sms[0].Spec.Endpoints, nil
+				return pt.Spec.Endpoints, nil
 			},
 		},
 		{
 			name: "kubelet Service Monitor",
 			getEndpoints: func(f *Factory) ([]monv1.Endpoint, error) {
-				sms, err := f.ControlPlaneKubeletServiceMonitors()
+				pt, err := f.ControlPlaneKubeletServiceMonitor()
 				if err != nil {
 					return nil, err
 				}
-				return sms[0].Spec.Endpoints, nil
+				return pt.Spec.Endpoints, nil
 			},
 		},
 		{
 			name: "Kube State Metrics Service Monitor",
 			getEndpoints: func(f *Factory) ([]monv1.Endpoint, error) {
-				sms, err := f.KubeStateMetricsServiceMonitors()
+				pt, err := f.KubeStateMetricsServiceMonitor()
 				if err != nil {
 					return nil, err
 				}
-				return sms[0].Spec.Endpoints, nil
+				return pt.Spec.Endpoints, nil
 			},
 		},
 		{
 			name: "Node Exporter Service Monitor",
 			getEndpoints: func(f *Factory) ([]monv1.Endpoint, error) {
-				sms, err := f.NodeExporterServiceMonitors()
+				pt, err := f.NodeExporterServiceMonitor()
 				if err != nil {
 					return nil, err
 				}
-				return sms[0].Spec.Endpoints, nil
+				return pt.Spec.Endpoints, nil
 			},
 		},
 		{
 			name: "OpenShift State Metrics Service Monitor",
 			getEndpoints: func(f *Factory) ([]monv1.Endpoint, error) {
-				sms, err := f.OpenShiftStateMetricsServiceMonitors()
+				pt, err := f.OpenShiftStateMetricsServiceMonitor()
 				if err != nil {
 					return nil, err
 				}
-				return sms[0].Spec.Endpoints, nil
+				return pt.Spec.Endpoints, nil
 			},
 		},
 		{
 			name: "Prometheus K8s Service Monitor",
 			getEndpoints: func(f *Factory) ([]monv1.Endpoint, error) {
-				sms, err := f.PrometheusK8sPrometheusServiceMonitors()
+				pt, err := f.PrometheusK8sPrometheusServiceMonitor()
 				if err != nil {
 					return nil, err
 				}
-				return sms[0].Spec.Endpoints, nil
+				return pt.Spec.Endpoints, nil
 			},
 		},
 		{
