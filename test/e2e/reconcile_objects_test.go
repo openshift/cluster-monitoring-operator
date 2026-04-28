@@ -95,7 +95,11 @@ func TestSecretsReconciliation(t *testing.T) {
 			continue
 		}
 		// Skip TLS secrets since they are managed by the service-ca controller, not CMO.
+		// Skip hashed secrets since they are replaced (not updated in-place) on rotation.
 		if secret.Type == v1.SecretTypeTLS {
+			continue
+		}
+		if _, ok := secret.Labels["monitoring.openshift.io/hash"]; ok {
 			continue
 		}
 		syncedSecrets = append(syncedSecrets, nn)
