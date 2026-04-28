@@ -208,8 +208,9 @@ func (c *Config) mergeAlertmanagerConfiguration(ac configv1alpha1.AlertmanagerCo
 	case configv1alpha1.AlertManagerDeployModeDisabled:
 		cfg.Enabled = ptr.To(false)
 	case configv1alpha1.AlertManagerDeployModeDefaultConfig:
-		// Deploy with platform defaults (Enabled is nil → true via IsEnabled).
+		cfg.Enabled = ptr.To(true)
 	case configv1alpha1.AlertManagerDeployModeCustomConfig:
+		cfg.Enabled = ptr.To(true)
 		mergeAlertmanagerCustomConfigFromCRD(cfg, ac.CustomConfig)
 	default:
 		return
