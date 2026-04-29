@@ -5,14 +5,19 @@ metadata:
     app.kubernetes.io/managed-by: cluster-monitoring-operator
     app.kubernetes.io/part-of: openshift-monitoring
     k8s-app: openshift-state-metrics
-    monitoring.openshift.io/collection-profile: full
-  name: openshift-state-metrics
+    monitoring.openshift.io/collection-profile: telemetry
+  name: openshift-state-metrics-telemetry
   namespace: openshift-monitoring
 spec:
   endpoints:
   - bearerTokenFile: ""
     honorLabels: true
     interval: 2m
+    metricRelabelings:
+    - action: keep
+      regex: (openshift_build_status_phase_total|openshift_route_info)
+      sourceLabels:
+      - __name__
     port: https-main
     scheme: https
     scrapeTimeout: 2m
@@ -22,6 +27,11 @@ spec:
       serverName: openshift-state-metrics.openshift-monitoring.svc
   - bearerTokenFile: ""
     interval: 2m
+    metricRelabelings:
+    - action: keep
+      regex: (openshift_build_status_phase_total|openshift_route_info)
+      sourceLabels:
+      - __name__
     port: https-self
     scheme: https
     scrapeTimeout: 2m

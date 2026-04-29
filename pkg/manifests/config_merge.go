@@ -16,9 +16,7 @@ package manifests
 
 import (
 	configv1alpha1 "github.com/openshift/api/config/v1alpha1"
-	monv1 "github.com/prometheus-operator/prometheus-operator/pkg/apis/monitoring/v1"
 	v1 "k8s.io/api/core/v1"
-	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	auditv1 "k8s.io/apiserver/pkg/apis/audit/v1"
 	"k8s.io/utils/ptr"
 )
@@ -37,8 +35,6 @@ func (c *Config) mergeClusterMonitoringCRD(clusterMonitoring *configv1alpha1.Clu
 	}
 
 	c.mergeMetricsServerConfiguration(clusterMonitoring.Spec.MetricsServerConfig)
-	c.mergePrometheusOperatorConfiguration(clusterMonitoring.Spec.PrometheusOperatorConfig)
-	c.mergeAlertmanagerConfiguration(clusterMonitoring.Spec.AlertmanagerConfig)
 }
 
 // clusterMonitoringMetricsServerSpecEmpty reports whether the CR's
@@ -63,34 +59,8 @@ func clusterMonitoringMetricsServerSpecEmpty(msc configv1alpha1.MetricsServerCon
 	if len(msc.TopologySpreadConstraints) > 0 {
 		return false
 	}
-	return true
-}
 
-// clusterMonitoringPrometheusOperatorSpecEmpty reports whether the CR's
-// prometheusOperatorConfig stanza contains no user-set field.
-func clusterMonitoringPrometheusOperatorSpecEmpty(poc configv1alpha1.PrometheusOperatorConfig) bool {
-	if poc.LogLevel != "" {
-		return false
-	}
-	if len(poc.NodeSelector) > 0 {
-		return false
-	}
-	if len(poc.Tolerations) > 0 {
-		return false
-	}
-	if len(poc.Resources) > 0 {
-		return false
-	}
-	if len(poc.TopologySpreadConstraints) > 0 {
-		return false
-	}
 	return true
-}
-
-// clusterMonitoringAlertmanagerSpecEmpty reports whether the CR's
-// alertmanagerConfig stanza contains no user intent.
-func clusterMonitoringAlertmanagerSpecEmpty(ac configv1alpha1.AlertmanagerConfig) bool {
-	return ac.DeploymentMode == ""
 }
 
 func verbosityLevelToNumeric(level configv1alpha1.VerbosityLevel) uint8 {
@@ -106,40 +76,6 @@ func verbosityLevelToNumeric(level configv1alpha1.VerbosityLevel) uint8 {
 	default:
 		return 0
 	}
-}
-
-func logLevelCRDToManifest(ll configv1alpha1.LogLevel) string {
-	switch ll {
-	case configv1alpha1.LogLevelError:
-		return "error"
-	case configv1alpha1.LogLevelWarn:
-		return "warn"
-	case configv1alpha1.LogLevelInfo:
-		return "info"
-	case configv1alpha1.LogLevelDebug:
-		return "debug"
-	default:
-		return ""
-	}
-}
-
-func containerResourcesFromCRD(resources []configv1alpha1.ContainerResource) *v1.ResourceRequirements {
-	if len(resources) == 0 {
-		return nil
-	}
-	out := &v1.ResourceRequirements{
-		Requests: v1.ResourceList{},
-		Limits:   v1.ResourceList{},
-	}
-	for _, res := range resources {
-		if !res.Request.IsZero() {
-			out.Requests[v1.ResourceName(res.Name)] = res.Request
-		}
-		if !res.Limit.IsZero() {
-			out.Limits[v1.ResourceName(res.Name)] = res.Limit
-		}
-	}
-	return out
 }
 
 func (c *Config) mergeMetricsServerConfiguration(msc configv1alpha1.MetricsServerConfig) {
@@ -161,99 +97,33 @@ func (c *Config) mergeMetricsServerConfiguration(msc configv1alpha1.MetricsServe
 	if msc.Verbosity != "" {
 		cfg.Verbosity = verbosityLevelToNumeric(msc.Verbosity)
 	}
+
 	cfg.NodeSelector = msc.NodeSelector
 	cfg.Tolerations = msc.Tolerations
-	cfg.Resources = containerResourcesFromCRD(msc.Resources)
+
+	if len(msc.Resources) > 0 {
+		resources := &v1.ResourceRequirements{
+			Requests: v1.ResourceList{},
+			Limits:   v1.ResourceList{},
+		}
+		for _, res := range msc.Resources {
+			if !res.Request.IsZero() {
+				resources.Requests[v1.ResourceName(res.Name)] = res.Request
+			}
+			if !res.Limit.IsZero() {
+				resources.Limits[v1.ResourceName(res.Name)] = res.Limit
+			}
+		}
+		cfg.Resources = resources
+	}
+
 	if msc.Audit.Profile != "" {
 		cfg.Audit = &Audit{
 			Profile: auditv1.Level(string(msc.Audit.Profile)),
 		}
 	}
+
 	cfg.TopologySpreadConstraints = msc.TopologySpreadConstraints
 
 	c.ClusterMonitoringConfiguration.MetricsServerConfig = cfg
-}
-
-func (c *Config) mergePrometheusOperatorConfiguration(poc configv1alpha1.PrometheusOperatorConfig) {
-	if c.ClusterMonitoringConfiguration.PrometheusOperatorConfig != nil {
-		return
-	}
-	if clusterMonitoringPrometheusOperatorSpecEmpty(poc) {
-		return
-	}
-
-	cfg := &PrometheusOperatorConfig{}
-
-	if poc.LogLevel != "" {
-		cfg.LogLevel = logLevelCRDToManifest(poc.LogLevel)
-	}
-	cfg.NodeSelector = poc.NodeSelector
-	cfg.Tolerations = poc.Tolerations
-	cfg.Resources = containerResourcesFromCRD(poc.Resources)
-	cfg.TopologySpreadConstraints = poc.TopologySpreadConstraints
-
-	c.ClusterMonitoringConfiguration.PrometheusOperatorConfig = cfg
-}
-
-func (c *Config) mergeAlertmanagerConfiguration(ac configv1alpha1.AlertmanagerConfig) {
-	if c.ClusterMonitoringConfiguration.AlertmanagerMainConfig != nil {
-		return
-	}
-	if clusterMonitoringAlertmanagerSpecEmpty(ac) {
-		return
-	}
-
-	cfg := &AlertmanagerMainConfig{}
-	switch ac.DeploymentMode {
-	case configv1alpha1.AlertManagerDeployModeDisabled:
-		cfg.Enabled = ptr.To(false)
-	case configv1alpha1.AlertManagerDeployModeDefaultConfig:
-		// Deploy with platform defaults (Enabled is nil → true via IsEnabled).
-	case configv1alpha1.AlertManagerDeployModeCustomConfig:
-		mergeAlertmanagerCustomConfigFromCRD(cfg, ac.CustomConfig)
-	default:
-		return
-	}
-	c.ClusterMonitoringConfiguration.AlertmanagerMainConfig = cfg
-}
-
-func mergeAlertmanagerCustomConfigFromCRD(dst *AlertmanagerMainConfig, cc configv1alpha1.AlertmanagerCustomConfig) {
-	if ll := logLevelCRDToManifest(cc.LogLevel); ll != "" {
-		dst.LogLevel = ll
-	}
-	if len(cc.NodeSelector) > 0 {
-		dst.NodeSelector = cc.NodeSelector
-	}
-	dst.Resources = containerResourcesFromCRD(cc.Resources)
-	if len(cc.Secrets) > 0 {
-		for _, s := range cc.Secrets {
-			dst.Secrets = append(dst.Secrets, string(s))
-		}
-	}
-	if len(cc.Tolerations) > 0 {
-		dst.Tolerations = cc.Tolerations
-	}
-	if len(cc.TopologySpreadConstraints) > 0 {
-		dst.TopologySpreadConstraints = cc.TopologySpreadConstraints
-	}
-	if cc.VolumeClaimTemplate != nil {
-		dst.VolumeClaimTemplate = persistentVolumeClaimToEmbedded(cc.VolumeClaimTemplate)
-	}
-}
-
-func persistentVolumeClaimToEmbedded(pvc *v1.PersistentVolumeClaim) *monv1.EmbeddedPersistentVolumeClaim {
-	if pvc == nil {
-		return nil
-	}
-	em := &monv1.EmbeddedPersistentVolumeClaim{
-		TypeMeta: metav1.TypeMeta{
-			APIVersion: v1.SchemeGroupVersion.String(),
-			Kind:       "PersistentVolumeClaim",
-		},
-	}
-	em.EmbeddedObjectMetadata.Name = pvc.Name
-	em.EmbeddedObjectMetadata.Labels = pvc.Labels
-	em.EmbeddedObjectMetadata.Annotations = pvc.Annotations
-	em.Spec = pvc.Spec
-	return em
 }
