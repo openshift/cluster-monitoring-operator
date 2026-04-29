@@ -3081,7 +3081,7 @@ var _ = g.Describe("[sig-monitoring] Cluster_Observability parallel monitoring",
 		createResourceFromYaml(oc, "openshift-monitoring", invalid_value_audit_profile)
 
 		exutil.By("check failed log in CMO")
-		checkLogWithLabel(oc, "openshift-monitoring", "app.kubernetes.io/name=cluster-monitoring-operator", "cluster-monitoring-operator", `adapter audit profile: metadata`, true)
+		checkLogWithLabel(oc, "openshift-monitoring", "app.kubernetes.io/name=cluster-monitoring-operator", "cluster-monitoring-operator", `audit profile "metadata" not supported`, true)
 	})
 
 	// author: tagao@redhat.com
