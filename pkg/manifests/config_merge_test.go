@@ -108,6 +108,16 @@ func TestClusterMonitoringAlertmanagerSpecEmpty(t *testing.T) {
 	}))
 }
 
+func TestClusterMonitoringHTTPConfigSpecEmpty(t *testing.T) {
+	require.True(t, clusterMonitoringHTTPConfigSpecEmpty(configv1alpha1.ClusterMonitoringHTTPConfig{}))
+	require.False(t, clusterMonitoringHTTPConfigSpecEmpty(configv1alpha1.ClusterMonitoringHTTPConfig{
+		HTTPProxy: "http://proxy",
+	}))
+	require.False(t, clusterMonitoringHTTPConfigSpecEmpty(configv1alpha1.ClusterMonitoringHTTPConfig{
+		NoProxy: "localhost",
+	}))
+}
+
 func TestLogLevelCRDToManifest(t *testing.T) {
 	require.Equal(t, "debug", logLevelCRDToManifest(configv1alpha1.LogLevelDebug))
 	require.Equal(t, "", logLevelCRDToManifest(configv1alpha1.LogLevel("Unknown")))
@@ -233,5 +243,49 @@ func TestConfig_MergeClusterMonitoringCRD_AlertmanagerMainConfigPhase1(t *testin
 		require.NoError(t, err)
 		require.NotNil(t, c.ClusterMonitoringConfiguration.AlertmanagerMainConfig.Enabled)
 		require.False(t, *c.ClusterMonitoringConfiguration.AlertmanagerMainConfig.Enabled)
+	})
+}
+
+func TestConfig_MergeClusterMonitoringCRD_HTTPConfigPhase1(t *testing.T) {
+	t.Run("CR applies when ConfigMap left HTTPConfig nil", func(t *testing.T) {
+		cm := &configv1alpha1.ClusterMonitoring{
+			Spec: configv1alpha1.ClusterMonitoringSpec{
+				UserDefined: configv1alpha1.UserDefinedMonitoring{
+					Mode: configv1alpha1.UserDefinedDisabled,
+				},
+				HTTPConfig: configv1alpha1.ClusterMonitoringHTTPConfig{
+					HTTPProxy:  "http://from-crd",
+					HTTPSProxy: "https://from-crd",
+					NoProxy:    "svc.cluster.local",
+				},
+			},
+		}
+		c, err := NewConfigFromStringAndClusterMonitoringResource("{}", cm)
+		require.NoError(t, err)
+		require.NotNil(t, c.ClusterMonitoringConfiguration.HTTPConfig)
+		require.Equal(t, "http://from-crd", c.ClusterMonitoringConfiguration.HTTPConfig.HTTPProxy)
+		require.Equal(t, "https://from-crd", c.ClusterMonitoringConfiguration.HTTPConfig.HTTPSProxy)
+		require.Equal(t, "svc.cluster.local", c.ClusterMonitoringConfiguration.HTTPConfig.NoProxy)
+	})
+	t.Run("CR ignored when ConfigMap already set HTTPConfig", func(t *testing.T) {
+		cm := &configv1alpha1.ClusterMonitoring{
+			Spec: configv1alpha1.ClusterMonitoringSpec{
+				UserDefined: configv1alpha1.UserDefinedMonitoring{
+					Mode: configv1alpha1.UserDefinedDisabled,
+				},
+				HTTPConfig: configv1alpha1.ClusterMonitoringHTTPConfig{
+					HTTPProxy: "http://from-crd",
+				},
+			},
+		}
+		c, err := NewConfigFromStringAndClusterMonitoringResource(`http:
+  httpProxy: http://from-configmap
+  httpsProxy: https://from-configmap
+  noProxy: from-configmap.example
+`, cm)
+		require.NoError(t, err)
+		require.Equal(t, "http://from-configmap", c.ClusterMonitoringConfiguration.HTTPConfig.HTTPProxy)
+		require.Equal(t, "https://from-configmap", c.ClusterMonitoringConfiguration.HTTPConfig.HTTPSProxy)
+		require.Equal(t, "from-configmap.example", c.ClusterMonitoringConfiguration.HTTPConfig.NoProxy)
 	})
 }

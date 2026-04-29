@@ -142,6 +142,27 @@ type ClusterMonitoringSpec struct {
 	// When set, at least one field must be specified within thanosQuerierConfig.
 	// +optional
 	ThanosQuerierConfig ThanosQuerierConfig `json:"thanosQuerierConfig,omitempty,omitzero"`
+	// httpConfig configures HTTP proxy environment variables (httpProxy, httpsProxy, noProxy)
+	// for monitoring components that respect cluster monitoring proxy settings.
+	// httpConfig is optional. When omitted, the platform is left to choose a reasonable default.
+	// When the cluster-monitoring-config ConfigMap already defines an `http` stanza, that
+	// configuration takes precedence and this field is ignored (Phase 1 merge).
+	// +optional
+	HTTPConfig ClusterMonitoringHTTPConfig `json:"httpConfig,omitempty,omitzero"`
+}
+
+// ClusterMonitoringHTTPConfig defines HTTP, HTTPS, and no-proxy values for the monitoring stack.
+type ClusterMonitoringHTTPConfig struct {
+	// httpProxy defines the URL of the HTTP proxy to use for egress HTTP connections.
+	// +optional
+	HTTPProxy string `json:"httpProxy,omitempty"`
+	// httpsProxy defines the URL of the HTTPS proxy to use for egress HTTPS connections.
+	// +optional
+	HTTPSProxy string `json:"httpsProxy,omitempty"`
+	// noProxy defines a comma-separated list of host names, host name suffixes, IP addresses,
+	// or CIDRs that should not use an HTTP or HTTPS proxy.
+	// +optional
+	NoProxy string `json:"noProxy,omitempty"`
 }
 
 // OpenShiftStateMetricsConfig provides configuration options for the openshift-state-metrics agent

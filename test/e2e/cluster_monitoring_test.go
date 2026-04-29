@@ -515,6 +515,91 @@ func TestClusterMonitorAlertmanagerConfigMapAndCRD(t *testing.T) {
 	}
 }
 
+// TestClusterMonitorHTTPConfigMapAndCRD verifies Phase 1 merge: when both ConfigMap `http` and CR
+// `httpConfig` are set, the ConfigMap wins and CR proxy values are ignored.
+func TestClusterMonitorHTTPConfigMapAndCRD(t *testing.T) {
+	if !clusterMonitoringCRDAvailable {
+		t.Skip("ClusterMonitoring CRD not available (TechPreview / ClusterMonitoringConfig feature gate may be disabled)")
+		return
+	}
+
+	t.Log("creating ConfigMap with baseline http proxy configuration")
+	configMapData := `http:
+  httpProxy: "http://proxy-from-configmap.openshift-monitoring-e2e.example:8080"
+  httpsProxy: "https://proxy-from-configmap.openshift-monitoring-e2e.example:8443"
+  noProxy: "from-configmap.example"
+`
+	cm := f.BuildCMOConfigMap(t, configMapData)
+	f.MustCreateOrUpdateConfigMap(t, cm)
+	t.Cleanup(func() {
+		f.MustDeleteConfigMap(t, cm)
+	})
+
+	t.Log("creating ClusterMonitoring CR with different httpConfig (must be ignored when ConfigMap defines http)")
+	crd := &configv1alpha1.ClusterMonitoring{
+		ObjectMeta: metav1.ObjectMeta{
+			Name: clusterMonitoringName,
+		},
+		Spec: configv1alpha1.ClusterMonitoringSpec{
+			HTTPConfig: configv1alpha1.ClusterMonitoringHTTPConfig{
+				HTTPProxy:  "http://proxy-from-crd.openshift-monitoring-e2e.example:8080",
+				HTTPSProxy: "https://proxy-from-crd.openshift-monitoring-e2e.example:8443",
+				NoProxy:    "from-crd.example",
+			},
+		},
+	}
+
+	f.MustCreateOrUpdateClusterMonitoring(t, crd)
+	t.Cleanup(func() {
+		crd.Spec.HTTPConfig = configv1alpha1.ClusterMonitoringHTTPConfig{}
+		f.MustCreateOrUpdateClusterMonitoring(t, crd)
+	})
+
+	t.Logf("configured both ConfigMap and ClusterMonitoring CR for Phase 1 precedence (ConfigMap wins)")
+
+	for _, tc := range []scenario{
+		{
+			name:      "assert prometheus-k8s statefulset exists and rolled out",
+			assertion: f.AssertStatefulSetExistsAndRolloutFunc("prometheus-k8s", f.Ns),
+		},
+		{
+			name: "assert ConfigMap http is used; CR httpConfig is ignored",
+			assertion: f.AssertPodConfigurationFunc(
+				f.Ns,
+				"app.kubernetes.io/name=prometheus,app.kubernetes.io/instance=k8s",
+				[]framework.PodAssertion{
+					expectContainerEnvVar("prometheus", "HTTP_PROXY", "http://proxy-from-configmap.openshift-monitoring-e2e.example:8080"),
+					expectContainerEnvVar("prometheus", "HTTPS_PROXY", "https://proxy-from-configmap.openshift-monitoring-e2e.example:8443"),
+					expectContainerEnvVar("prometheus", "NO_PROXY", "from-configmap.example"),
+				},
+			),
+		},
+	} {
+		t.Run(tc.name, tc.assertion)
+	}
+}
+
+func expectContainerEnvVar(containerName, name, value string) framework.PodAssertion {
+	return func(pod v1.Pod) error {
+		for _, c := range pod.Spec.Containers {
+			if c.Name != containerName {
+				continue
+			}
+			for _, e := range c.Env {
+				if e.Name != name {
+					continue
+				}
+				if e.Value != value {
+					return fmt.Errorf("container %s env %s: want %q got %q", containerName, name, value, e.Value)
+				}
+				return nil
+			}
+			return fmt.Errorf("container %s: env %s not found", containerName, name)
+		}
+		return fmt.Errorf("container %q not found in pod %s", containerName, pod.Name)
+	}
+}
+
 func expectMatchingLimits(podName, containerName, expectMem, expectCPU string) framework.PodAssertion {
 	return func(pod v1.Pod) error {
 		if podName != "*" && pod.Name != podName {

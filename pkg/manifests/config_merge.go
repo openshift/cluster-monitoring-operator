@@ -39,6 +39,7 @@ func (c *Config) mergeClusterMonitoringCRD(clusterMonitoring *configv1alpha1.Clu
 	c.mergeMetricsServerConfiguration(clusterMonitoring.Spec.MetricsServerConfig)
 	c.mergePrometheusOperatorConfiguration(clusterMonitoring.Spec.PrometheusOperatorConfig)
 	c.mergeAlertmanagerConfiguration(clusterMonitoring.Spec.AlertmanagerConfig)
+	c.mergeClusterMonitoringHTTPConfig(clusterMonitoring.Spec.HTTPConfig)
 }
 
 // clusterMonitoringMetricsServerSpecEmpty reports whether the CR's
@@ -91,6 +92,22 @@ func clusterMonitoringPrometheusOperatorSpecEmpty(poc configv1alpha1.PrometheusO
 // alertmanagerConfig stanza contains no user intent.
 func clusterMonitoringAlertmanagerSpecEmpty(ac configv1alpha1.AlertmanagerConfig) bool {
 	return ac.DeploymentMode == ""
+}
+
+// clusterMonitoringHTTPConfigSpecEmpty reports whether the CR's httpConfig stanza
+// contains no user-set field. The API uses a value type, so omitted in the manifest
+// is always the zero struct in Go.
+func clusterMonitoringHTTPConfigSpecEmpty(hc configv1alpha1.ClusterMonitoringHTTPConfig) bool {
+	if hc.HTTPProxy != "" {
+		return false
+	}
+	if hc.HTTPSProxy != "" {
+		return false
+	}
+	if hc.NoProxy != "" {
+		return false
+	}
+	return true
 }
 
 func verbosityLevelToNumeric(level configv1alpha1.VerbosityLevel) uint8 {
@@ -215,6 +232,21 @@ func (c *Config) mergeAlertmanagerConfiguration(ac configv1alpha1.AlertmanagerCo
 		return
 	}
 	c.ClusterMonitoringConfiguration.AlertmanagerMainConfig = cfg
+}
+
+func (c *Config) mergeClusterMonitoringHTTPConfig(hc configv1alpha1.ClusterMonitoringHTTPConfig) {
+	// HTTP proxy (Phase 1): if the ConfigMap already has `http`, mergeClusterMonitoringHTTPConfig is a no-op.
+	if c.ClusterMonitoringConfiguration.HTTPConfig != nil {
+		return
+	}
+	if clusterMonitoringHTTPConfigSpecEmpty(hc) {
+		return
+	}
+	c.ClusterMonitoringConfiguration.HTTPConfig = &HTTPConfig{
+		HTTPProxy:  hc.HTTPProxy,
+		HTTPSProxy: hc.HTTPSProxy,
+		NoProxy:    hc.NoProxy,
+	}
 }
 
 func mergeAlertmanagerCustomConfigFromCRD(dst *AlertmanagerMainConfig, cc configv1alpha1.AlertmanagerCustomConfig) {
