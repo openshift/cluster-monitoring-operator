@@ -75,14 +75,6 @@ func AllFeatureSets() map[uint64]map[ClusterProfileName]map[configv1.FeatureSet]
 var (
 	allFeatureGates = map[configv1.FeatureGateName][]featureGateStatus{}
 
-	FeatureGateConsolePluginCSP = newFeatureGate("ConsolePluginContentSecurityPolicy").
-					reportProblemsToJiraComponent("Management Console").
-					contactPerson("jhadvig").
-					productScope(ocpSpecific).
-					enable(inDefault(), inOKD(), inTechPreviewNoUpgrade(), inDevPreviewNoUpgrade()).
-					enhancementPR("https://github.com/openshift/enhancements/pull/1706").
-					mustRegister()
-
 	FeatureGateServiceAccountTokenNodeBinding = newFeatureGate("ServiceAccountTokenNodeBinding").
 							reportProblemsToJiraComponent("apiserver-auth").
 							contactPerson("ibihim").
@@ -622,24 +614,6 @@ var (
 						enable(inDefault(), inOKD(), inTechPreviewNoUpgrade(), inDevPreviewNoUpgrade()).
 						mustRegister()
 
-	FeatureGateUserNamespacesSupport = newFeatureGate("UserNamespacesSupport").
-						reportProblemsToJiraComponent("Node").
-						contactPerson("haircommander").
-						productScope(kubernetes).
-						enhancementPR("https://github.com/kubernetes/enhancements/issues/127").
-						enable(inDefault(), inOKD(), inTechPreviewNoUpgrade(), inDevPreviewNoUpgrade()).
-						mustRegister()
-
-	// Note: this feature is perma-alpha, but it is safe and desireable to enable.
-	// It was an oversight in upstream to not remove the feature gate after the version skew became safe in 1.33.
-	// See https://github.com/kubernetes/enhancements/tree/d4226c42/keps/sig-node/127-user-namespaces#pod-security-standards-pss-integration
-	FeatureGateUserNamespacesPodSecurityStandards = newFeatureGate("UserNamespacesPodSecurityStandards").
-							reportProblemsToJiraComponent("Node").
-							contactPerson("haircommander").
-							productScope(kubernetes).
-							enhancementPR("https://github.com/kubernetes/enhancements/issues/127").
-							enable(inDefault(), inOKD(), inTechPreviewNoUpgrade(), inDevPreviewNoUpgrade()).
-							mustRegister()
 
 	FeatureGateVSphereMultiNetworks = newFeatureGate("VSphereMultiNetworks").
 					reportProblemsToJiraComponent("SPLAT").
@@ -672,14 +646,6 @@ var (
 					enhancementPR("https://github.com/openshift/enhancements/pull/1711").
 					enable(inDevPreviewNoUpgrade(), inTechPreviewNoUpgrade()).
 					mustRegister()
-
-	FeatureGateKMSEncryptionProvider = newFeatureGate("KMSEncryptionProvider").
-						reportProblemsToJiraComponent("kube-apiserver").
-						contactPerson("swghosh").
-						productScope(ocpSpecific).
-						enhancementPR("https://github.com/openshift/enhancements/pull/1682").
-						enable(inDevPreviewNoUpgrade()).
-						mustRegister()
 
 	FeatureGateKMSEncryption = newFeatureGate("KMSEncryption").
 					reportProblemsToJiraComponent("kube-apiserver").
@@ -1005,11 +971,11 @@ var (
 				enable(inDevPreviewNoUpgrade(), inTechPreviewNoUpgrade()).
 				mustRegister()
 
-        FeatureGateConfidentialCluster = newFeatureGate("ConfidentialCluster").
-                                        reportProblemsToJiraComponent("ConfidentialClusters").
-                                        contactPerson("fjin").
-                                        productScope(ocpSpecific).
-                                        enhancementPR("https://github.com/openshift/enhancements/pull/1962").
-                                        enable(inDevPreviewNoUpgrade()).
-                                        mustRegister()
+	FeatureGateConfidentialCluster = newFeatureGate("ConfidentialCluster").
+					reportProblemsToJiraComponent("ConfidentialClusters").
+					contactPerson("fjin").
+					productScope(ocpSpecific).
+					enhancementPR("https://github.com/openshift/enhancements/pull/1962").
+					enable(inDevPreviewNoUpgrade()).
+					mustRegister()
 )

@@ -108,6 +108,16 @@ func TestClusterMonitoringAlertmanagerSpecEmpty(t *testing.T) {
 	}))
 }
 
+func TestClusterMonitoringMonitoringPluginSpecEmpty(t *testing.T) {
+	require.True(t, clusterMonitoringMonitoringPluginSpecEmpty(configv1alpha1.MonitoringPluginConfig{}))
+	require.False(t, clusterMonitoringMonitoringPluginSpecEmpty(configv1alpha1.MonitoringPluginConfig{
+		NodeSelector: map[string]string{"k": "v"},
+	}))
+	require.False(t, clusterMonitoringMonitoringPluginSpecEmpty(configv1alpha1.MonitoringPluginConfig{
+		Resources: []configv1alpha1.ContainerResource{{Name: "cpu"}},
+	}))
+}
+
 func TestLogLevelCRDToManifest(t *testing.T) {
 	require.Equal(t, "debug", logLevelCRDToManifest(configv1alpha1.LogLevelDebug))
 	require.Equal(t, "", logLevelCRDToManifest(configv1alpha1.LogLevel("Unknown")))
@@ -233,5 +243,53 @@ func TestConfig_MergeClusterMonitoringCRD_AlertmanagerMainConfigPhase1(t *testin
 		require.NoError(t, err)
 		require.NotNil(t, c.ClusterMonitoringConfiguration.AlertmanagerMainConfig.Enabled)
 		require.False(t, *c.ClusterMonitoringConfiguration.AlertmanagerMainConfig.Enabled)
+	})
+}
+
+func TestConfig_MergeClusterMonitoringCRD_MonitoringPluginConfigPhase1(t *testing.T) {
+	t.Run("CR applies when ConfigMap left MonitoringPluginConfig nil", func(t *testing.T) {
+		cm := &configv1alpha1.ClusterMonitoring{
+			Spec: configv1alpha1.ClusterMonitoringSpec{
+				MonitoringPluginConfig: configv1alpha1.MonitoringPluginConfig{
+					NodeSelector: map[string]string{"kubernetes.io/os": "linux"},
+				},
+			},
+		}
+		c, err := NewConfigFromStringAndClusterMonitoringResource("{}", cm)
+		require.NoError(t, err)
+		require.NotNil(t, c.ClusterMonitoringConfiguration.MonitoringPluginConfig)
+		require.Equal(t, "linux", c.ClusterMonitoringConfiguration.MonitoringPluginConfig.NodeSelector["kubernetes.io/os"])
+	})
+	t.Run("CR ignored when ConfigMap already set MonitoringPluginConfig", func(t *testing.T) {
+		cm := &configv1alpha1.ClusterMonitoring{
+			Spec: configv1alpha1.ClusterMonitoringSpec{
+				MonitoringPluginConfig: configv1alpha1.MonitoringPluginConfig{
+					NodeSelector: map[string]string{"kubernetes.io/os": "linux"},
+				},
+			},
+		}
+		c, err := NewConfigFromStringAndClusterMonitoringResource("{monitoringPlugin: {nodeSelector: {test: from-cm}}}", cm)
+		require.NoError(t, err)
+		require.Equal(t, "from-cm", c.ClusterMonitoringConfiguration.MonitoringPluginConfig.NodeSelector["test"])
+	})
+	t.Run("CR maps ContainerResource to Resources", func(t *testing.T) {
+		cm := &configv1alpha1.ClusterMonitoring{
+			Spec: configv1alpha1.ClusterMonitoringSpec{
+				MonitoringPluginConfig: configv1alpha1.MonitoringPluginConfig{
+					Resources: []configv1alpha1.ContainerResource{
+						{
+							Name:    "cpu",
+							Request: resource.MustParse("100m"),
+							Limit:   resource.MustParse("200m"),
+						},
+					},
+				},
+			},
+		}
+		c, err := NewConfigFromStringAndClusterMonitoringResource("{}", cm)
+		require.NoError(t, err)
+		require.NotNil(t, c.ClusterMonitoringConfiguration.MonitoringPluginConfig.Resources)
+		require.Equal(t, resource.MustParse("100m"), c.ClusterMonitoringConfiguration.MonitoringPluginConfig.Resources.Requests[v1.ResourceCPU])
+		require.Equal(t, resource.MustParse("200m"), c.ClusterMonitoringConfiguration.MonitoringPluginConfig.Resources.Limits[v1.ResourceCPU])
 	})
 }
