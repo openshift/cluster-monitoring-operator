@@ -39,6 +39,7 @@ func (c *Config) mergeClusterMonitoringCRD(clusterMonitoring *configv1alpha1.Clu
 	c.mergeMetricsServerConfiguration(clusterMonitoring.Spec.MetricsServerConfig)
 	c.mergePrometheusOperatorConfiguration(clusterMonitoring.Spec.PrometheusOperatorConfig)
 	c.mergeAlertmanagerConfiguration(clusterMonitoring.Spec.AlertmanagerConfig)
+	c.mergeMonitoringPluginConfiguration(clusterMonitoring.Spec.MonitoringPluginConfig)
 }
 
 // clusterMonitoringMetricsServerSpecEmpty reports whether the CR's
@@ -91,6 +92,24 @@ func clusterMonitoringPrometheusOperatorSpecEmpty(poc configv1alpha1.PrometheusO
 // alertmanagerConfig stanza contains no user intent.
 func clusterMonitoringAlertmanagerSpecEmpty(ac configv1alpha1.AlertmanagerConfig) bool {
 	return ac.DeploymentMode == ""
+}
+
+// clusterMonitoringMonitoringPluginSpecEmpty reports whether the CR's
+// monitoringPluginConfig stanza contains no user-set field.
+func clusterMonitoringMonitoringPluginSpecEmpty(mpc configv1alpha1.MonitoringPluginConfig) bool {
+	if len(mpc.NodeSelector) > 0 {
+		return false
+	}
+	if len(mpc.Resources) > 0 {
+		return false
+	}
+	if len(mpc.Tolerations) > 0 {
+		return false
+	}
+	if len(mpc.TopologySpreadConstraints) > 0 {
+		return false
+	}
+	return true
 }
 
 func verbosityLevelToNumeric(level configv1alpha1.VerbosityLevel) uint8 {
@@ -215,6 +234,24 @@ func (c *Config) mergeAlertmanagerConfiguration(ac configv1alpha1.AlertmanagerCo
 		return
 	}
 	c.ClusterMonitoringConfiguration.AlertmanagerMainConfig = cfg
+}
+
+func (c *Config) mergeMonitoringPluginConfiguration(mpc configv1alpha1.MonitoringPluginConfig) {
+	// Phase 1: if the ConfigMap already set monitoringPlugin, keep it and ignore the CR.
+	if c.ClusterMonitoringConfiguration.MonitoringPluginConfig != nil {
+		return
+	}
+	if clusterMonitoringMonitoringPluginSpecEmpty(mpc) {
+		return
+	}
+
+	cfg := &MonitoringPluginConfig{}
+	cfg.NodeSelector = mpc.NodeSelector
+	cfg.Resources = containerResourcesFromCRD(mpc.Resources)
+	cfg.Tolerations = mpc.Tolerations
+	cfg.TopologySpreadConstraints = mpc.TopologySpreadConstraints
+
+	c.ClusterMonitoringConfiguration.MonitoringPluginConfig = cfg
 }
 
 func mergeAlertmanagerCustomConfigFromCRD(dst *AlertmanagerMainConfig, cc configv1alpha1.AlertmanagerCustomConfig) {

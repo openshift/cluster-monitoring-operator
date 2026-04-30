@@ -515,6 +515,147 @@ func TestClusterMonitorAlertmanagerConfigMapAndCRD(t *testing.T) {
 	}
 }
 
+// TestClusterMonitoringMonitoringPlugin tests monitoringPluginConfig via ClusterMonitoring CRD.
+func TestClusterMonitoringMonitoringPlugin(t *testing.T) {
+	if !clusterMonitoringCRDAvailable {
+		t.Skip("ClusterMonitoring CRD not available (TechPreview / ClusterMonitoringConfig feature gate may be disabled)")
+		return
+	}
+
+	t.Log("creating ClusterMonitoring resource with monitoringPluginConfig")
+	cm := &configv1alpha1.ClusterMonitoring{
+		ObjectMeta: metav1.ObjectMeta{
+			Name: clusterMonitoringName,
+		},
+		Spec: configv1alpha1.ClusterMonitoringSpec{
+			MonitoringPluginConfig: configv1alpha1.MonitoringPluginConfig{
+				Resources: []configv1alpha1.ContainerResource{
+					{
+						Name:    "cpu",
+						Request: resource.MustParse("10m"),
+						Limit:   resource.MustParse("100m"),
+					},
+					{
+						Name:    "memory",
+						Request: resource.MustParse("100Mi"),
+						Limit:   resource.MustParse("200Mi"),
+					},
+				},
+				NodeSelector: map[string]string{
+					"kubernetes.io/os": "linux",
+				},
+			},
+		},
+	}
+
+	f.MustCreateOrUpdateClusterMonitoring(t, cm)
+	t.Cleanup(func() {
+		cm.Spec.MonitoringPluginConfig = configv1alpha1.MonitoringPluginConfig{}
+		f.MustCreateOrUpdateClusterMonitoring(t, cm)
+	})
+
+	t.Logf("configured ClusterMonitoring resource: %s", cm.Name)
+
+	for _, test := range []scenario{
+		{
+			name:      "assert monitoring-plugin deployment exists and rolled out",
+			assertion: f.AssertDeploymentExistsAndRolloutFunc("monitoring-plugin", f.Ns),
+		},
+		{
+			name: "assert pod configuration is as expected",
+			assertion: f.AssertPodConfigurationFunc(
+				f.Ns,
+				"app.kubernetes.io/name=monitoring-plugin,app.kubernetes.io/component=monitoring-plugin",
+				[]framework.PodAssertion{
+					expectMatchingRequests("*", "monitoring-plugin", "100Mi", "10m"),
+					expectMatchingLimits("*", "monitoring-plugin", "200Mi", "100m"),
+					expectNodeSelector("kubernetes.io/os", "linux"),
+				},
+			),
+		},
+	} {
+		t.Run(test.name, test.assertion)
+	}
+}
+
+// TestClusterMonitorMonitoringPluginConfigMapAndCRD verifies Phase 1 merge: when both ConfigMap and CR
+// specify monitoringPlugin / monitoringPluginConfig, the ConfigMap wins at the top level and CR values are ignored.
+func TestClusterMonitorMonitoringPluginConfigMapAndCRD(t *testing.T) {
+	if !clusterMonitoringCRDAvailable {
+		t.Skip("ClusterMonitoring CRD not available (TechPreview / ClusterMonitoringConfig feature gate may be disabled)")
+		return
+	}
+
+	t.Log("creating ConfigMap with baseline monitoringPlugin configuration")
+	configMapData := `monitoringPlugin:
+  nodeSelector:
+    test-precedence: "from-configmap"
+  resources:
+    requests:
+      cpu: "5m"
+      memory: "50Mi"
+`
+	cm := f.BuildCMOConfigMap(t, configMapData)
+	f.MustCreateOrUpdateConfigMap(t, cm)
+	t.Cleanup(func() {
+		f.MustDeleteConfigMap(t, cm)
+	})
+
+	t.Log("creating ClusterMonitoring CR with different monitoring plugin settings (must be ignored when ConfigMap defines monitoringPlugin)")
+	crd := &configv1alpha1.ClusterMonitoring{
+		ObjectMeta: metav1.ObjectMeta{
+			Name: clusterMonitoringName,
+		},
+		Spec: configv1alpha1.ClusterMonitoringSpec{
+			MonitoringPluginConfig: configv1alpha1.MonitoringPluginConfig{
+				NodeSelector: map[string]string{
+					"test-precedence": "from-crd",
+				},
+				Resources: []configv1alpha1.ContainerResource{
+					{
+						Name:    "cpu",
+						Request: resource.MustParse("10m"),
+						Limit:   resource.MustParse("100m"),
+					},
+					{
+						Name:    "memory",
+						Request: resource.MustParse("100Mi"),
+						Limit:   resource.MustParse("200Mi"),
+					},
+				},
+			},
+		},
+	}
+
+	f.MustCreateOrUpdateClusterMonitoring(t, crd)
+	t.Cleanup(func() {
+		crd.Spec.MonitoringPluginConfig = configv1alpha1.MonitoringPluginConfig{}
+		f.MustCreateOrUpdateClusterMonitoring(t, crd)
+	})
+
+	t.Logf("configured both ConfigMap and ClusterMonitoring CR for Phase 1 precedence (ConfigMap wins)")
+
+	for _, tc := range []scenario{
+		{
+			name:      "assert monitoring-plugin deployment exists and rolled out",
+			assertion: f.AssertDeploymentExistsAndRolloutFunc("monitoring-plugin", f.Ns),
+		},
+		{
+			name: "assert ConfigMap monitoringPlugin is used; CR monitoringPluginConfig is ignored",
+			assertion: f.AssertPodConfigurationFunc(
+				f.Ns,
+				"app.kubernetes.io/name=monitoring-plugin,app.kubernetes.io/component=monitoring-plugin",
+				[]framework.PodAssertion{
+					expectMatchingRequests("*", "monitoring-plugin", "50Mi", "5m"),
+					expectNodeSelector("test-precedence", "from-configmap"),
+				},
+			),
+		},
+	} {
+		t.Run(tc.name, tc.assertion)
+	}
+}
+
 func expectMatchingLimits(podName, containerName, expectMem, expectCPU string) framework.PodAssertion {
 	return func(pod v1.Pod) error {
 		if podName != "*" && pod.Name != podName {
