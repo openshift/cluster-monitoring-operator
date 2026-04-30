@@ -89,6 +89,11 @@ func TestClusterMonitoringMetricsServerSpecEmpty(t *testing.T) {
 	require.False(t, clusterMonitoringMetricsServerSpecEmpty(configv1alpha1.MetricsServerConfig{
 		Audit: configv1alpha1.Audit{Profile: configv1alpha1.AuditProfileMetadata},
 	}))
+	require.False(t, clusterMonitoringMetricsServerSpecEmpty(configv1alpha1.MetricsServerConfig{
+		Resources: []configv1alpha1.ContainerResource{
+			{Name: "cpu", Request: resource.MustParse("10m")},
+		},
+	}))
 }
 
 func TestClusterMonitoringPrometheusOperatorSpecEmpty(t *testing.T) {
@@ -138,6 +143,26 @@ func TestConfig_MergeClusterMonitoringCRD_MetricsServerConfigPhase1(t *testing.T
 		c, err := NewConfigFromStringAndClusterMonitoringResource("{metricsServer: {verbosity: 1}}", cm)
 		require.NoError(t, err)
 		require.Equal(t, uint8(1), c.ClusterMonitoringConfiguration.MetricsServerConfig.Verbosity)
+	})
+	t.Run("CR maps ContainerResource to Resources", func(t *testing.T) {
+		cm := &configv1alpha1.ClusterMonitoring{
+			Spec: configv1alpha1.ClusterMonitoringSpec{
+				MetricsServerConfig: configv1alpha1.MetricsServerConfig{
+					Resources: []configv1alpha1.ContainerResource{
+						{
+							Name:    "cpu",
+							Request: resource.MustParse("100m"),
+							Limit:   resource.MustParse("200m"),
+						},
+					},
+				},
+			},
+		}
+		c, err := NewConfigFromStringAndClusterMonitoringResource("{}", cm)
+		require.NoError(t, err)
+		require.NotNil(t, c.ClusterMonitoringConfiguration.MetricsServerConfig.Resources)
+		require.Equal(t, resource.MustParse("100m"), c.ClusterMonitoringConfiguration.MetricsServerConfig.Resources.Requests[v1.ResourceCPU])
+		require.Equal(t, resource.MustParse("200m"), c.ClusterMonitoringConfiguration.MetricsServerConfig.Resources.Limits[v1.ResourceCPU])
 	})
 }
 
