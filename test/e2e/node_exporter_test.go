@@ -54,6 +54,14 @@ nodeExporter:
       enabled: true`,
 		},
 		{
+			nameCollector: "interrupts",
+			config: `
+nodeExporter:
+  collectors:
+    interrupts:
+      include: ["^LOC;.*"]`,
+		},
+		{
 			nameCollector: "softirqs",
 			config: `
 nodeExporter:

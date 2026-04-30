@@ -1,0 +1,25 @@
+// DO NOT EDIT THE CONTENT IN THIS FILE. It is automatically generated from the 
+	// source code for the Cluster Monitoring Operator. Any changes made to this 
+	// file will be overwritten when the content is re-generated. If you wish to 
+	// make edits, read the docgen utility instructions in the source code for the 
+	// CMO.
+	:_content-type: ASSEMBLY
+
+== NodeExporterCollectorInterruptsConfig
+
+=== Description
+
+The `NodeExporterCollectorInterruptsConfig` resource configures the `interrupts` collector of the `node-exporter` agent. By default, the collector is disabled. A non-empty `include` list enables the collector and allow-lists which interrupt lines are exposed (each entry is a regular expression; they are combined with OR). This limits metric cardinality compared to exposing every line from `/proc/interrupts`. If `include` is empty, the collector is disabled. To match all interrupt lines (high cardinality), set `include` to one broad regexp such as `.*`.
+
+
+
+Appears in: link:nodeexportercollectorconfig.adoc[NodeExporterCollectorConfig]
+
+[options="header"]
+|===
+| Property | Type | Description 
+|include|[]string|A list of regular expression patterns. Each line in `/proc/interrupts` is matched against the same string node-exporter uses: the IRQ name, info, and devices fields joined with `;`, for example `LOC;77;IO-APIC …`. Patterns are combined with OR. An empty list disables the collector.
+
+|===
+
+link:../index.adoc[Back to TOC]
