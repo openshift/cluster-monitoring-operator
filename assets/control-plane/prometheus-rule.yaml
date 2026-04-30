@@ -225,7 +225,7 @@ spec:
             ==
           kube_horizontalpodautoscaler_spec_max_replicas{namespace=~"(openshift-.*|kube-.*|default)",job="kube-state-metrics"}
         )
-        and on(namespace, horizontalpodautoscaler, cluster) (
+        and on(namespace, horizontalpodautoscaler) (
           kube_horizontalpodautoscaler_spec_max_replicas{namespace=~"(openshift-.*|kube-.*|default)",job="kube-state-metrics"}
             !=
           kube_horizontalpodautoscaler_spec_min_replicas{namespace=~"(openshift-.*|kube-.*|default)",job="kube-state-metrics"}

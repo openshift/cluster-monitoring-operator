@@ -58,6 +58,7 @@ The configuration file itself is always defined under the `config.yaml` key in t
 * link:modules/nodeexportercollectorsoftirqsconfig.adoc[NodeExporterCollectorSoftirqsConfig]
 * link:modules/nodeexportercollectorsystemdconfig.adoc[NodeExporterCollectorSystemdConfig]
 * link:modules/nodeexportercollectortcpstatconfig.adoc[NodeExporterCollectorTcpStatConfig]
+* link:modules/nodeexportercollectorzoneinfoconfig.adoc[NodeExporterCollectorZoneinfoConfig]
 * link:modules/nodeexporterconfig.adoc[NodeExporterConfig]
 * link:modules/openshiftstatemetricsconfig.adoc[OpenShiftStateMetricsConfig]
 * link:modules/prometheusk8sconfig.adoc[PrometheusK8sConfig]

@@ -38,6 +38,7 @@ Configuring Cluster Monitoring is optional. If the config does not exist or is e
 * [NodeExporterCollectorSoftirqsConfig](#nodeexportercollectorsoftirqsconfig)
 * [NodeExporterCollectorSystemdConfig](#nodeexportercollectorsystemdconfig)
 * [NodeExporterCollectorTcpStatConfig](#nodeexportercollectortcpstatconfig)
+* [NodeExporterCollectorZoneinfoConfig](#nodeexportercollectorzoneinfoconfig)
 * [NodeExporterConfig](#nodeexporterconfig)
 * [OpenShiftStateMetricsConfig](#openshiftstatemetricsconfig)
 * [PrometheusK8sConfig](#prometheusk8sconfig)
@@ -55,11 +56,11 @@ Configuring Cluster Monitoring is optional. If the config does not exist or is e
 
 ## AdditionalAlertmanagerConfig
 
-#### Description
+### Description
 
 The `AdditionalAlertmanagerConfig` resource defines settings for how a component communicates with additional Alertmanager instances.
 
-#### Required
+### Required
    - ` apiVersion `
 
 <em>appears in: [PrometheusK8sConfig](#prometheusk8sconfig), [PrometheusRestrictedConfig](#prometheusrestrictedconfig), [ThanosRulerConfig](#thanosrulerconfig)</em>
@@ -78,7 +79,7 @@ The `AdditionalAlertmanagerConfig` resource defines settings for how a component
 
 ## AlertmanagerMainConfig
 
-#### Description
+### Description
 
 The `AlertmanagerMainConfig` resource defines settings for the Alertmanager component in the `openshift-monitoring` namespace.
 
@@ -101,7 +102,7 @@ The `AlertmanagerMainConfig` resource defines settings for the Alertmanager comp
 
 ## AlertmanagerUserWorkloadConfig
 
-#### Description
+### Description
 
 The `AlertmanagerUserWorkloadConfig` resource defines the settings for the Alertmanager instance used for user-defined projects.
 
@@ -124,7 +125,7 @@ The `AlertmanagerUserWorkloadConfig` resource defines the settings for the Alert
 
 ## ClusterMonitoringConfiguration
 
-#### Description
+### Description
 
 The `ClusterMonitoringConfiguration` resource defines settings that customize the default platform monitoring stack through the `cluster-monitoring-config` config map in the `openshift-monitoring` namespace.
 
@@ -148,7 +149,7 @@ The `ClusterMonitoringConfiguration` resource defines settings that customize th
 
 ## K8sPrometheusAdapter
 
-#### Description
+### Description
 
 The `K8sPrometheusAdapter` resource defines settings for the Prometheus Adapter component. This is deprecated config, setting this has no effect and will be removed in a future version.
 
@@ -164,7 +165,7 @@ The `K8sPrometheusAdapter` resource defines settings for the Prometheus Adapter 
 
 ## KubeStateMetricsConfig
 
-#### Description
+### Description
 
 The `KubeStateMetricsConfig` resource defines settings for the `kube-state-metrics` agent.
 
@@ -183,7 +184,7 @@ The `KubeStateMetricsConfig` resource defines settings for the `kube-state-metri
 
 ## MetricsServerConfig
 
-#### Description
+### Description
 
 The `MetricsServerConfig` resource defines settings for the Metrics Server component.
 
@@ -203,7 +204,7 @@ The `MetricsServerConfig` resource defines settings for the Metrics Server compo
 
 ## MonitoringPluginConfig
 
-#### Description
+### Description
 
 The `MonitoringPluginConfig` resource defines settings for the Console Plugin component in the `openshift-monitoring` namespace.
 
@@ -221,7 +222,7 @@ The `MonitoringPluginConfig` resource defines settings for the Console Plugin co
 
 ## NodeExporterCollectorBuddyInfoConfig
 
-#### Description
+### Description
 
 The `NodeExporterCollectorBuddyInfoConfig` resource works as an on/off switch for the `buddyinfo` collector of the `node-exporter` agent. By default, the `buddyinfo` collector is disabled.
 
@@ -236,7 +237,7 @@ The `NodeExporterCollectorBuddyInfoConfig` resource works as an on/off switch fo
 
 ## NodeExporterCollectorConfig
 
-#### Description
+### Description
 
 The `NodeExporterCollectorConfig` resource defines settings for individual collectors of the `node-exporter` agent.
 
@@ -256,12 +257,13 @@ The `NodeExporterCollectorConfig` resource defines settings for individual colle
 | processes | [NodeExporterCollectorProcessesConfig](#nodeexportercollectorprocessesconfig) | Defines the configuration of the `processes` collector, which collects statistics from processes and threads running in the system. Disabled by default. |
 | systemd | [NodeExporterCollectorSystemdConfig](#nodeexportercollectorsystemdconfig) | Defines the configuration of the `systemd` collector, which collects statistics on the systemd daemon and its managed services. Disabled by default. |
 | softirqs | [NodeExporterCollectorSoftirqsConfig](#nodeexportercollectorsoftirqsconfig) | Defines the configuration of the `softirqs` collector, which exposes detailed softirq metrics from `/proc/softirqs`. Disabled by default. |
+| zoneinfo | [NodeExporterCollectorZoneinfoConfig](#nodeexportercollectorzoneinfoconfig) | Defines the configuration of the `zoneinfo` collector, which exposes detailed memory zone statistics from `/proc/zoneinfo`. Disabled by default. |
 
 [Back to TOC](#table-of-contents)
 
 ## NodeExporterCollectorCpufreqConfig
 
-#### Description
+### Description
 
 The `NodeExporterCollectorCpufreqConfig` resource works as an on/off switch for the `cpufreq` collector of the `node-exporter` agent. By default, the `cpufreq` collector is disabled. Under certain circumstances, enabling the cpufreq collector increases CPU usage on machines with many cores. If you enable this collector and have machines with many cores, monitor your systems closely for excessive CPU usage. Please refer to https://github.com/prometheus/node_exporter/issues/1880 for more details. A related bug: https://bugzilla.redhat.com/show_bug.cgi?id=1972076
 
@@ -276,7 +278,7 @@ The `NodeExporterCollectorCpufreqConfig` resource works as an on/off switch for 
 
 ## NodeExporterCollectorEthtoolConfig
 
-#### Description
+### Description
 
 The `NodeExporterCollectorEthtoolConfig` resource works as an on/off switch for the `ethtool` collector of the `node-exporter` agent. By default, the `ethtool` collector is disabled.
 
@@ -291,7 +293,7 @@ The `NodeExporterCollectorEthtoolConfig` resource works as an on/off switch for 
 
 ## NodeExporterCollectorKSMDConfig
 
-#### Description
+### Description
 
 The `NodeExporterCollectorKSMDConfig` resource works as an on/off switch for the `ksmd` collector of the `node-exporter` agent. By default, the `ksmd` collector is disabled.
 
@@ -306,7 +308,7 @@ The `NodeExporterCollectorKSMDConfig` resource works as an on/off switch for the
 
 ## NodeExporterCollectorMountStatsConfig
 
-#### Description
+### Description
 
 The `NodeExporterCollectorMountStatsConfig` resource works as an on/off switch for the `mountstats` collector of the `node-exporter` agent. By default, the `mountstats` collector is disabled. If enabled, these metrics become available:\n\n\t`node_mountstats_nfs_read_bytes_total`,\n\t`node_mountstats_nfs_write_bytes_total`,\n\t`node_mountstats_nfs_operations_requests_total`.\n\nPlease be aware that these metrics can have a high cardinality. If you enable this collector, closely monitor any increases in memory usage for the `prometheus-k8s` pods.
 
@@ -321,7 +323,7 @@ The `NodeExporterCollectorMountStatsConfig` resource works as an on/off switch f
 
 ## NodeExporterCollectorNetClassConfig
 
-#### Description
+### Description
 
 The `NodeExporterCollectorNetClassConfig` resource works as an on/off switch for the `netclass` collector of the `node-exporter` agent. By default, the `netclass` collector is enabled. If disabled, these metrics become unavailable: `node_network_info`, `node_network_address_assign_type`, `node_network_carrier`, `node_network_carrier_changes_total`, `node_network_carrier_up_changes_total`, `node_network_carrier_down_changes_total`, `node_network_device_id`, `node_network_dormant`, `node_network_flags`, `node_network_iface_id`, `node_network_iface_link`, `node_network_iface_link_mode`, `node_network_mtu_bytes`, `node_network_name_assign_type`, `node_network_net_dev_group`, `node_network_speed_bytes`, `node_network_transmit_queue_length`, `node_network_protocol_type`.
 
@@ -337,7 +339,7 @@ The `NodeExporterCollectorNetClassConfig` resource works as an on/off switch for
 
 ## NodeExporterCollectorNetDevConfig
 
-#### Description
+### Description
 
 The `NodeExporterCollectorNetDevConfig` resource works as an on/off switch for the `netdev` collector of the `node-exporter` agent. By default, the `netdev` collector is enabled. If disabled, these metrics become unavailable: `node_network_receive_bytes_total`, `node_network_receive_compressed_total`, `node_network_receive_drop_total`, `node_network_receive_errs_total`, `node_network_receive_fifo_total`, `node_network_receive_frame_total`, `node_network_receive_multicast_total`, `node_network_receive_nohandler_total`, `node_network_receive_packets_total`, `node_network_transmit_bytes_total`, `node_network_transmit_carrier_total`, `node_network_transmit_colls_total`, `node_network_transmit_compressed_total`, `node_network_transmit_drop_total`, `node_network_transmit_errs_total`, `node_network_transmit_fifo_total`, `node_network_transmit_packets_total`.
 
@@ -352,7 +354,7 @@ The `NodeExporterCollectorNetDevConfig` resource works as an on/off switch for t
 
 ## NodeExporterCollectorProcessesConfig
 
-#### Description
+### Description
 
 The `NodeExporterCollectorProcessesConfig` resource works as an on/off switch for the `processes` collector of the `node-exporter` agent. If enabled, these metrics become available: `node_processes_max_processes`, `node_processes_pids`, `node_processes_state`, `node_processes_threads`, `node_processes_threads_state`. The metric `node_processes_state` and `node_processes_threads_state` can have up to 5 series each, depending on the state of the processes and threads. The possible states of a process or a thread are: 'D' (UNINTERRUPTABLE_SLEEP), 'R' (RUNNING & RUNNABLE), 'S' (INTERRRUPTABLE_SLEEP), 'T' (STOPPED), 'Z' (ZOMBIE). By default, the `processes` collector is disabled.
 
@@ -367,7 +369,7 @@ The `NodeExporterCollectorProcessesConfig` resource works as an on/off switch fo
 
 ## NodeExporterCollectorSoftirqsConfig
 
-#### Description
+### Description
 
 The `NodeExporterCollectorSoftirqsConfig` resource works as an on/off switch for the `softirqs` collector of the `node-exporter` agent. By default, the `softirqs` collector is disabled.
 
@@ -382,7 +384,7 @@ The `NodeExporterCollectorSoftirqsConfig` resource works as an on/off switch for
 
 ## NodeExporterCollectorSystemdConfig
 
-#### Description
+### Description
 
 The `NodeExporterCollectorSystemdConfig` resource works as an on/off switch for the `systemd` collector of the `node-exporter` agent. By default, the `systemd` collector is disabled. If enabled, the following metrics become available: `node_systemd_system_running`, `node_systemd_units`, `node_systemd_version`. If the unit uses a socket, it also generates these 3 metrics: `node_systemd_socket_accepted_connections_total`, `node_systemd_socket_current_connections`, `node_systemd_socket_refused_connections_total`. You can use the `units` parameter to select the systemd units to be included by the `systemd` collector. The selected units are used to generate the `node_systemd_unit_state` metric, which shows the state of each systemd unit. The timer units such as `logrotate.timer` generate one more metric `node_systemd_timer_last_trigger_seconds`. However, this metric's cardinality might be high (at least 5 series per unit per node). If you enable this collector with a long list of selected units, closely monitor the `prometheus-k8s` deployment for excessive memory usage.
 
@@ -398,7 +400,7 @@ The `NodeExporterCollectorSystemdConfig` resource works as an on/off switch for 
 
 ## NodeExporterCollectorTcpStatConfig
 
-#### Description
+### Description
 
 The `NodeExporterCollectorTcpStatConfig` resource works as an on/off switch for the `tcpstat` collector of the `node-exporter` agent. By default, the `tcpstat` collector is disabled.
 
@@ -411,9 +413,24 @@ The `NodeExporterCollectorTcpStatConfig` resource works as an on/off switch for 
 
 [Back to TOC](#table-of-contents)
 
+## NodeExporterCollectorZoneinfoConfig
+
+### Description
+
+The `NodeExporterCollectorZoneinfoConfig` resource works as an on/off switch for the `zoneinfo` collector of the `node-exporter` agent. By default, the `zoneinfo` collector is disabled.
+
+
+<em>appears in: [NodeExporterCollectorConfig](#nodeexportercollectorconfig)</em>
+
+| Property | Type | Description |
+| -------- | ---- | ----------- |
+| enabled | bool | A Boolean flag that enables or disables the `zoneinfo` collector. |
+
+[Back to TOC](#table-of-contents)
+
 ## NodeExporterConfig
 
-#### Description
+### Description
 
 The `NodeExporterConfig` resource defines settings for the `node-exporter` agent.
 
@@ -431,7 +448,7 @@ The `NodeExporterConfig` resource defines settings for the `node-exporter` agent
 
 ## OpenShiftStateMetricsConfig
 
-#### Description
+### Description
 
 The `OpenShiftStateMetricsConfig` resource defines settings for the `openshift-state-metrics` agent.
 
@@ -449,7 +466,7 @@ The `OpenShiftStateMetricsConfig` resource defines settings for the `openshift-s
 
 ## PrometheusK8sConfig
 
-#### Description
+### Description
 
 The `PrometheusK8sConfig` resource defines settings for the Prometheus component.
 
@@ -477,7 +494,7 @@ The `PrometheusK8sConfig` resource defines settings for the Prometheus component
 
 ## PrometheusOperatorAdmissionWebhookConfig
 
-#### Description
+### Description
 
 The `PrometheusOperatorAdmissionWebhookConfig` resource defines settings for the Prometheus Operator's admission webhook workload.
 
@@ -493,7 +510,7 @@ The `PrometheusOperatorAdmissionWebhookConfig` resource defines settings for the
 
 ## PrometheusOperatorConfig
 
-#### Description
+### Description
 
 The `PrometheusOperatorConfig` resource defines settings for the Prometheus Operator component.
 
@@ -512,7 +529,7 @@ The `PrometheusOperatorConfig` resource defines settings for the Prometheus Oper
 
 ## PrometheusRestrictedConfig
 
-#### Description
+### Description
 
 The `PrometheusRestrictedConfig` resource defines the settings for the Prometheus component that monitors user-defined projects.
 
@@ -545,11 +562,11 @@ The `PrometheusRestrictedConfig` resource defines the settings for the Prometheu
 
 ## RemoteWriteSpec
 
-#### Description
+### Description
 
 The `RemoteWriteSpec` resource defines the settings for remote write storage.
 
-#### Required
+### Required
    - ` url `
 
 <em>appears in: [PrometheusK8sConfig](#prometheusk8sconfig), [PrometheusRestrictedConfig](#prometheusrestrictedconfig)</em>
@@ -576,11 +593,11 @@ The `RemoteWriteSpec` resource defines the settings for remote write storage.
 
 ## ResourceLabels
 
-#### Description
+### Description
 
 The `ResourceLabels` resource defines which Kubernetes labels to expose as metrics for a given resource type.
 
-#### Required
+### Required
    - ` resource `
    - ` labels `
 
@@ -595,11 +612,11 @@ The `ResourceLabels` resource defines which Kubernetes labels to expose as metri
 
 ## TLSConfig
 
-#### Description
+### Description
 
 The `TLSConfig` resource configures the settings for TLS connections.
 
-#### Required
+### Required
    - ` insecureSkipVerify `
 
 <em>appears in: [AdditionalAlertmanagerConfig](#additionalalertmanagerconfig)</em>
@@ -616,11 +633,11 @@ The `TLSConfig` resource configures the settings for TLS connections.
 
 ## TelemeterClientConfig
 
-#### Description
+### Description
 
 `TelemeterClientConfig` defines settings for the Telemeter Client component.
 
-#### Required
+### Required
    - ` nodeSelector `
    - ` tolerations `
 
@@ -637,7 +654,7 @@ The `TLSConfig` resource configures the settings for TLS connections.
 
 ## ThanosQuerierConfig
 
-#### Description
+### Description
 
 The `ThanosQuerierConfig` resource defines settings for the Thanos Querier component.
 
@@ -658,7 +675,7 @@ The `ThanosQuerierConfig` resource defines settings for the Thanos Querier compo
 
 ## ThanosRulerConfig
 
-#### Description
+### Description
 
 The `ThanosRulerConfig` resource defines configuration for the Thanos Ruler instance for user-defined projects.
 
@@ -681,7 +698,7 @@ The `ThanosRulerConfig` resource defines configuration for the Thanos Ruler inst
 
 ## UserWorkloadConfig
 
-#### Description
+### Description
 
 The `UserWorkloadConfig` resource defines settings for the monitoring of user-defined projects.
 
@@ -696,7 +713,7 @@ The `UserWorkloadConfig` resource defines settings for the monitoring of user-de
 
 ## UserWorkloadConfiguration
 
-#### Description
+### Description
 
 The `UserWorkloadConfiguration` resource defines the settings responsible for user-defined projects in the `user-workload-monitoring-config` config map  in the `openshift-user-workload-monitoring` namespace. You can only enable `UserWorkloadConfiguration` after you have set `enableUserWorkload` to `true` in the `cluster-monitoring-config` config map under the `openshift-monitoring` namespace.
 

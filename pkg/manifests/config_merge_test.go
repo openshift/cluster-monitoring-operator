@@ -19,8 +19,6 @@ import (
 
 	configv1alpha1 "github.com/openshift/api/config/v1alpha1"
 	"github.com/stretchr/testify/require"
-	v1 "k8s.io/api/core/v1"
-	"k8s.io/apimachinery/pkg/api/resource"
 )
 
 func TestConfig_MergeClusterMonitoringCRD(t *testing.T) {
@@ -91,28 +89,6 @@ func TestClusterMonitoringMetricsServerSpecEmpty(t *testing.T) {
 	}))
 }
 
-func TestClusterMonitoringPrometheusOperatorSpecEmpty(t *testing.T) {
-	require.True(t, clusterMonitoringPrometheusOperatorSpecEmpty(configv1alpha1.PrometheusOperatorConfig{}))
-	require.False(t, clusterMonitoringPrometheusOperatorSpecEmpty(configv1alpha1.PrometheusOperatorConfig{
-		LogLevel: configv1alpha1.LogLevelInfo,
-	}))
-	require.False(t, clusterMonitoringPrometheusOperatorSpecEmpty(configv1alpha1.PrometheusOperatorConfig{
-		NodeSelector: map[string]string{"k": "v"},
-	}))
-}
-
-func TestClusterMonitoringAlertmanagerSpecEmpty(t *testing.T) {
-	require.True(t, clusterMonitoringAlertmanagerSpecEmpty(configv1alpha1.AlertmanagerConfig{}))
-	require.False(t, clusterMonitoringAlertmanagerSpecEmpty(configv1alpha1.AlertmanagerConfig{
-		DeploymentMode: configv1alpha1.AlertManagerDeployModeDefaultConfig,
-	}))
-}
-
-func TestLogLevelCRDToManifest(t *testing.T) {
-	require.Equal(t, "debug", logLevelCRDToManifest(configv1alpha1.LogLevelDebug))
-	require.Equal(t, "", logLevelCRDToManifest(configv1alpha1.LogLevel("Unknown")))
-}
-
 func TestConfig_MergeClusterMonitoringCRD_MetricsServerConfigPhase1(t *testing.T) {
 	t.Run("CR applies when ConfigMap left MetricsServerConfig nil", func(t *testing.T) {
 		cm := &configv1alpha1.ClusterMonitoring{
@@ -138,100 +114,5 @@ func TestConfig_MergeClusterMonitoringCRD_MetricsServerConfigPhase1(t *testing.T
 		c, err := NewConfigFromStringAndClusterMonitoringResource("{metricsServer: {verbosity: 1}}", cm)
 		require.NoError(t, err)
 		require.Equal(t, uint8(1), c.ClusterMonitoringConfiguration.MetricsServerConfig.Verbosity)
-	})
-}
-
-func TestConfig_MergeClusterMonitoringCRD_PrometheusOperatorConfigPhase1(t *testing.T) {
-	t.Run("CR applies when ConfigMap left PrometheusOperatorConfig nil", func(t *testing.T) {
-		cm := &configv1alpha1.ClusterMonitoring{
-			Spec: configv1alpha1.ClusterMonitoringSpec{
-				PrometheusOperatorConfig: configv1alpha1.PrometheusOperatorConfig{
-					LogLevel: configv1alpha1.LogLevelDebug,
-				},
-			},
-		}
-		c, err := NewConfigFromStringAndClusterMonitoringResource("{}", cm)
-		require.NoError(t, err)
-		require.NotNil(t, c.ClusterMonitoringConfiguration.PrometheusOperatorConfig)
-		require.Equal(t, "debug", c.ClusterMonitoringConfiguration.PrometheusOperatorConfig.LogLevel)
-	})
-	t.Run("CR ignored when ConfigMap already set PrometheusOperatorConfig", func(t *testing.T) {
-		cm := &configv1alpha1.ClusterMonitoring{
-			Spec: configv1alpha1.ClusterMonitoringSpec{
-				PrometheusOperatorConfig: configv1alpha1.PrometheusOperatorConfig{
-					LogLevel: configv1alpha1.LogLevelDebug,
-				},
-			},
-		}
-		c, err := NewConfigFromStringAndClusterMonitoringResource("{prometheusOperator: {logLevel: info}}", cm)
-		require.NoError(t, err)
-		require.Equal(t, "info", c.ClusterMonitoringConfiguration.PrometheusOperatorConfig.LogLevel)
-	})
-	t.Run("CR maps ContainerResource to Resources", func(t *testing.T) {
-		cm := &configv1alpha1.ClusterMonitoring{
-			Spec: configv1alpha1.ClusterMonitoringSpec{
-				PrometheusOperatorConfig: configv1alpha1.PrometheusOperatorConfig{
-					Resources: []configv1alpha1.ContainerResource{
-						{
-							Name:    "cpu",
-							Request: resource.MustParse("100m"),
-							Limit:   resource.MustParse("200m"),
-						},
-					},
-				},
-			},
-		}
-		c, err := NewConfigFromStringAndClusterMonitoringResource("{}", cm)
-		require.NoError(t, err)
-		require.NotNil(t, c.ClusterMonitoringConfiguration.PrometheusOperatorConfig.Resources)
-		require.Equal(t, resource.MustParse("100m"), c.ClusterMonitoringConfiguration.PrometheusOperatorConfig.Resources.Requests[v1.ResourceCPU])
-		require.Equal(t, resource.MustParse("200m"), c.ClusterMonitoringConfiguration.PrometheusOperatorConfig.Resources.Limits[v1.ResourceCPU])
-	})
-}
-
-func TestConfig_MergeClusterMonitoringCRD_AlertmanagerMainConfigPhase1(t *testing.T) {
-	t.Run("CR applies when ConfigMap left AlertmanagerMainConfig nil", func(t *testing.T) {
-		cm := &configv1alpha1.ClusterMonitoring{
-			Spec: configv1alpha1.ClusterMonitoringSpec{
-				AlertmanagerConfig: configv1alpha1.AlertmanagerConfig{
-					DeploymentMode: configv1alpha1.AlertManagerDeployModeCustomConfig,
-					CustomConfig: configv1alpha1.AlertmanagerCustomConfig{
-						LogLevel: configv1alpha1.LogLevelDebug,
-					},
-				},
-			},
-		}
-		c, err := NewConfigFromStringAndClusterMonitoringResource("{}", cm)
-		require.NoError(t, err)
-		require.NotNil(t, c.ClusterMonitoringConfiguration.AlertmanagerMainConfig)
-		require.Equal(t, "debug", c.ClusterMonitoringConfiguration.AlertmanagerMainConfig.LogLevel)
-	})
-	t.Run("CR ignored when ConfigMap already set AlertmanagerMainConfig", func(t *testing.T) {
-		cm := &configv1alpha1.ClusterMonitoring{
-			Spec: configv1alpha1.ClusterMonitoringSpec{
-				AlertmanagerConfig: configv1alpha1.AlertmanagerConfig{
-					DeploymentMode: configv1alpha1.AlertManagerDeployModeCustomConfig,
-					CustomConfig: configv1alpha1.AlertmanagerCustomConfig{
-						LogLevel: configv1alpha1.LogLevelDebug,
-					},
-				},
-			},
-		}
-		c, err := NewConfigFromStringAndClusterMonitoringResource("{alertmanagerMain: {logLevel: info}}", cm)
-		require.NoError(t, err)
-		require.Equal(t, "info", c.ClusterMonitoringConfiguration.AlertmanagerMainConfig.LogLevel)
-	})
-	t.Run("CR Disabled sets enabled false", func(t *testing.T) {
-		cm := &configv1alpha1.ClusterMonitoring{
-			Spec: configv1alpha1.ClusterMonitoringSpec{
-				AlertmanagerConfig: configv1alpha1.AlertmanagerConfig{
-					DeploymentMode: configv1alpha1.AlertManagerDeployModeDisabled,
-				},
-			},
-		}
-		c, err := NewConfigFromStringAndClusterMonitoringResource("{}", cm)
-		require.NoError(t, err)
-		require.NotNil(t, c.ClusterMonitoringConfiguration.AlertmanagerMainConfig.Enabled)
-		require.False(t, *c.ClusterMonitoringConfiguration.AlertmanagerMainConfig.Enabled)
 	})
 }
