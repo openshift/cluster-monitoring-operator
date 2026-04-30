@@ -30,6 +30,7 @@ Configuring Cluster Monitoring is optional. If the config does not exist or is e
 * [NodeExporterCollectorConfig](#nodeexportercollectorconfig)
 * [NodeExporterCollectorCpufreqConfig](#nodeexportercollectorcpufreqconfig)
 * [NodeExporterCollectorEthtoolConfig](#nodeexportercollectorethtoolconfig)
+* [NodeExporterCollectorInterruptsConfig](#nodeexportercollectorinterruptsconfig)
 * [NodeExporterCollectorKSMDConfig](#nodeexportercollectorksmdconfig)
 * [NodeExporterCollectorMountStatsConfig](#nodeexportercollectormountstatsconfig)
 * [NodeExporterCollectorNetClassConfig](#nodeexportercollectornetclassconfig)
@@ -256,6 +257,7 @@ The `NodeExporterCollectorConfig` resource defines settings for individual colle
 | ksmd | [NodeExporterCollectorKSMDConfig](#nodeexportercollectorksmdconfig) | Defines the configuration of the `ksmd` collector, which collects statistics from the kernel same-page merger daemon. Disabled by default. |
 | processes | [NodeExporterCollectorProcessesConfig](#nodeexportercollectorprocessesconfig) | Defines the configuration of the `processes` collector, which collects statistics from processes and threads running in the system. Disabled by default. |
 | systemd | [NodeExporterCollectorSystemdConfig](#nodeexportercollectorsystemdconfig) | Defines the configuration of the `systemd` collector, which collects statistics on the systemd daemon and its managed services. Disabled by default. |
+| interrupts | [NodeExporterCollectorInterruptsConfig](#nodeexportercollectorinterruptsconfig) | Defines the configuration of the `interrupts` collector, which exposes interrupt counts from `/proc/interrupts`. Disabled by default. |
 | softirqs | [NodeExporterCollectorSoftirqsConfig](#nodeexportercollectorsoftirqsconfig) | Defines the configuration of the `softirqs` collector, which exposes detailed softirq metrics from `/proc/softirqs`. Disabled by default. |
 | zoneinfo | [NodeExporterCollectorZoneinfoConfig](#nodeexportercollectorzoneinfoconfig) | Defines the configuration of the `zoneinfo` collector, which exposes detailed memory zone statistics from `/proc/zoneinfo`. Disabled by default. |
 
@@ -288,6 +290,21 @@ The `NodeExporterCollectorEthtoolConfig` resource works as an on/off switch for 
 | Property | Type | Description |
 | -------- | ---- | ----------- |
 | enabled | bool | A Boolean flag that enables or disables the `ethtool` collector. |
+
+[Back to TOC](#table-of-contents)
+
+## NodeExporterCollectorInterruptsConfig
+
+### Description
+
+The `NodeExporterCollectorInterruptsConfig` resource configures the `interrupts` collector of the `node-exporter` agent. By default, the collector is disabled. A non-empty `include` list enables the collector and allow-lists which interrupt lines are exposed (each entry is a regular expression; they are combined with OR). This limits metric cardinality compared to exposing every line from `/proc/interrupts`. If `include` is empty, the collector is disabled. To match all interrupt lines (high cardinality), set `include` to one broad regexp such as `.*`.
+
+
+<em>appears in: [NodeExporterCollectorConfig](#nodeexportercollectorconfig)</em>
+
+| Property | Type | Description |
+| -------- | ---- | ----------- |
+| include | []string | A list of regular expression patterns. Each line in `/proc/interrupts` is matched against the same string node-exporter uses: the IRQ name, info, and devices fields joined with `;`, for example `LOC;77;IO-APIC …`. Patterns are combined with OR. An empty list disables the collector. |
 
 [Back to TOC](#table-of-contents)
 
