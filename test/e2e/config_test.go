@@ -790,7 +790,7 @@ func assertThanosRulerEvaluationInterval(evaluationInterval string) func(*testin
 // checkMonitorConsolePluginReachable makes sure that one of the pods at least can serve /plugin-manifest.json
 func checkMonitorConsolePluginReachable(t *testing.T, pluginName string) {
 	err := framework.Poll(time.Second, 5*time.Minute, func() error {
-		host, cleanUp, err := f.ForwardPort(t, f.Ns, pluginName, 9443)
+		host, cleanUp, err := f.ForwardServicePort(t, f.Ns, pluginName, 9443)
 		if err != nil {
 			t.Fatal(err)
 		}
