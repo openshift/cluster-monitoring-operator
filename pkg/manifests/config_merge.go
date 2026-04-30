@@ -163,7 +163,9 @@ func (c *Config) mergeMetricsServerConfiguration(msc configv1alpha1.MetricsServe
 	}
 	cfg.NodeSelector = msc.NodeSelector
 	cfg.Tolerations = msc.Tolerations
-	cfg.Resources = containerResourcesFromCRD(msc.Resources)
+	if res := containerResourcesFromCRD(msc.Resources); res != nil {
+		cfg.Resources = res
+	}
 	if msc.Audit.Profile != "" {
 		cfg.Audit = &Audit{
 			Profile: auditv1.Level(string(msc.Audit.Profile)),
