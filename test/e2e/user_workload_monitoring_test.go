@@ -1099,98 +1099,106 @@ func assertUWMFederateEndpoint(t *testing.T) {
 	ctx := context.Background()
 	const testAccount = "test-uwm-federate"
 
-	err := framework.Poll(2*time.Second, 10*time.Second, func() error {
-		_, err := f.CreateServiceAccount(userWorkloadTestNs, testAccount)
-		return err
-	})
-	if err != nil {
-		t.Fatal(err)
-	}
+	saCleanup, err := f.CreateServiceAccount(userWorkloadTestNs, testAccount)
+	require.NoError(t, err)
+	defer func() { require.NoError(t, saCleanup()) }()
 
 	// Grant enough permissions to invoke /federate endpoint which is protected by kube-rbac-proxy.
-	err = framework.Poll(2*time.Second, 10*time.Second, func() error {
-		_, err = f.CreateClusterRoleBinding(userWorkloadTestNs, testAccount, "admin")
-		return err
-	})
-	if err != nil {
-		t.Fatal(err)
-	}
+	// Using cluster-monitoring-view as it's more specific than admin.
+	rbCleanup, err := f.CreateClusterRoleBinding(userWorkloadTestNs, testAccount, "cluster-monitoring-view")
+	require.NoError(t, err)
+	defer func() { require.NoError(t, rbCleanup()) }()
 
 	var token string
 	err = framework.Poll(5*time.Second, time.Minute, func() error {
+		var err error
 		token, err = f.GetServiceAccountToken(userWorkloadTestNs, testAccount)
 		return err
 	})
-	if err != nil {
-		t.Fatal(err)
-	}
+	require.NoError(t, err)
 
-	// check /federate endpoint
+	// check /federate endpoint for service
 	err = framework.Poll(5*time.Second, time.Minute, func() error {
-		federate := func(host string) error {
-			client := framework.NewPrometheusClient(
-				host,
-				token,
-				&framework.QueryParameterInjector{
-					Name:  "match[]",
-					Value: `up`,
-				},
-			)
-
-			resp, err := client.Do("GET", "/federate", nil)
-			if err != nil {
-				return err
-			}
-			defer resp.Body.Close()
-
-			b, err := io.ReadAll(resp.Body)
-			if err != nil {
-				return err
-			}
-			if resp.StatusCode != http.StatusOK {
-				return fmt.Errorf("unexpected status code response, want %d, got %d (%s)", http.StatusOK, resp.StatusCode, framework.ClampMax(b))
-			}
-
-			if !strings.Contains(string(b), "up") {
-				return fmt.Errorf("'up' metric is missing, got (%s)", framework.ClampMax(b))
-			}
-
-			return nil
-		}
-		// The federate port (9092) is only exposed in-cluster, so we need to use
-		// port forwarding to access kube-rbac-proxy.
 		host, cleanUp, err := f.ForwardPort(t, f.UserWorkloadMonitoringNs, "prometheus-user-workload", 9092)
 		if err != nil {
 			return err
 		}
 		defer cleanUp()
 
-		err = federate(host)
+		client := framework.NewPrometheusClient(
+			host,
+			token,
+			&framework.QueryParameterInjector{
+				Name:  "match[]",
+				Value: `up`,
+			},
+		)
+
+		resp, err := client.Do("GET", "/federate", nil)
 		if err != nil {
 			return err
 		}
+		defer resp.Body.Close()
 
+		b, err := io.ReadAll(io.LimitReader(resp.Body, 1<<20)) // 1MiB
+		if err != nil {
+			return err
+		}
+		if resp.StatusCode != http.StatusOK {
+			return fmt.Errorf("unexpected status code response, want %d, got %d (%s)", http.StatusOK, resp.StatusCode, framework.ClampMax(b))
+		}
+
+		if !strings.Contains(string(b), "up") {
+			return fmt.Errorf("'up' metric is missing, got (%s)", framework.ClampMax(b))
+		}
+		return nil
+	})
+	require.NoError(t, err)
+
+	// check /federate endpoint for route
+	err = framework.Poll(5*time.Second, time.Minute, func() error {
 		r, err := f.OpenShiftRouteClient.Routes(f.UserWorkloadMonitoringNs).Get(ctx, "federate", metav1.GetOptions{})
 		if err != nil {
 			return err
 		}
-		route, err := f.OperatorClient.GetRouteURL(ctx, r)
-		if err != nil {
-			return err
-		}
-		// Test the same through OpenShift Route.
-		federateHost := fmt.Sprintf("%s:%s", route.Hostname(), route.Port())
-		err = federate(federateHost)
-		if err != nil {
-			return err
+
+		federatePath := strings.TrimSpace(r.Spec.Path)
+		federatePath = strings.TrimRight(federatePath, "/")
+		if federatePath == "" || federatePath == "/" {
+			federatePath = "/federate"
+		} else if !strings.HasSuffix(federatePath, "/federate") {
+			federatePath = federatePath + "/federate"
 		}
 
+		client := framework.NewPrometheusClient(
+			r.Spec.Host,
+			token,
+			&framework.QueryParameterInjector{
+				Name:  "match[]",
+				Value: `up`,
+			},
+		)
+
+		resp, err := client.Do("GET", federatePath, nil)
+		if err != nil {
+			return err
+		}
+		defer resp.Body.Close()
+
+		b, err := io.ReadAll(io.LimitReader(resp.Body, 1<<20)) // 1MiB
+		if err != nil {
+			return err
+		}
+		if resp.StatusCode != http.StatusOK {
+			return fmt.Errorf("unexpected status code response, want %d, got %d (%s)", http.StatusOK, resp.StatusCode, framework.ClampMax(b))
+		}
+
+		if !strings.Contains(string(b), "up") {
+			return fmt.Errorf("'up' metric is missing, got (%s)", framework.ClampMax(b))
+		}
 		return nil
 	})
-
-	if err != nil {
-		t.Fatal(err)
-	}
+	require.NoError(t, err)
 }
 
 func assertTenancyForSeriesMetadata(t *testing.T) {
