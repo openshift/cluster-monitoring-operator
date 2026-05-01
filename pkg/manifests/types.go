@@ -16,7 +16,6 @@ package manifests
 
 import (
 	"slices"
-	"strings"
 
 	monv1 "github.com/prometheus-operator/prometheus-operator/pkg/apis/monitoring/v1"
 	v1 "k8s.io/api/core/v1"
@@ -28,21 +27,15 @@ type CollectionProfile string
 type CollectionProfiles []CollectionProfile
 
 const (
-	FullCollectionProfile      = "full"
-	MinimalCollectionProfile   = "minimal"
-	TelemetryCollectionProfile = "telemetry"
+	// FullCollectionProfile collects all metrics.
+	FullCollectionProfile = "full"
+
+	// MinimalCollectionProfile collects only metrics used by recording/alerting, dashboards and Telemetry.
+	MinimalCollectionProfile = "minimal"
 )
 
-var SupportedCollectionProfiles = CollectionProfiles{
-	FullCollectionProfile,
-	MinimalCollectionProfile,
-	TelemetryCollectionProfile,
-}
-
-// String returns a comma-separated string of collection profiles.
-func (cps CollectionProfiles) String() string {
-	return strings.Join(cps.StringSlice(), ", ")
-}
+// SupportedCollectionProfiles is the list of collection profiles supported by CMO.
+var SupportedCollectionProfiles = CollectionProfiles{FullCollectionProfile, MinimalCollectionProfile}
 
 // StringSlice returns the list of collection profiles as []string.
 func (cps CollectionProfiles) StringSlice() []string {
@@ -422,9 +415,6 @@ type NodeExporterCollectorConfig struct {
 	// Defines the configuration of the `softirqs` collector, which exposes detailed softirq metrics from `/proc/softirqs`.
 	// Disabled by default.
 	Softirqs NodeExporterCollectorSoftirqsConfig `json:"softirqs,omitempty"`
-	// Defines the configuration of the `zoneinfo` collector, which exposes detailed memory zone statistics from `/proc/zoneinfo`.
-	// Disabled by default.
-	Zoneinfo NodeExporterCollectorZoneinfoConfig `json:"zoneinfo,omitempty"`
 }
 
 // The `NodeExporterCollectorCpufreqConfig` resource works as an on/off switch for
@@ -595,14 +585,6 @@ type NodeExporterCollectorSystemdConfig struct {
 // By default, the `softirqs` collector is disabled.
 type NodeExporterCollectorSoftirqsConfig struct {
 	// A Boolean flag that enables or disables the `softirqs` collector.
-	Enabled bool `json:"enabled,omitempty"`
-}
-
-// The `NodeExporterCollectorZoneinfoConfig` resource works as an on/off switch for
-// the `zoneinfo` collector of the `node-exporter` agent.
-// By default, the `zoneinfo` collector is disabled.
-type NodeExporterCollectorZoneinfoConfig struct {
-	// A Boolean flag that enables or disables the `zoneinfo` collector.
 	Enabled bool `json:"enabled,omitempty"`
 }
 

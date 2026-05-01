@@ -187,14 +187,14 @@ func (t *TelemeterClientTask) create(ctx context.Context) error {
 		return fmt.Errorf("reconciling Telemeter client Prometheus Rule failed: %w", err)
 	}
 
-	sms, err := t.factory.TelemeterClientServiceMonitors()
+	sm, err := t.factory.TelemeterClientServiceMonitor()
 	if err != nil {
-		return fmt.Errorf("initializing Telemeter client ServiceMonitors failed: %w", err)
+		return fmt.Errorf("initializing Telemeter client ServiceMonitor failed: %w", err)
 	}
 
-	err = t.client.CreateOrUpdateServiceMonitors(ctx, sms)
+	err = t.client.CreateOrUpdateServiceMonitor(ctx, sm)
 	if err != nil {
-		return fmt.Errorf("reconciling Telemeter client ServiceMonitors failed: %w", err)
+		return fmt.Errorf("reconciling Telemeter client ServiceMonitor failed: %w", err)
 	}
 
 	netpol, err := t.factory.TelemeterClientNetworkPolicy()
@@ -291,14 +291,14 @@ func (t *TelemeterClientTask) destroy(ctx context.Context) error {
 		return fmt.Errorf("deleting Telemeter client ServiceAccount failed: %w", err)
 	}
 
-	sms, err := t.factory.TelemeterClientServiceMonitors()
+	sm, err := t.factory.TelemeterClientServiceMonitor()
 	if err != nil {
-		return fmt.Errorf("initializing Telemeter client ServiceMonitors failed: %w", err)
+		return fmt.Errorf("initializing Telemeter client ServiceMonitor failed: %w", err)
 	}
 
-	err = t.client.DeleteServiceMonitors(ctx, sms)
+	err = t.client.DeleteServiceMonitor(ctx, sm)
 	if err != nil {
-		return fmt.Errorf("deleting Telemeter client ServiceMonitors failed: %w", err)
+		return fmt.Errorf("deleting Telemeter client ServiceMonitor failed: %w", err)
 	}
 
 	cacm, err := t.factory.TelemeterClientServingCertsCABundle()

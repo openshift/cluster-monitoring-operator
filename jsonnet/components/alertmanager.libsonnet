@@ -3,7 +3,6 @@ local alertmanager = import 'github.com/prometheus-operator/kube-prometheus/json
 // local krp = import 'github.com/prometheus-operator/kube-prometheus/jsonnet/kube-prometheus/components/kube-rbac-proxy.libsonnet';
 local generateCertInjection = import '../utils/generate-certificate-injection.libsonnet';
 local generateSecret = import '../utils/generate-secret.libsonnet';
-local generateServiceMonitor = import '../utils/generate-service-monitors.libsonnet';
 local withDescription = (import '../utils/add-annotations.libsonnet').withDescription;
 local testFilePlaceholder = (import '../utils/add-annotations.libsonnet').testFilePlaceholder;
 local requiredRoles = (import '../utils/add-annotations.libsonnet').requiredRoles;
@@ -218,11 +217,6 @@ function(params)
     },
 
     serviceMonitor+: {
-      metadata+: {
-        labels+: {
-          'monitoring.openshift.io/collection-profile': 'full',
-        },
-      },
       spec+: {
         serviceDiscoveryRole: 'EndpointSlice',
         endpoints: [
@@ -234,11 +228,6 @@ function(params)
         ],
       },
     },
-
-    minimalServiceMonitor: generateServiceMonitor.serviceMonitorForMinimalProfile(self.serviceMonitor),
-    telemetryServiceMonitor: generateServiceMonitor.serviceMonitorForTelemetryProfile(
-      generateServiceMonitor.keepOnlyMetrics(self.serviceMonitor, ['alertmanager_integrations'])
-    ),
 
     alertmanager+: {
       metadata+: {
