@@ -17,16 +17,19 @@ package e2e
 import (
 	"context"
 	"fmt"
+	"io"
+	"net/http"
+	"strings"
 	"testing"
 	"time"
 
+	osConfigv1 "github.com/openshift/api/config/v1"
+	"github.com/openshift/cluster-monitoring-operator/test/e2e/framework"
 	_ "github.com/prometheus/prometheus/discovery/kubernetes" // required for promConfig.Load to parse kubernetes_sd_configs
+	"github.com/stretchr/testify/require"
 	v1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/types"
-
-	osConfigv1 "github.com/openshift/api/config/v1"
-	"github.com/openshift/cluster-monitoring-operator/test/e2e/framework"
 )
 
 func TestPrometheusMetrics(t *testing.T) {
@@ -386,4 +389,52 @@ func TestBodySizeLimit(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
+}
+
+// TestPrometheusWebUI verifies that the Prometheus Mantine web UI is reachable
+// via pod port-forwarding to port 9090. Even though it is not exposed through
+// the service, it is useful in some situations.
+func TestPrometheusWebUI(t *testing.T) {
+	t.Parallel()
+	host, cleanUp, err := f.ForwardPodPort(t, f.Ns, "prometheus-k8s-0", 9090)
+	require.NoError(t, err)
+	t.Cleanup(cleanUp)
+
+	err = framework.Poll(time.Second, 5*time.Minute, func() error {
+		// /query is a client-side route only defined in the Mantine UI code.
+		resp, err := http.Get(fmt.Sprintf("http://%s/query", host))
+		if err != nil {
+			return err
+		}
+		defer resp.Body.Close()
+
+		b, err := io.ReadAll(resp.Body)
+		if err != nil {
+			return fmt.Errorf("failed to read /query response: %w", err)
+		}
+		if resp.StatusCode != http.StatusOK {
+			return fmt.Errorf("/query: expected 200, got %d (%s)", resp.StatusCode, framework.ClampMax(b))
+		}
+
+		body := string(b)
+		// GLOBAL_READY is a JS global only defined in the Mantine UI template.
+		if !strings.Contains(body, "GLOBAL_READY") {
+			return fmt.Errorf("/query: missing Mantine UI marker GLOBAL_READY, got: %s", framework.ClampMax(b))
+		}
+
+		// Sanity check: an unknown path should 404 to confirm we're
+		// getting real responses from Prometheus, not a blanket 200.
+		resp, err = http.Get(fmt.Sprintf("http://%s/doesnotexist", host))
+		if err != nil {
+			return err
+		}
+		defer resp.Body.Close()
+
+		if resp.StatusCode != http.StatusNotFound {
+			return fmt.Errorf("/doesnotexist: expected 404, got %d", resp.StatusCode)
+		}
+
+		return nil
+	})
+	require.NoError(t, err)
 }

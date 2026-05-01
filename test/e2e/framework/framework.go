@@ -585,12 +585,28 @@ func (f *Framework) CreateRoleBindingFromRoleOtherNamespace(saNamespace, service
 	}, nil
 }
 
-func (f *Framework) ForwardPort(t *testing.T, ns, svc string, port int) (string, func(), error) {
+// ForwardServicePort sets up port forwarding to the given service and returns
+// the local host:port address, a cleanup function, and any error.
+func (f *Framework) ForwardServicePort(t *testing.T, ns, svc string, port int) (string, func(), error) {
+	t.Helper()
+	return f.forwardPort(t, ns, fmt.Sprintf("service/%s", svc), port)
+}
+
+// ForwardPodPort sets up port forwarding to the given pod and returns
+// the local host:port address, a cleanup function, and any error.
+func (f *Framework) ForwardPodPort(t *testing.T, ns, pod string, port int) (string, func(), error) {
+	t.Helper()
+	return f.forwardPort(t, ns, fmt.Sprintf("pod/%s", pod), port)
+}
+
+// forwardPort runs "oc port-forward" for the given target (e.g.
+// "service/name" or "pod/name") and returns the local address.
+func (f *Framework) forwardPort(t *testing.T, ns, target string, port int) (string, func(), error) {
 	t.Helper()
 
 	ctx, cancel := context.WithCancel(context.Background())
 	// Taken from github.com/openshift/origin/test/extended/etcd/etcd_test_runner.go
-	cmd := exec.CommandContext(ctx, "oc", "port-forward", fmt.Sprintf("service/%s", svc), fmt.Sprintf(":%d", port), "-n", ns, "--kubeconfig", f.KubeConfigPath)
+	cmd := exec.CommandContext(ctx, "oc", "port-forward", target, fmt.Sprintf(":%d", port), "-n", ns, "--kubeconfig", f.KubeConfigPath)
 
 	cleanUp := func() {
 		cancel()
