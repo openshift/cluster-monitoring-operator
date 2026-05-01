@@ -127,9 +127,11 @@ func (t *NodeExporterTask) Run(ctx context.Context) error {
 		return fmt.Errorf("initializing node-exporter ServiceMonitors failed: %w", err)
 	}
 
-	err = t.client.CreateOrUpdateServiceMonitors(ctx, sms)
-	if err != nil {
-		return fmt.Errorf("reconciling node-exporter ServiceMonitors failed: %w", err)
+	for _, sm := range sms {
+		err = t.client.CreateOrUpdateServiceMonitor(ctx, sm)
+		if err != nil {
+			return fmt.Errorf("reconciling %s/%s ServiceMonitor failed: %w", sm.Namespace, sm.Name, err)
+		}
 	}
 
 	return nil

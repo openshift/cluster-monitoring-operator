@@ -25,13 +25,7 @@
                                                'prometheus-' + o.metadata.labels['app.kubernetes.io/instance'] + '-' + o.metadata.name
                                              else
                                                if std.objectHas(o.metadata.labels, 'monitoring.openshift.io/collection-profile') then
-                                                 local suffix = '-' + o.metadata.labels['monitoring.openshift.io/collection-profile'];
-                                                 local suffixLen = std.length(suffix);
-                                                 local nameLen = std.length(o.metadata.name);
-                                                 if std.endsWith(o.metadata.name, suffix) then
-                                                   std.substr(o.metadata.name, 0, nameLen - suffixLen)
-                                                 else
-                                                   o.metadata.name
+                                                 std.rstripChars(o.metadata.name, '-' + o.metadata.labels['monitoring.openshift.io/collection-profile'])
                                                else
                                                  o.metadata.name,
                                              o.metadata.namespace,

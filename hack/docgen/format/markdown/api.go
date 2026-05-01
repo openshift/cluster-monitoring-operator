@@ -92,7 +92,7 @@ func PrintAPIDocs(args []string) {
 				continue
 			}
 
-			fmt.Printf("\n## %s\n\n### Description\n\n%s\n\n", t.Name, t.Description())
+			fmt.Printf("\n## %s\n\n#### Description\n\n%s\n\n", t.Name, t.Description())
 
 			printRequiredSection(t)
 
@@ -122,7 +122,7 @@ func printRequiredSection(t *model.StructType) {
 	}
 
 	if hasRequiredFields {
-		fmt.Println("### Required")
+		fmt.Println("#### Required")
 		for _, f := range t.Fields {
 			if f.IsRequired() == true {
 				fmt.Println("   - `", f.Name(), "`")

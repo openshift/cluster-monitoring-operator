@@ -62,14 +62,6 @@ nodeExporter:
       enabled: true`,
 		},
 		{
-			nameCollector: "zoneinfo",
-			config: `
-nodeExporter:
-  collectors:
-    zoneinfo:
-      enabled: true`,
-		},
-		{
 			nameCollector: "buddyinfo",
 			config: `
 nodeExporter:

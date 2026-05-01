@@ -8,7 +8,6 @@ metadata:
     app.kubernetes.io/name: prometheus
     app.kubernetes.io/part-of: openshift-monitoring
     app.kubernetes.io/version: 3.9.1
-    monitoring.openshift.io/collection-profile: full
   name: prometheus-k8s
   namespace: openshift-monitoring
 spec:
