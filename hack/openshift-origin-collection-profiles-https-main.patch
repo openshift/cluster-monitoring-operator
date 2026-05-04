@@ -7,7 +7,6 @@ Subject: [PATCH] test: align collection profile count() with https-main scrape
 scrape_samples_post_metric_relabeling is summed for endpoint https-main
 only; count() must use the same job/endpoint or https-self inflates got.
 
-Co-authored-by: Cursor <cursoragent@cursor.com>
 ---
  test/extended/prometheus/collection_profiles.go | 3 ++-
  1 file changed, 2 insertions(+), 1 deletion(-)
