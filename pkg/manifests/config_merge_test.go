@@ -108,6 +108,18 @@ func TestClusterMonitoringAlertmanagerSpecEmpty(t *testing.T) {
 	}))
 }
 
+func TestClusterMonitoringMonitoringPluginSpecEmpty(t *testing.T) {
+	require.True(t, clusterMonitoringMonitoringPluginSpecEmpty(configv1alpha1.MonitoringPluginConfig{}))
+	require.False(t, clusterMonitoringMonitoringPluginSpecEmpty(configv1alpha1.MonitoringPluginConfig{
+		NodeSelector: map[string]string{"k": "v"},
+	}))
+	require.False(t, clusterMonitoringMonitoringPluginSpecEmpty(configv1alpha1.MonitoringPluginConfig{
+		Resources: []configv1alpha1.ContainerResource{
+			{Name: "cpu", Request: resource.MustParse("10m")},
+		},
+	}))
+}
+
 func TestLogLevelCRDToManifest(t *testing.T) {
 	require.Equal(t, "debug", logLevelCRDToManifest(configv1alpha1.LogLevelDebug))
 	require.Equal(t, "", logLevelCRDToManifest(configv1alpha1.LogLevel("Unknown")))
@@ -186,6 +198,54 @@ func TestConfig_MergeClusterMonitoringCRD_PrometheusOperatorConfigPhase1(t *test
 		require.NotNil(t, c.ClusterMonitoringConfiguration.PrometheusOperatorConfig.Resources)
 		require.Equal(t, resource.MustParse("100m"), c.ClusterMonitoringConfiguration.PrometheusOperatorConfig.Resources.Requests[v1.ResourceCPU])
 		require.Equal(t, resource.MustParse("200m"), c.ClusterMonitoringConfiguration.PrometheusOperatorConfig.Resources.Limits[v1.ResourceCPU])
+	})
+}
+
+func TestConfig_MergeClusterMonitoringCRD_MonitoringPluginConfigPhase1(t *testing.T) {
+	t.Run("CR applies when ConfigMap left MonitoringPluginConfig nil", func(t *testing.T) {
+		cm := &configv1alpha1.ClusterMonitoring{
+			Spec: configv1alpha1.ClusterMonitoringSpec{
+				MonitoringPluginConfig: configv1alpha1.MonitoringPluginConfig{
+					NodeSelector: map[string]string{"role": "monitoring"},
+				},
+			},
+		}
+		c, err := NewConfigFromStringAndClusterMonitoringResource("{}", cm)
+		require.NoError(t, err)
+		require.NotNil(t, c.ClusterMonitoringConfiguration.MonitoringPluginConfig)
+		require.Equal(t, map[string]string{"role": "monitoring"}, c.ClusterMonitoringConfiguration.MonitoringPluginConfig.NodeSelector)
+	})
+	t.Run("CR ignored when ConfigMap already set MonitoringPluginConfig", func(t *testing.T) {
+		cm := &configv1alpha1.ClusterMonitoring{
+			Spec: configv1alpha1.ClusterMonitoringSpec{
+				MonitoringPluginConfig: configv1alpha1.MonitoringPluginConfig{
+					NodeSelector: map[string]string{"from": "crd"},
+				},
+			},
+		}
+		c, err := NewConfigFromStringAndClusterMonitoringResource("{monitoringPlugin: {nodeSelector: {from: configmap}}}", cm)
+		require.NoError(t, err)
+		require.Equal(t, map[string]string{"from": "configmap"}, c.ClusterMonitoringConfiguration.MonitoringPluginConfig.NodeSelector)
+	})
+	t.Run("CR maps ContainerResource to Resources", func(t *testing.T) {
+		cm := &configv1alpha1.ClusterMonitoring{
+			Spec: configv1alpha1.ClusterMonitoringSpec{
+				MonitoringPluginConfig: configv1alpha1.MonitoringPluginConfig{
+					Resources: []configv1alpha1.ContainerResource{
+						{
+							Name:    "cpu",
+							Request: resource.MustParse("100m"),
+							Limit:   resource.MustParse("200m"),
+						},
+					},
+				},
+			},
+		}
+		c, err := NewConfigFromStringAndClusterMonitoringResource("{}", cm)
+		require.NoError(t, err)
+		require.NotNil(t, c.ClusterMonitoringConfiguration.MonitoringPluginConfig.Resources)
+		require.Equal(t, resource.MustParse("100m"), c.ClusterMonitoringConfiguration.MonitoringPluginConfig.Resources.Requests[v1.ResourceCPU])
+		require.Equal(t, resource.MustParse("200m"), c.ClusterMonitoringConfiguration.MonitoringPluginConfig.Resources.Limits[v1.ResourceCPU])
 	})
 }
 
