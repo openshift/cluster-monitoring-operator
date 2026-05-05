@@ -14,7 +14,7 @@ repos:
     prometheusOperator: openshift/prometheus-operator
     thanos: openshift/thanos
 versions:
-    alertmanager: 0.32.0
+    alertmanager: 0.32.1
     kubeRbacProxy: 0.21.1
     kubeStateMetrics: 2.18.0
     kubernetesMetricsServer: 0.8.1
