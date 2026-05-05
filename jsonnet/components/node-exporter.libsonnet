@@ -136,7 +136,6 @@ function(params)
         },
       },
       spec+: {
-        serviceDiscoveryRole: 'EndpointSlice',
         endpoints: [
           endpoint {
             local metricRelabelingsOld = if std.objectHas(endpoint, 'metricRelabelings') then endpoint.metricRelabelings else [],
