@@ -139,6 +139,20 @@ func TestClusterMonitoringPrometheusOperatorAdmissionWebhookSpecEmpty(t *testing
 	}))
 }
 
+func TestClusterMonitoringNodeExporterCollectorsEmpty(t *testing.T) {
+	require.True(t, clusterMonitoringNodeExporterCollectorsEmpty(configv1alpha1.NodeExporterCollectorConfig{}))
+	require.False(t, clusterMonitoringNodeExporterCollectorsEmpty(configv1alpha1.NodeExporterCollectorConfig{
+		Softirqs: configv1alpha1.NodeExporterCollectorSoftirqsConfig{
+			CollectionPolicy: configv1alpha1.NodeExporterCollectorCollectionPolicyCollect,
+		},
+	}))
+	require.False(t, clusterMonitoringNodeExporterCollectorsEmpty(configv1alpha1.NodeExporterCollectorConfig{
+		CpuFreq: configv1alpha1.NodeExporterCollectorCpufreqConfig{
+			CollectionPolicy: configv1alpha1.NodeExporterCollectorCollectionPolicyDoNotCollect,
+		},
+	}))
+}
+
 func TestClusterMonitoringTelemeterClientSpecEmpty(t *testing.T) {
 	require.True(t, clusterMonitoringTelemeterClientSpecEmpty(configv1alpha1.TelemeterClientConfig{}))
 	require.False(t, clusterMonitoringTelemeterClientSpecEmpty(configv1alpha1.TelemeterClientConfig{
@@ -171,6 +185,27 @@ func TestClusterMonitoringThanosQuerierSpecEmpty(t *testing.T) {
 			{Key: "key", Operator: v1.TolerationOpEqual, Value: "val"},
 		},
 	}))
+}
+
+func TestClusterMonitoringNodeExporterSpecEmpty(t *testing.T) {
+	require.True(t, clusterMonitoringNodeExporterSpecEmpty(configv1alpha1.NodeExporterConfig{}))
+	require.False(t, clusterMonitoringNodeExporterSpecEmpty(configv1alpha1.NodeExporterConfig{
+		MaxProcs: 2,
+	}))
+	require.False(t, clusterMonitoringNodeExporterSpecEmpty(configv1alpha1.NodeExporterConfig{
+		Collectors: configv1alpha1.NodeExporterCollectorConfig{
+			Softirqs: configv1alpha1.NodeExporterCollectorSoftirqsConfig{
+				CollectionPolicy: configv1alpha1.NodeExporterCollectorCollectionPolicyCollect,
+			},
+		},
+	}))
+}
+
+func TestConfigMapDeclaresNodeExporter(t *testing.T) {
+	require.False(t, configMapDeclaresNodeExporter(""))
+	require.False(t, configMapDeclaresNodeExporter("{}"))
+	require.True(t, configMapDeclaresNodeExporter("nodeExporter: null"))
+	require.True(t, configMapDeclaresNodeExporter("nodeExporter: {}"))
 }
 
 func TestLogLevelCRDToManifest(t *testing.T) {
@@ -468,6 +503,49 @@ func TestConfig_MergeClusterMonitoringCRD_ThanosQuerierConfigPhase1(t *testing.T
 		require.NotNil(t, c.ClusterMonitoringConfiguration.ThanosQuerierConfig.Resources)
 		require.Equal(t, resource.MustParse("100m"), c.ClusterMonitoringConfiguration.ThanosQuerierConfig.Resources.Requests[v1.ResourceCPU])
 		require.Equal(t, resource.MustParse("200m"), c.ClusterMonitoringConfiguration.ThanosQuerierConfig.Resources.Limits[v1.ResourceCPU])
+	})
+}
+
+func TestConfig_MergeClusterMonitoringCRD_NodeExporterConfigPhase1(t *testing.T) {
+	softirqsCR := func(policy configv1alpha1.NodeExporterCollectorCollectionPolicy) *configv1alpha1.ClusterMonitoring {
+		return &configv1alpha1.ClusterMonitoring{
+			Spec: configv1alpha1.ClusterMonitoringSpec{
+				NodeExporterConfig: configv1alpha1.NodeExporterConfig{
+					Collectors: configv1alpha1.NodeExporterCollectorConfig{
+						Softirqs: configv1alpha1.NodeExporterCollectorSoftirqsConfig{
+							CollectionPolicy: policy,
+						},
+					},
+				},
+			},
+		}
+	}
+	t.Run("CR applies when ConfigMap omits nodeExporter", func(t *testing.T) {
+		c, err := NewConfigFromStringAndClusterMonitoringResource("{}", softirqsCR(configv1alpha1.NodeExporterCollectorCollectionPolicyCollect))
+		require.NoError(t, err)
+		require.True(t, c.ClusterMonitoringConfiguration.NodeExporterConfig.Collectors.Softirqs.Enabled)
+	})
+	t.Run("CR ignored when ConfigMap declares nodeExporter without softirqs", func(t *testing.T) {
+		c, err := NewConfigFromStringAndClusterMonitoringResource(`nodeExporter:
+  maxProcs: 2
+`, softirqsCR(configv1alpha1.NodeExporterCollectorCollectionPolicyCollect))
+		require.NoError(t, err)
+		require.Equal(t, uint32(2), c.ClusterMonitoringConfiguration.NodeExporterConfig.MaxProcs)
+		require.False(t, c.ClusterMonitoringConfiguration.NodeExporterConfig.Collectors.Softirqs.Enabled)
+	})
+	t.Run("CR ignored when ConfigMap declares collectors.softirqs", func(t *testing.T) {
+		c, err := NewConfigFromStringAndClusterMonitoringResource(`nodeExporter:
+  collectors:
+    softirqs:
+      enabled: false
+`, softirqsCR(configv1alpha1.NodeExporterCollectorCollectionPolicyCollect))
+		require.NoError(t, err)
+		require.False(t, c.ClusterMonitoringConfiguration.NodeExporterConfig.Collectors.Softirqs.Enabled)
+	})
+	t.Run("CR maps DoNotCollect to disabled", func(t *testing.T) {
+		c, err := NewConfigFromStringAndClusterMonitoringResource("{}", softirqsCR(configv1alpha1.NodeExporterCollectorCollectionPolicyDoNotCollect))
+		require.NoError(t, err)
+		require.False(t, c.ClusterMonitoringConfiguration.NodeExporterConfig.Collectors.Softirqs.Enabled)
 	})
 }
 

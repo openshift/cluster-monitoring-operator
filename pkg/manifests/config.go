@@ -299,6 +299,20 @@ func NewConfigFromString(content string) (*Config, error) {
 	return NewConfigFromStringAndClusterMonitoringResource(content, nil)
 }
 
+// configMapDeclaresNodeExporter reports whether the cluster-monitoring-config body includes a
+// top-level nodeExporter key (including explicit null).
+func configMapDeclaresNodeExporter(cmYAML string) bool {
+	if strings.TrimSpace(cmYAML) == "" {
+		return false
+	}
+	var root map[string]interface{}
+	if err := UnmarshalStrict([]byte(cmYAML), &root); err != nil {
+		return false
+	}
+	_, ok := root["nodeExporter"]
+	return ok
+}
+
 // NewConfigFromStringAndClusterMonitoringResource returns the Config
 // initialized from the provided string and merged with the ClusterMonitoring
 // resource.
@@ -329,7 +343,7 @@ func NewConfigFromStringAndClusterMonitoringResource(content string, cmr *config
 		ClusterMonitoringConfiguration: &cmc,
 		UserWorkloadConfiguration:      NewDefaultUserWorkloadMonitoringConfig(),
 	}
-	if err := c.mergeClusterMonitoringCRD(cmr); err != nil {
+	if err := c.mergeClusterMonitoringCRD(cmr, content); err != nil {
 		return nil, fmt.Errorf("merging ClusterMonitoring CR: %w", err)
 	}
 
