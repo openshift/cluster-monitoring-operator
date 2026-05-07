@@ -606,6 +606,7 @@ func TestScrapeIntervalUWM(t *testing.T) {
 			_, err := NewUserConfigFromString(tc.uwmconfig)
 			if tc.expectedError {
 				require.Error(t, err)
+				require.True(t, errors.Is(err, ErrConfigValidation))
 				return
 			}
 			require.NoError(t, err)
@@ -699,6 +700,7 @@ func TestEvaluationIntervalUWM(t *testing.T) {
 			_, err := NewUserConfigFromString(tc.uwmconfig)
 			if tc.expectedError {
 				require.Error(t, err)
+				require.True(t, errors.Is(err, ErrConfigValidation))
 				return
 			}
 			require.NoError(t, err)

@@ -3078,10 +3078,9 @@ var _ = g.Describe("[sig-monitoring] Cluster_Observability parallel monitoring",
 		checkYamlconfig(oc, "openshift-monitoring", "deploy", "metrics-server", cmd, `"--audit-policy-file=/etc/audit/metadata-profile.yaml"`, true)
 
 		exutil.By("set invalid value for audit profile")
-		createResourceFromYaml(oc, "openshift-monitoring", invalid_value_audit_profile)
-
-		exutil.By("check failed log in CMO")
-		checkLogWithLabel(oc, "openshift-monitoring", "app.kubernetes.io/name=cluster-monitoring-operator", "cluster-monitoring-operator", `adapter audit profile: metadata`, true)
+		output, err := oc.AsAdmin().WithoutNamespace().Run("apply").Args("-f", invalid_value_audit_profile, "-n", "openshift-monitoring").Output()
+		o.Expect(err).To(o.HaveOccurred())
+		o.Expect(output).To(o.ContainSubstring(`audit profile "metadata" not supported`))
 	})
 
 	// author: tagao@redhat.com
