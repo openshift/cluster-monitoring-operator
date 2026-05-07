@@ -569,6 +569,12 @@ data:
     # value. The possible values for tls_termination are edge, passthrough and reencrypt.
     - '{__name__="cluster:openshift_route_info:tls_termination:sum"}'
     #
+    # owners: (@openshift/network-edge)
+    #
+    # openshift:gateway_api_usage:count tracks the amount of gateway resources created in the cluster 
+    # aggregated by Gateway class type.
+    - '{__name__="openshift:gateway_api_usage:count",gateway_class_type=~"openshift|not-openshift"}'
+    #
     # owners: (https://github.com/openshift/insights-operator/blob/master/OWNERS)
     #
     # insightsclient_request_send tracks the number of metrics sends.
