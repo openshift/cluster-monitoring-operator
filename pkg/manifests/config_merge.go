@@ -38,6 +38,7 @@ func (c *Config) mergeClusterMonitoringCRD(clusterMonitoring *configv1alpha1.Clu
 
 	c.mergeMetricsServerConfiguration(clusterMonitoring.Spec.MetricsServerConfig)
 	c.mergePrometheusOperatorConfiguration(clusterMonitoring.Spec.PrometheusOperatorConfig)
+	c.mergePrometheusOperatorAdmissionWebhookConfiguration(clusterMonitoring.Spec.PrometheusOperatorAdmissionWebhookConfig)
 	c.mergeAlertmanagerConfiguration(clusterMonitoring.Spec.AlertmanagerConfig)
 	c.mergeMonitoringPluginConfiguration(clusterMonitoring.Spec.MonitoringPluginConfig)
 }
@@ -92,6 +93,18 @@ func clusterMonitoringPrometheusOperatorSpecEmpty(poc configv1alpha1.PrometheusO
 // alertmanagerConfig stanza contains no user intent.
 func clusterMonitoringAlertmanagerSpecEmpty(ac configv1alpha1.AlertmanagerConfig) bool {
 	return ac.DeploymentMode == ""
+}
+
+// clusterMonitoringPrometheusOperatorAdmissionWebhookSpecEmpty reports whether the CR's
+// prometheusOperatorAdmissionWebhookConfig stanza contains no user-set field.
+func clusterMonitoringPrometheusOperatorAdmissionWebhookSpecEmpty(pawc configv1alpha1.PrometheusOperatorAdmissionWebhookConfig) bool {
+	if len(pawc.Resources) > 0 {
+		return false
+	}
+	if len(pawc.TopologySpreadConstraints) > 0 {
+		return false
+	}
+	return true
 }
 
 // clusterMonitoringMonitoringPluginSpecEmpty reports whether the CR's
@@ -214,6 +227,23 @@ func (c *Config) mergePrometheusOperatorConfiguration(poc configv1alpha1.Prometh
 	cfg.TopologySpreadConstraints = poc.TopologySpreadConstraints
 
 	c.ClusterMonitoringConfiguration.PrometheusOperatorConfig = cfg
+}
+
+func (c *Config) mergePrometheusOperatorAdmissionWebhookConfiguration(pawc configv1alpha1.PrometheusOperatorAdmissionWebhookConfig) {
+	if c.ClusterMonitoringConfiguration.PrometheusOperatorAdmissionWebhookConfig != nil {
+		return
+	}
+	if clusterMonitoringPrometheusOperatorAdmissionWebhookSpecEmpty(pawc) {
+		return
+	}
+
+	cfg := &PrometheusOperatorAdmissionWebhookConfig{}
+	if res := containerResourcesFromCRD(pawc.Resources); res != nil {
+		cfg.Resources = res
+	}
+	cfg.TopologySpreadConstraints = pawc.TopologySpreadConstraints
+
+	c.ClusterMonitoringConfiguration.PrometheusOperatorAdmissionWebhookConfig = cfg
 }
 
 func (c *Config) mergeMonitoringPluginConfiguration(mpc configv1alpha1.MonitoringPluginConfig) {
