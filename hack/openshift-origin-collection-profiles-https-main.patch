@@ -1,0 +1,30 @@
+From 6f4bd14a7404e77a63591cac74ecb387720fbf64 Mon Sep 17 00:00:00 2001
+From: midu <midu@framework.frntdeu1.pop.starlinkisp.net>
+Date: Mon, 4 May 2026 16:39:17 +0200
+Subject: [PATCH] test: align collection profile count() with https-main scrape
+ scope
+
+scrape_samples_post_metric_relabeling is summed for endpoint https-main
+only; count() must use the same job/endpoint or https-self inflates got.
+
+---
+ test/extended/prometheus/collection_profiles.go | 3 ++-
+ 1 file changed, 2 insertions(+), 1 deletion(-)
+
+diff --git a/test/extended/prometheus/collection_profiles.go b/test/extended/prometheus/collection_profiles.go
+index 9e385fa..a2d8256 100644
+--- a/test/extended/prometheus/collection_profiles.go
++++ b/test/extended/prometheus/collection_profiles.go
+@@ -295,7 +295,8 @@ var _ = g.Describe("[sig-instrumentation][OCPFeatureGate:MetricsCollectionProfil
+ 				wantCount := int(queryResponse.Data.Result[0].Value)
+ 
+ 				kubeStateMetricsMainMetricsString := strings.Join(kubeStateMetricsMainMetrics, "")
+-				kubeStateMetricsMainMetricsCountQuery := fmt.Sprintf("count({__name__=~\"%s\"})", kubeStateMetricsMainMetricsString[:len(kubeStateMetricsMainMetricsString)-1 /* drop the last "|" or ")" */])
++				// Match scrape_samples_post_metric_relabeling (https-main only; avoid https-self series in count()).
++				kubeStateMetricsMainMetricsCountQuery := fmt.Sprintf("count({__name__=~\"%s\", job=\"%s\", endpoint=\"https-main\"})", kubeStateMetricsMainMetricsString[:len(kubeStateMetricsMainMetricsString)-1 /* drop the last "|" or ")" */], appName)
+ 				queryResponse, err = helper.RunQuery(tctx, r.pclient, kubeStateMetricsMainMetricsCountQuery)
+ 				if err != nil {
+ 					return err
+-- 
+2.54.0
+
