@@ -40,6 +40,7 @@ func (c *Config) mergeClusterMonitoringCRD(clusterMonitoring *configv1alpha1.Clu
 	c.mergePrometheusOperatorConfiguration(clusterMonitoring.Spec.PrometheusOperatorConfig)
 	c.mergeAlertmanagerConfiguration(clusterMonitoring.Spec.AlertmanagerConfig)
 	c.mergeMonitoringPluginConfiguration(clusterMonitoring.Spec.MonitoringPluginConfig)
+	c.mergeThanosQuerierConfiguration(clusterMonitoring.Spec.ThanosQuerierConfig)
 }
 
 // clusterMonitoringMetricsServerSpecEmpty reports whether the CR's
@@ -107,6 +108,24 @@ func clusterMonitoringMonitoringPluginSpecEmpty(mpc configv1alpha1.MonitoringPlu
 		return false
 	}
 	if len(mpc.TopologySpreadConstraints) > 0 {
+		return false
+	}
+	return true
+}
+
+// clusterMonitoringThanosQuerierSpecEmpty reports whether the CR's
+// thanosQuerierConfig stanza contains no user-set field.
+func clusterMonitoringThanosQuerierSpecEmpty(tqc configv1alpha1.ThanosQuerierConfig) bool {
+	if len(tqc.NodeSelector) > 0 {
+		return false
+	}
+	if len(tqc.Tolerations) > 0 {
+		return false
+	}
+	if len(tqc.Resources) > 0 {
+		return false
+	}
+	if len(tqc.TopologySpreadConstraints) > 0 {
 		return false
 	}
 	return true
@@ -231,6 +250,25 @@ func (c *Config) mergeMonitoringPluginConfiguration(mpc configv1alpha1.Monitorin
 	cfg.TopologySpreadConstraints = mpc.TopologySpreadConstraints
 
 	c.ClusterMonitoringConfiguration.MonitoringPluginConfig = cfg
+}
+
+func (c *Config) mergeThanosQuerierConfiguration(tqc configv1alpha1.ThanosQuerierConfig) {
+	if c.ClusterMonitoringConfiguration.ThanosQuerierConfig != nil {
+		return
+	}
+	if clusterMonitoringThanosQuerierSpecEmpty(tqc) {
+		return
+	}
+
+	cfg := &ThanosQuerierConfig{}
+	cfg.NodeSelector = tqc.NodeSelector
+	cfg.Tolerations = tqc.Tolerations
+	if res := containerResourcesFromCRD(tqc.Resources); res != nil {
+		cfg.Resources = res
+	}
+	cfg.TopologySpreadConstraints = tqc.TopologySpreadConstraints
+
+	c.ClusterMonitoringConfiguration.ThanosQuerierConfig = cfg
 }
 
 func (c *Config) mergeAlertmanagerConfiguration(ac configv1alpha1.AlertmanagerConfig) {

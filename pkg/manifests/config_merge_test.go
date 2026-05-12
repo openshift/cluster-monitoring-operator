@@ -125,6 +125,23 @@ func TestClusterMonitoringMonitoringPluginSpecEmpty(t *testing.T) {
 	}))
 }
 
+func TestClusterMonitoringThanosQuerierSpecEmpty(t *testing.T) {
+	require.True(t, clusterMonitoringThanosQuerierSpecEmpty(configv1alpha1.ThanosQuerierConfig{}))
+	require.False(t, clusterMonitoringThanosQuerierSpecEmpty(configv1alpha1.ThanosQuerierConfig{
+		NodeSelector: map[string]string{"k": "v"},
+	}))
+	require.False(t, clusterMonitoringThanosQuerierSpecEmpty(configv1alpha1.ThanosQuerierConfig{
+		Resources: []configv1alpha1.ContainerResource{
+			{Name: "cpu", Request: resource.MustParse("10m")},
+		},
+	}))
+	require.False(t, clusterMonitoringThanosQuerierSpecEmpty(configv1alpha1.ThanosQuerierConfig{
+		Tolerations: []v1.Toleration{
+			{Key: "key", Operator: v1.TolerationOpEqual, Value: "val"},
+		},
+	}))
+}
+
 func TestLogLevelCRDToManifest(t *testing.T) {
 	require.Equal(t, "debug", logLevelCRDToManifest(configv1alpha1.LogLevelDebug))
 	require.Equal(t, "", logLevelCRDToManifest(configv1alpha1.LogLevel("Unknown")))
@@ -271,6 +288,54 @@ func TestConfig_MergeClusterMonitoringCRD_MonitoringPluginConfigPhase1(t *testin
 		require.NotNil(t, c.ClusterMonitoringConfiguration.MonitoringPluginConfig.Resources)
 		require.Equal(t, resource.MustParse("100m"), c.ClusterMonitoringConfiguration.MonitoringPluginConfig.Resources.Requests[v1.ResourceCPU])
 		require.Equal(t, resource.MustParse("200m"), c.ClusterMonitoringConfiguration.MonitoringPluginConfig.Resources.Limits[v1.ResourceCPU])
+	})
+}
+
+func TestConfig_MergeClusterMonitoringCRD_ThanosQuerierConfigPhase1(t *testing.T) {
+	t.Run("CR applies when ConfigMap left ThanosQuerierConfig nil", func(t *testing.T) {
+		cm := &configv1alpha1.ClusterMonitoring{
+			Spec: configv1alpha1.ClusterMonitoringSpec{
+				ThanosQuerierConfig: configv1alpha1.ThanosQuerierConfig{
+					NodeSelector: map[string]string{"role": "infra"},
+				},
+			},
+		}
+		c, err := NewConfigFromStringAndClusterMonitoringResource("{}", cm)
+		require.NoError(t, err)
+		require.NotNil(t, c.ClusterMonitoringConfiguration.ThanosQuerierConfig)
+		require.Equal(t, map[string]string{"role": "infra"}, c.ClusterMonitoringConfiguration.ThanosQuerierConfig.NodeSelector)
+	})
+	t.Run("CR ignored when ConfigMap already set ThanosQuerierConfig", func(t *testing.T) {
+		cm := &configv1alpha1.ClusterMonitoring{
+			Spec: configv1alpha1.ClusterMonitoringSpec{
+				ThanosQuerierConfig: configv1alpha1.ThanosQuerierConfig{
+					NodeSelector: map[string]string{"from": "crd"},
+				},
+			},
+		}
+		c, err := NewConfigFromStringAndClusterMonitoringResource("{thanosQuerier: {nodeSelector: {from: configmap}}}", cm)
+		require.NoError(t, err)
+		require.Equal(t, map[string]string{"from": "configmap"}, c.ClusterMonitoringConfiguration.ThanosQuerierConfig.NodeSelector)
+	})
+	t.Run("CR maps ContainerResource to Resources", func(t *testing.T) {
+		cm := &configv1alpha1.ClusterMonitoring{
+			Spec: configv1alpha1.ClusterMonitoringSpec{
+				ThanosQuerierConfig: configv1alpha1.ThanosQuerierConfig{
+					Resources: []configv1alpha1.ContainerResource{
+						{
+							Name:    "cpu",
+							Request: resource.MustParse("100m"),
+							Limit:   resource.MustParse("200m"),
+						},
+					},
+				},
+			},
+		}
+		c, err := NewConfigFromStringAndClusterMonitoringResource("{}", cm)
+		require.NoError(t, err)
+		require.NotNil(t, c.ClusterMonitoringConfiguration.ThanosQuerierConfig.Resources)
+		require.Equal(t, resource.MustParse("100m"), c.ClusterMonitoringConfiguration.ThanosQuerierConfig.Resources.Requests[v1.ResourceCPU])
+		require.Equal(t, resource.MustParse("200m"), c.ClusterMonitoringConfiguration.ThanosQuerierConfig.Resources.Limits[v1.ResourceCPU])
 	})
 }
 
