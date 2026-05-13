@@ -670,11 +670,24 @@ function(params)
         ingress: [
           {
             ports: [
-              // allow for thanos-querier tenancy endpoint, 9092 port(port name: tenancy),
-              // for example, expose tenancy-aware /api/v1/labels for thanos query,
-              // load metrics result on admin web UI
               {
-                port: 'tenancy',
+                // Allow to query the Thanos Querier API.
+                port: 9091,
+                protocol: 'TCP',
+              },
+              {
+                // Allow to access tenancy-aware query endpoints.
+                port: 9092,
+                protocol: 'TCP',
+              },
+              {
+                // Allow to access tenancy-aware rules and alerts endpoints.
+                port: 9093,
+                protocol: 'TCP',
+              },
+              {
+                // Allow Prometheus to scrape Thanos Querier's own /metrics endpoint.
+                port: 9094,
                 protocol: 'TCP',
               },
             ],

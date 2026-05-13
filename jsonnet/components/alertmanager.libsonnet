@@ -478,20 +478,32 @@ function(params)
           {
             ports: [
               {
-                // allow access to the Alertmanager endpoints restricted to a given project,
-                // port number 9092(port name: tenancy)
-                port: 'tenancy',
+                // Allow users to access namespace-scoped Alertmanager API endpoints.
+                port: 9092,
                 protocol: 'TCP',
               },
               {
-                // allow prometheus to sent alerts to alertmanager, port number 9095(port name: web)
-                port: 'web',
+                // Allow Prometheus to push alerts to Alertmanager and allow users to
+                // access the Alertmanager UI/API via route.
+                port: 9095,
                 protocol: 'TCP',
               },
               {
-                // allow prometheus to scrape alertmanager endpoint, port number 9097(port name: metrics)
-                port: 'metrics',
+                // Allow Prometheus to scrape Alertmanager's own /metrics endpoint.
+                port: 9097,
                 protocol: 'TCP',
+              },
+              {
+                // Allow Alertmanager replicas to communicate via the HA gossip mesh
+                // (injected by Prometheus Operator).
+                port: 9094,
+                protocol: 'TCP',
+              },
+              {
+                // Allow Alertmanager replicas to communicate via the HA gossip mesh
+                // (injected by Prometheus Operator).
+                port: 9094,
+                protocol: 'UDP',
               },
             ],
           },

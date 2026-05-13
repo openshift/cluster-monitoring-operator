@@ -11,12 +11,16 @@ spec:
   - {}
   ingress:
   - ports:
-    - port: tenancy
+    - port: 9092
       protocol: TCP
-    - port: web
+    - port: 9095
       protocol: TCP
-    - port: metrics
+    - port: 9097
       protocol: TCP
+    - port: 9094
+      protocol: TCP
+    - port: 9094
+      protocol: UDP
   podSelector:
     matchLabels:
       app.kubernetes.io/name: alertmanager

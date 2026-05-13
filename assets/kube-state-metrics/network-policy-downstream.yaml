@@ -11,9 +11,9 @@ spec:
   - {}
   ingress:
   - ports:
-    - port: https-main
+    - port: 8443
       protocol: TCP
-    - port: https-self
+    - port: 9443
       protocol: TCP
   podSelector:
     matchLabels:

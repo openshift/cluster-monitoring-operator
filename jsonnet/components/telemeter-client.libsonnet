@@ -140,9 +140,8 @@ function(params) {
         {
           ports: [
             {
-              // allow prometheus to scrape telemeter-client endpoint,
-              // 8443(port name: https) port
-              port: 'https',
+              // Allow Prometheus to scrape telemeter-client's /metrics endpoint.
+              port: 8443,
               protocol: 'TCP',
             },
           ],

@@ -246,9 +246,9 @@ function(params)
           {
             ports: [
               {
-                // expose 9443(port name: https) port for admin web console to load monitoring-plugin,
-                // then Observe menu would show
-                port: 'https',
+                // Allow the console to load the monitoring dynamic
+                // plugin (serves plugin-manifest.json and assets).
+                port: 9443,
                 protocol: 'TCP',
               },
             ],

@@ -11,7 +11,7 @@ spec:
   - {}
   ingress:
   - ports:
-    - port: https
+    - port: 10250
       protocol: TCP
   podSelector:
     matchLabels:
