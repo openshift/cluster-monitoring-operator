@@ -637,8 +637,25 @@ function(params)
           {
             ports: [
               {
-                // allow prometheus to update endpoints(port number: 10901, port name: grpc)
-                port: 'grpc',
+                // Allow to query the Prometheus API and UI.
+                port: 9091,
+                protocol: 'TCP',
+              },
+              {
+                // Allow platform Prometheus to scrape this Prometheus instance's own
+                // /metrics endpoint.
+                port: 9092,
+                protocol: 'TCP',
+              },
+              {
+                // Allow Thanos Querier to reach the Thanos sidecar gRPC endpoint
+                // for StoreAPI queries.
+                port: 10901,
+                protocol: 'TCP',
+              },
+              {
+                // Allow Prometheus to scrape the Thanos sidecar's own metrics.
+                port: 10903,
                 protocol: 'TCP',
               },
             ],

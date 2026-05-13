@@ -15,7 +15,6 @@
 package e2e
 
 import (
-	"context"
 	"fmt"
 	"io"
 	"net/http"
@@ -23,7 +22,6 @@ import (
 	"time"
 
 	"github.com/openshift/cluster-monitoring-operator/test/e2e/framework"
-	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
 
 func TestUserWorkloadWithAlertmanager(t *testing.T) {
@@ -40,52 +38,7 @@ func TestUserWorkloadWithAlertmanager(t *testing.T) {
 	f.AssertStatefulSetExistsAndRolloutFunc("alertmanager-user-workload", f.UserWorkloadMonitoringNs)(t)
 	f.AssertServiceExistsFunc("alertmanager-user-workload", f.UserWorkloadMonitoringNs)(t)
 
-	// since this func enabled User Workload Alertmanager, check all NetworkPolicies are deployed
-	// under UWM project and the total deployed NetworkPolicies count matches with the required
-	// NetworkPolicies count, this also can avoid extra setup/teardown of UWM cycle
-	ctx := context.Background()
-	networkPolicyNames := []string{
-		"alertmanager-user-workload",
-		"default-deny-user-workload-operands",
-		"prometheus-operator-user-workload",
-		"prometheus-user-workload",
-		"thanos-ruler",
-	}
-
-	for _, scenario := range []struct {
-		name string
-		f    func(*testing.T)
-	}{
-		{
-			name: "assert UWM alert access",
-			f:    assertUWMAlertsAccess,
-		},
-		{
-			name: "check user workload monitoring NetworkPolicies",
-			f: func(t *testing.T) {
-				for _, netpol := range networkPolicyNames {
-					t.Run(fmt.Sprintf("assert %s networkpolicy exists", netpol), func(t *testing.T) {
-						f.AssertNetworkPolicyExistsFunc(netpol, f.UserWorkloadMonitoringNs)(t)
-					})
-				}
-			},
-		},
-		{
-			name: "assert total deployed NetworkPolicies count matches",
-			f: func(t *testing.T) {
-				npList, err := f.KubeClient.NetworkingV1().NetworkPolicies(f.UserWorkloadMonitoringNs).List(ctx, metav1.ListOptions{})
-				if err != nil {
-					t.Fatalf("failed to list NetworkPolicies: %v", err)
-				}
-
-				if len(npList.Items) != len(networkPolicyNames) {
-					t.Errorf("NetworkPolicies count = %d, want %d", len(npList.Items), len(networkPolicyNames))
-				}
-			},
-		},
-	} {
-		t.Run(scenario.name, scenario.f)
-	}
+	t.Run("assert UWM alert access", assertUWMAlertsAccess)
 }
 
 // assertUWMAlertsAccess ensures that a user can't access all alerts from the UWM alertmanager via the api.

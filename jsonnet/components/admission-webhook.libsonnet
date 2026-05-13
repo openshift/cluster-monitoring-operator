@@ -191,9 +191,8 @@ function(params)
           {
             ports: [
               {
-                // allow apiserver reach to prometheus-operator-admission-webhook
-                // 8443(port name: https) port to validate customresourcedefinitions
-                port: 'https',
+                // Allow the kube-apiserver to reach the admission webhook.
+                port: 8443,
                 protocol: 'TCP',
               },
             ],

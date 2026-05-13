@@ -11,7 +11,11 @@ spec:
   - {}
   ingress:
   - ports:
-    - port: metrics
+    - port: 9091
+      protocol: TCP
+    - port: 9092
+      protocol: TCP
+    - port: 10901
       protocol: TCP
   podSelector:
     matchLabels:
