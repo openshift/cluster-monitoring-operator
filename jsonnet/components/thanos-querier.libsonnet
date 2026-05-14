@@ -661,6 +661,7 @@ function(params)
         podSelector: {
           matchLabels: {
             'app.kubernetes.io/name': 'thanos-query',
+            'app.kubernetes.io/part-of': 'openshift-monitoring',
           },
         },
         policyTypes: [

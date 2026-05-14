@@ -405,6 +405,7 @@ function(params) {
       podSelector: {
         matchLabels: {
           'app.kubernetes.io/name': 'metrics-server',
+          'app.kubernetes.io/part-of': 'openshift-monitoring',
         },
       },
       policyTypes: [

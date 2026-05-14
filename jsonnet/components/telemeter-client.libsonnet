@@ -130,6 +130,7 @@ function(params) {
       podSelector: {
         matchLabels: {
           'app.kubernetes.io/name': 'telemeter-client',
+          'app.kubernetes.io/part-of': 'openshift-monitoring',
         },
       },
       policyTypes: [
