@@ -24,6 +24,7 @@ spec:
   podSelector:
     matchLabels:
       app.kubernetes.io/name: alertmanager
+      app.kubernetes.io/part-of: openshift-monitoring
   policyTypes:
   - Ingress
   - Egress
