@@ -30,6 +30,7 @@ spec:
       protocol: UDP
   podSelector:
     matchLabels:
+      app.kubernetes.io/instance: main
       app.kubernetes.io/name: alertmanager
       app.kubernetes.io/part-of: openshift-monitoring
   policyTypes:

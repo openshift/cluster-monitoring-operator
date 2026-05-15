@@ -585,6 +585,7 @@ function(params)
         podSelector: {
           matchLabels: {
             'app.kubernetes.io/name': 'thanos-ruler',
+            'app.kubernetes.io/instance': 'user-workload',
             'app.kubernetes.io/part-of': 'openshift-monitoring',
           },
         },

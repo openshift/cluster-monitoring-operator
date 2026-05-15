@@ -626,6 +626,7 @@ function(params)
         podSelector: {
           matchLabels: {
             'app.kubernetes.io/name': 'prometheus',
+            'app.kubernetes.io/instance': 'k8s',
             'app.kubernetes.io/part-of': 'openshift-monitoring',
           },
         },

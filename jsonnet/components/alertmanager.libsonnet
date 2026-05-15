@@ -468,6 +468,7 @@ function(params)
         podSelector: {
           matchLabels: {
             'app.kubernetes.io/name': 'alertmanager',
+            'app.kubernetes.io/instance': 'main',
             'app.kubernetes.io/part-of': 'openshift-monitoring',
           },
         },

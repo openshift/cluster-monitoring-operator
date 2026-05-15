@@ -31,6 +31,7 @@ spec:
       protocol: TCP
   podSelector:
     matchLabels:
+      app.kubernetes.io/instance: k8s
       app.kubernetes.io/name: prometheus
       app.kubernetes.io/part-of: openshift-monitoring
   policyTypes:
