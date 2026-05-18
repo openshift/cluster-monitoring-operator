@@ -139,6 +139,23 @@ func TestClusterMonitoringPrometheusOperatorAdmissionWebhookSpecEmpty(t *testing
 	}))
 }
 
+func TestClusterMonitoringTelemeterClientSpecEmpty(t *testing.T) {
+	require.True(t, clusterMonitoringTelemeterClientSpecEmpty(configv1alpha1.TelemeterClientConfig{}))
+	require.False(t, clusterMonitoringTelemeterClientSpecEmpty(configv1alpha1.TelemeterClientConfig{
+		NodeSelector: map[string]string{"k": "v"},
+	}))
+	require.False(t, clusterMonitoringTelemeterClientSpecEmpty(configv1alpha1.TelemeterClientConfig{
+		Resources: []configv1alpha1.ContainerResource{
+			{Name: "cpu", Request: resource.MustParse("10m")},
+		},
+	}))
+	require.False(t, clusterMonitoringTelemeterClientSpecEmpty(configv1alpha1.TelemeterClientConfig{
+		Tolerations: []v1.Toleration{
+			{Key: "key", Operator: v1.TolerationOpEqual, Value: "val"},
+		},
+	}))
+}
+
 func TestLogLevelCRDToManifest(t *testing.T) {
 	require.Equal(t, "debug", logLevelCRDToManifest(configv1alpha1.LogLevelDebug))
 	require.Equal(t, "", logLevelCRDToManifest(configv1alpha1.LogLevel("Unknown")))
@@ -338,6 +355,54 @@ func TestConfig_MergeClusterMonitoringCRD_PrometheusOperatorAdmissionWebhookConf
 		require.NotNil(t, c.ClusterMonitoringConfiguration.PrometheusOperatorAdmissionWebhookConfig.Resources)
 		require.Equal(t, resource.MustParse("100m"), c.ClusterMonitoringConfiguration.PrometheusOperatorAdmissionWebhookConfig.Resources.Requests[v1.ResourceCPU])
 		require.Equal(t, resource.MustParse("200m"), c.ClusterMonitoringConfiguration.PrometheusOperatorAdmissionWebhookConfig.Resources.Limits[v1.ResourceCPU])
+	})
+}
+
+func TestConfig_MergeClusterMonitoringCRD_TelemeterClientConfigPhase1(t *testing.T) {
+	t.Run("CR applies when ConfigMap left TelemeterClientConfig nil", func(t *testing.T) {
+		cm := &configv1alpha1.ClusterMonitoring{
+			Spec: configv1alpha1.ClusterMonitoringSpec{
+				TelemeterClientConfig: configv1alpha1.TelemeterClientConfig{
+					NodeSelector: map[string]string{"role": "infra"},
+				},
+			},
+		}
+		c, err := NewConfigFromStringAndClusterMonitoringResource("{}", cm)
+		require.NoError(t, err)
+		require.NotNil(t, c.ClusterMonitoringConfiguration.TelemeterClientConfig)
+		require.Equal(t, map[string]string{"role": "infra"}, c.ClusterMonitoringConfiguration.TelemeterClientConfig.NodeSelector)
+	})
+	t.Run("CR ignored when ConfigMap already set TelemeterClientConfig", func(t *testing.T) {
+		cm := &configv1alpha1.ClusterMonitoring{
+			Spec: configv1alpha1.ClusterMonitoringSpec{
+				TelemeterClientConfig: configv1alpha1.TelemeterClientConfig{
+					NodeSelector: map[string]string{"from": "crd"},
+				},
+			},
+		}
+		c, err := NewConfigFromStringAndClusterMonitoringResource("{telemeterClient: {nodeSelector: {from: configmap}}}", cm)
+		require.NoError(t, err)
+		require.Equal(t, map[string]string{"from": "configmap"}, c.ClusterMonitoringConfiguration.TelemeterClientConfig.NodeSelector)
+	})
+	t.Run("CR maps ContainerResource to Resources", func(t *testing.T) {
+		cm := &configv1alpha1.ClusterMonitoring{
+			Spec: configv1alpha1.ClusterMonitoringSpec{
+				TelemeterClientConfig: configv1alpha1.TelemeterClientConfig{
+					Resources: []configv1alpha1.ContainerResource{
+						{
+							Name:    "cpu",
+							Request: resource.MustParse("100m"),
+							Limit:   resource.MustParse("200m"),
+						},
+					},
+				},
+			},
+		}
+		c, err := NewConfigFromStringAndClusterMonitoringResource("{}", cm)
+		require.NoError(t, err)
+		require.NotNil(t, c.ClusterMonitoringConfiguration.TelemeterClientConfig.Resources)
+		require.Equal(t, resource.MustParse("100m"), c.ClusterMonitoringConfiguration.TelemeterClientConfig.Resources.Requests[v1.ResourceCPU])
+		require.Equal(t, resource.MustParse("200m"), c.ClusterMonitoringConfiguration.TelemeterClientConfig.Resources.Limits[v1.ResourceCPU])
 	})
 }
 
