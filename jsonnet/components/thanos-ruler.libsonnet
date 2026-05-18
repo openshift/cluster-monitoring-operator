@@ -585,6 +585,7 @@ function(params)
         podSelector: {
           matchLabels: {
             'app.kubernetes.io/name': 'thanos-ruler',
+            'app.kubernetes.io/part-of': 'openshift-monitoring',
           },
         },
         policyTypes: [
@@ -594,9 +595,20 @@ function(params)
         ingress: [
           {
             ports: [
-              // allow prometheus to scrape thanos-ruler endpoint, 9092(port name: metrics) port
               {
-                port: 'metrics',
+                // Allow to access the Thanos Ruler API.
+                port: 9091,
+                protocol: 'TCP',
+              },
+              {
+                // Allow Prometheus to scrape Thanos Ruler's own /metrics endpoint.
+                port: 9092,
+                protocol: 'TCP',
+              },
+              {
+                // Allow Thanos Querier to reach Thanos Ruler's gRPC store API
+                // endpoint for rule evaluation results.
+                port: 10901,
                 protocol: 'TCP',
               },
             ],
