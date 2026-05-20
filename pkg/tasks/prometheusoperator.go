@@ -18,9 +18,6 @@ import (
 	"context"
 	"fmt"
 
-	v1 "k8s.io/api/core/v1"
-	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
-
 	"github.com/openshift/cluster-monitoring-operator/pkg/client"
 	"github.com/openshift/cluster-monitoring-operator/pkg/manifests"
 )
@@ -123,12 +120,7 @@ func (t *PrometheusOperatorTask) Run(ctx context.Context) error {
 	// Prometheus Operator no longer manages the legacy kubelet Endpoints object
 	// when --kubelet-endpoints=false; delete any leftover Endpoints to avoid
 	// deprecated API warnings.
-	err = t.client.DeleteEndpoints(ctx, &v1.Endpoints{
-		ObjectMeta: metav1.ObjectMeta{
-			Name:      kubeletServiceName,
-			Namespace: kubeletServiceNamespace,
-		},
-	})
+	err = t.client.DeleteEndpointsByNamespaceAndName(ctx, kubeletServiceNamespace, kubeletServiceName)
 	if err != nil {
 		return fmt.Errorf("deleting kubelet Endpoints failed: %w", err)
 	}

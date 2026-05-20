@@ -889,13 +889,13 @@ func (c *Client) DeleteClusterRoleBinding(ctx context.Context, crb *rbacv1.Clust
 	return err
 }
 
-func (c *Client) DeleteEndpoints(ctx context.Context, eps *v1.Endpoints) error {
-	_, err := c.kclient.CoreV1().Endpoints(eps.Namespace).Get(ctx, eps.GetName(), metav1.GetOptions{})
+func (c *Client) DeleteEndpointsByNamespaceAndName(ctx context.Context, namespace, name string) error {
+	_, err := c.kclient.CoreV1().Endpoints(namespace).Get(ctx, name, metav1.GetOptions{})
 	if apierrors.IsNotFound(err) {
 		return nil
 	}
 
-	err = c.kclient.CoreV1().Endpoints(eps.Namespace).Delete(ctx, eps.GetName(), metav1.DeleteOptions{})
+	err = c.kclient.CoreV1().Endpoints(namespace).Delete(ctx, name, metav1.DeleteOptions{})
 	if apierrors.IsNotFound(err) {
 		return nil
 	}
