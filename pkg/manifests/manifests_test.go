@@ -30,6 +30,7 @@ import (
 	"github.com/openshift/library-go/pkg/crypto"
 	monv1 "github.com/prometheus-operator/prometheus-operator/pkg/apis/monitoring/v1"
 	"github.com/stretchr/testify/require"
+	appsv1 "k8s.io/api/apps/v1"
 	v1 "k8s.io/api/core/v1"
 	policyv1 "k8s.io/api/policy/v1"
 	"k8s.io/apimachinery/pkg/api/resource"
@@ -645,6 +646,51 @@ func TestSharingConfig(t *testing.T) {
 			}
 		})
 	}
+}
+
+func TestPrometheusOperatorKubeletEndpointsDisabled(t *testing.T) {
+	c, err := NewConfigFromString("")
+	require.NoError(t, err)
+
+	c.SetImages(map[string]string{
+		"prometheus-operator":        "docker.io/openshift/origin-prometheus-operator:latest",
+		"prometheus-config-reloader": "docker.io/openshift/origin-prometheus-config-reloader:latest",
+		"kube-rbac-proxy":            "docker.io/openshift/origin-kube-rbac-proxy:latest",
+	})
+
+	f := NewFactory("openshift-monitoring", "openshift-user-workload-monitoring", c, defaultInfrastructureReader(), &fakeProxyReader{}, NewAssets(assetsPath), &APIServerConfig{}, &configv1.Console{})
+
+	for _, tc := range []struct {
+		name       string
+		deployment func() (*appsv1.Deployment, error)
+	}{
+		{name: "platform", deployment: f.PrometheusOperatorDeployment},
+		{name: "user-workload", deployment: f.PrometheusOperatorUserWorkloadDeployment},
+	} {
+		t.Run(tc.name, func(t *testing.T) {
+			d, err := tc.deployment()
+			require.NoError(t, err)
+			assertPrometheusOperatorKubeletEndpointsDisabled(t, d)
+		})
+	}
+}
+
+func assertPrometheusOperatorKubeletEndpointsDisabled(t *testing.T, d *appsv1.Deployment) {
+	t.Helper()
+
+	for _, container := range d.Spec.Template.Spec.Containers {
+		if container.Name != "prometheus-operator" {
+			continue
+		}
+
+		require.True(t, argumentPresent(container, PrometheusOperatorKubeletEndpointsDisabledArg),
+			"expected %q on prometheus-operator container", PrometheusOperatorKubeletEndpointsDisabledArg)
+		require.False(t, argumentPresent(container, PrometheusOperatorKubeletEndpointsEnabledArg),
+			"unexpected %q on prometheus-operator container", PrometheusOperatorKubeletEndpointsEnabledArg)
+		return
+	}
+
+	t.Fatal("prometheus-operator container not found")
 }
 
 func TestPrometheusOperatorConfiguration(t *testing.T) {

@@ -1,6 +1,7 @@
 local tlsVolumeName = 'prometheus-operator-user-workload-tls';
 
 local operator = import 'github.com/prometheus-operator/kube-prometheus/jsonnet/kube-prometheus/components/prometheus-operator.libsonnet';
+local overrideFlag = import '../utils/override-flag.libsonnet';
 local generateSecret = import '../utils/generate-secret.libsonnet';
 local rbac = import '../utils/rbac.libsonnet';
 local withDescription = (import '../utils/add-annotations.libsonnet').withDescription;
@@ -88,9 +89,15 @@ function(params)
                 function(c)
                   if c.name == 'prometheus-operator' then
                     c {
-                      args: std.filter(
-                        function(arg) !std.startsWith(arg, '--kubelet-service'),
-                        super.args,
+                      // Kubelet discovery uses EndpointSlice since OpenShift 4.21
+                      // (https://github.com/openshift/cluster-monitoring-operator/pull/2696).
+                      args: overrideFlag.overrideFlag(
+                        '--kubelet-endpoints=',
+                        'false',
+                        std.filter(
+                          function(arg) !std.startsWith(arg, '--kubelet-service'),
+                          super.args,
+                        ),
                       ) + [
                         '--prometheus-instance-namespaces=' + params.namespace,
                         '--alertmanager-instance-namespaces=' + params.namespace,

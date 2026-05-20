@@ -710,3 +710,17 @@ func expectNodeSelector(key, value string) framework.PodAssertion {
 		return nil
 	}
 }
+
+// TestKubeletEndpointsRemoved verifies CMO removes the legacy kube-system/kubelet
+// Endpoints object after kubelet discovery moved to EndpointSlice (4.21, PR #2696).
+func TestKubeletEndpointsRemoved(t *testing.T) {
+	ctx := context.Background()
+
+	_, err := f.KubeClient.CoreV1().Endpoints("kube-system").Get(ctx, "kubelet", metav1.GetOptions{})
+	if err == nil {
+		t.Fatal("expected kube-system/kubelet Endpoints to be absent")
+	}
+	if !apierrors.IsNotFound(err) {
+		t.Fatalf("unexpected error getting kube-system/kubelet Endpoints: %v", err)
+	}
+}

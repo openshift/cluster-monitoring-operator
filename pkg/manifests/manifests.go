@@ -328,6 +328,8 @@ var (
 	PrometheusOperatorAlertmanagerInstanceNamespacesFlag = "--alertmanager-instance-namespaces="
 	PrometheusOperatorWebTLSCipherSuitesFlag             = "--web.tls-cipher-suites="
 	PrometheusOperatorWebTLSMinTLSVersionFlag            = "--web.tls-min-version="
+	PrometheusOperatorKubeletEndpointsDisabledArg        = "--kubelet-endpoints=false"
+	PrometheusOperatorKubeletEndpointsEnabledArg         = "--kubelet-endpoints=true"
 	MetricsServerTLSCipherSuitesFlag                     = "--tls-cipher-suites="
 	MetricsServerTLSMinTLSVersionFlag                    = "--tls-min-version="
 	KubeRbacProxyTLSCipherSuitesFlag                     = "--tls-cipher-suites="

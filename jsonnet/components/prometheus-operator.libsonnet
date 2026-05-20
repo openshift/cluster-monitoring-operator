@@ -1,6 +1,7 @@
 local tlsVolumeName = 'prometheus-operator-tls';
 
 local generateCertInjection = import '../utils/generate-certificate-injection.libsonnet';
+local overrideFlag = import '../utils/override-flag.libsonnet';
 local operator = import 'github.com/prometheus-operator/kube-prometheus/jsonnet/kube-prometheus/components/prometheus-operator.libsonnet';
 local conversionWebhook = import 'github.com/prometheus-operator/prometheus-operator/jsonnet/prometheus-operator/conversion.libsonnet';
 local generateSecret = import '../utils/generate-secret.libsonnet';
@@ -69,7 +70,9 @@ function(params)
                     // upstream prometheus-operator supports /healthz endpoint
                     // without requiring client TLS authentication.
                     c {
-                      args+: [
+                      // Kubelet discovery uses EndpointSlice since OpenShift 4.21
+                      // (https://github.com/openshift/cluster-monitoring-operator/pull/2696).
+                      args: overrideFlag.overrideFlag('--kubelet-endpoints=', 'false', super.args) + [
                         '--prometheus-instance-namespaces=' + params.namespace,
                         '--thanos-ruler-instance-namespaces=' + params.namespace,
                         '--alertmanager-instance-namespaces=' + params.namespace,

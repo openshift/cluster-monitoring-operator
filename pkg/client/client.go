@@ -889,6 +889,20 @@ func (c *Client) DeleteClusterRoleBinding(ctx context.Context, crb *rbacv1.Clust
 	return err
 }
 
+func (c *Client) DeleteEndpoints(ctx context.Context, eps *v1.Endpoints) error {
+	_, err := c.kclient.CoreV1().Endpoints(eps.Namespace).Get(ctx, eps.GetName(), metav1.GetOptions{})
+	if apierrors.IsNotFound(err) {
+		return nil
+	}
+
+	err = c.kclient.CoreV1().Endpoints(eps.Namespace).Delete(ctx, eps.GetName(), metav1.DeleteOptions{})
+	if apierrors.IsNotFound(err) {
+		return nil
+	}
+
+	return err
+}
+
 func (c *Client) DeleteService(ctx context.Context, svc *v1.Service) error {
 	// Short-circuit if the resource doesn't exist (a Get is less expensive than a no-op Delete)
 	_, err := c.kclient.CoreV1().Services(svc.Namespace).Get(ctx, svc.GetName(), metav1.GetOptions{})
