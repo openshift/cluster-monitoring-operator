@@ -602,6 +602,7 @@ function(params)
         podSelector: {
           matchLabels: {
             'app.kubernetes.io/name': 'prometheus',
+            'app.kubernetes.io/part-of': 'openshift-monitoring',
           },
         },
         policyTypes: [
@@ -611,9 +612,26 @@ function(params)
         ingress: [
           {
             ports: [
-              // allow prometheus to scrape user workload prometheus endpoint, 9091(port name: metrics) port
               {
-                port: 'metrics',
+                // Allow platform Prometheus to scrape UWM Prometheus's own /metrics
+                // endpoint.
+                port: 9091,
+                protocol: 'TCP',
+              },
+              {
+                // Allow access to the /federate endpoint for cross-Prometheus federation.
+                port: 9092,
+                protocol: 'TCP',
+              },
+              {
+                // Allow Thanos Querier to reach the Thanos sidecar gRPC endpoint
+                // for StoreAPI queries.
+                port: 10901,
+                protocol: 'TCP',
+              },
+              {
+                // Allow Prometheus to scrape the Thanos sidecar's own metrics.
+                port: 10903,
                 protocol: 'TCP',
               },
             ],

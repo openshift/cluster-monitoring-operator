@@ -324,6 +324,7 @@ function(params)
         podSelector: {
           matchLabels: {
             'app.kubernetes.io/name': 'kube-state-metrics',
+            'app.kubernetes.io/part-of': 'openshift-monitoring',
           },
         },
         policyTypes: [
@@ -333,14 +334,16 @@ function(params)
         ingress: [
           {
             ports: [
-              // allow prometheus to scrape kube-state-metrics endpoints,
-              // 8443(port name: https-main)/9443(port name: https-self) ports
               {
-                port: 'https-main',
+                // Allow Prometheus to scrape kube-state-metrics for Kubernetes object
+                // metrics.
+                port: 8443,
                 protocol: 'TCP',
               },
               {
-                port: 'https-self',
+                // Allow Prometheus to scrape kube-state-metrics process-level self
+                // metrics.
+                port: 9443,
                 protocol: 'TCP',
               },
             ],

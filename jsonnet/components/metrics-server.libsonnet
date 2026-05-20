@@ -405,6 +405,7 @@ function(params) {
       podSelector: {
         matchLabels: {
           'app.kubernetes.io/name': 'metrics-server',
+          'app.kubernetes.io/part-of': 'openshift-monitoring',
         },
       },
       policyTypes: [
@@ -414,10 +415,10 @@ function(params) {
       ingress: [
         {
           ports: [
-            // make Metrics API available and allow prometheus to scrape metrics-server endpoint,
-            // 10250(port name: https) port
             {
-              port: 'https',
+              // Allow kube-apiserver to reach the Metrics API and allow Prometheus
+              // to scrape metrics-server's /metrics endpoint.
+              port: 10250,
               protocol: 'TCP',
             },
           ],

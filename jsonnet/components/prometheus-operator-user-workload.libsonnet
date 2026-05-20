@@ -208,6 +208,7 @@ function(params)
         podSelector: {
           matchLabels: {
             'app.kubernetes.io/name': 'prometheus-operator',
+            'app.kubernetes.io/part-of': 'openshift-monitoring',
           },
         },
         policyTypes: [
@@ -217,9 +218,9 @@ function(params)
         ingress: [
           {
             ports: [
-              // allow prometheus to scrape prometheus-operator endpoint, 8443(port name: https) port
               {
-                port: 'https',
+                // Allow Prometheus to scrape prometheus-operator's /metrics endpoint.
+                port: 8443,
                 protocol: 'TCP',
               },
             ],
