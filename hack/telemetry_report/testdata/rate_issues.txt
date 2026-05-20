@@ -1,0 +1,75 @@
+# Telemetry selectors report (1d)
+# args: {__name__=~"e2etelemetry:etcd_has_leader:rate_gauge|e2etelemetry:etcd_wal_fsync:deep_rate|e2etelemetry:etcd_wal_fsync:rate_short|e2etelemetry:etcd_wal_fsync_sum:rate|e2etelemetry:process_cpu_seconds:max"}
+# Results depend on the queried Prometheus instance and may differ elsewhere.
+selectors:
+  - selector: '{__name__=~"e2etelemetry:etcd_has_leader:rate_gauge|e2etelemetry:etcd_wal_fsync:deep_rate|e2etelemetry:etcd_wal_fsync:rate_short|e2etelemetry:etcd_wal_fsync_sum:rate|e2etelemetry:process_cpu_seconds:max"}'
+    metrics:
+      - name: e2etelemetry:etcd_has_leader:rate_gauge
+        peak_series: N
+        value_range: V
+        recording_rule:
+          file: RULEFILE
+          expr: sum(rate(etcd_server_has_leader{job="etcd"}[5m]))
+          tree: |-
+            └── etcd_server_has_leader{job="etcd"}
+                  <job: etcd> <value_range: V> <peak_series: N>
+      - name: e2etelemetry:etcd_wal_fsync:deep_rate
+        peak_series: N
+        value_range: V
+        recording_rule:
+          file: RULEFILE
+          expr: rate(e2etelemetry:etcd_wal_fsync:sum_outer[5m])
+          tree: |-
+            └── e2etelemetry:etcd_wal_fsync:sum_outer
+                  <expr: sum(e2etelemetry:etcd_wal_fsync:sum_inner)>
+                  <value_range: V> <peak_series: N> <file: RULEFILE>
+                └── e2etelemetry:etcd_wal_fsync:sum_inner
+                      <expr: sum(etcd_disk_wal_fsync_duration_seconds_count{job="etcd"})>
+                      <peak_series: N> <file: RULEFILE>
+                    └── etcd_disk_wal_fsync_duration_seconds_count{job="etcd"}
+                          <job: etcd> <peak_series: N>
+      - name: e2etelemetry:etcd_wal_fsync:rate_short
+        peak_series: N
+        value_range: V
+        recording_rule:
+          file: RULEFILE
+          expr: sum(rate(etcd_disk_wal_fsync_duration_seconds_count{job="etcd"}[50s]))
+          tree: |-
+            └── etcd_disk_wal_fsync_duration_seconds_count{job="etcd"}
+                  <job: etcd> <value_range: V> <peak_series: N>
+      - name: e2etelemetry:etcd_wal_fsync_sum:rate
+        peak_series: N
+        value_range: V
+        recording_rule:
+          file: RULEFILE
+          expr: rate(e2etelemetry:etcd_wal_fsync:sum[5m])
+          tree: |-
+            └── e2etelemetry:etcd_wal_fsync:sum
+                  <expr: sum(etcd_disk_wal_fsync_duration_seconds_count{job="etcd"})>
+                  <value_range: V> <peak_series: N> <file: RULEFILE>
+                └── etcd_disk_wal_fsync_duration_seconds_count{job="etcd"}
+                      <job: etcd> <peak_series: N>
+      - name: e2etelemetry:process_cpu_seconds:max
+        peak_series: N
+        value_range: V
+        recording_rule:
+          file: RULEFILE
+          expr: max(process_cpu_seconds_total{job="etcd"})
+          tree: |-
+            └── process_cpu_seconds_total{job="etcd"}
+                  <job: etcd> <value_range: V> <peak_series: N>
+    failing_checks:
+      count: 12
+      messages:
+        - recording rule "e2etelemetry:etcd_has_leader:rate_gauge" is defined in CMO, it should probably live in the owning component operator
+        - recording rule "e2etelemetry:etcd_wal_fsync:deep_rate" is defined in CMO, it should probably live in the owning component operator
+        - recording rule "e2etelemetry:etcd_wal_fsync:rate_short" is defined in CMO, it should probably live in the owning component operator
+        - recording rule "e2etelemetry:etcd_wal_fsync_sum:rate" is defined in CMO, it should probably live in the owning component operator
+        - recording rule "e2etelemetry:process_cpu_seconds:max" is defined in CMO, it should probably live in the owning component operator
+        - recording rule "e2etelemetry:etcd_wal_fsync:deep_rate" has suffix :deep_rate, expected :rate based on the expression
+        - recording rule "e2etelemetry:etcd_has_leader:rate_gauge" uses rate() on "etcd_server_has_leader" which is a gauge, not a counter
+        - 'recording rule "e2etelemetry:etcd_wal_fsync:deep_rate" applies rate() over "e2etelemetry:etcd_wal_fsync:sum_outer" which uses sum(), consider reversing the order: sum(rate(...)) instead of rate(sum(...))'
+        - recording rule "e2etelemetry:etcd_wal_fsync:rate_short" uses rate() with range 50s, need at least 1m (>= 2x scrape_interval 30s)
+        - 'recording rule "e2etelemetry:etcd_wal_fsync_sum:rate" applies rate() over "e2etelemetry:etcd_wal_fsync:sum" which uses sum(), consider reversing the order: sum(rate(...)) instead of rate(sum(...))'
+        - recording rule "e2etelemetry:process_cpu_seconds:max" uses counter "process_cpu_seconds_total" without rate()/increase(), raw counter values reset on restart and grow unbounded, making them meaningless as-is
+        - recording rule "e2etelemetry:etcd_has_leader:rate_gauge" uses the same source metrics as alert "etcdNoLeader", ALERTS is already forwarded to telemetry so this metric may be redundant

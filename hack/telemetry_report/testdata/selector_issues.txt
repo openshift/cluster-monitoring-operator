@@ -1,0 +1,44 @@
+# Telemetry selectors report (1d)
+# args: {__name__=~"e2etelemetry:etcd_has_leader:max|e2etelemetry:etcd:total|e2etelemetry:etcd_has_leader:max", extra!="gone", extra!~"prod", extra2=~"foo", extra3="", extra4=~"val.+"}
+# Results depend on the queried Prometheus instance and may differ elsewhere.
+selectors:
+  - selector: '{__name__=~"e2etelemetry:etcd_has_leader:max|e2etelemetry:etcd:total|e2etelemetry:etcd_has_leader:max", extra!="gone", extra!~"prod", extra2=~"foo", extra3="", extra4=~"val.+"}'
+    metrics:
+      - name: e2etelemetry:etcd:total
+        peak_series: N
+        value_range: V
+        recording_rule:
+          file: RULEFILE
+          expr: max(etcd_server_has_leader{job="etcd"})
+          tree: |-
+            └── etcd_server_has_leader{job="etcd"}
+                  <job: etcd> <value_range: V> <peak_series: N>
+      - name: e2etelemetry:etcd_has_leader:max
+        peak_series: N
+        value_range: V
+        recording_rule:
+          file: RULEFILE
+          expr: max(etcd_server_has_leader{job="etcd"})
+          tree: |-
+            └── etcd_server_has_leader{job="etcd"}
+                  <job: etcd> <value_range: V> <peak_series: N>
+    failing_checks:
+      count: 17
+      messages:
+        - metric "e2etelemetry:etcd:total" has 0 timeseries, source metrics may not exist or rule dependencies are not met
+        - metric "e2etelemetry:etcd_has_leader:max" has 0 timeseries, source metrics may not exist or rule dependencies are not met
+        - recording rule "e2etelemetry:etcd:total" ends with :total (reserved for raw counters)
+        - recording rule "e2etelemetry:etcd:total" is defined in CMO, it should probably live in the owning component operator
+        - recording rule "e2etelemetry:etcd_has_leader:max" is defined in CMO, it should probably live in the owning component operator
+        - recording rule "e2etelemetry:etcd:total" has suffix :total, expected :max based on the expression
+        - recording rule "e2etelemetry:etcd:total" uses the same source metrics as alert "etcdNoLeader", ALERTS is already forwarded to telemetry so this metric may be redundant
+        - recording rule "e2etelemetry:etcd_has_leader:max" uses the same source metrics as alert "etcdNoLeader", ALERTS is already forwarded to telemetry so this metric may be redundant
+        - selector has 6 matchers (limit 3), consider moving filtering into the recording rule
+        - matcher __name__=~"e2etelemetry:etcd_has_leader:max|e2etelemetry:etcd:total|e2etelemetry:etcd_has_leader:max" has duplicate values in alternation, consider removing duplicates
+        - matcher __name__=~"e2etelemetry:etcd_has_leader:max|e2etelemetry:etcd:total|e2etelemetry:etcd_has_leader:max" alternation is unsorted, consider using __name__=~"e2etelemetry:etcd:total|e2etelemetry:etcd_has_leader:max"
+        - matcher extra!="gone" is a negative match, consider enumerating allowed values instead, e.g. extra=~"val1|val2"
+        - label "extra" has multiple matchers, consider combining into one
+        - matcher extra!~"prod" is a negative regex, consider enumerating allowed values instead, e.g. extra=~"val1|val2"
+        - matcher extra2=~"foo" uses unnecessary regexp, use extra2="foo" instead
+        - matcher extra3="" matches empty or missing values, use a positive match instead, e.g. extra3=~"val1|val2"
+        - matcher extra4=~"val.+" is open-ended, consider using bounded values, e.g. extra4=~"val1|val2"
