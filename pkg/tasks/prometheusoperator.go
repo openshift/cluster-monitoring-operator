@@ -120,6 +120,7 @@ func (t *PrometheusOperatorTask) Run(ctx context.Context) error {
 	// Prometheus Operator no longer manages the legacy kubelet Endpoints object
 	// when --kubelet-endpoints=false; delete any leftover Endpoints to avoid
 	// deprecated API warnings.
+	// TODO: remove this step in 5.1 when all clusters have upgraded.
 	err = t.client.DeleteEndpointsByNamespaceAndName(ctx, kubeletServiceNamespace, kubeletServiceName)
 	if err != nil {
 		return fmt.Errorf("deleting kubelet Endpoints failed: %w", err)
