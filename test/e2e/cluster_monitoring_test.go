@@ -711,12 +711,11 @@ func expectNodeSelector(key, value string) framework.PodAssertion {
 	}
 }
 
-// TestKubeletEndpointsRemoved verifies CMO removes the legacy kube-system/kubelet
-// Endpoints object after kubelet discovery moved to EndpointSlice (4.21, PR #2696).
-func TestKubeletEndpointsRemoved(t *testing.T) {
+// TestKubeletEndpointsNotCreated verifies the legacy kube-system/kubelet Endpoints object
+// is not created by the Prometheus operator.
+func TestKubeletEndpointsNotCreated(t *testing.T) {
 	ctx := context.Background()
 	var lastGetErr error
-
 	err := wait.PollUntilContextTimeout(ctx, 2*time.Second, 2*time.Minute, true, func(context.Context) (bool, error) {
 		_, err := f.KubeClient.CoreV1().Endpoints("kube-system").Get(ctx, "kubelet", metav1.GetOptions{})
 		if apierrors.IsNotFound(err) {
@@ -729,6 +728,6 @@ func TestKubeletEndpointsRemoved(t *testing.T) {
 		return false, nil
 	})
 	if err != nil {
-		t.Fatalf("expected kube-system/kubelet Endpoints to be removed: %v (last get error: %v)", err, lastGetErr)
+		t.Fatalf("expected kube-system/kubelet Endpoints to be absent: %v (last get error: %v)", err, lastGetErr)
 	}
 }

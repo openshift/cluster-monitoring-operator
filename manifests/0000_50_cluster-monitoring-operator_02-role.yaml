@@ -194,6 +194,13 @@ rules:
   - create
   - update
 - apiGroups:
+  - ""
+  resources:
+  - endpoints
+  verbs:
+  - get
+  - delete
+- apiGroups:
   - authentication.k8s.io
   resources:
   - tokenreviews
@@ -796,15 +803,6 @@ rules:
   - storageclasses
   verbs:
   - get
-- apiGroups:
-  - ""
-  resources:
-  - endpoints
-  verbs:
-  - get
-  - create
-  - update
-  - delete
 - apiGroups:
   - discovery.k8s.io
   resources:
