@@ -31,7 +31,7 @@ tests:
           "comment": "Silence test"
         }'
     tearDown: |
-      oc delete namespace test-alertmanager-tenancy-monitoring-rules-edit --wait=false
+      oc delete namespace test-alertmanager-tenancy-monitoring-rules-edit --ignore-not-found=true --wait=false
   - script: |
       ## The following example exercises permissions granted by the `monitoring-edit` cluster role.
       ## The binding commands must be run by a user with the necessary privileges.
@@ -64,4 +64,4 @@ tests:
           "comment": "Silence test"
         }'
     tearDown: |
-      oc delete namespace test-alertmanager-tenancy-monitoring-edit --wait=false
+      oc delete namespace test-alertmanager-tenancy-monitoring-edit --ignore-not-found=true --wait=false

@@ -17,7 +17,7 @@ tests:
       curl -k -f -H "Authorization: Bearer $TOKEN" "https://thanos-querier.openshift-monitoring:9093/api/v1/rules?namespace=test-thanos-querier-tenancy-rules-monitoring-rules-edit"
       curl -k -f -H "Authorization: Bearer $TOKEN" "https://thanos-querier.openshift-monitoring:9093/api/v1/alerts?namespace=test-thanos-querier-tenancy-rules-monitoring-rules-edit"
     tearDown: |
-      oc delete namespace test-thanos-querier-tenancy-rules-monitoring-rules-edit --wait=false
+      oc delete namespace test-thanos-querier-tenancy-rules-monitoring-rules-edit --ignore-not-found=true --wait=false
   - script: |
       ## The following example exercises permissions granted by the `monitoring-edit` cluster role.
       ## The binding commands must be run by a user with the necessary privileges.
@@ -36,7 +36,7 @@ tests:
       curl -k -f -H "Authorization: Bearer $TOKEN" "https://thanos-querier.openshift-monitoring:9093/api/v1/rules?namespace=test-thanos-querier-tenancy-rules-monitoring-edit"
       curl -k -f -H "Authorization: Bearer $TOKEN" "https://thanos-querier.openshift-monitoring:9093/api/v1/alerts?namespace=test-thanos-querier-tenancy-rules-monitoring-edit"
     tearDown: |
-      oc delete namespace test-thanos-querier-tenancy-rules-monitoring-edit --wait=false
+      oc delete namespace test-thanos-querier-tenancy-rules-monitoring-edit --ignore-not-found=true --wait=false
   - script: |
       ## The following example exercises permissions granted by the `monitoring-rules-view` cluster role.
       ## The binding commands must be run by a user with the necessary privileges.
@@ -55,4 +55,4 @@ tests:
       curl -k -f -H "Authorization: Bearer $TOKEN" "https://thanos-querier.openshift-monitoring:9093/api/v1/rules?namespace=test-thanos-querier-tenancy-rules-monitoring-rules-view"
       curl -k -f -H "Authorization: Bearer $TOKEN" "https://thanos-querier.openshift-monitoring:9093/api/v1/alerts?namespace=test-thanos-querier-tenancy-rules-monitoring-rules-view"
     tearDown: |
-      oc delete namespace test-thanos-querier-tenancy-rules-monitoring-rules-view --wait=false
+      oc delete namespace test-thanos-querier-tenancy-rules-monitoring-rules-view --ignore-not-found=true --wait=false
