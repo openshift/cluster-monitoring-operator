@@ -132,13 +132,13 @@ func TestDocExamples(t *testing.T) {
 						require.NoError(t, err)
 					})
 
-					err = framework.Poll(time.Second, time.Minute, func() error {
+					err = framework.Poll(5*time.Second, time.Minute, func() error {
 						pod, err = f.KubeClient.CoreV1().Pods(testNamespace).Get(ctx, podName, metav1.GetOptions{})
 						if err != nil {
 							return err
 						}
 						if pod.Status.Phase != corev1.PodSucceeded && pod.Status.Phase != corev1.PodFailed {
-							return fmt.Errorf("waiting for pod")
+							return fmt.Errorf("waiting for pod %s/%s: phase %q", testNamespace, podName, pod.Status.Phase)
 						}
 						return nil
 					})
