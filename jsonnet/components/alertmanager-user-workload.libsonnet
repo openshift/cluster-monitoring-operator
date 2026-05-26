@@ -430,6 +430,7 @@ function(params)
         podSelector: {
           matchLabels: {
             'app.kubernetes.io/name': 'alertmanager',
+            'app.kubernetes.io/instance': 'user-workload',
             'app.kubernetes.io/part-of': 'openshift-monitoring',
           },
         },
@@ -456,6 +457,19 @@ function(params)
                 port: 9097,
                 protocol: 'TCP',
               },
+            ],
+          },
+          {
+            from: [{
+              podSelector: {
+                matchLabels: {
+                  'app.kubernetes.io/name': 'alertmanager',
+                  'app.kubernetes.io/part-of': 'openshift-monitoring',
+                  'app.kubernetes.io/instance': 'user-workload',
+                },
+              },
+            }],
+            ports: [
               {
                 // Allow UWM Alertmanager replicas to communicate via the HA gossip mesh
                 // (injected by Prometheus Operator).

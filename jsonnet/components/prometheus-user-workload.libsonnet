@@ -602,6 +602,7 @@ function(params)
         podSelector: {
           matchLabels: {
             'app.kubernetes.io/name': 'prometheus',
+            'app.kubernetes.io/instance': 'user-workload',
             'app.kubernetes.io/part-of': 'openshift-monitoring',
           },
         },
@@ -624,14 +625,32 @@ function(params)
                 protocol: 'TCP',
               },
               {
+                // Allow Prometheus to scrape the Thanos sidecar's own metrics.
+                port: 10903,
+                protocol: 'TCP',
+              },
+            ],
+          },
+          {
+            from: [{
+              namespaceSelector: {
+                matchLabels: {
+                  'kubernetes.io/metadata.name': 'openshift-monitoring',
+                },
+              },
+              podSelector: {
+                matchLabels: {
+                  'app.kubernetes.io/name': 'thanos-query',
+                  'app.kubernetes.io/instance': 'thanos-querier',
+                  'app.kubernetes.io/part-of': 'openshift-monitoring',
+                },
+              },
+            }],
+            ports: [
+              {
                 // Allow Thanos Querier to reach the Thanos sidecar gRPC endpoint
                 // for StoreAPI queries.
                 port: 10901,
-                protocol: 'TCP',
-              },
-              {
-                // Allow Prometheus to scrape the Thanos sidecar's own metrics.
-                port: 10903,
                 protocol: 'TCP',
               },
             ],
