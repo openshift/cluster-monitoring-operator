@@ -205,6 +205,7 @@ var (
 	MetricsServerDeployment                      = "metrics-server/deployment.yaml"
 	MetricsServerService                         = "metrics-server/service.yaml"
 	MetricsServerServiceMonitor                  = "metrics-server/service-monitor.yaml"
+	MetricsServerPrometheusRule                  = "metrics-server/prometheus-rule.yaml"
 	MetricsServerPodDisruptionBudget             = "metrics-server/pod-disruption-budget.yaml"
 	MetricsServerNetworkPolicy                   = "metrics-server/network-policy-downstream.yaml"
 
@@ -2123,6 +2124,10 @@ func (f *Factory) MetricsServerService() (*v1.Service, error) {
 
 func (f *Factory) MetricsServerServiceMonitor() (*monv1.ServiceMonitor, error) {
 	return f.NewServiceMonitor(f.assets.MustNewAssetSlice(MetricsServerServiceMonitor))
+}
+
+func (f *Factory) MetricsServerPrometheusRule() (*monv1.PrometheusRule, error) {
+	return f.NewPrometheusRule(f.assets.MustNewAssetSlice(MetricsServerPrometheusRule))
 }
 
 func (f *Factory) MetricsServerAPIService() (*apiregistrationv1.APIService, error) {
