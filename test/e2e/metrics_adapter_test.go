@@ -244,6 +244,10 @@ func TestMetricsServerRollout(t *testing.T) {
 			assertion: f.AssertServiceMonitorExistsFunc("metrics-server", f.Ns),
 		},
 		{
+			name:      "assert metrics-server alerting rules are created",
+			assertion: f.AssertPrometheusRuleExistsFunc("metrics-server-rules", f.Ns),
+		},
+		{
 			name: "assert pod configuration is as expected",
 			assertion: f.AssertPodConfigurationFunc(
 				f.Ns,
