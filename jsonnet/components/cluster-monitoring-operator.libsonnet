@@ -287,12 +287,11 @@ function(params) {
         resources: ['consoleplugins'],
         verbs: ['get', 'create', 'update'],
       },
-      // CMO needs permission to delete leftover kube-system/kubelet Endpoints (platform PO uses EndpointSlice).
-      // TODO: remove in 5.1 when all clusters have upgraded.
+      // UWM prometheus-operator needs endpoints RBAC; CMO must hold the verbs it grants.
       {
         apiGroups: [''],
         resources: ['endpoints'],
-        verbs: ['get', 'delete'],
+        verbs: ['get', 'create', 'update', 'delete'],
       },
     ],
   },
