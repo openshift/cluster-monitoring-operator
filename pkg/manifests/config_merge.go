@@ -41,6 +41,7 @@ func (c *Config) mergeClusterMonitoringCRD(clusterMonitoring *configv1alpha1.Clu
 	c.mergePrometheusOperatorAdmissionWebhookConfiguration(clusterMonitoring.Spec.PrometheusOperatorAdmissionWebhookConfig)
 	c.mergeAlertmanagerConfiguration(clusterMonitoring.Spec.AlertmanagerConfig)
 	c.mergeMonitoringPluginConfiguration(clusterMonitoring.Spec.MonitoringPluginConfig)
+	c.mergeTelemeterClientConfiguration(clusterMonitoring.Spec.TelemeterClientConfig)
 }
 
 // clusterMonitoringMetricsServerSpecEmpty reports whether the CR's
@@ -120,6 +121,24 @@ func clusterMonitoringMonitoringPluginSpecEmpty(mpc configv1alpha1.MonitoringPlu
 		return false
 	}
 	if len(mpc.TopologySpreadConstraints) > 0 {
+		return false
+	}
+	return true
+}
+
+// clusterMonitoringTelemeterClientSpecEmpty reports whether the CR's
+// telemeterClientConfig stanza contains no user-set field.
+func clusterMonitoringTelemeterClientSpecEmpty(tcc configv1alpha1.TelemeterClientConfig) bool {
+	if len(tcc.NodeSelector) > 0 {
+		return false
+	}
+	if len(tcc.Tolerations) > 0 {
+		return false
+	}
+	if len(tcc.Resources) > 0 {
+		return false
+	}
+	if len(tcc.TopologySpreadConstraints) > 0 {
 		return false
 	}
 	return true
@@ -261,6 +280,25 @@ func (c *Config) mergeMonitoringPluginConfiguration(mpc configv1alpha1.Monitorin
 	cfg.TopologySpreadConstraints = mpc.TopologySpreadConstraints
 
 	c.ClusterMonitoringConfiguration.MonitoringPluginConfig = cfg
+}
+
+func (c *Config) mergeTelemeterClientConfiguration(tcc configv1alpha1.TelemeterClientConfig) {
+	if c.ClusterMonitoringConfiguration.TelemeterClientConfig != nil {
+		return
+	}
+	if clusterMonitoringTelemeterClientSpecEmpty(tcc) {
+		return
+	}
+
+	cfg := &TelemeterClientConfig{}
+	cfg.NodeSelector = tcc.NodeSelector
+	cfg.Tolerations = tcc.Tolerations
+	if res := containerResourcesFromCRD(tcc.Resources); res != nil {
+		cfg.Resources = res
+	}
+	cfg.TopologySpreadConstraints = tcc.TopologySpreadConstraints
+
+	c.ClusterMonitoringConfiguration.TelemeterClientConfig = cfg
 }
 
 func (c *Config) mergeAlertmanagerConfiguration(ac configv1alpha1.AlertmanagerConfig) {
