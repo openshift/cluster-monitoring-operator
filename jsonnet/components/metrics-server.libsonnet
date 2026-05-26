@@ -368,6 +368,55 @@ function(params) {
       versionPriority: 100,
     },
   },
+  prometheusRule: {
+    apiVersion: 'monitoring.coreos.com/v1',
+    kind: 'PrometheusRule',
+    metadata: {
+      labels: {
+        'app.kubernetes.io/component': 'metrics-server',
+        'app.kubernetes.io/managed-by': 'cluster-monitoring-operator',
+        'app.kubernetes.io/name': 'metrics-server',
+        'app.kubernetes.io/version': cfg.version,
+      } + cfg.commonLabels + {
+        prometheus: 'k8s',
+        role: 'alert-rules',
+      },
+      name: 'metrics-server-rules',
+      namespace: cfg.namespace,
+    },
+    spec: {
+      groups: [
+        {
+          name: 'metrics-server',
+          rules: [
+            {
+              alert: 'MetricsServerKubeletScrapeFailures',
+              annotations: {
+                description: 'metrics-server in namespace {{ $labels.namespace }} (pod {{ $labels.pod }}) is failing {{ $value | humanizePercentage }} of the requests to kubelet. Check metrics-server logs for "Failed to scrape node".',
+                summary: 'metrics-server fails to scrape nodes.',
+              },
+              expr: |||
+                sum by (pod, namespace) (
+                  rate(metrics_server_kubelet_request_total{namespace="%s",success="false"}[5m])
+                )
+                /
+                sum by (pod, namespace) (
+                  rate(metrics_server_kubelet_request_total{namespace="%s"}[5m])
+                )
+                > 0.1
+              ||| % [cfg.namespace, cfg.namespace],
+              'for': '15m',
+              labels: {
+                namespace: cfg.namespace,
+                severity: 'warning',
+              },
+            },
+          ],
+        },
+      ],
+    },
+  },
+
   serviceMonitor: {
     apiVersion: 'monitoring.coreos.com/v1',
     kind: 'ServiceMonitor',
