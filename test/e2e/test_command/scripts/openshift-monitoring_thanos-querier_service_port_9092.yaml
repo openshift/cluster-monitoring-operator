@@ -16,4 +16,4 @@ tests:
       # Access Thanos Querier endpoints from within the cluster. The port is not exposed externally by default.
       curl -k -f -H "Authorization: Bearer $TOKEN" "https://thanos-querier.openshift-monitoring:9092/api/v1/query?query=up&namespace=test-thanos-querier-tenancy-view"
     tearDown: |
-      oc delete namespace test-thanos-querier-tenancy-view --wait=false
+      oc delete namespace test-thanos-querier-tenancy-view --ignore-not-found=true --wait=false
