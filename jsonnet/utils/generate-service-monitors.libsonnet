@@ -1,5 +1,5 @@
 {
-  local profiles = ['minimal'],
+  local profiles = ['minimal', 'telemetry'],
 
   // Removes all metricRelabelings with the action "drop" from ServiceMonitor.spec.endpoint.metricRelabelings
   local removeDrop(sm) = sm {
@@ -68,4 +68,5 @@
     },
 
   serviceMonitorForMinimalProfile(sm): addProfile(sm, profiles[0]),
+  serviceMonitorForTelemetryProfile(sm): addProfile(sm, profiles[1]),
 }

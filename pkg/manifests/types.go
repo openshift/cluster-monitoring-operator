@@ -16,6 +16,7 @@ package manifests
 
 import (
 	"slices"
+	"strings"
 
 	monv1 "github.com/prometheus-operator/prometheus-operator/pkg/apis/monitoring/v1"
 	v1 "k8s.io/api/core/v1"
@@ -30,12 +31,23 @@ const (
 	// FullCollectionProfile collects all metrics.
 	FullCollectionProfile = "full"
 
-	// MinimalCollectionProfile collects metrics used by recording and alerting rules, dashboards and Telemetry.
+	// MinimalCollectionProfile collects metrics used by recording and alerting rules, dashboards and telemetry.
 	MinimalCollectionProfile = "minimal"
+
+	// TelemetryCollectionProfile collects metrics used for telemetry.
+	TelemetryCollectionProfile = "telemetry"
 )
 
-// SupportedCollectionProfiles is the list of collection profiles supported by CMO.
-var SupportedCollectionProfiles = CollectionProfiles{FullCollectionProfile, MinimalCollectionProfile}
+var SupportedCollectionProfiles = CollectionProfiles{
+	FullCollectionProfile,
+	MinimalCollectionProfile,
+	TelemetryCollectionProfile,
+}
+
+// String returns a comma-separated string of collection profiles.
+func (cps CollectionProfiles) String() string {
+	return strings.Join(cps.StringSlice(), ", ")
+}
 
 // StringSlice returns the list of collection profiles as []string.
 func (cps CollectionProfiles) StringSlice() []string {

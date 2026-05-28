@@ -105,6 +105,15 @@ function(params) {
     },
   },
   minimalServiceMonitor: generateServiceMonitor.serviceMonitorForMinimalProfile(self.serviceMonitor),
+  telemetryServiceMonitor: generateServiceMonitor.serviceMonitorForTelemetryProfile(
+    generateServiceMonitor.keepOnlyMetrics(
+      self.serviceMonitor,
+      [
+        'openshift_build_status_phase_total',
+        'openshift_route_info',
+      ]
+    )
+  ),
   networkPolicyDownstream: {
     apiVersion: 'networking.k8s.io/v1',
     kind: 'NetworkPolicy',
