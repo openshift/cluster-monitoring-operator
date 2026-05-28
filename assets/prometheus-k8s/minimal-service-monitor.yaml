@@ -7,9 +7,9 @@ metadata:
     app.kubernetes.io/managed-by: cluster-monitoring-operator
     app.kubernetes.io/name: prometheus
     app.kubernetes.io/part-of: openshift-monitoring
-    app.kubernetes.io/version: 3.11.2
-    monitoring.openshift.io/collection-profile: full
-  name: prometheus-k8s
+    app.kubernetes.io/version: 3.9.1
+    monitoring.openshift.io/collection-profile: minimal
+  name: prometheus-k8s-minimal
   namespace: openshift-monitoring
 spec:
   endpoints:
