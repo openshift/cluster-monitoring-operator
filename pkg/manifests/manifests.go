@@ -2684,16 +2684,6 @@ func (f *Factory) NewConfigMap(manifest []byte) (*v1.ConfigMap, error) {
 	return &cm, nil
 }
 
-func (f *Factory) NewConfigMapList(manifest []byte) (*v1.ConfigMapList, error) {
-	cml := v1.ConfigMapList{}
-	err := decodeYAML(manifest, &cml)
-	if err != nil {
-		return nil, err
-	}
-
-	return &cml, nil
-}
-
 func (f *Factory) NewServiceAccount(manifest []byte) (*v1.ServiceAccount, error) {
 	sa := v1.ServiceAccount{}
 	err := decodeYAML(manifest, &sa)
