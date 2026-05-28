@@ -38,6 +38,7 @@ const (
 	TelemetryCollectionProfile = "telemetry"
 )
 
+// SupportedCollectionProfiles is the list of collection profiles supported by CMO.
 var SupportedCollectionProfiles = CollectionProfiles{
 	FullCollectionProfile,
 	MinimalCollectionProfile,
@@ -283,11 +284,14 @@ type PrometheusK8sConfig struct {
 	// Defines the pod's topology spread constraints.
 	TopologySpreadConstraints []v1.TopologySpreadConstraint `json:"topologySpreadConstraints,omitempty"`
 	// Defines the metrics collection profile that Prometheus uses to collect
-	// metrics from the platform components. Supported values are `full` or
-	// `minimal`. In the `full` profile (default), Prometheus collects all
-	// metrics that are exposed by the platform components. In the `minimal`
-	// profile, Prometheus only collects metrics necessary for the default
-	// platform alerts, recording rules, telemetry and console dashboards.
+	// metrics from the platform components. Supported values are `full`,
+	// `minimal` and `telemetry`. In the `full` profile (default), Prometheus
+	// collects all metrics that are exposed by the platform components. In
+	// the `minimal` profile, Prometheus only collects metrics necessary for
+	// the default platform alerts, recording rules, telemetry and console
+	// dashboards. In the `telemetry` profile, Prometheus only collects
+	// metrics necessary for telemetry. The `minimal` profile's allow-list
+	// should always be a superset of the `telemetry` profile's allow-list.
 	CollectionProfile CollectionProfile `json:"collectionProfile,omitempty"`
 	// Defines persistent storage for Prometheus. Use this setting to
 	// configure the persistent volume claim, including storage class,
