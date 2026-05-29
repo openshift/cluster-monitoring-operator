@@ -168,6 +168,11 @@ func (t *AlertmanagerTask) create(ctx context.Context) error {
 		return fmt.Errorf("reconciling Alertmanager ServiceAccount failed: %w", err)
 	}
 
+	err = t.client.WaitForClusterRoleBindingSCCUse(ctx, crb)
+	if err != nil {
+		return fmt.Errorf("waiting for role binding permissions failed: %w", err)
+	}
+
 	ps, err := t.factory.AlertmanagerRBACProxyWebSecret()
 	if err != nil {
 		return fmt.Errorf("initializing Alertmanager proxy web Secret failed: %w", err)

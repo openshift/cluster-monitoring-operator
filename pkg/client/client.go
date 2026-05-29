@@ -44,6 +44,7 @@ import (
 	monitoring "github.com/prometheus-operator/prometheus-operator/pkg/client/versioned"
 	admissionv1 "k8s.io/api/admissionregistration/v1"
 	appsv1 "k8s.io/api/apps/v1"
+	authzv1 "k8s.io/api/authorization/v1"
 	v1 "k8s.io/api/core/v1"
 	networkingv1 "k8s.io/api/networking/v1"
 	policyv1 "k8s.io/api/policy/v1"
@@ -1604,6 +1605,86 @@ func (c *Client) CreateOrUpdateClusterRole(ctx context.Context, cr *rbacv1.Clust
 func (c *Client) CreateOrUpdateClusterRoleBinding(ctx context.Context, crb *rbacv1.ClusterRoleBinding) error {
 	_, _, err := resourceapply.ApplyClusterRoleBinding(ctx, c.kclient.RbacV1(), c.eventRecorder, crb)
 	return err
+}
+
+func (c *Client) WaitForClusterRoleBindingSCCUse(ctx context.Context, crb *rbacv1.ClusterRoleBinding) error {
+	if crb.RoleRef.Kind != "ClusterRole" {
+		return nil
+	}
+
+	cr, err := c.kclient.RbacV1().ClusterRoles().Get(ctx, crb.RoleRef.Name, metav1.GetOptions{})
+	if err != nil {
+		return fmt.Errorf("getting ClusterRole %q for SCC propagation wait: %w", crb.RoleRef.Name, err)
+	}
+
+	var sccNames []string
+	for _, rule := range cr.Rules {
+		if !slices.Contains(rule.Verbs, "use") {
+			continue
+		}
+		if !slices.Contains(rule.APIGroups, "security.openshift.io") {
+			continue
+		}
+		if !slices.Contains(rule.Resources, "securitycontextconstraints") {
+			continue
+		}
+
+		sccNames = append(sccNames, rule.ResourceNames...)
+	}
+	if len(sccNames) == 0 {
+		return nil
+	}
+
+	for _, subject := range crb.Subjects {
+		if subject.Kind != rbacv1.ServiceAccountKind {
+			continue
+		}
+
+		for _, sccName := range sccNames {
+			if err := c.waitForServiceAccountSCCUse(ctx, subject.Namespace, subject.Name, sccName); err != nil {
+				return err
+			}
+		}
+	}
+
+	return nil
+}
+
+func (c *Client) waitForServiceAccountSCCUse(ctx context.Context, namespace, name, sccName string) error {
+	user := fmt.Sprintf("system:serviceaccount:%s:%s", namespace, name)
+	var lastReason string
+
+	err := Poll(ctx, func(ctx context.Context) (bool, error) {
+		sar, err := c.kclient.AuthorizationV1().SubjectAccessReviews().Create(ctx, &authzv1.SubjectAccessReview{
+			Spec: authzv1.SubjectAccessReviewSpec{
+				User: user,
+				ResourceAttributes: &authzv1.ResourceAttributes{
+					Group:    "security.openshift.io",
+					Resource: "securitycontextconstraints",
+					Name:     sccName,
+					Verb:     "use",
+				},
+			},
+		}, metav1.CreateOptions{})
+		if err != nil {
+			return false, err
+		}
+		if sar.Status.Allowed {
+			return true, nil
+		}
+
+		lastReason = sar.Status.Reason
+		return false, nil
+	}, WithPollInterval(time.Second), WithPollTimeout(30*time.Second))
+
+	if err != nil {
+		if lastReason != "" {
+			return fmt.Errorf("waiting for %s to use SCC %q: %w: %s", user, sccName, err, lastReason)
+		}
+		return fmt.Errorf("waiting for %s to use SCC %q: %w", user, sccName, err)
+	}
+
+	return nil
 }
 
 func (c *Client) CreateOrUpdateServiceAccount(ctx context.Context, sa *v1.ServiceAccount) error {
