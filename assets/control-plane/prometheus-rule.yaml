@@ -320,11 +320,13 @@ spec:
         description: Namespace {{ $labels.namespace }} is using {{ $value | humanizePercentage }} of its {{ $labels.resource }} quota.
         summary: Namespace quota is going to be full.
       expr: |
-        max without (instance, job, type) (
-          kube_resourcequota{namespace=~"(openshift-.*|kube-.*|default)",job="kube-state-metrics", type="used"}
+        topk by (cluster, namespace, resource, resourcequota) (1,
+          max without (instance, job, type) (
+            kube_resourcequota{namespace=~"(openshift-.*|kube-.*|default)",job="kube-state-metrics", type="used"}
+          )
         )
         / on (cluster, namespace, resource, resourcequota) group_left()
-        (
+        topk by (cluster, namespace, resource, resourcequota) (1,
           max without (instance, job, type) (
             kube_resourcequota{namespace=~"(openshift-.*|kube-.*|default)",job="kube-state-metrics", type="hard"}
           ) > 0
@@ -338,11 +340,13 @@ spec:
         description: Namespace {{ $labels.namespace }} is using {{ $value | humanizePercentage }} of its {{ $labels.resource }} quota.
         summary: Namespace quota is fully used.
       expr: |
-        max without (instance, job, type) (
-          kube_resourcequota{namespace=~"(openshift-.*|kube-.*|default)",job="kube-state-metrics", type="used"}
+        topk by (cluster, namespace, resource, resourcequota) (1,
+          max without (instance, job, type) (
+            kube_resourcequota{namespace=~"(openshift-.*|kube-.*|default)",job="kube-state-metrics", type="used"}
+          )
         )
         / on (cluster, namespace, resource, resourcequota) group_left()
-        (
+        topk by (cluster, namespace, resource, resourcequota) (1,
           max without (instance, job, type) (
             kube_resourcequota{namespace=~"(openshift-.*|kube-.*|default)",job="kube-state-metrics", type="hard"}
           ) > 0
@@ -356,11 +360,13 @@ spec:
         description: Namespace {{ $labels.namespace }} is using {{ $value | humanizePercentage }} of its {{ $labels.resource }} quota.
         summary: Namespace quota has exceeded the limits.
       expr: |
-        max without (instance, job, type) (
-          kube_resourcequota{namespace=~"(openshift-.*|kube-.*|default)",job="kube-state-metrics", type="used"}
+        topk by (cluster, namespace, resource, resourcequota) (1,
+          max without (instance, job, type) (
+            kube_resourcequota{namespace=~"(openshift-.*|kube-.*|default)",job="kube-state-metrics", type="used"}
+          )
         )
         / on (cluster, namespace, resource, resourcequota) group_left()
-        (
+        topk by (cluster, namespace, resource, resourcequota) (1,
           max without (instance, job, type) (
             kube_resourcequota{namespace=~"(openshift-.*|kube-.*|default)",job="kube-state-metrics", type="hard"}
           ) > 0
