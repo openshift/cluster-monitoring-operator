@@ -4,9 +4,9 @@ tests:
       oc create namespace test-platform-federate-service
       oc create serviceaccount prom-client --namespace=test-platform-federate-service
       # Bind the role to the service account.
-      oc create rolebinding test-platform-federate-service-rb 
-        --namespace=openshift-monitoring 
-        --clusterrole=cluster-monitoring-view 
+      oc create rolebinding test-platform-federate-service-rb \
+        --namespace=openshift-monitoring \
+        --clusterrole=cluster-monitoring-view \
         --serviceaccount=test-platform-federate-service:prom-client
       # Generate a token to access the endpoints.
       TOKEN=$(oc create token prom-client --namespace=test-platform-federate-service)
@@ -22,9 +22,9 @@ tests:
       oc create namespace test-platform-federate-route
       oc create serviceaccount prom-client --namespace=test-platform-federate-route
       # Bind the role to the service account.
-      oc create rolebinding test-platform-federate-route-rb 
-        --namespace=openshift-monitoring 
-        --clusterrole=cluster-monitoring-view 
+      oc create rolebinding test-platform-federate-route-rb \
+        --namespace=openshift-monitoring \
+        --clusterrole=cluster-monitoring-view \
         --serviceaccount=test-platform-federate-route:prom-client
       # Generate a token to access the endpoints.
       TOKEN=$(oc create token prom-client --namespace=test-platform-federate-route)
