@@ -5,13 +5,18 @@ metadata:
     app.kubernetes.io/managed-by: cluster-monitoring-operator
     app.kubernetes.io/part-of: openshift-monitoring
     k8s-app: telemeter-client
-    monitoring.openshift.io/collection-profile: full
-  name: telemeter-client
+    monitoring.openshift.io/collection-profile: telemetry
+  name: telemeter-client-telemetry
   namespace: openshift-monitoring
 spec:
   endpoints:
   - bearerTokenFile: ""
     interval: 30s
+    metricRelabelings:
+    - action: keep
+      regex: (federate_filtered_samples|federate_samples)
+      sourceLabels:
+      - __name__
     port: https
     scheme: https
     tlsConfig:

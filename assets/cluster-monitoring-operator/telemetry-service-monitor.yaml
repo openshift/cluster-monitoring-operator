@@ -5,15 +5,15 @@ metadata:
     app.kubernetes.io/managed-by: cluster-monitoring-operator
     app.kubernetes.io/name: cluster-monitoring-operator
     app.kubernetes.io/part-of: openshift-monitoring
-    monitoring.openshift.io/collection-profile: full
-  name: cluster-monitoring-operator
+    monitoring.openshift.io/collection-profile: telemetry
+  name: cluster-monitoring-operator-telemetry
   namespace: openshift-monitoring
 spec:
   endpoints:
   - bearerTokenFile: ""
     metricRelabelings:
-    - action: drop
-      regex: (apiserver|go_sched|workqueue)_.+
+    - action: keep
+      regex: (cluster_monitoring_operator_collection_profile)
       sourceLabels:
       - __name__
     port: https
