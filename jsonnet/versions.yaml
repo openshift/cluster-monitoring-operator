@@ -16,11 +16,11 @@ repos:
 versions:
     alertmanager: 0.32.1
     kubeRbacProxy: 0.21.1
-    kubeStateMetrics: 2.18.0
+    kubeStateMetrics: 2.19.0
     kubernetesMetricsServer: 0.8.1
     monitoringPlugin: 1.0.0
     nodeExporter: 1.11.1
     promLabelProxy: 0.13.0
-    prometheus: 3.11.2
+    prometheus: 3.11.3
     prometheusOperator: 0.91.0
     thanos: 0.41.0
