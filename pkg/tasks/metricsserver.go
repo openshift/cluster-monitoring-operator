@@ -224,6 +224,17 @@ func (t *MetricsServerTask) Run(ctx context.Context) error {
 		}
 	}
 	{
+		pr, err := t.factory.MetricsServerPrometheusRule()
+		if err != nil {
+			return fmt.Errorf("initializing MetricsServer PrometheusRule failed: %w", err)
+		}
+
+		err = t.client.CreateOrUpdatePrometheusRule(ctx, pr)
+		if err != nil {
+			return fmt.Errorf("reconciling MetricsServer PrometheusRule failed: %w", err)
+		}
+	}
+	{
 		pdb, err := t.factory.MetricsServerPodDisruptionBudget()
 		if err != nil {
 			return fmt.Errorf("initializing MetricsServer PodDisruptionBudget failed: %w", err)
