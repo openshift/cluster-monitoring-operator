@@ -22,6 +22,11 @@ import (
 	"github.com/openshift/cluster-monitoring-operator/pkg/manifests"
 )
 
+const (
+	kubeletServiceNamespace = "kube-system"
+	kubeletServiceName      = "kubelet"
+)
+
 type PrometheusOperatorTask struct {
 	client  *client.Client
 	factory *manifests.Factory
@@ -108,6 +113,17 @@ func (t *PrometheusOperatorTask) Run(ctx context.Context) error {
 	err = t.client.CreateOrUpdateDeployment(ctx, d)
 	if err != nil {
 		return fmt.Errorf("reconciling Prometheus Operator Deployment failed: %w", err)
+	}
+
+	// Kubelet discovery was migrated to EndpointSlice in OpenShift 4.21
+	// (https://github.com/openshift/cluster-monitoring-operator/pull/2696).
+	// Prometheus Operator no longer manages the legacy kubelet Endpoints object
+	// when --kubelet-endpoints=false; delete any leftover Endpoints to avoid
+	// deprecated API warnings.
+	// TODO: remove this step in 5.1 when all clusters have upgraded.
+	err = t.client.DeleteEndpointsByNamespaceAndName(ctx, kubeletServiceNamespace, kubeletServiceName)
+	if err != nil {
+		return fmt.Errorf("deleting kubelet Endpoints failed: %w", err)
 	}
 
 	err = t.client.AssurePrometheusOperatorCRsExist(ctx)

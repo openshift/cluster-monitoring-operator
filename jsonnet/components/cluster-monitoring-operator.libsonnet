@@ -287,6 +287,12 @@ function(params) {
         resources: ['consoleplugins'],
         verbs: ['get', 'create', 'update'],
       },
+      // UWM prometheus-operator needs endpoints RBAC; CMO must hold the verbs it grants.
+      {
+        apiGroups: [''],
+        resources: ['endpoints'],
+        verbs: ['get', 'create', 'update', 'delete'],
+      },
     ],
   },
 

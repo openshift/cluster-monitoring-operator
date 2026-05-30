@@ -889,6 +889,21 @@ func (c *Client) DeleteClusterRoleBinding(ctx context.Context, crb *rbacv1.Clust
 	return err
 }
 
+// DeleteEndpointsByNamespaceAndName deletes the legacy Endpoints object if it exists.
+func (c *Client) DeleteEndpointsByNamespaceAndName(ctx context.Context, namespace, name string) error {
+	_, err := c.kclient.CoreV1().Endpoints(namespace).Get(ctx, name, metav1.GetOptions{})
+	if apierrors.IsNotFound(err) {
+		return nil
+	}
+
+	err = c.kclient.CoreV1().Endpoints(namespace).Delete(ctx, name, metav1.DeleteOptions{})
+	if apierrors.IsNotFound(err) {
+		return nil
+	}
+
+	return err
+}
+
 func (c *Client) DeleteService(ctx context.Context, svc *v1.Service) error {
 	// Short-circuit if the resource doesn't exist (a Get is less expensive than a no-op Delete)
 	_, err := c.kclient.CoreV1().Services(svc.Namespace).Get(ctx, svc.GetName(), metav1.GetOptions{})
