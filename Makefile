@@ -38,7 +38,7 @@ GOJSONTOYAML_BIN=$(BIN_DIR)/gojsontoyaml
 JSONNET_BIN=$(BIN_DIR)/jsonnet
 JSONNETFMT_BIN=$(BIN_DIR)/jsonnetfmt
 GOLANGCI_LINT_BIN=$(BIN_DIR)/golangci-lint
-GOLANGCI_LINT_VERSION=v2.11.3
+GOLANGCI_LINT_VERSION=v2.12.2
 PROMTOOL_BIN=$(BIN_DIR)/promtool
 DOCGEN_BIN=$(BIN_DIR)/docgen
 MISSPELL_BIN=$(BIN_DIR)/misspell
@@ -226,7 +226,7 @@ golangci-lint-fix: $(GOLANGCI_LINT_BIN)
 	$(GOLANGCI_LINT_BIN) run --verbose --print-resources-usage --fix
 
 $(GOLANGCI_LINT_BIN): $(BIN_DIR)
-	curl -sfL https://raw.githubusercontent.com/golangci/golangci-lint/master/install.sh| sh -s -- -b $(BIN_DIR) $(GOLANGCI_LINT_VERSION)
+	curl -sfL https://golangci-lint.run/install.sh | sh -s -- -b $(BIN_DIR) $(GOLANGCI_LINT_VERSION)
 
 .PHONY:
 misspell: $(MISSPELL_BIN)
