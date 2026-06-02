@@ -157,7 +157,7 @@ func (t *AlertmanagerUserWorkloadTask) create(ctx context.Context) error {
 		return fmt.Errorf("reconciling Alertmanager User Workload ServiceAccount failed: %w", err)
 	}
 
-	err = t.client.WaitForClusterRoleBindingSCCUse(ctx, crb)
+	err = t.client.WaitForClusterRoleBindingSCCUse(ctx, cr, crb)
 	if err != nil {
 		return fmt.Errorf("waiting for role binding permissions failed: %w", err)
 	}

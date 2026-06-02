@@ -2371,7 +2371,7 @@ func TestWaitForClusterRoleBindingSCCUse(t *testing.T) {
 		})
 
 		c := Client{kclient: kclient}
-		require.NoError(t, c.WaitForClusterRoleBindingSCCUse(ctx, crb))
+		require.NoError(t, c.WaitForClusterRoleBindingSCCUse(ctx, cr, crb))
 	})
 
 	t.Run("denied then allowed", func(t *testing.T) {
@@ -2389,28 +2389,29 @@ func TestWaitForClusterRoleBindingSCCUse(t *testing.T) {
 		})
 
 		c := Client{kclient: kclient}
-		require.NoError(t, c.WaitForClusterRoleBindingSCCUse(ctx, crb))
+		require.NoError(t, c.WaitForClusterRoleBindingSCCUse(ctx, cr, crb))
 		require.Greater(t, calls, 1)
 	})
 
 	t.Run("no scc rules", func(t *testing.T) {
-		kclient := fake.NewClientset(&rbacv1.ClusterRole{
+		noSCCRole := &rbacv1.ClusterRole{
 			ObjectMeta: metav1.ObjectMeta{Name: "no-scc"},
 			Rules: []rbacv1.PolicyRule{{
 				APIGroups: []string{""},
 				Resources: []string{"pods"},
 				Verbs:     []string{"get"},
 			}},
-		})
-
-		c := Client{kclient: kclient}
-		require.NoError(t, c.WaitForClusterRoleBindingSCCUse(ctx, &rbacv1.ClusterRoleBinding{
+		}
+		noSCCBinding := &rbacv1.ClusterRoleBinding{
 			ObjectMeta: metav1.ObjectMeta{Name: "no-scc"},
 			RoleRef: rbacv1.RoleRef{
 				APIGroup: "rbac.authorization.k8s.io",
 				Kind:     "ClusterRole",
 				Name:     "no-scc",
 			},
-		}))
+		}
+
+		c := Client{kclient: fake.NewClientset()}
+		require.NoError(t, c.WaitForClusterRoleBindingSCCUse(ctx, noSCCRole, noSCCBinding))
 	})
 }
