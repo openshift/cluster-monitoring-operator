@@ -19,8 +19,8 @@ tests:
       # Access Prometheus endpoints from within the cluster.
       curl -k -H "Authorization: Bearer $TOKEN" "https://prometheus-k8s.openshift-monitoring:9091/api/v1/query?query=up"
     tearDown: |
-      oc delete rolebinding test-prometheus-web-cluster-monitoring-view --namespace=openshift-monitoring
-      oc delete namespace test-prometheus-web-cluster-monitoring-view --wait=false
+      oc delete rolebinding test-prometheus-web-cluster-monitoring-view --ignore-not-found=true --namespace=openshift-monitoring
+      oc delete namespace test-prometheus-web-cluster-monitoring-view --ignore-not-found=true --wait=false
   - script: |
       ## The following example exercises permissions granted by the `cluster-monitoring-metrics-api` role.
       ## The binding commands must be run by a user with the necessary privileges.
@@ -41,5 +41,5 @@ tests:
       # Access Prometheus endpoints from within the cluster.
       curl -k -H "Authorization: Bearer $TOKEN" "https://prometheus-k8s.openshift-monitoring:9091/api/v1/query?query=up"
     tearDown: |
-      oc delete rolebinding test-prometheus-web-cluster-monitoring-metrics-api --namespace=openshift-monitoring
-      oc delete namespace test-prometheus-web-cluster-monitoring-metrics-api --wait=false
+      oc delete rolebinding test-prometheus-web-cluster-monitoring-metrics-api --ignore-not-found=true --namespace=openshift-monitoring
+      oc delete namespace test-prometheus-web-cluster-monitoring-metrics-api --ignore-not-found=true --wait=false
