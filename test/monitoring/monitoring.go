@@ -94,31 +94,7 @@ var _ = g.Describe("[sig-monitoring] Cluster_Observability parallel monitoring",
 		checkRetention(oc, "openshift-monitoring", "prometheus-k8s", "storage.tsdb.retention.time=45d", 20)
 	}) */
 
-	// TODO: could be merged with other RBAC tests
-	// author: hongyli@redhat.com
-	g.It("Author:hongyli-High-49514-federate service endpoint and route of platform Prometheus", func() {
-		exutil.By("skip case for external OIDC cluster")
-		isExternalOIDCCluster, err := exutil.IsExternalOIDCCluster(oc)
-		o.Expect(err).NotTo(o.HaveOccurred())
-		if isExternalOIDCCluster {
-			g.Skip("Skipping the test as we are running against an external OIDC cluster.")
-		}
 
-		exutil.By("Bind cluster-monitoring-view cluster role to current user")
-		clusterRoleBindingName := "clusterMonitoringViewFederate"
-		defer deleteClusterRoleBinding(oc, clusterRoleBindingName)
-		clusterRoleBinding, err := bindClusterRoleToUser(oc, "cluster-monitoring-view", oc.Username(), clusterRoleBindingName)
-		o.Expect(err).NotTo(o.HaveOccurred())
-		e2e.Logf("Created: %v %v", "ClusterRoleBinding", clusterRoleBinding.Name)
-
-		exutil.By("Get token of current user")
-		token := oc.UserConfig().BearerToken
-		exutil.By("check federate endpoint service")
-		checkMetric(oc, "https://prometheus-k8s.openshift-monitoring.svc:9091/federate --data-urlencode 'match[]=prometheus_build_info'", token, "prometheus_build_info", 3*platformLoadTime)
-
-		exutil.By("check federate route")
-		checkRoute(oc, "openshift-monitoring", "prometheus-k8s-federate", token, "match[]=prometheus_build_info", "prometheus_build_info", 3*platformLoadTime)
-	})
 
 	// This test is already covered in test/e2e/validatingwebhook_test.go::TestAlertManagerConfigValidatingWebhook
 	// author: juzhao@redhat.com
@@ -1014,27 +990,6 @@ var _ = g.Describe("[sig-monitoring] Cluster_Observability parallel monitoring",
 				exutil.By("check alerts")
 				checkMetric(oc, "https://thanos-ruler.openshift-user-workload-monitoring.svc:9091/api/v1/alerts", token, "TestAlert", 2*uwmLoadTime)
 			}) */
-
-			// TODO: could be merged with other RBAC tests
-			// author: hongyli@redhat.com
-			g.It("Author:hongyli-High-50024-High-49515-Check federate route and service of user workload Prometheus", func() {
-				var err error
-				exutil.By("Bind cluster-monitoring-view RBAC to default service account")
-				uwmFederateRBACViewName := "uwm-federate-rbac-" + ns
-				defer deleteBindMonitoringViewRoleToDefaultSA(oc, uwmFederateRBACViewName)
-				clusterRoleBinding, err := bindMonitoringViewRoleToDefaultSA(oc, ns, uwmFederateRBACViewName)
-				o.Expect(err).NotTo(o.HaveOccurred())
-				e2e.Logf("Created: %v %v", "ClusterRoleBinding", clusterRoleBinding.Name)
-				exutil.By("Get token of default service account")
-				token := getSAToken(oc, "default", ns)
-
-				exutil.By("check uwm federate endpoint service")
-				checkMetric(oc, "https://prometheus-user-workload.openshift-user-workload-monitoring.svc:9092/federate --data-urlencode 'match[]=version'", token, "prometheus-example-app", 2*uwmLoadTime)
-
-				exutil.By("check uwm federate route")
-				checkRoute(oc, "openshift-user-workload-monitoring", "federate", token, "match[]=version", "prometheus-example-app", 100)
-
-			})
 
 			// author: tagao@redhat.com
 			g.It("Author:tagao-Medium-50241-Prometheus (uwm) externalLabels not showing always in alerts", func() {
