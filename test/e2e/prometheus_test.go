@@ -48,9 +48,11 @@ func TestPrometheusMetrics(t *testing.T) {
 	for service, metric := range expected {
 		t.Run(service, func(t *testing.T) {
 			f.ThanosQuerierClient.WaitForQueryReturn(
-				// To avoid making the test wait for more than lookback-delta in case Prometheus
-				// wasn't able to write stale markers (because it was down), reduce the lookup period.
-				t, time.Minute, fmt.Sprintf(`count(last_over_time(up{service="%s",namespace="openshift-monitoring"}[1m]) == 1)`, service),
+				// To avoid making the test wait for more than lookback-delta
+				// in case Prometheus wasn't able to write stale markers
+				// (because it was down), reduce the lookup period but not
+				// lower than the highest scrape interval (which is 2m).
+				t, time.Minute, fmt.Sprintf(`count(last_over_time(up{service="%s",namespace="openshift-monitoring"}[2m30s]) == 1)`, service),
 				func(v float64) error {
 					if v != float64(metric) {
 						return fmt.Errorf("expected %d targets to be up but got %v", metric, v)
