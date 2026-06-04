@@ -46,6 +46,7 @@ local acceleratorsConfigData = [
       { pciID: '0x25b0', modelName: 'NVIDIA RTX A1000' },
       { pciID: '0x2bb5', modelName: 'Blackwell RTX PRO 6000' },
       { pciID: '0x2941', modelName: 'Blackwell GB100' },
+      { pciID: '0x2335', modelName: 'NVIDIA H200' },
     ],
   },
   {
