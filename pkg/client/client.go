@@ -1642,8 +1642,10 @@ func (c *Client) WaitForClusterRoleBindingSCCUse(ctx context.Context, cr *rbacv1
 		namespace string
 		name      string
 		sccName   string
+		ok        bool
 	}
 
+	// Generate bucket of SCC objects to check, skip all non ServiceAccountKind
 	var checks []sccUseCheck
 	for _, subject := range crb.Subjects {
 		if subject.Kind != rbacv1.ServiceAccountKind {
@@ -1662,64 +1664,62 @@ func (c *Client) WaitForClusterRoleBindingSCCUse(ctx context.Context, cr *rbacv1
 		return nil
 	}
 
+	// Helper function to execute check, currently only needed by WaitForClusterRoleBindingSCCUse
+	subjectAccessReviewSCCAllowed := func(ctx context.Context, user, sccName string) (bool, string, error) {
+		sar, err := c.kclient.AuthorizationV1().SubjectAccessReviews().Create(ctx, &authzv1.SubjectAccessReview{
+			Spec: authzv1.SubjectAccessReviewSpec{
+				User: user,
+				ResourceAttributes: &authzv1.ResourceAttributes{
+					Group:    secv1.GroupName,
+					Resource: "securitycontextconstraints",
+					Name:     sccName,
+					Verb:     "use",
+				},
+			},
+		}, metav1.CreateOptions{})
+		if err != nil {
+			return false, "", err
+		}
+
+		return sar.Status.Allowed, sar.Status.Reason, nil
+	}
+
 	pending := append([]sccUseCheck(nil), checks...)
 	var lastErr error
 	if err := Poll(ctx, func(ctx context.Context) (bool, error) {
-		// avoid creating access reviews on already successful runs
-		var stillPending []sccUseCheck
-		for _, check := range pending {
-			allowed, reason, err := c.subjectAccessReviewSCCAllowed(ctx, check.namespace, check.name, check.sccName)
-			if err != nil {
-				lastErr = err
-				klog.V(4).ErrorS(err, "WaitForClusterRoleBindingSCCUse: failed to create SubjectAccessReview")
-				stillPending = append(stillPending, check)
-				continue
-			}
-			if allowed {
+		successfullyCheckedAll := true
+		for i, check := range pending {
+			// skip successful runs
+			if pending[i].ok {
 				continue
 			}
 
 			user := fmt.Sprintf("system:serviceaccount:%s:%s", check.namespace, check.name)
-			if reason != "" {
-				lastErr = fmt.Errorf("%s cannot use SCC %q: %s", user, check.sccName, reason)
-			} else {
-				lastErr = fmt.Errorf("%s cannot use SCC %q", user, check.sccName)
+			allowed, reason, err := subjectAccessReviewSCCAllowed(ctx, user, check.sccName)
+			if err != nil {
+				lastErr = fmt.Errorf("failed to check access for service account %s/%s and SCC %s: %w", check.namespace, check.name, check.sccName, err)
+				klog.V(4).ErrorS(err, "WaitForClusterRoleBindingSCCUse: failed to create SubjectAccessReview")
+				successfullyCheckedAll = false
+				continue
 			}
-			stillPending = append(stillPending, check)
+			if allowed {
+				pending[i].ok = true
+				continue
+			}
+
+			successfullyCheckedAll = false
+			if reason == "" {
+				reason = "no reason"
+			}
+			lastErr = fmt.Errorf("%s cannot use SCC %q: %s", user, check.sccName, reason)
 		}
 
-		pending = stillPending
-		if len(pending) == 0 {
-			return true, nil
-		}
-
-		return false, nil
+		return successfullyCheckedAll, nil
 	}, WithPollInterval(time.Second), WithPollTimeout(30*time.Second), WithLastError(&lastErr)); err != nil {
 		return fmt.Errorf("waiting for ClusterRoleBinding %q SCC permissions: %w", crb.Name, err)
 	}
 
 	return nil
-}
-
-func (c *Client) subjectAccessReviewSCCAllowed(ctx context.Context, namespace, name, sccName string) (bool, string, error) {
-	user := fmt.Sprintf("system:serviceaccount:%s:%s", namespace, name)
-
-	sar, err := c.kclient.AuthorizationV1().SubjectAccessReviews().Create(ctx, &authzv1.SubjectAccessReview{
-		Spec: authzv1.SubjectAccessReviewSpec{
-			User: user,
-			ResourceAttributes: &authzv1.ResourceAttributes{
-				Group:    secv1.GroupName,
-				Resource: "securitycontextconstraints",
-				Name:     sccName,
-				Verb:     "use",
-			},
-		},
-	}, metav1.CreateOptions{})
-	if err != nil {
-		return false, "", err
-	}
-
-	return sar.Status.Allowed, sar.Status.Reason, nil
 }
 
 func (c *Client) CreateOrUpdateServiceAccount(ctx context.Context, sa *v1.ServiceAccount) error {
