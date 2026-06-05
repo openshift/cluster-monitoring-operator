@@ -482,6 +482,24 @@ local patchedRules = [
       },
     ],
   },
+  {
+    // OCPBUGS-86352: exclude ReplicationController from the catch-all pod_owner rule
+    // to prevent duplicate namespace_workload_pod:kube_pod_owner:relabel series when
+    // a DeploymentConfig (which creates a ReplicationController) is used. Our custom
+    // deploymentconfig rule already handles this owner_kind.
+    name: 'k8s.rules.pod_owner',
+    rules: [
+      {
+        record: 'namespace_workload_pod:kube_pod_owner:relabel',
+        expr: function(expr)
+          std.strReplace(
+            expr,
+            'owner_kind!="ReplicaSet", owner_kind!="DaemonSet", owner_kind!="StatefulSet", owner_kind!="Job", owner_kind!="Node", owner_kind!=""',
+            'owner_kind!~"ReplicaSet|ReplicationController|DaemonSet|StatefulSet|Job|Node|"',
+          ),
+      },
+    ],
+  },
 ];
 
 local openShiftRunbook(runbook) =
