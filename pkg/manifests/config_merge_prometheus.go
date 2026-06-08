@@ -73,7 +73,7 @@ func clusterMonitoringPrometheusSpecEmpty(pc configv1alpha1.PrometheusConfig) bo
 }
 
 func retentionCRDEmpty(r configv1alpha1.Retention) bool {
-	return r.DurationInDays == 0 && r.SizeInGiB == 0
+	return r.Duration == "" && r.Size == ""
 }
 
 func collectionProfileCRDToManifest(cp configv1alpha1.CollectionProfile) CollectionProfile {
@@ -452,11 +452,11 @@ func (c *Config) mergePrometheusK8sConfiguration(pc configv1alpha1.PrometheusCon
 	if cp := collectionProfileCRDToManifest(pc.CollectionProfile); cp != "" {
 		cfg.CollectionProfile = cp
 	}
-	if pc.Retention.DurationInDays > 0 {
-		cfg.Retention = fmt.Sprintf("%dd", pc.Retention.DurationInDays)
+	if pc.Retention.Duration != "" {
+		cfg.Retention = pc.Retention.Duration
 	}
-	if pc.Retention.SizeInGiB > 0 {
-		cfg.RetentionSize = fmt.Sprintf("%dGiB", pc.Retention.SizeInGiB)
+	if pc.Retention.Size != "" {
+		cfg.RetentionSize = pc.Retention.Size
 	}
 	if pc.VolumeClaimTemplate != nil {
 		cfg.VolumeClaimTemplate = persistentVolumeClaimToEmbedded(pc.VolumeClaimTemplate)
