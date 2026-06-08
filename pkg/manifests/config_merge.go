@@ -43,6 +43,7 @@ func (c *Config) mergeClusterMonitoringCRD(clusterMonitoring *configv1alpha1.Clu
 	c.mergeMonitoringPluginConfiguration(clusterMonitoring.Spec.MonitoringPluginConfig)
 	c.mergeTelemeterClientConfiguration(clusterMonitoring.Spec.TelemeterClientConfig)
 	c.mergeThanosQuerierConfiguration(clusterMonitoring.Spec.ThanosQuerierConfig)
+	c.mergeOpenShiftStateMetricsConfiguration(clusterMonitoring.Spec.OpenShiftStateMetricsConfig)
 }
 
 // clusterMonitoringMetricsServerSpecEmpty reports whether the CR's
@@ -158,6 +159,24 @@ func clusterMonitoringThanosQuerierSpecEmpty(tqc configv1alpha1.ThanosQuerierCon
 		return false
 	}
 	if len(tqc.TopologySpreadConstraints) > 0 {
+		return false
+	}
+	return true
+}
+
+// clusterMonitoringOpenShiftStateMetricsSpecEmpty reports whether the CR's
+// openShiftStateMetricsConfig stanza contains no user-set field.
+func clusterMonitoringOpenShiftStateMetricsSpecEmpty(osmc configv1alpha1.OpenShiftStateMetricsConfig) bool {
+	if len(osmc.NodeSelector) > 0 {
+		return false
+	}
+	if len(osmc.Tolerations) > 0 {
+		return false
+	}
+	if len(osmc.Resources) > 0 {
+		return false
+	}
+	if len(osmc.TopologySpreadConstraints) > 0 {
 		return false
 	}
 	return true
@@ -337,6 +356,23 @@ func (c *Config) mergeThanosQuerierConfiguration(tqc configv1alpha1.ThanosQuerie
 	cfg.TopologySpreadConstraints = tqc.TopologySpreadConstraints
 
 	c.ClusterMonitoringConfiguration.ThanosQuerierConfig = cfg
+}
+
+func (c *Config) mergeOpenShiftStateMetricsConfiguration(osmc configv1alpha1.OpenShiftStateMetricsConfig) {
+	if c.ClusterMonitoringConfiguration.OpenShiftMetricsConfig != nil {
+		return
+	}
+	if clusterMonitoringOpenShiftStateMetricsSpecEmpty(osmc) {
+		return
+	}
+
+	cfg := &OpenShiftStateMetricsConfig{}
+	cfg.NodeSelector = osmc.NodeSelector
+	cfg.Tolerations = osmc.Tolerations
+	cfg.Resources = containerResourcesFromCRD(osmc.Resources)
+	cfg.TopologySpreadConstraints = osmc.TopologySpreadConstraints
+
+	c.ClusterMonitoringConfiguration.OpenShiftMetricsConfig = cfg
 }
 
 func (c *Config) mergeAlertmanagerConfiguration(ac configv1alpha1.AlertmanagerConfig) {

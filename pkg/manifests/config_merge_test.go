@@ -471,6 +471,76 @@ func TestConfig_MergeClusterMonitoringCRD_ThanosQuerierConfigPhase1(t *testing.T
 	})
 }
 
+func TestClusterMonitoringOpenShiftStateMetricsSpecEmpty(t *testing.T) {
+	require.True(t, clusterMonitoringOpenShiftStateMetricsSpecEmpty(configv1alpha1.OpenShiftStateMetricsConfig{}))
+	require.False(t, clusterMonitoringOpenShiftStateMetricsSpecEmpty(configv1alpha1.OpenShiftStateMetricsConfig{
+		NodeSelector: map[string]string{"k": "v"},
+	}))
+	require.False(t, clusterMonitoringOpenShiftStateMetricsSpecEmpty(configv1alpha1.OpenShiftStateMetricsConfig{
+		Resources: []configv1alpha1.ContainerResource{
+			{Name: "cpu", Request: resource.MustParse("10m")},
+		},
+	}))
+	require.False(t, clusterMonitoringOpenShiftStateMetricsSpecEmpty(configv1alpha1.OpenShiftStateMetricsConfig{
+		Tolerations: []v1.Toleration{
+			{Key: "key", Operator: v1.TolerationOpEqual, Value: "val"},
+		},
+	}))
+	require.False(t, clusterMonitoringOpenShiftStateMetricsSpecEmpty(configv1alpha1.OpenShiftStateMetricsConfig{
+		TopologySpreadConstraints: []v1.TopologySpreadConstraint{
+			{MaxSkew: 1, TopologyKey: "kubernetes.io/hostname"},
+		},
+	}))
+}
+
+func TestConfig_MergeClusterMonitoringCRD_OpenShiftStateMetricsConfigPhase1(t *testing.T) {
+	t.Run("CR applies when ConfigMap left OpenShiftMetricsConfig nil", func(t *testing.T) {
+		cm := &configv1alpha1.ClusterMonitoring{
+			Spec: configv1alpha1.ClusterMonitoringSpec{
+				OpenShiftStateMetricsConfig: configv1alpha1.OpenShiftStateMetricsConfig{
+					NodeSelector: map[string]string{"role": "infra"},
+				},
+			},
+		}
+		c, err := NewConfigFromStringAndClusterMonitoringResource("{}", cm)
+		require.NoError(t, err)
+		require.NotNil(t, c.ClusterMonitoringConfiguration.OpenShiftMetricsConfig)
+		require.Equal(t, map[string]string{"role": "infra"}, c.ClusterMonitoringConfiguration.OpenShiftMetricsConfig.NodeSelector)
+	})
+	t.Run("CR ignored when ConfigMap already set OpenShiftMetricsConfig", func(t *testing.T) {
+		cm := &configv1alpha1.ClusterMonitoring{
+			Spec: configv1alpha1.ClusterMonitoringSpec{
+				OpenShiftStateMetricsConfig: configv1alpha1.OpenShiftStateMetricsConfig{
+					NodeSelector: map[string]string{"from": "crd"},
+				},
+			},
+		}
+		c, err := NewConfigFromStringAndClusterMonitoringResource("{openshiftStateMetrics: {nodeSelector: {from: configmap}}}", cm)
+		require.NoError(t, err)
+		require.Equal(t, map[string]string{"from": "configmap"}, c.ClusterMonitoringConfiguration.OpenShiftMetricsConfig.NodeSelector)
+	})
+	t.Run("CR maps ContainerResource to Resources", func(t *testing.T) {
+		cm := &configv1alpha1.ClusterMonitoring{
+			Spec: configv1alpha1.ClusterMonitoringSpec{
+				OpenShiftStateMetricsConfig: configv1alpha1.OpenShiftStateMetricsConfig{
+					Resources: []configv1alpha1.ContainerResource{
+						{
+							Name:    "cpu",
+							Request: resource.MustParse("100m"),
+							Limit:   resource.MustParse("200m"),
+						},
+					},
+				},
+			},
+		}
+		c, err := NewConfigFromStringAndClusterMonitoringResource("{}", cm)
+		require.NoError(t, err)
+		require.NotNil(t, c.ClusterMonitoringConfiguration.OpenShiftMetricsConfig.Resources)
+		require.Equal(t, resource.MustParse("100m"), c.ClusterMonitoringConfiguration.OpenShiftMetricsConfig.Resources.Requests[v1.ResourceCPU])
+		require.Equal(t, resource.MustParse("200m"), c.ClusterMonitoringConfiguration.OpenShiftMetricsConfig.Resources.Limits[v1.ResourceCPU])
+	})
+}
+
 func TestConfig_MergeClusterMonitoringCRD_AlertmanagerMainConfigPhase1(t *testing.T) {
 	t.Run("CR applies when ConfigMap left AlertmanagerMainConfig nil", func(t *testing.T) {
 		cm := &configv1alpha1.ClusterMonitoring{
