@@ -210,7 +210,7 @@ func TestClusterMonitoringPrometheusSpecEmpty(t *testing.T) {
 		NodeSelector: map[string]string{"k": "v"},
 	}))
 	require.False(t, clusterMonitoringPrometheusSpecEmpty(configv1alpha1.PrometheusConfig{
-		Retention: configv1alpha1.Retention{DurationInDays: 30},
+		Retention: configv1alpha1.Retention{Duration: "30d"},
 	}))
 	require.False(t, clusterMonitoringPrometheusSpecEmpty(configv1alpha1.PrometheusConfig{
 		CollectionProfile: configv1alpha1.CollectionProfileMinimal,
@@ -805,7 +805,7 @@ func TestConfig_MergeClusterMonitoringCRD_PrometheusK8sConfigPhase1(t *testing.T
 				PrometheusConfig: configv1alpha1.PrometheusConfig{
 					LogLevel:          configv1alpha1.LogLevelDebug,
 					CollectionProfile: configv1alpha1.CollectionProfileMinimal,
-					Retention:         configv1alpha1.Retention{DurationInDays: 30},
+					Retention:         configv1alpha1.Retention{Duration: "30d"},
 				},
 			},
 		}
@@ -863,5 +863,21 @@ func TestConfig_MergeClusterMonitoringCRD_PrometheusK8sConfigPhase1(t *testing.T
 		require.NoError(t, err)
 		require.Equal(t, "4194304", c.ClusterMonitoringConfiguration.PrometheusK8sConfig.EnforcedBodySizeLimit)
 		require.Equal(t, ExternalLabels{"region": "us-east"}, c.ClusterMonitoringConfiguration.PrometheusK8sConfig.ExternalLabels)
+	})
+	t.Run("CR maps Prometheus retention strings through without conversion", func(t *testing.T) {
+		cm := &configv1alpha1.ClusterMonitoring{
+			Spec: configv1alpha1.ClusterMonitoringSpec{
+				PrometheusConfig: configv1alpha1.PrometheusConfig{
+					Retention: configv1alpha1.Retention{
+						Duration: "15h",
+						Size:     "500MiB",
+					},
+				},
+			},
+		}
+		c, err := NewConfigFromStringAndClusterMonitoringResource("{}", cm)
+		require.NoError(t, err)
+		require.Equal(t, "15h", c.ClusterMonitoringConfiguration.PrometheusK8sConfig.Retention)
+		require.Equal(t, "500MiB", c.ClusterMonitoringConfiguration.PrometheusK8sConfig.RetentionSize)
 	})
 }
