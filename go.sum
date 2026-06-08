@@ -280,6 +280,8 @@ github.com/kylelemons/godebug v1.1.0 h1:RPNrshWIDI6G2gRW9EHilWtl7Z6Sb1BR0xunSBf0
 github.com/kylelemons/godebug v1.1.0/go.mod h1:9/0rRGxNHcop5bhtWyNeEfOS8JIWk580+fNqagV/RAw=
 github.com/linode/linodego v1.59.0 h1:kYz6sQH9g0u21gbI1UUFjZmFLirtc39JPybygrW76Q0=
 github.com/linode/linodego v1.59.0/go.mod h1:1+Bt0oTz5rBnDOJbGhccxn7LYVytXTIIfAy7QYmijDs=
+github.com/marioferh/api v0.0.0-20260604172124-b4b461bd0629 h1:LXc7XMcivVUee7IvqJZR6CQPglfO+GIsn6iXHHHAb6U=
+github.com/marioferh/api v0.0.0-20260604172124-b4b461bd0629/go.mod h1:pyVjK0nZ4sRs4fuQVQ4rubsJdahI1PB94LnQ8sGdvxo=
 github.com/mattn/go-colorable v0.1.13 h1:fFA4WZxdEF4tXPZVKMLwD8oUnCTTo08duU7wxecdEvA=
 github.com/mattn/go-colorable v0.1.13/go.mod h1:7S9/ev0klgBDR4GtXTXX8a3vIGJpMovkB8vQcUbaXHg=
 github.com/mattn/go-isatty v0.0.20 h1:xfD0iDuEKnDkl03q4limB+vH+GxLEtL/jb4xVJSWWEY=
