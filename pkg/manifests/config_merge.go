@@ -16,11 +16,9 @@ package manifests
 
 import (
 	"fmt"
-	"strings"
 
 	configv1alpha1 "github.com/openshift/api/config/v1alpha1"
 	monv1 "github.com/prometheus-operator/prometheus-operator/pkg/apis/monitoring/v1"
-	yamlv3 "gopkg.in/yaml.v3"
 	v1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	auditv1 "k8s.io/apiserver/pkg/apis/audit/v1"
@@ -30,7 +28,7 @@ import (
 // mergeClusterMonitoringCRD merges the ClusterMonitoring CR spec into the ConfigMap-derived
 // config when clusterMonitoring is non-nil. Phase 1 (pre-GA): for each top-level field, if the
 // ConfigMap did not set it, use the CR; otherwise keep the ConfigMap and ignore the CR for that field.
-func (c *Config) mergeClusterMonitoringCRD(clusterMonitoring *configv1alpha1.ClusterMonitoring, clusterMonitoringConfigYAML string) error {
+func (c *Config) mergeClusterMonitoringCRD(clusterMonitoring *configv1alpha1.ClusterMonitoring) error {
 	if clusterMonitoring == nil {
 		return nil
 	}
@@ -53,23 +51,8 @@ func (c *Config) mergeClusterMonitoringCRD(clusterMonitoring *configv1alpha1.Clu
 		return err
 	}
 
-	c.mergeNodeExporterConfiguration(clusterMonitoringConfigYAML, clusterMonitoring.Spec.NodeExporterConfig)
+	c.mergeNodeExporterConfiguration(clusterMonitoring.Spec.NodeExporterConfig)
 	return nil
-}
-
-// configMapYAMLDeclaresNodeExporter reports whether the cluster-monitoring-config body includes a
-// top-level nodeExporter key (including explicit null). Phase 1: if set, the ConfigMap wins for
-// the whole nodeExporter stanza and the ClusterMonitoring CR's nodeExporterConfig is ignored.
-func configMapYAMLDeclaresNodeExporter(cmYAML string) bool {
-	if strings.TrimSpace(cmYAML) == "" {
-		return false
-	}
-	var root map[string]interface{}
-	if err := yamlv3.Unmarshal([]byte(cmYAML), &root); err != nil {
-		return false
-	}
-	_, ok := root["nodeExporter"]
-	return ok
 }
 
 func clusterMonitoringNodeExporterCollectorsEmpty(col configv1alpha1.NodeExporterCollectorConfig) bool {
@@ -184,15 +167,15 @@ func mergeNodeExporterCollectorsFromCRD(dst *NodeExporterCollectorConfig, src co
 	}
 }
 
-func (c *Config) mergeNodeExporterConfiguration(cmYAML string, nec configv1alpha1.NodeExporterConfig) {
-	if configMapYAMLDeclaresNodeExporter(cmYAML) {
+func (c *Config) mergeNodeExporterConfiguration(nec configv1alpha1.NodeExporterConfig) {
+	if c.ClusterMonitoringConfiguration.NodeExporterConfig != nil {
 		return
 	}
 	if clusterMonitoringNodeExporterSpecEmpty(nec) {
 		return
 	}
 
-	ne := &c.ClusterMonitoringConfiguration.NodeExporterConfig
+	ne := defaultNodeExporterConfig()
 	if nec.MaxProcs > 0 {
 		ne.MaxProcs = uint32(nec.MaxProcs)
 	}
@@ -207,6 +190,7 @@ func (c *Config) mergeNodeExporterConfiguration(cmYAML string, nec configv1alpha
 		ne.Resources = res
 	}
 	mergeNodeExporterCollectorsFromCRD(&ne.Collectors, nec.Collectors)
+	c.ClusterMonitoringConfiguration.NodeExporterConfig = ne
 }
 
 // clusterMonitoringMetricsServerSpecEmpty reports whether the CR's

@@ -82,7 +82,7 @@ type ClusterMonitoringConfiguration struct {
 	// `ThanosQuerierConfig` defines settings for the Thanos Querier component.
 	ThanosQuerierConfig *ThanosQuerierConfig `json:"thanosQuerier,omitempty"`
 	// `NodeExporterConfig` defines settings for the `node-exporter` agent.
-	NodeExporterConfig NodeExporterConfig `json:"nodeExporter,omitempty"`
+	NodeExporterConfig *NodeExporterConfig `json:"nodeExporter,omitempty"`
 	// `MonitoringPluginConfig` defines settings for the monitoring `console-plugin`.
 	MonitoringPluginConfig *MonitoringPluginConfig `json:"monitoringPlugin,omitempty"`
 }

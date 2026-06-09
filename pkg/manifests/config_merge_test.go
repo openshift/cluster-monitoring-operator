@@ -201,13 +201,6 @@ func TestClusterMonitoringNodeExporterSpecEmpty(t *testing.T) {
 	}))
 }
 
-func TestConfigMapDeclaresNodeExporter(t *testing.T) {
-	require.False(t, configMapDeclaresNodeExporter(""))
-	require.False(t, configMapDeclaresNodeExporter("{}"))
-	require.True(t, configMapDeclaresNodeExporter("nodeExporter: null"))
-	require.True(t, configMapDeclaresNodeExporter("nodeExporter: {}"))
-}
-
 func TestLogLevelCRDToManifest(t *testing.T) {
 	require.Equal(t, "debug", logLevelCRDToManifest(configv1alpha1.LogLevelDebug))
 	require.Equal(t, "", logLevelCRDToManifest(configv1alpha1.LogLevel("Unknown")))
@@ -522,6 +515,11 @@ func TestConfig_MergeClusterMonitoringCRD_NodeExporterConfigPhase1(t *testing.T)
 	}
 	t.Run("CR applies when ConfigMap omits nodeExporter", func(t *testing.T) {
 		c, err := NewConfigFromStringAndClusterMonitoringResource("{}", softirqsCR(configv1alpha1.NodeExporterCollectorCollectionPolicyCollect))
+		require.NoError(t, err)
+		require.True(t, c.ClusterMonitoringConfiguration.NodeExporterConfig.Collectors.Softirqs.Enabled)
+	})
+	t.Run("CR applies when ConfigMap sets nodeExporter to null", func(t *testing.T) {
+		c, err := NewConfigFromStringAndClusterMonitoringResource("nodeExporter: null", softirqsCR(configv1alpha1.NodeExporterCollectorCollectionPolicyCollect))
 		require.NoError(t, err)
 		require.True(t, c.ClusterMonitoringConfiguration.NodeExporterConfig.Collectors.Softirqs.Enabled)
 	})

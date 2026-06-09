@@ -299,55 +299,61 @@ func NewConfigFromString(content string) (*Config, error) {
 	return NewConfigFromStringAndClusterMonitoringResource(content, nil)
 }
 
-// configMapDeclaresNodeExporter reports whether the cluster-monitoring-config body includes a
-// top-level nodeExporter key (including explicit null).
-func configMapDeclaresNodeExporter(cmYAML string) bool {
-	if strings.TrimSpace(cmYAML) == "" {
-		return false
+// defaultNodeExporterConfig returns the baseline node-exporter configuration.
+func defaultNodeExporterConfig() *NodeExporterConfig {
+	return &NodeExporterConfig{
+		Collectors: NodeExporterCollectorConfig{
+			NetDev: NodeExporterCollectorNetDevConfig{
+				Enabled: true,
+			},
+			NetClass: NodeExporterCollectorNetClassConfig{
+				Enabled:    true,
+				UseNetlink: true,
+			},
+			Systemd: NodeExporterCollectorSystemdConfig{
+				Enabled: false,
+			},
+		},
 	}
-	var root map[string]interface{}
-	if err := UnmarshalStrict([]byte(cmYAML), &root); err != nil {
-		return false
+}
+
+// applyNodeExporterConfigFromConfigMap re-unmarshals the ConfigMap body into a
+// pre-initialized node-exporter config so omitted collector keys keep their
+// enabled-by-default values while explicit settings override them.
+func applyNodeExporterConfigFromConfigMap(ne *NodeExporterConfig, content string) {
+	wrapper := ClusterMonitoringConfiguration{
+		NodeExporterConfig: defaultNodeExporterConfig(),
 	}
-	_, ok := root["nodeExporter"]
-	return ok
+	if err := UnmarshalStrict([]byte(content), &wrapper); err != nil {
+		return
+	}
+	if wrapper.NodeExporterConfig != nil {
+		*ne = *wrapper.NodeExporterConfig
+	}
 }
 
 // NewConfigFromStringAndClusterMonitoringResource returns the Config
 // initialized from the provided string and merged with the ClusterMonitoring
 // resource.
 func NewConfigFromStringAndClusterMonitoringResource(content string, cmr *configv1alpha1.ClusterMonitoring) (*Config, error) {
-	cmc := ClusterMonitoringConfiguration{
-		NodeExporterConfig: NodeExporterConfig{
-			Collectors: NodeExporterCollectorConfig{
-				NetDev: NodeExporterCollectorNetDevConfig{
-					Enabled: true,
-				},
-				NetClass: NodeExporterCollectorNetClassConfig{
-					Enabled:    true,
-					UseNetlink: true,
-				},
-				Systemd: NodeExporterCollectorSystemdConfig{
-					Enabled: false,
-				},
-			},
-		},
-	}
+	cmc := ClusterMonitoringConfiguration{}
 
 	err := UnmarshalStrict([]byte(content), &cmc)
 	if err != nil {
 		return nil, err
 	}
 
+	nodeExporterFromConfigMap := cmc.NodeExporterConfig != nil
+
 	c := &Config{
 		ClusterMonitoringConfiguration: &cmc,
 		UserWorkloadConfiguration:      NewDefaultUserWorkloadMonitoringConfig(),
 	}
-	if err := c.mergeClusterMonitoringCRD(cmr, content); err != nil {
+	if err := c.mergeClusterMonitoringCRD(cmr); err != nil {
 		return nil, fmt.Errorf("merging ClusterMonitoring CR: %w", err)
 	}
 
-	c.applyDefaults()
+	c.applyDefaults(nodeExporterFromConfigMap, content)
 
 	if err := c.validate(); err != nil {
 		return nil, fmt.Errorf("%w: %w", ErrConfigValidation, err)
@@ -450,13 +456,20 @@ func validateAdditionalResourceLabels(ksm *KubeStateMetricsConfig) error {
 	return nil
 }
 
-func (c *Config) applyDefaults() {
+func (c *Config) applyDefaults(nodeExporterFromConfigMap bool, clusterMonitoringConfigContent string) {
 	if c.Images == nil {
 		c.Images = &Images{}
 	}
 
 	if c.ClusterMonitoringConfiguration == nil {
 		c.ClusterMonitoringConfiguration = &ClusterMonitoringConfiguration{}
+	}
+
+	switch {
+	case nodeExporterFromConfigMap:
+		applyNodeExporterConfigFromConfigMap(c.ClusterMonitoringConfiguration.NodeExporterConfig, clusterMonitoringConfigContent)
+	case c.ClusterMonitoringConfiguration.NodeExporterConfig == nil:
+		c.ClusterMonitoringConfiguration.NodeExporterConfig = defaultNodeExporterConfig()
 	}
 
 	if c.ClusterMonitoringConfiguration.UserWorkloadEnabled == nil {
