@@ -564,9 +564,9 @@ data:
     # owners: (@openshift/networking)
     #
     # cluster:ovnkube_clustermanager_cluster_user_defined_networks:max gives the count of
-    # ClusterUserDefinedNetworks objects in the cluster, broken down by role and
-    # topology.
-    - '{__name__="cluster:ovnkube_clustermanager_cluster_user_defined_networks:max",role=~"Primary|Secondary",topology=~"Layer2|Layer3"}'
+    # ClusterUserDefinedNetworks objects in the cluster, broken down by role,
+    # topology, and transport type.
+    - '{__name__="cluster:ovnkube_clustermanager_cluster_user_defined_networks:max",role=~"Primary|Secondary",topology=~"Layer2|Layer3",transport=~"Geneve|NoOverlay|EVPN|Localnet"}'
     #
     # owners: (@openshift/network-edge)
     #
