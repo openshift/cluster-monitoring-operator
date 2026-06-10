@@ -30,7 +30,7 @@ const (
 	// FullCollectionProfile collects all metrics.
 	FullCollectionProfile = "full"
 
-	// MinimalCollectionProfile collects only metrics used by recording/alerting, dashboards and Telemetry.
+	// MinimalCollectionProfile collects metrics used by recording and alerting rules, dashboards and Telemetry.
 	MinimalCollectionProfile = "minimal"
 )
 
