@@ -141,7 +141,7 @@ The `ClusterMonitoringConfiguration` resource defines settings that customize th
 | openshiftStateMetrics | *[OpenShiftStateMetricsConfig](#openshiftstatemetricsconfig) | `OpenShiftMetricsConfig` defines settings for the `openshift-state-metrics` agent. |
 | telemeterClient | *[TelemeterClientConfig](#telemeterclientconfig) | `TelemeterClientConfig` defines settings for the Telemeter Client component. |
 | thanosQuerier | *[ThanosQuerierConfig](#thanosquerierconfig) | `ThanosQuerierConfig` defines settings for the Thanos Querier component. |
-| nodeExporter | [NodeExporterConfig](#nodeexporterconfig) | `NodeExporterConfig` defines settings for the `node-exporter` agent. |
+| nodeExporter | *[NodeExporterConfig](#nodeexporterconfig) | `NodeExporterConfig` defines settings for the `node-exporter` agent. |
 | monitoringPlugin | *[MonitoringPluginConfig](#monitoringpluginconfig) | `MonitoringPluginConfig` defines settings for the monitoring `console-plugin`. |
 
 [Back to TOC](#table-of-contents)
