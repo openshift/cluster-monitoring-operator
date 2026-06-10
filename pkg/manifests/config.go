@@ -329,7 +329,9 @@ func NewConfigFromStringAndClusterMonitoringResource(content string, cmr *config
 		ClusterMonitoringConfiguration: &cmc,
 		UserWorkloadConfiguration:      NewDefaultUserWorkloadMonitoringConfig(),
 	}
-	c.mergeClusterMonitoringCRD(cmr)
+	if err := c.mergeClusterMonitoringCRD(cmr); err != nil {
+		return nil, fmt.Errorf("merging ClusterMonitoring CR: %w", err)
+	}
 
 	c.applyDefaults()
 

@@ -15,6 +15,8 @@
 package manifests
 
 import (
+	"fmt"
+
 	configv1alpha1 "github.com/openshift/api/config/v1alpha1"
 	monv1 "github.com/prometheus-operator/prometheus-operator/pkg/apis/monitoring/v1"
 	v1 "k8s.io/api/core/v1"
@@ -26,9 +28,9 @@ import (
 // mergeClusterMonitoringCRD merges the ClusterMonitoring CR spec into the ConfigMap-derived
 // config when clusterMonitoring is non-nil. Phase 1 (pre-GA): for each top-level field, if the
 // ConfigMap did not set it, use the CR; otherwise keep the ConfigMap and ignore the CR for that field.
-func (c *Config) mergeClusterMonitoringCRD(clusterMonitoring *configv1alpha1.ClusterMonitoring) {
+func (c *Config) mergeClusterMonitoringCRD(clusterMonitoring *configv1alpha1.ClusterMonitoring) error {
 	if clusterMonitoring == nil {
-		return
+		return nil
 	}
 
 	// User workload: use the CR only if the ConfigMap did not set enableUserWorkload.
@@ -44,6 +46,12 @@ func (c *Config) mergeClusterMonitoringCRD(clusterMonitoring *configv1alpha1.Clu
 	c.mergeTelemeterClientConfiguration(clusterMonitoring.Spec.TelemeterClientConfig)
 	c.mergeThanosQuerierConfiguration(clusterMonitoring.Spec.ThanosQuerierConfig)
 	c.mergeOpenShiftStateMetricsConfiguration(clusterMonitoring.Spec.OpenShiftStateMetricsConfig)
+
+	if err := c.mergeKubeStateMetricsConfiguration(clusterMonitoring.Spec.KubeStateMetricsConfig); err != nil {
+		return err
+	}
+
+	return nil
 }
 
 // clusterMonitoringMetricsServerSpecEmpty reports whether the CR's
@@ -177,6 +185,27 @@ func clusterMonitoringOpenShiftStateMetricsSpecEmpty(osmc configv1alpha1.OpenShi
 		return false
 	}
 	if len(osmc.TopologySpreadConstraints) > 0 {
+		return false
+	}
+	return true
+}
+
+// clusterMonitoringKubeStateMetricsSpecEmpty reports whether the CR's
+// kubeStateMetricsConfig stanza contains no user-set field.
+func clusterMonitoringKubeStateMetricsSpecEmpty(ksmc configv1alpha1.KubeStateMetricsConfig) bool {
+	if len(ksmc.NodeSelector) > 0 {
+		return false
+	}
+	if len(ksmc.Tolerations) > 0 {
+		return false
+	}
+	if len(ksmc.Resources) > 0 {
+		return false
+	}
+	if len(ksmc.TopologySpreadConstraints) > 0 {
+		return false
+	}
+	if len(ksmc.AdditionalResourceLabels) > 0 {
 		return false
 	}
 	return true
@@ -373,6 +402,60 @@ func (c *Config) mergeOpenShiftStateMetricsConfiguration(osmc configv1alpha1.Ope
 	cfg.TopologySpreadConstraints = osmc.TopologySpreadConstraints
 
 	c.ClusterMonitoringConfiguration.OpenShiftMetricsConfig = cfg
+}
+
+// kubeStateMetricsResourceNameToInternal maps the CRD PascalCase resource
+// names ("Job", "CronJob") to the lowercase plural form used by the internal
+// KubeStateMetricsConfig / validateAdditionalResourceLabels ("jobs", "cronjobs").
+var kubeStateMetricsResourceNameToInternal = map[configv1alpha1.KubeStateMetricsResourceName]string{
+	configv1alpha1.KubeStateMetricsResourceJob:     "jobs",
+	configv1alpha1.KubeStateMetricsResourceCronJob: "cronjobs",
+}
+
+func additionalResourceLabelsFromCRD(crdLabels []configv1alpha1.KubeStateMetricsResourceLabels) ([]ResourceLabels, error) {
+	if len(crdLabels) == 0 {
+		return nil, nil
+	}
+	out := make([]ResourceLabels, 0, len(crdLabels))
+	for _, rl := range crdLabels {
+		internalName, ok := kubeStateMetricsResourceNameToInternal[rl.Resource]
+		if !ok {
+			return nil, fmt.Errorf("unknown kube-state-metrics resource name %q", rl.Resource)
+		}
+		labels := make([]string, 0, len(rl.Labels))
+		for _, l := range rl.Labels {
+			labels = append(labels, string(l))
+		}
+		out = append(out, ResourceLabels{
+			Resource: internalName,
+			Labels:   labels,
+		})
+	}
+	return out, nil
+}
+
+func (c *Config) mergeKubeStateMetricsConfiguration(ksmc configv1alpha1.KubeStateMetricsConfig) error {
+	if c.ClusterMonitoringConfiguration.KubeStateMetricsConfig != nil {
+		return nil
+	}
+	if clusterMonitoringKubeStateMetricsSpecEmpty(ksmc) {
+		return nil
+	}
+
+	cfg := &KubeStateMetricsConfig{}
+	cfg.NodeSelector = ksmc.NodeSelector
+	cfg.Tolerations = ksmc.Tolerations
+	cfg.Resources = containerResourcesFromCRD(ksmc.Resources)
+	cfg.TopologySpreadConstraints = ksmc.TopologySpreadConstraints
+
+	rl, err := additionalResourceLabelsFromCRD(ksmc.AdditionalResourceLabels)
+	if err != nil {
+		return fmt.Errorf("kubeStateMetrics.additionalResourceLabels: %w", err)
+	}
+	cfg.AdditionalResourceLabels = rl
+
+	c.ClusterMonitoringConfiguration.KubeStateMetricsConfig = cfg
+	return nil
 }
 
 func (c *Config) mergeAlertmanagerConfiguration(ac configv1alpha1.AlertmanagerConfig) {
