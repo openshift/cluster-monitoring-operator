@@ -186,7 +186,7 @@ function(params)
 
     minimalServiceMonitor: generateServiceMonitor.serviceMonitorForMinimalProfile(
       generateServiceMonitor.keepOnlyMetrics(
-        super.serviceMonitor,
+        self.serviceMonitor,
         telemetryMetrics + [
           'node_disk_io_time_seconds_total',
           'node_disk_io_time_weighted_seconds_total',
@@ -233,7 +233,7 @@ function(params)
 
     telemetryServiceMonitor: generateServiceMonitor.serviceMonitorForTelemetryProfile(
       generateServiceMonitor.keepOnlyMetrics(
-        super.serviceMonitor,
+        self.serviceMonitor,
         telemetryMetrics,
       )
     ),
