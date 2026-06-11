@@ -22,7 +22,6 @@ import (
 	"errors"
 	"fmt"
 	"hash/fnv"
-	"net"
 	"net/url"
 	"path/filepath"
 	"regexp"
@@ -2586,14 +2585,6 @@ func (f *Factory) ControlPlaneKubeletServiceMonitors() ([]*monv1.ServiceMonitor,
 		ControlPlaneKubeletMinimalServiceMonitor,
 		ControlPlaneKubeletTelemetryServiceMonitor,
 	)
-}
-
-func IsMissingPortInAddressError(err error) bool {
-	var addrErr *net.AddrError
-	if errors.As(err, &addrErr) {
-		return addrErr.Err == "missing port in address"
-	}
-	return false
 }
 
 func (f *Factory) NewDaemonSet(manifest []byte) (*appsv1.DaemonSet, error) {
