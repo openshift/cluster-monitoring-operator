@@ -772,7 +772,7 @@ spec:
             OR
             label_replace(
               group by (cluster, namespace, pod, owner_name, owner_kind) (
-                kube_pod_owner{job="kube-state-metrics", owner_kind!="ReplicaSet", owner_kind!="DaemonSet", owner_kind!="StatefulSet", owner_kind!="Job", owner_kind!="Node", owner_kind!=""}
+                kube_pod_owner{job="kube-state-metrics", owner_kind!~"ReplicaSet|ReplicationController|DaemonSet|StatefulSet|Job|Node|"}
               )
               , "workload", "$1", "owner_name", "(.+)"
             )
