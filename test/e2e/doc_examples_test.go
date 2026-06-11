@@ -109,7 +109,7 @@ func TestDocExamples(t *testing.T) {
 							Containers: []corev1.Container{
 								{
 									Name:            containerName,
-									Image:           "registry.redhat.io/openshift4/ose-cli:latest",
+									Image:           "image-registry.openshift-image-registry.svc:5000/openshift/cli:latest",
 									ImagePullPolicy: corev1.PullIfNotPresent,
 									Command:         []string{"bash", "-c", test.Script},
 									SecurityContext: &corev1.SecurityContext{
