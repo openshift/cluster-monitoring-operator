@@ -132,12 +132,12 @@ func mergeNodeExporterCollectorsFromCRD(dst *NodeExporterCollectorConfig, src co
 		dst.Ethtool.Enabled = enabled
 	}
 	if enabled, set := nodeExporterCollectorEnabledFromPolicy(src.NetDev.CollectionPolicy); set {
-		dst.NetDev.Enabled = enabled
+		dst.NetDev.Enabled = ptr.To(enabled)
 	}
 	if enabled, set := nodeExporterCollectorEnabledFromPolicy(src.NetClass.CollectionPolicy); set {
-		dst.NetClass.Enabled = enabled
+		dst.NetClass.Enabled = ptr.To(enabled)
 		if enabled && src.NetClass.Collect.StatsGatherer != "" {
-			dst.NetClass.UseNetlink = src.NetClass.Collect.StatsGatherer == configv1alpha1.NodeExporterNetclassStatsGathererNetlink
+			dst.NetClass.UseNetlink = ptr.To(src.NetClass.Collect.StatsGatherer == configv1alpha1.NodeExporterNetclassStatsGathererNetlink)
 		}
 	}
 	if enabled, set := nodeExporterCollectorEnabledFromPolicy(src.BuddyInfo.CollectionPolicy); set {

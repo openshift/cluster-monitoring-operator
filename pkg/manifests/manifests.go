@@ -926,8 +926,8 @@ func (f *Factory) updateNodeExporterArgs(args []string) ([]string, error) {
 	}
 
 	var excludedDevices string
-	if f.config.ClusterMonitoringConfiguration.NodeExporterConfig.Collectors.NetDev.Enabled ||
-		f.config.ClusterMonitoringConfiguration.NodeExporterConfig.Collectors.NetClass.Enabled ||
+	if ptr.Deref(f.config.ClusterMonitoringConfiguration.NodeExporterConfig.Collectors.NetDev.Enabled, true) ||
+		ptr.Deref(f.config.ClusterMonitoringConfiguration.NodeExporterConfig.Collectors.NetClass.Enabled, true) ||
 		f.config.ClusterMonitoringConfiguration.NodeExporterConfig.Collectors.Ethtool.Enabled {
 		devs := *f.config.ClusterMonitoringConfiguration.NodeExporterConfig.IgnoredNetworkDevices
 		// An empty list generates a regular expression matching empty strings: `^()$`
@@ -941,16 +941,16 @@ func (f *Factory) updateNodeExporterArgs(args []string) ([]string, error) {
 		}
 	}
 
-	if f.config.ClusterMonitoringConfiguration.NodeExporterConfig.Collectors.NetDev.Enabled {
+	if ptr.Deref(f.config.ClusterMonitoringConfiguration.NodeExporterConfig.Collectors.NetDev.Enabled, true) {
 		args = setArg(args, "--collector.netdev", "")
 		args = setArg(args, "--collector.netdev.device-exclude=", excludedDevices)
 	} else {
 		args = setArg(args, "--no-collector.netdev", "")
 	}
 
-	if f.config.ClusterMonitoringConfiguration.NodeExporterConfig.Collectors.NetClass.Enabled {
+	if ptr.Deref(f.config.ClusterMonitoringConfiguration.NodeExporterConfig.Collectors.NetClass.Enabled, true) {
 		args = setArg(args, "--collector.netclass", "")
-		if f.config.ClusterMonitoringConfiguration.NodeExporterConfig.Collectors.NetClass.UseNetlink {
+		if ptr.Deref(f.config.ClusterMonitoringConfiguration.NodeExporterConfig.Collectors.NetClass.UseNetlink, true) {
 			args = setArg(args, "--collector.netclass.netlink", "")
 		}
 		args = setArg(args, "--collector.netclass.ignored-devices=", excludedDevices)

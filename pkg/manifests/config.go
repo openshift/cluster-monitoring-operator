@@ -304,31 +304,16 @@ func defaultNodeExporterConfig() *NodeExporterConfig {
 	return &NodeExporterConfig{
 		Collectors: NodeExporterCollectorConfig{
 			NetDev: NodeExporterCollectorNetDevConfig{
-				Enabled: true,
+				Enabled: ptr.To(true),
 			},
 			NetClass: NodeExporterCollectorNetClassConfig{
-				Enabled:    true,
-				UseNetlink: true,
+				Enabled:    ptr.To(true),
+				UseNetlink: ptr.To(true),
 			},
 			Systemd: NodeExporterCollectorSystemdConfig{
 				Enabled: false,
 			},
 		},
-	}
-}
-
-// applyNodeExporterConfigFromConfigMap re-unmarshals the ConfigMap body into a
-// pre-initialized node-exporter config so omitted collector keys keep their
-// enabled-by-default values while explicit settings override them.
-func applyNodeExporterConfigFromConfigMap(ne *NodeExporterConfig, content string) {
-	wrapper := ClusterMonitoringConfiguration{
-		NodeExporterConfig: defaultNodeExporterConfig(),
-	}
-	if err := UnmarshalStrict([]byte(content), &wrapper); err != nil {
-		return
-	}
-	if wrapper.NodeExporterConfig != nil {
-		*ne = *wrapper.NodeExporterConfig
 	}
 }
 
@@ -343,8 +328,6 @@ func NewConfigFromStringAndClusterMonitoringResource(content string, cmr *config
 		return nil, err
 	}
 
-	nodeExporterFromConfigMap := cmc.NodeExporterConfig != nil
-
 	c := &Config{
 		ClusterMonitoringConfiguration: &cmc,
 		UserWorkloadConfiguration:      NewDefaultUserWorkloadMonitoringConfig(),
@@ -353,7 +336,7 @@ func NewConfigFromStringAndClusterMonitoringResource(content string, cmr *config
 		return nil, fmt.Errorf("merging ClusterMonitoring CR: %w", err)
 	}
 
-	c.applyDefaults(nodeExporterFromConfigMap, content)
+	c.applyDefaults()
 
 	if err := c.validate(); err != nil {
 		return nil, fmt.Errorf("%w: %w", ErrConfigValidation, err)
@@ -456,7 +439,7 @@ func validateAdditionalResourceLabels(ksm *KubeStateMetricsConfig) error {
 	return nil
 }
 
-func (c *Config) applyDefaults(nodeExporterFromConfigMap bool, clusterMonitoringConfigContent string) {
+func (c *Config) applyDefaults() {
 	if c.Images == nil {
 		c.Images = &Images{}
 	}
@@ -465,11 +448,19 @@ func (c *Config) applyDefaults(nodeExporterFromConfigMap bool, clusterMonitoring
 		c.ClusterMonitoringConfiguration = &ClusterMonitoringConfiguration{}
 	}
 
-	switch {
-	case nodeExporterFromConfigMap:
-		applyNodeExporterConfigFromConfigMap(c.ClusterMonitoringConfiguration.NodeExporterConfig, clusterMonitoringConfigContent)
-	case c.ClusterMonitoringConfiguration.NodeExporterConfig == nil:
+	if c.ClusterMonitoringConfiguration.NodeExporterConfig == nil {
 		c.ClusterMonitoringConfiguration.NodeExporterConfig = defaultNodeExporterConfig()
+	}
+
+	collectors := &c.ClusterMonitoringConfiguration.NodeExporterConfig.Collectors
+	if collectors.NetDev.Enabled == nil {
+		collectors.NetDev.Enabled = ptr.To(true)
+	}
+	if collectors.NetClass.Enabled == nil {
+		collectors.NetClass.Enabled = ptr.To(true)
+	}
+	if collectors.NetClass.UseNetlink == nil {
+		collectors.NetClass.UseNetlink = ptr.To(true)
 	}
 
 	if c.ClusterMonitoringConfiguration.UserWorkloadEnabled == nil {
