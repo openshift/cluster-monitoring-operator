@@ -44,6 +44,7 @@ import (
 	monitoring "github.com/prometheus-operator/prometheus-operator/pkg/client/versioned"
 	admissionv1 "k8s.io/api/admissionregistration/v1"
 	appsv1 "k8s.io/api/apps/v1"
+	authzv1 "k8s.io/api/authorization/v1"
 	v1 "k8s.io/api/core/v1"
 	networkingv1 "k8s.io/api/networking/v1"
 	policyv1 "k8s.io/api/policy/v1"
@@ -1613,6 +1614,121 @@ func (c *Client) CreateOrUpdateClusterRole(ctx context.Context, cr *rbacv1.Clust
 func (c *Client) CreateOrUpdateClusterRoleBinding(ctx context.Context, crb *rbacv1.ClusterRoleBinding) error {
 	_, _, err := resourceapply.ApplyClusterRoleBinding(ctx, c.kclient.RbacV1(), c.eventRecorder, crb)
 	return err
+}
+
+func (c *Client) WaitForClusterRoleBindingSCCUse(ctx context.Context, cr *rbacv1.ClusterRole, crb *rbacv1.ClusterRoleBinding) error {
+	if cr == nil || crb == nil {
+		return nil
+	}
+	if crb.RoleRef.Kind != "ClusterRole" || crb.RoleRef.Name != cr.Name {
+		return nil
+	}
+
+	// account for wildcard rules
+	matches := func(values []string, target string) bool {
+		return slices.Contains(values, target) || slices.Contains(values, "*")
+	}
+
+	var sccNames []string
+	for _, rule := range cr.Rules {
+		if !matches(rule.Verbs, "use") {
+			continue
+		}
+		if !matches(rule.APIGroups, secv1.GroupName) {
+			continue
+		}
+		if !matches(rule.Resources, "securitycontextconstraints") {
+			continue
+		}
+
+		sccNames = append(sccNames, rule.ResourceNames...)
+	}
+	if len(sccNames) == 0 {
+		return nil
+	}
+
+	type sccUseCheck struct {
+		namespace string
+		name      string
+		sccName   string
+		ok        bool
+	}
+
+	// Generate bucket of SCC objects to check, skip all non ServiceAccountKind
+	var checks []sccUseCheck
+	for _, subject := range crb.Subjects {
+		if subject.Kind != rbacv1.ServiceAccountKind {
+			continue
+		}
+
+		for _, sccName := range sccNames {
+			checks = append(checks, sccUseCheck{
+				namespace: subject.Namespace,
+				name:      subject.Name,
+				sccName:   sccName,
+			})
+		}
+	}
+	if len(checks) == 0 {
+		return nil
+	}
+
+	// Helper function to execute check, currently only needed by WaitForClusterRoleBindingSCCUse
+	subjectAccessReviewSCCAllowed := func(ctx context.Context, user, sccName string) (bool, string, error) {
+		sar, err := c.kclient.AuthorizationV1().SubjectAccessReviews().Create(ctx, &authzv1.SubjectAccessReview{
+			Spec: authzv1.SubjectAccessReviewSpec{
+				User: user,
+				ResourceAttributes: &authzv1.ResourceAttributes{
+					Group:    secv1.GroupName,
+					Resource: "securitycontextconstraints",
+					Name:     sccName,
+					Verb:     "use",
+				},
+			},
+		}, metav1.CreateOptions{})
+		if err != nil {
+			return false, "", err
+		}
+
+		return sar.Status.Allowed, sar.Status.Reason, nil
+	}
+
+	pending := append([]sccUseCheck(nil), checks...)
+	var lastErr error
+	if err := Poll(ctx, func(ctx context.Context) (bool, error) {
+		successfullyCheckedAll := true
+		for i, check := range pending {
+			// skip successful runs
+			if pending[i].ok {
+				continue
+			}
+
+			user := fmt.Sprintf("system:serviceaccount:%s:%s", check.namespace, check.name)
+			allowed, reason, err := subjectAccessReviewSCCAllowed(ctx, user, check.sccName)
+			if err != nil {
+				lastErr = fmt.Errorf("failed to check access for service account %s/%s and SCC %s: %w", check.namespace, check.name, check.sccName, err)
+				klog.V(4).ErrorS(err, "WaitForClusterRoleBindingSCCUse: failed to create SubjectAccessReview")
+				successfullyCheckedAll = false
+				continue
+			}
+			if allowed {
+				pending[i].ok = true
+				continue
+			}
+
+			successfullyCheckedAll = false
+			if reason == "" {
+				reason = "no reason"
+			}
+			lastErr = fmt.Errorf("%s cannot use SCC %q: %s", user, check.sccName, reason)
+		}
+
+		return successfullyCheckedAll, nil
+	}, WithPollInterval(time.Second), WithPollTimeout(30*time.Second), WithLastError(&lastErr)); err != nil {
+		return fmt.Errorf("waiting for ClusterRoleBinding %q SCC permissions: %w", crb.Name, err)
+	}
+
+	return nil
 }
 
 func (c *Client) CreateOrUpdateServiceAccount(ctx context.Context, sa *v1.ServiceAccount) error {
