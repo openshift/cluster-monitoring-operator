@@ -185,3 +185,6 @@ require (
 
 // Some utils are only available in the fork https://github.com/openshift-eng/openshift-tests-extension/blob/8ef37c67e666954f9b95e52320c9c20d6b53d241/go.mod#L37
 replace github.com/onsi/ginkgo/v2 => github.com/openshift/onsi-ginkgo/v2 v2.6.1-0.20241205171354-8006f302fd12
+
+// Temporary: test against openshift/api PR https://github.com/openshift/api/pull/2851
+replace github.com/openshift/api => github.com/marioferh/api v0.0.0-20260604172124-b4b461bd0629

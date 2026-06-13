@@ -46,6 +46,7 @@ func (c *Config) mergeClusterMonitoringCRD(clusterMonitoring *configv1alpha1.Clu
 	c.mergeTelemeterClientConfiguration(clusterMonitoring.Spec.TelemeterClientConfig)
 	c.mergeThanosQuerierConfiguration(clusterMonitoring.Spec.ThanosQuerierConfig)
 	c.mergeOpenShiftStateMetricsConfiguration(clusterMonitoring.Spec.OpenShiftStateMetricsConfig)
+	c.mergePrometheusK8sConfiguration(clusterMonitoring.Spec.PrometheusConfig)
 
 	if err := c.mergeKubeStateMetricsConfiguration(clusterMonitoring.Spec.KubeStateMetricsConfig); err != nil {
 		return err
