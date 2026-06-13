@@ -96,53 +96,7 @@ func TestUserWorkloadMonitoringInvalidConfig(t *testing.T) {
 	f.AssertOperatorConditionMessageFunc(configv1.OperatorUpgradeable, "")(t)
 }
 
-func TestUserWorkloadMonitoringMetrics(t *testing.T) {
-	setupUserWorkloadAssetsWithTeardownHook(t, f)
-
-	f.AssertStatefulSetExistsAndRolloutFunc("prometheus-user-workload", f.UserWorkloadMonitoringNs)(t)
-	if err := deployUserApplication(f); err != nil {
-		t.Fatal(err)
-	}
-
-	for _, scenario := range []struct {
-		name string
-		f    func(*testing.T)
-	}{
-		{
-			name: "assert metrics for user workload components",
-			f:    assertMetricsForMonitoringComponents,
-		},
-		{
-			name: "assert user workload metrics",
-			f:    assertUserWorkloadMetrics,
-		},
-		{
-			name: "assert tenancy model is enforced for metrics",
-			f:    assertTenancyForMetrics,
-		},
-		{
-			name: "assert tenancy model is enforced for series metadata",
-			f:    assertTenancyForSeriesMetadata,
-		},
-		{
-			name: "assert prometheus is not deployed in user namespace",
-			f:    f.AssertStatefulsetDoesNotExistFunc("prometheus-not-to-be-reconciled", userWorkloadTestNs),
-		},
-		{
-			name: "assert alertmanager is not deployed in user namespace",
-			f:    f.AssertStatefulsetDoesNotExistFunc("alertmanager-not-to-be-reconciled", userWorkloadTestNs),
-		},
-
-		{
-			name: "assert UWM federate endpoint is exposed",
-			f:    assertUWMFederateEndpoint,
-		},
-	} {
-		t.Run(scenario.name, scenario.f)
-	}
-}
-
-func TestUserWorkloadMonitoringAlerting(t *testing.T) {
+func TestUserWorkloadMonitoring(t *testing.T) {
 	setupUserWorkloadAssetsWithTeardownHook(t, f)
 
 	uwmCM := f.BuildUserWorkloadConfigMap(t,
@@ -152,48 +106,40 @@ namespacesWithoutLabelEnforcement:
 `, notEnforcedNs),
 	)
 	f.MustCreateOrUpdateConfigMap(t, uwmCM)
-	defer f.MustDeleteConfigMap(t, uwmCM)
+	t.Cleanup(func() {
+		f.MustDeleteConfigMap(t, uwmCM)
+	})
 
 	f.AssertStatefulSetExistsAndRolloutFunc("prometheus-user-workload", f.UserWorkloadMonitoringNs)(t)
 
-	if err := deployUserApplication(f); err != nil {
-		t.Fatal(err)
-	}
+	setupUserApplications(t, f)
+	t.Cleanup(func() {
+		tearDownUserApplications(t, f)
+	})
 
 	if err := deployGlobalRules(f); err != nil {
 		t.Fatalf("failed to deploy global rules: %s", err)
 	}
 
-	if err := createPrometheusAlertmanagerInUserNamespace(f); err != nil {
-		t.Fatalf("failed to create Alertmanager object in user namespace: %s", err)
-	}
-
-	for _, scenario := range []struct {
+	for _, check := range []struct {
 		name string
 		f    func(*testing.T)
 	}{
-		{
-			name: "assert user workload rules",
-			f:    assertUserWorkloadRules,
-		},
-		{
-			name: "assert tenancy model is enforced for rules and alerts",
-			f:    assertTenancyForRulesAndAlerts,
-		},
-		{
-			name: "assert rules without namespace enforcement",
-			f:    assertGlobalRulesWithoutNamespaceEnforcement,
-		},
-		{
-			name: "assert prometheus is not deployed in user namespace",
-			f:    f.AssertStatefulsetDoesNotExistFunc("prometheus-not-to-be-reconciled", userWorkloadTestNs),
-		},
-		{
-			name: "assert alertmanager is not deployed in user namespace",
-			f:    f.AssertStatefulsetDoesNotExistFunc("alertmanager-not-to-be-reconciled", userWorkloadTestNs),
-		},
+		{"assert metrics for user workload components", assertMetricsForMonitoringComponents},
+		{"assert user workload metrics", assertUserWorkloadMetrics},
+		{"assert tenancy model is enforced for metrics", assertTenancyForMetrics},
+		{"assert tenancy model is enforced for series metadata", assertTenancyForSeriesMetadata},
+		{"assert prometheus is not deployed in user namespace", f.AssertStatefulsetDoesNotExistFunc("prometheus-not-to-be-reconciled", userWorkloadTestNs)},
+		{"assert alertmanager is not deployed in user namespace", f.AssertStatefulsetDoesNotExistFunc("alertmanager-not-to-be-reconciled", userWorkloadTestNs)},
+		{"assert UWM federate endpoint is exposed", assertUWMFederateEndpoint},
+		{"assert user workload rules", assertUserWorkloadRules},
+		{"assert tenancy model is enforced for rules and alerts", assertTenancyForRulesAndAlerts},
+		{"assert rules without namespace enforcement", assertGlobalRulesWithoutNamespaceEnforcement},
+		{"assert namespace opt out removes appropriate targets", assertNamespaceOptOut},
+		{"assert grpc tls rotation", assertGRPCTLSRotation},
+		{"assert service monitor opt out removes appropriate targets", assertServiceMonitorOptOut},
 	} {
-		t.Run(scenario.name, scenario.f)
+		t.Run(check.name, check.f)
 	}
 
 	// Disable cross-namespace rules via the CMO config.
@@ -202,38 +148,6 @@ userWorkload:
   rulesWithoutLabelEnforcementAllowed: false
 `))
 	t.Run("assert cross-namespace rules are not allowed from CMO config", assertGlobalRulesWithNamespaceEnforcement)
-}
-
-func TestUserWorkloadMonitoringOptOut(t *testing.T) {
-	setupUserWorkloadAssetsWithTeardownHook(t, f)
-
-	f.AssertStatefulSetExistsAndRolloutFunc("prometheus-user-workload", f.UserWorkloadMonitoringNs)(t)
-	if err := deployUserApplication(f); err != nil {
-		t.Fatal(err)
-	}
-
-	for _, scenario := range []struct {
-		name string
-		f    func(*testing.T)
-	}{
-		{"assert namespace opt out removes appropriate targets", assertNamespaceOptOut},
-		{"assert service monitor opt out removes appropriate targets", assertServiceMonitorOptOut},
-	} {
-		t.Run(scenario.name, scenario.f)
-	}
-}
-
-func TestUserWorkloadMonitoringGrpcSecrets(t *testing.T) {
-	setupUserWorkloadAssetsWithTeardownHook(t, f)
-
-	for _, scenario := range []struct {
-		name string
-		f    func(*testing.T)
-	}{
-		{"assert grpc tls rotation", assertGRPCTLSRotation},
-	} {
-		t.Run(scenario.name, scenario.f)
-	}
 }
 
 func TestUserWorkloadMonitoringWithAdditionalAlertmanagerConfigs(t *testing.T) {
@@ -473,6 +387,7 @@ func assertUserWorkloadMetrics(t *testing.T) {
 	err = framework.Poll(5*time.Second, 5*time.Minute, func() error {
 		body, err := f.AlertmanagerClient.GetAlertmanagerAlerts(
 			"filter", `alertname="VersionAlert"`,
+			"filter", fmt.Sprintf(`namespace="%s"`, userWorkloadTestNs),
 			"active", "true",
 		)
 		if err != nil {
@@ -502,7 +417,7 @@ func assertUserWorkloadMetrics(t *testing.T) {
 	// Assert that recording rule is in thanos querier and we get it
 	// via thanos ruler replica.
 	f.ThanosQuerierClient.WaitForQueryReturn(
-		t, 10*time.Minute, `version:blah:count{thanos_ruler_replica="thanos-ruler-user-workload-0"}`,
+		t, 10*time.Minute, fmt.Sprintf(`version:blah:count{thanos_ruler_replica="thanos-ruler-user-workload-0",namespace="%s"}`, userWorkloadTestNs),
 		func(v float64) error {
 			if v == 1 {
 				return nil
@@ -514,7 +429,7 @@ func assertUserWorkloadMetrics(t *testing.T) {
 	// Assert that recording rule is in thanos querier and we get it
 	// via user workload prometheus.
 	f.ThanosQuerierClient.WaitForQueryReturn(
-		t, 10*time.Minute, `version:blah:leaf:count{prometheus_replica="prometheus-user-workload-0"}`,
+		t, 10*time.Minute, fmt.Sprintf(`version:blah:leaf:count{prometheus_replica="prometheus-user-workload-0",namespace="%s"}`, userWorkloadTestNs),
 		func(v float64) error {
 			if v == 1 {
 				return nil
@@ -637,12 +552,12 @@ func assertTenancyForMetrics(t *testing.T) {
 				}
 			}()
 
-			err = framework.Poll(5*time.Second, time.Minute, func() error {
+			err = framework.Poll(5*time.Second, 5*time.Minute, func() error {
 				// The tenancy port (9092) is only exposed in-cluster, so we need to use
 				// port forwarding to access kube-rbac-proxy.
 				host, cleanUp, err := f.ForwardServicePort(t, f.Ns, "thanos-querier", 9092)
 				if err != nil {
-					t.Fatal(err)
+					return err
 				}
 				defer cleanUp()
 
@@ -705,12 +620,12 @@ func assertTenancyForMetrics(t *testing.T) {
 
 	// Check that the account doesn't have to access the rules and alerts endpoints.
 	for _, path := range []string{"/api/v1/rules", "/api/v1/alerts"} {
-		err = framework.Poll(5*time.Second, time.Minute, func() error {
+		err = framework.Poll(5*time.Second, 5*time.Minute, func() error {
 			// The tenancy port (9092) is only exposed in-cluster, so we need to use
 			// port forwarding to access kube-rbac-proxy.
 			host, cleanUp, err := f.ForwardServicePort(t, f.Ns, "thanos-querier", 9092)
 			if err != nil {
-				t.Fatal(err)
+				return err
 			}
 			defer cleanUp()
 
@@ -821,25 +736,25 @@ func assertTenancyForMetrics(t *testing.T) {
 				}
 			}()
 
-			// Forward the tenancy port.
-			host, cleanUp, err := f.ForwardServicePort(t, f.Ns, "thanos-querier", 9092)
-			if err != nil {
-				t.Fatal(err)
-			}
-			defer cleanUp()
-
-			// Create a Prometheus client with the test SA token.
-			client := framework.NewPrometheusClient(
-				host,
-				token,
-				&framework.QueryParameterInjector{
-					Name:  "namespace",
-					Value: userWorkloadTestNs,
-				},
-			)
-
 			// It might take some time for kube-rbac-proxy to catch up the updated permission.
-			err = framework.Poll(time.Second, time.Minute, func() error {
+			err = framework.Poll(time.Second, 5*time.Minute, func() error {
+				// Forward the tenancy port.
+				host, cleanUp, err := f.ForwardServicePort(t, f.Ns, "thanos-querier", 9092)
+				if err != nil {
+					return err
+				}
+				defer cleanUp()
+
+				// Create a Prometheus client with the test SA token.
+				client := framework.NewPrometheusClient(
+					host,
+					token,
+					&framework.QueryParameterInjector{
+						Name:  "namespace",
+						Value: userWorkloadTestNs,
+					},
+				)
+
 				resp, err := client.Do(tc.method, "/api/v1/query?namespace="+userWorkloadTestNs+"&query=up", nil)
 				if err != nil {
 					return err
@@ -897,24 +812,25 @@ func assertTenancyForRulesAndAlerts(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	// The tenancy port (9093) is only exposed in-cluster, so we need to use
-	// port forwarding to access kube-rbac-proxy.
-	host, cleanUp, err := f.ForwardServicePort(t, f.Ns, "thanos-querier", 9093)
-	if err != nil {
-		t.Fatal(err)
-	}
-	defer cleanUp()
+	var client *framework.PrometheusClient
+	err = framework.Poll(5*time.Second, 5*time.Minute, func() error {
+		// The tenancy port (9093) is only exposed in-cluster, so we need to use
+		// port forwarding to access kube-rbac-proxy.
+		host, cleanUp, err := f.ForwardServicePort(t, f.Ns, "thanos-querier", 9093)
+		if err != nil {
+			return err
+		}
+		t.Cleanup(cleanUp)
 
-	client := framework.NewPrometheusClient(
-		host,
-		token,
-		&framework.QueryParameterInjector{
-			Name:  "namespace",
-			Value: userWorkloadTestNs,
-		},
-	)
+		client = framework.NewPrometheusClient(
+			host,
+			token,
+			&framework.QueryParameterInjector{
+				Name:  "namespace",
+				Value: userWorkloadTestNs,
+			},
+		)
 
-	err = framework.Poll(5*time.Second, time.Minute, func() error {
 		resp, err := client.Do("GET", "/api/v1/rules", nil)
 		if err != nil {
 			return err
@@ -1000,7 +916,7 @@ func assertTenancyForRulesAndAlerts(t *testing.T) {
 		t.Fatalf("failed to query rules from Thanos querier: %v", err)
 	}
 
-	err = framework.Poll(5*time.Second, time.Minute, func() error {
+	err = framework.Poll(5*time.Second, 5*time.Minute, func() error {
 		resp, err := client.Do("GET", "/api/v1/alerts", nil)
 		if err != nil {
 			return err
@@ -1023,7 +939,7 @@ func assertTenancyForRulesAndAlerts(t *testing.T) {
 
 	// Check that the account doesn't have to access the query endpoints.
 	for _, path := range []string{"/api/v1/range?query=up", "/api/v1/query_range?query=up&start=0&end=0&step=1s"} {
-		err = framework.Poll(5*time.Second, time.Minute, func() error {
+		err = framework.Poll(5*time.Second, 5*time.Minute, func() error {
 			resp, err := client.Do("GET", path, nil)
 			if err != nil {
 				return err
@@ -1110,7 +1026,7 @@ func assertUWMFederateEndpoint(t *testing.T) {
 	defer func() { require.NoError(t, rbCleanup()) }()
 
 	var token string
-	err = framework.Poll(5*time.Second, time.Minute, func() error {
+	err = framework.Poll(5*time.Second, 5*time.Minute, func() error {
 		var err error
 		token, err = f.GetServiceAccountToken(userWorkloadTestNs, testAccount)
 		return err
@@ -1118,7 +1034,7 @@ func assertUWMFederateEndpoint(t *testing.T) {
 	require.NoError(t, err)
 
 	// check /federate endpoint for service
-	err = framework.Poll(5*time.Second, time.Minute, func() error {
+	err = framework.Poll(5*time.Second, 5*time.Minute, func() error {
 		host, cleanUp, err := f.ForwardServicePort(t, f.UserWorkloadMonitoringNs, "prometheus-user-workload", 9092)
 		if err != nil {
 			return err
@@ -1156,7 +1072,7 @@ func assertUWMFederateEndpoint(t *testing.T) {
 	require.NoError(t, err)
 
 	// check /federate endpoint for route
-	err = framework.Poll(5*time.Second, time.Minute, func() error {
+	err = framework.Poll(5*time.Second, 5*time.Minute, func() error {
 		r, err := f.OpenShiftRouteClient.Routes(f.UserWorkloadMonitoringNs).Get(ctx, "federate", metav1.GetOptions{})
 		if err != nil {
 			return err
@@ -1222,7 +1138,7 @@ func assertTenancyForSeriesMetadata(t *testing.T) {
 	}
 
 	var token string
-	err = framework.Poll(5*time.Second, time.Minute, func() error {
+	err = framework.Poll(5*time.Second, 5*time.Minute, func() error {
 		token, err = f.GetServiceAccountToken(userWorkloadTestNs, testAccount)
 		return err
 	})
@@ -1231,7 +1147,7 @@ func assertTenancyForSeriesMetadata(t *testing.T) {
 	}
 
 	// check /api/v1/labels endpoint
-	err = framework.Poll(5*time.Second, time.Minute, func() error {
+	err = framework.Poll(5*time.Second, 5*time.Minute, func() error {
 		// The tenancy port (9092) is only exposed in-cluster, so we need to use
 		// port forwarding to access kube-rbac-proxy.
 		host, cleanUp, err := f.ForwardServicePort(t, f.Ns, "thanos-querier", 9092)
@@ -1285,7 +1201,7 @@ func assertTenancyForSeriesMetadata(t *testing.T) {
 	}
 
 	// Check the /api/v1/series endpoint.
-	err = framework.Poll(5*time.Second, time.Minute, func() error {
+	err = framework.Poll(5*time.Second, 5*time.Minute, func() error {
 		// The tenancy port (9092) is only exposed in-cluster, so we need to use
 		// port forwarding to access kube-rbac-proxy.
 		host, cleanUp, err := f.ForwardServicePort(t, f.Ns, "thanos-querier", 9092)
@@ -1339,7 +1255,7 @@ func assertTenancyForSeriesMetadata(t *testing.T) {
 	}
 
 	// Check that /api/v1/label/{namespace}/values returns a single value.
-	err = framework.Poll(5*time.Second, time.Minute, func() error {
+	err = framework.Poll(5*time.Second, 5*time.Minute, func() error {
 		// The tenancy port (9092) is only exposed in-cluster, so we need to use
 		// port forwarding to access kube-rbac-proxy.
 		host, cleanUp, err := f.ForwardServicePort(t, f.Ns, "thanos-querier", 9092)
@@ -1392,7 +1308,7 @@ func assertGRPCTLSRotation(t *testing.T) {
 	countGRPCSecrets := func(ns string) int {
 		t.Helper()
 		var result int
-		err := framework.Poll(5*time.Second, time.Minute, func() error {
+		err := framework.Poll(5*time.Second, 5*time.Minute, func() error {
 			s, err := f.KubeClient.CoreV1().Secrets(ns).List(ctx, metav1.ListOptions{LabelSelector: "monitoring.openshift.io/hash"})
 			if err != nil {
 				return err
@@ -1472,7 +1388,7 @@ func assertGRPCTLSRotation(t *testing.T) {
 func assertNamespaceOptOut(t *testing.T) {
 	ctx := context.Background()
 
-	serviceMonitorJobName := fmt.Sprintf("serviceMonitor/%s/%s/0", userWorkloadTestNs, serviceMonitorTestName)
+	serviceMonitorJobName := fmt.Sprintf("serviceMonitor/%s/%s/0", userWorkloadOptOutTestNs, serviceMonitorTestName)
 
 	// Ensure the target for the example ServiceMonitor exists.
 	f.ThanosQuerierClient.WaitForTargetsReturn(t, 5*time.Minute, func(body []byte) error {
@@ -1480,7 +1396,7 @@ func assertNamespaceOptOut(t *testing.T) {
 	})
 
 	// Add opt-out label to namespace.
-	ns, err := f.KubeClient.CoreV1().Namespaces().Get(ctx, userWorkloadTestNs, metav1.GetOptions{})
+	ns, err := f.KubeClient.CoreV1().Namespaces().Get(ctx, userWorkloadOptOutTestNs, metav1.GetOptions{})
 	if err != nil {
 		t.Fatalf("Failed to fetch user-workload namespace: %v", err)
 	}
@@ -1504,7 +1420,7 @@ func assertNamespaceOptOut(t *testing.T) {
 	})
 
 	// Remove opt-out label from namespace.
-	ns, err = f.KubeClient.CoreV1().Namespaces().Get(ctx, userWorkloadTestNs, metav1.GetOptions{})
+	ns, err = f.KubeClient.CoreV1().Namespaces().Get(ctx, userWorkloadOptOutTestNs, metav1.GetOptions{})
 	if err != nil {
 		t.Fatalf("Failed to fetch user-workload namespace: %v", err)
 	}
@@ -1579,8 +1495,6 @@ func assertServiceMonitorOptOut(t *testing.T) {
 	})
 }
 
-// TestPrometheusUserWorkloadEndpointSliceDiscovery verifies that
-// prometheus-user-workload can discover and scrape targets using endpoint slices.
 func TestPrometheusUserWorkloadEndpointSliceDiscovery(t *testing.T) {
 	ctx := context.Background()
 	setupUserWorkloadAssetsWithTeardownHook(t, f)
@@ -1631,7 +1545,7 @@ func TestPrometheusUserWorkloadEndpointSliceDiscovery(t *testing.T) {
 					Containers: []v1.Container{
 						{
 							Name:            appName,
-							Image:           "ghcr.io/rhobs/prometheus-example-app:0.3.0",
+							Image:           "ghcr.io/rhobs/prometheus-example-app:0.5.1",
 							SecurityContext: getSecurityContextRestrictedProfile(),
 						},
 					},
