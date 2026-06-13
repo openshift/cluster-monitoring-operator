@@ -25,7 +25,8 @@ import (
 )
 
 func TestUserWorkloadWithAlertmanager(t *testing.T) {
-
+	// Cannot run in parallel: modifies the user-workload-monitoring-config ConfigMap.
+	// t.Parallel()
 	setupUserWorkloadAssetsWithTeardownHook(t, f)
 
 	uwmCM := f.BuildUserWorkloadConfigMap(t, `alertmanager:

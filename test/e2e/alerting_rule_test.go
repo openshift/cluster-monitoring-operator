@@ -39,6 +39,8 @@ const (
 )
 
 func TestAlertingRule(t *testing.T) {
+	// The test shouldn't be disruptive, safe to run in parallel with others.
+	t.Parallel()
 	ctx := context.Background()
 	alertingRules := f.OpenShiftMonitoringClient.MonitoringV1().AlertingRules(f.Ns)
 
@@ -142,6 +144,8 @@ func TestAlertingRule(t *testing.T) {
 // scheme, before the hash was changed to SHA-224 in
 // https://github.com/openshift/cluster-monitoring-operator/pull/2086.
 func TestAlertingRuleLegacyPrometheusRuleCleanup(t *testing.T) {
+	// Cannot run in parallel: creates/deletes AlertingRules and PrometheusRules in the shared namespace.
+	// t.Parallel()
 	const arName = "legacy-rule-test"
 
 	createAlertingRule(t, &osmv1.AlertingRule{
@@ -226,6 +230,7 @@ func prometheusRuleCount(t *testing.T) int {
 }
 
 func assertPrometheusRuleCount(t *testing.T, count int) {
+	t.Helper()
 	currentCount := prometheusRuleCount(t)
 	if currentCount != count {
 		t.Fatalf("Different generated PrometheusRule count (%d != %d)", currentCount, count)

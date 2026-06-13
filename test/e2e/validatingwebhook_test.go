@@ -128,6 +128,8 @@ spec:
 )
 
 func TestPrometheusRuleValidatingWebhook(t *testing.T) {
+	// Cannot run in parallel: creates PrometheusRules in the shared namespace without cleanup.
+	// t.Parallel()
 	ctx := context.Background()
 
 	_, err := f.AdmissionClient.ValidatingWebhookConfigurations().Get(ctx, prometheusRuleWebhookName, metav1.GetOptions{})
@@ -158,6 +160,8 @@ func TestPrometheusRuleValidatingWebhook(t *testing.T) {
 }
 
 func TestPrometheusRuleValidatingWebhookUTF8Names(t *testing.T) {
+	// Cannot run in parallel: creates PrometheusRules in the shared namespace.
+	// t.Parallel()
 	ctx := context.Background()
 
 	// Test PrometheusRule with UTF-8 names.
@@ -176,6 +180,8 @@ func TestPrometheusRuleValidatingWebhookUTF8Names(t *testing.T) {
 }
 
 func TestAlertManagerConfigValidatingWebhook(t *testing.T) {
+	// Cannot run in parallel: creates AlertmanagerConfigs in the shared namespace without cleanup.
+	// t.Parallel()
 	ctx := context.Background()
 
 	_, err := f.AdmissionClient.ValidatingWebhookConfigurations().Get(ctx, alertmanagerConfigWebhookName, metav1.GetOptions{})

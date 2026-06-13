@@ -33,6 +33,8 @@ import (
 )
 
 func TestPrometheusMetrics(t *testing.T) {
+	// The test is read-only, safe to run in parallel.
+	t.Parallel()
 	expected := map[string]int{
 		"prometheus-operator":           1,
 		"prometheus-k8s":                2,
@@ -47,6 +49,7 @@ func TestPrometheusMetrics(t *testing.T) {
 
 	for service, metric := range expected {
 		t.Run(service, func(t *testing.T) {
+			t.Parallel()
 			f.ThanosQuerierClient.WaitForQueryReturn(
 				// To avoid making the test wait for more than lookback-delta
 				// in case Prometheus wasn't able to write stale markers
@@ -70,6 +73,8 @@ func TestPrometheusMetrics(t *testing.T) {
 // consider whether the new default value is still suitable.
 // Refer to this link for some points that may need to be examined https://github.com/openshift/prometheus/pull/206#issuecomment-2182168575.
 func TestPrometheusGOGC(t *testing.T) {
+	// The test is read-only, safe to run in parallel.
+	t.Parallel()
 	gogc := 75
 	f.ThanosQuerierClient.WaitForQueryReturn(
 		t, 5*time.Minute, `min(go_gc_gogc_percent{namespace="openshift-monitoring", service="prometheus-k8s", container="kube-rbac-proxy"})`, // kube-rbac-proxy exposes prometheus container's metrics.
@@ -84,6 +89,8 @@ func TestPrometheusGOGC(t *testing.T) {
 }
 
 func TestAntiAffinity(t *testing.T) {
+	// The test is read-only, safe to run in parallel.
+	t.Parallel()
 	for _, tc := range []struct {
 		name     string
 		instance string
@@ -126,6 +133,8 @@ type remoteWriteTest struct {
 }
 
 func TestPrometheusRemoteWrite(t *testing.T) {
+	// Cannot run in parallel: modifies the cluster-monitoring-config ConfigMap.
+	// t.Parallel()
 	ctx := context.Background()
 
 	// Use the same image than k8s' for the remote write target.
@@ -345,6 +354,8 @@ func remoteWriteCheckMetrics(ctx context.Context, t *testing.T, promClient *fram
 }
 
 func TestBodySizeLimit(t *testing.T) {
+	// Cannot run in parallel: modifies the cluster-monitoring-config ConfigMap.
+	// t.Parallel()
 	const (
 		bodySizeLimitSmall         = "1MB"
 		bodySizeLimitSmallNumber   = 1 * 1024 * 1024

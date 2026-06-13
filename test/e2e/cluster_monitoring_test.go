@@ -34,6 +34,8 @@ const clusterMonitoringName = "cluster"
 
 // TestClusterMonitoringUserDefined tests UserDefinedMonitoring (enable/disable user workload monitoring via CRD).
 func TestClusterMonitoringUserDefined(t *testing.T) {
+	// Cannot run in parallel: modifies the ClusterMonitoring CRD.
+	// t.Parallel()
 	if !clusterMonitoringCRDAvailable {
 		t.Skip("ClusterMonitoring CRD not available (TechPreview / ClusterMonitoringConfig feature gate may be disabled)")
 		return
@@ -157,6 +159,8 @@ func TestClusterMonitoringUserDefined(t *testing.T) {
 // TestConfigMapEnableUserWorkloadOverridesCRD verifies that when enableUserWorkload is set in the
 // cluster-monitoring-config ConfigMap, that value is used and the ClusterMonitoring CRD is ignored.
 func TestConfigMapEnableUserWorkloadOverridesCRD(t *testing.T) {
+	// Cannot run in parallel: modifies the cluster-monitoring-config ConfigMap and ClusterMonitoring CRD.
+	// t.Parallel()
 	if !clusterMonitoringCRDAvailable {
 		t.Skip("ClusterMonitoring CRD not available (TechPreview / ClusterMonitoringConfig feature gate may be disabled)")
 		return
@@ -217,6 +221,8 @@ func TestConfigMapEnableUserWorkloadOverridesCRD(t *testing.T) {
 
 // TestClusterMonitoringMetricsServer tests MetricsServerConfig via ClusterMonitoring CRD.
 func TestClusterMonitoringMetricsServer(t *testing.T) {
+	// Cannot run in parallel: modifies the ClusterMonitoring CRD.
+	// t.Parallel()
 	if !clusterMonitoringCRDAvailable {
 		t.Skip("ClusterMonitoring CRD not available (TechPreview / ClusterMonitoringConfig feature gate may be disabled)")
 		return
@@ -285,6 +291,8 @@ func TestClusterMonitoringMetricsServer(t *testing.T) {
 // TestClusterMonitorMetricsServerConfigMapAndCRD verifies Phase 1 merge: when both ConfigMap and CR
 // specify metricsServer, the ConfigMap wins at the top level and CR values are ignored.
 func TestClusterMonitorMetricsServerConfigMapAndCRD(t *testing.T) {
+	// Cannot run in parallel: modifies the cluster-monitoring-config ConfigMap and ClusterMonitoring CRD.
+	// t.Parallel()
 	if !clusterMonitoringCRDAvailable {
 		t.Skip("ClusterMonitoring CRD not available (TechPreview / ClusterMonitoringConfig feature gate may be disabled)")
 		return
@@ -365,6 +373,8 @@ func TestClusterMonitorMetricsServerConfigMapAndCRD(t *testing.T) {
 
 // TestClusterMonitoringPrometheusOperator tests PrometheusOperatorConfig via ClusterMonitoring CRD.
 func TestClusterMonitoringPrometheusOperator(t *testing.T) {
+	// Cannot run in parallel: modifies the ClusterMonitoring CRD.
+	// t.Parallel()
 	if !clusterMonitoringCRDAvailable {
 		t.Skip("ClusterMonitoring CRD not available (TechPreview / ClusterMonitoringConfig feature gate may be disabled)")
 		return
@@ -437,6 +447,8 @@ func TestClusterMonitoringPrometheusOperator(t *testing.T) {
 // TestClusterMonitorPrometheusOperatorConfigMapAndCRD verifies Phase 1 merge: when both ConfigMap and CR
 // specify prometheusOperator / prometheusOperatorConfig, the ConfigMap wins at the top level and CR values are ignored.
 func TestClusterMonitorPrometheusOperatorConfigMapAndCRD(t *testing.T) {
+	// Cannot run in parallel: modifies the cluster-monitoring-config ConfigMap and ClusterMonitoring CRD.
+	// t.Parallel()
 	if !clusterMonitoringCRDAvailable {
 		t.Skip("ClusterMonitoring CRD not available (TechPreview / ClusterMonitoringConfig feature gate may be disabled)")
 		return
@@ -515,6 +527,8 @@ func TestClusterMonitorPrometheusOperatorConfigMapAndCRD(t *testing.T) {
 
 // TestClusterMonitoringAlertmanager tests alertmanagerConfig via ClusterMonitoring CRD (CustomConfig).
 func TestClusterMonitoringAlertmanager(t *testing.T) {
+	// Cannot run in parallel: modifies the ClusterMonitoring CRD.
+	// t.Parallel()
 	if !clusterMonitoringCRDAvailable {
 		t.Skip("ClusterMonitoring CRD not available (TechPreview / ClusterMonitoringConfig feature gate may be disabled)")
 		return
@@ -585,6 +599,8 @@ func TestClusterMonitoringAlertmanager(t *testing.T) {
 // TestClusterMonitorAlertmanagerConfigMapAndCRD verifies Phase 1 merge: when both ConfigMap and CR
 // specify alertmanagerMain / alertmanagerConfig, the ConfigMap wins at the top level and CR values are ignored.
 func TestClusterMonitorAlertmanagerConfigMapAndCRD(t *testing.T) {
+	// Cannot run in parallel: modifies the cluster-monitoring-config ConfigMap and ClusterMonitoring CRD.
+	// t.Parallel()
 	if !clusterMonitoringCRDAvailable {
 		t.Skip("ClusterMonitoring CRD not available (TechPreview / ClusterMonitoringConfig feature gate may be disabled)")
 		return

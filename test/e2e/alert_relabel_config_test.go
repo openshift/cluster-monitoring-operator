@@ -40,6 +40,8 @@ const (
 )
 
 func TestAlertRelabelConfig(t *testing.T) {
+	// The test uses its own unique AlertRelabelConfig, safe to run in parallel.
+	t.Parallel()
 	initialRelabelConfig := prometheusRelabelConfig(t)
 
 	// By default, we drop prometheus_replica label + add openshift_io_alert_source = 2
