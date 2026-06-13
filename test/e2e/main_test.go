@@ -407,7 +407,7 @@ func runProbePod(t *testing.T, ctx context.Context, script string) {
 			RestartPolicy: v1.RestartPolicyNever,
 			Containers: []v1.Container{{
 				Name:            "probe",
-				Image:           "registry.redhat.io/openshift4/ose-cli:latest",
+				Image:           "image-registry.openshift-image-registry.svc:5000/openshift/cli:latest",
 				ImagePullPolicy: v1.PullIfNotPresent,
 				Command:         []string{"bash", "-c", script},
 				SecurityContext: &v1.SecurityContext{
