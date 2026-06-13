@@ -38,6 +38,8 @@ func atLeastVersionTLS12(v string) string {
 }
 
 func TestDefaultTLSSecurityProfileConfiguration(t *testing.T) {
+	// Cannot run in parallel: modifies the global API server TLS security profile.
+	// t.Parallel()
 	// The admission webhook supports only TLS versions >= 1.2.
 	assertCorrectTLSConfiguration(t, "prometheus-operator-admission-webhook", "deployment",
 		manifests.PrometheusOperatorWebTLSCipherSuitesFlag,

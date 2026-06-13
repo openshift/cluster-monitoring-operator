@@ -28,6 +28,8 @@ import (
 // TestTelemeterRemoteWrite verifies that the monitoring stack can send data to
 // the telemeter server using the native Prometheus remote write endpoint.
 func TestTelemeterRemoteWrite(t *testing.T) {
+	// Cannot run in parallel: modifies the CMO deployment and cluster version overrides.
+	// t.Parallel()
 	cm := f.BuildCMOConfigMap(t, "{}")
 	f.MustCreateOrUpdateConfigMap(t, cm)
 
@@ -90,6 +92,8 @@ func TestTelemeterRemoteWrite(t *testing.T) {
 
 // TestTelemeterClient verifies that the telemeter client can collect metrics from the monitoring stack and forward them to the telemeter server.
 func TestTelemeterClient(t *testing.T) {
+	// The test is read-only, safe to run in parallel.
+	t.Parallel()
 	{
 		f.PrometheusK8sClient.WaitForQueryReturn(
 			t,
@@ -119,6 +123,8 @@ func TestTelemeterClient(t *testing.T) {
 
 // TestTelemeterClusterMetrics verifies that key Telemetry metrics are present.
 func TestTelemeterClusterMetrics(t *testing.T) {
+	// The test is read-only, safe to run in parallel.
+	t.Parallel()
 	for _, q := range []string{
 		`count(cluster:usage:resources:sum) > 0`,
 		`count(cluster:usage:resources:sum{resource="pods"}) > 0`,

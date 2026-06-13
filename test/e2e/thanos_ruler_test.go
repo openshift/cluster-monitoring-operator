@@ -16,6 +16,8 @@ import (
 )
 
 func TestUserWorkloadThanosRulerWithAdditionalAlertmanagers(t *testing.T) {
+	// Cannot run in parallel: modifies the user-workload-monitoring-config ConfigMap.
+	// t.Parallel()
 	setupUserWorkloadAssetsWithTeardownHook(t, f)
 
 	// Ensure there is no existing alertmanager in f.UserWorkloadMonitoringNs as we're using

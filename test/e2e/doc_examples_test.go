@@ -65,6 +65,8 @@ func setupEnv(t *testing.T) {
 }
 
 func TestDocExamples(t *testing.T) {
+	// Cannot run in parallel: creates resources in the shared namespace and depends on cluster state.
+	// t.Parallel()
 	filesDir := "test_command/scripts/"
 	tempDir := t.TempDir()
 	kubeConfigPath := f.KubeConfigPath

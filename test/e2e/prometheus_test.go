@@ -23,6 +23,7 @@ import (
 	"testing"
 	"time"
 
+	"github.com/Jeffail/gabs/v2"
 	osConfigv1 "github.com/openshift/api/config/v1"
 	"github.com/openshift/cluster-monitoring-operator/test/e2e/framework"
 	_ "github.com/prometheus/prometheus/discovery/kubernetes" // required for promConfig.Load to parse kubernetes_sd_configs
@@ -33,7 +34,9 @@ import (
 )
 
 func TestPrometheusMetrics(t *testing.T) {
-	expected := map[string]int{
+	// The test is read-only, safe to run in parallel.
+	t.Parallel()
+	expectedHealthyTargetsByJob := map[string]int{
 		"prometheus-operator":           1,
 		"prometheus-k8s":                2,
 		"prometheus-k8s-thanos-sidecar": 2,
@@ -45,22 +48,29 @@ func TestPrometheusMetrics(t *testing.T) {
 		"telemeter-client":              1,
 	}
 
-	for service, metric := range expected {
-		t.Run(service, func(t *testing.T) {
-			f.ThanosQuerierClient.WaitForQueryReturn(
-				// To avoid making the test wait for more than lookback-delta
-				// in case Prometheus wasn't able to write stale markers
-				// (because it was down), reduce the lookup period but not
-				// lower than the highest scrape interval (which is 2m).
-				t, time.Minute, fmt.Sprintf(`count(last_over_time(up{service="%s",namespace="openshift-monitoring"}[2m30s]) == 1)`, service),
-				func(v float64) error {
-					if v != float64(metric) {
-						return fmt.Errorf("expected %d targets to be up but got %v", metric, v)
-					}
+	for jobName, expectedTargets := range expectedHealthyTargetsByJob {
+		t.Run(jobName, func(t *testing.T) {
+			t.Parallel()
+			f.PrometheusK8sClient.WaitForTargetsReturn(t, time.Minute, func(body []byte) error {
+				j, err := gabs.ParseJSON(body)
+				if err != nil {
+					return err
+				}
 
-					return nil
-				},
-			)
+				healthyTargets := 0
+				for _, target := range j.Path("data.activeTargets").Children() {
+					job, _ := target.Path("labels.job").Data().(string)
+					health, _ := target.Path("health").Data().(string)
+					if job == jobName && health == "up" {
+						healthyTargets++
+					}
+				}
+
+				if healthyTargets != expectedTargets {
+					return fmt.Errorf("expected %d healthy targets, got %d", expectedTargets, healthyTargets)
+				}
+				return nil
+			})
 		})
 	}
 }
@@ -70,6 +80,8 @@ func TestPrometheusMetrics(t *testing.T) {
 // consider whether the new default value is still suitable.
 // Refer to this link for some points that may need to be examined https://github.com/openshift/prometheus/pull/206#issuecomment-2182168575.
 func TestPrometheusGOGC(t *testing.T) {
+	// The test is read-only, safe to run in parallel.
+	t.Parallel()
 	gogc := 75
 	f.ThanosQuerierClient.WaitForQueryReturn(
 		t, 5*time.Minute, `min(go_gc_gogc_percent{namespace="openshift-monitoring", service="prometheus-k8s", container="kube-rbac-proxy"})`, // kube-rbac-proxy exposes prometheus container's metrics.
@@ -84,6 +96,8 @@ func TestPrometheusGOGC(t *testing.T) {
 }
 
 func TestAntiAffinity(t *testing.T) {
+	// The test is read-only, safe to run in parallel.
+	t.Parallel()
 	for _, tc := range []struct {
 		name     string
 		instance string
@@ -126,6 +140,8 @@ type remoteWriteTest struct {
 }
 
 func TestPrometheusRemoteWrite(t *testing.T) {
+	// Cannot run in parallel: modifies the cluster-monitoring-config ConfigMap.
+	// t.Parallel()
 	ctx := context.Background()
 
 	// Use the same image than k8s' for the remote write target.
@@ -345,6 +361,8 @@ func remoteWriteCheckMetrics(ctx context.Context, t *testing.T, promClient *fram
 }
 
 func TestBodySizeLimit(t *testing.T) {
+	// Cannot run in parallel: modifies the cluster-monitoring-config ConfigMap.
+	// t.Parallel()
 	const (
 		bodySizeLimitSmall         = "1MB"
 		bodySizeLimitSmallNumber   = 1 * 1024 * 1024

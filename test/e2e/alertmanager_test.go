@@ -45,6 +45,8 @@ import (
 // TestAlertmanagerTenancyAPI ensures that the Alertmanager API exposed on the
 // tenancy port enforces the namespace value.
 func TestAlertmanagerTenancyAPI(t *testing.T) {
+	// Cannot run in parallel: modifies the cluster-monitoring-config ConfigMap.
+	// t.Parallel()
 	for _, tc := range []struct {
 		name               string
 		config             string
@@ -366,6 +368,8 @@ func testAlertmanagerTenancyAPI(t *testing.T, host string) {
 // Even when no persistent storage is configured, silences (and notifications)
 // shouldn't be lost when new Alertmanager pods are rolled out.
 func TestAlertmanagerDataReplication(t *testing.T) {
+	// Cannot run in parallel: modifies the cluster-monitoring-config ConfigMap.
+	// t.Parallel()
 	const (
 		silenceLabelName  = "test"
 		silenceLabelValue = "AlertmanagerReplication"
@@ -413,24 +417,31 @@ func TestAlertmanagerDataReplication(t *testing.T) {
 `)
 	f.MustCreateOrUpdateConfigMap(t, f.BuildCMOConfigMap(t, data))
 
-	for _, test := range []scenario{
-		{
-			name:      "test the alertmanager-main statefulset is rolled out",
-			assertion: f.AssertStatefulSetExistsAndRolloutFunc(statefulSetName, f.Ns),
-		},
-		{
-			name: "assert pod configuration is as expected",
-			assertion: f.AssertPodConfigurationFunc(
-				f.Ns,
-				"app.kubernetes.io/name=alertmanager,app.kubernetes.io/instance=main",
-				[]framework.PodAssertion{
-					expectContainerArg("--log.level=warn", containerName),
-				},
-			),
-		},
-	} {
-		t.Run(test.name, test.assertion)
-	}
+	// Wait for the rollout to complete before checking that the silence has
+	// been preserved. The group acts as a barrier.
+	t.Run("rollout", func(t *testing.T) {
+		for _, test := range []scenario{
+			{
+				name:      "test the alertmanager-main statefulset is rolled out",
+				assertion: f.AssertStatefulSetExistsAndRolloutFunc(statefulSetName, f.Ns),
+			},
+			{
+				name: "assert pod configuration is as expected",
+				assertion: f.AssertPodConfigurationFunc(
+					f.Ns,
+					"app.kubernetes.io/name=alertmanager,app.kubernetes.io/instance=main",
+					[]framework.PodAssertion{
+						expectContainerArg("--log.level=warn", containerName),
+					},
+				),
+			},
+		} {
+			t.Run(test.name, func(t *testing.T) {
+				t.Parallel()
+				test.assertion(t)
+			})
+		}
+	})
 
 	// Ensure that the silence has been preserved.
 	err = framework.Poll(5*time.Second, time.Minute, func() error {
@@ -463,6 +474,8 @@ func TestAlertmanagerDataReplication(t *testing.T) {
 
 // The Alertmanager API should be protected by authentication/authorization.
 func TestAlertmanagerAPI(t *testing.T) {
+	// The test uses its own isolated namespace, safe to run in parallel.
+	t.Parallel()
 	err := framework.Poll(5*time.Second, 5*time.Minute, func() error {
 		body, err := f.AlertmanagerClient.GetAlertmanagerAlerts(
 			"filter", `alertname="Watchdog"`,
@@ -677,6 +690,8 @@ func checkAlertmanagerAPIVerbs(_ *testing.T, client *framework.PrometheusClient,
 
 // Users should be able to disable Alertmanager through the cluster-monitoring-config
 func TestAlertmanagerDisabling(t *testing.T) {
+	// Cannot run in parallel: modifies the cluster-monitoring-config ConfigMap.
+	// t.Parallel()
 	f.MustCreateOrUpdateConfigMap(t, f.BuildCMOConfigMap(t, "alertmanagerMain: { enabled: false }"))
 
 	assertions := []struct {
@@ -753,6 +768,8 @@ func TestAlertmanagerDisabling(t *testing.T) {
 // correct Alertmanager (depending on whether user-defined Alertmanager is
 // enabled or not).
 func TestAlertmanagerConfigPipeline(t *testing.T) {
+	// Cannot run in parallel: modifies the user-workload-monitoring-config ConfigMap.
+	// t.Parallel()
 	for _, tc := range []struct {
 		name               string
 		config             string
@@ -962,8 +979,10 @@ func assertLabelSelectorRequirement(reqs []metav1.LabelSelectorRequirement, must
 }
 
 // TestAlertmanagerPlatformSecrets ensures secrets
-// are mounted correctly in Platform AlertManager container
+// are mounted correctly in Platform AlertManager container.
 func TestAlertmanagerPlatformSecrets(t *testing.T) {
+	// Cannot run in parallel: modifies the cluster-monitoring-config ConfigMap.
+	// t.Parallel()
 	amSecret := &v1.Secret{
 		ObjectMeta: metav1.ObjectMeta{
 			Name:      "test-secret",
@@ -1041,8 +1060,10 @@ func TestAlertmanagerPlatformSecrets(t *testing.T) {
 }
 
 // TestAlertmanagerUWMSecrets ensures secrets
-// are mounted correctly in UWM AlertManager container
+// are mounted correctly in UWM AlertManager container.
 func TestAlertmanagerUWMSecrets(t *testing.T) {
+	// Cannot run in parallel: modifies the user-workload-monitoring-config ConfigMap.
+	// t.Parallel()
 	amSecret := &v1.Secret{
 		ObjectMeta: metav1.ObjectMeta{
 			Name:      "test-secret",

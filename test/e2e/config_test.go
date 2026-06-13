@@ -37,6 +37,8 @@ import (
 )
 
 func TestClusterMonitoringOperatorConfiguration(t *testing.T) {
+	// Cannot run in parallel: modifies the cluster-monitoring-config ConfigMap.
+	// t.Parallel()
 	// Enable user workload monitoring to assess that an invalid configuration
 	// doesn't rollback the last known and valid configuration.
 	setupUserWorkloadAssets(t, f)
@@ -90,6 +92,8 @@ func TestClusterMonitoringOperatorConfiguration(t *testing.T) {
 }
 
 func TestClusterMonitoringStatus(t *testing.T) {
+	// Cannot run in parallel: modifies the cluster-monitoring-config ConfigMap.
+	// t.Parallel()
 	const (
 		storage = "2Gi"
 	)
@@ -205,6 +209,8 @@ prometheusK8s:
 }
 
 func TestClusterMonitorPrometheusOperatorConfig(t *testing.T) {
+	// Cannot run in parallel: modifies the cluster-monitoring-config ConfigMap.
+	// t.Parallel()
 	const (
 		containerName = "prometheus-operator"
 	)
@@ -235,6 +241,8 @@ func TestClusterMonitorPrometheusOperatorConfig(t *testing.T) {
 }
 
 func TestClusterMonitorPrometheusK8Config(t *testing.T) {
+	// Cannot run in parallel: modifies the cluster-monitoring-config ConfigMap.
+	// t.Parallel()
 	const (
 		pvcClaimName    = "prometheus-k8s-db-prometheus-k8s-0"
 		statefulsetName = "prometheus-k8s"
@@ -315,11 +323,16 @@ func TestClusterMonitorPrometheusK8Config(t *testing.T) {
 			assertion: f.AssertPrometheusRuleExistsFunc(thanosRule, f.Ns),
 		},
 	} {
-		t.Run(tc.name, tc.assertion)
+		t.Run(tc.name, func(t *testing.T) {
+			t.Parallel()
+			tc.assertion(t)
+		})
 	}
 }
 
 func TestClusterMonitorAlertManagerConfig(t *testing.T) {
+	// Cannot run in parallel: modifies the cluster-monitoring-config ConfigMap.
+	// t.Parallel()
 	const (
 		pvcClaimName    = "alertmanager-main-db-alertmanager-main-0"
 		statefulsetName = "alertmanager-main"
@@ -367,11 +380,16 @@ func TestClusterMonitorAlertManagerConfig(t *testing.T) {
 			),
 		},
 	} {
-		t.Run(tc.name, tc.assertion)
+		t.Run(tc.name, func(t *testing.T) {
+			t.Parallel()
+			tc.assertion(t)
+		})
 	}
 }
 
 func TestClusterMonitorKSMConfig(t *testing.T) {
+	// Cannot run in parallel: modifies the cluster-monitoring-config ConfigMap.
+	// t.Parallel()
 	const (
 		deploymentName = "kube-state-metrics"
 	)
@@ -403,6 +421,8 @@ func TestClusterMonitorKSMConfig(t *testing.T) {
 }
 
 func TestClusterMonitorOSMConfig(t *testing.T) {
+	// Cannot run in parallel: modifies the cluster-monitoring-config ConfigMap.
+	// t.Parallel()
 	const (
 		deploymentName = "openshift-state-metrics"
 	)
@@ -434,6 +454,8 @@ func TestClusterMonitorOSMConfig(t *testing.T) {
 }
 
 func TestClusterMonitorTelemeterClientConfig(t *testing.T) {
+	// Cannot run in parallel: modifies the cluster-monitoring-config ConfigMap.
+	// t.Parallel()
 	const (
 		deploymentName = "telemeter-client"
 	)
@@ -467,6 +489,8 @@ func TestClusterMonitorTelemeterClientConfig(t *testing.T) {
 }
 
 func TestTelemeterClientSecret(t *testing.T) {
+	// Cannot run in parallel: modifies the cluster-monitoring-config ConfigMap.
+	// t.Parallel()
 	for _, tc := range []struct {
 		name         string
 		oldC         string
@@ -511,6 +535,8 @@ func TestTelemeterClientSecret(t *testing.T) {
 }
 
 func TestClusterMonitorThanosQuerierConfig(t *testing.T) {
+	// Cannot run in parallel: modifies the cluster-monitoring-config ConfigMap.
+	// t.Parallel()
 	const (
 		deploymentName = "thanos-querier"
 		containerName  = "thanos-query"
@@ -552,6 +578,8 @@ func TestClusterMonitorThanosQuerierConfig(t *testing.T) {
 }
 
 func TestUserWorkloadMonitorPromOperatorConfig(t *testing.T) {
+	// Cannot run in parallel: modifies the user-workload-monitoring-config ConfigMap.
+	// t.Parallel()
 	const (
 		containerName = "prometheus-operator"
 	)
@@ -585,6 +613,8 @@ func TestUserWorkloadMonitorPromOperatorConfig(t *testing.T) {
 }
 
 func TestUserWorkloadMonitorPrometheusK8Config(t *testing.T) {
+	// Cannot run in parallel: modifies the user-workload-monitoring-config ConfigMap.
+	// t.Parallel()
 	setupUserWorkloadAssetsWithTeardownHook(t, f)
 	const (
 		pvcClaimName    = "prometheus-user-workload-db-prometheus-user-workload-0"
@@ -697,11 +727,16 @@ func TestUserWorkloadMonitorPrometheusK8Config(t *testing.T) {
 			assertion: assertPrometheusEvaluationInterval("15s"),
 		},
 	} {
-		t.Run(tc.name, tc.assertion)
+		t.Run(tc.name, func(t *testing.T) {
+			t.Parallel()
+			tc.assertion(t)
+		})
 	}
 }
 
 func TestUserWorkloadMonitorThanosRulerConfig(t *testing.T) {
+	// Cannot run in parallel: modifies the user-workload-monitoring-config ConfigMap.
+	// t.Parallel()
 	const (
 		containerName   = "thanos-ruler"
 		pvcClaimName    = "thanos-ruler-user-workload-data-thanos-ruler-user-workload-0"
@@ -759,7 +794,10 @@ func TestUserWorkloadMonitorThanosRulerConfig(t *testing.T) {
 			assertion: assertThanosRulerEvaluationInterval("15s"),
 		},
 	} {
-		t.Run(tc.name, tc.assertion)
+		t.Run(tc.name, func(t *testing.T) {
+			t.Parallel()
+			tc.assertion(t)
+		})
 	}
 }
 
@@ -830,6 +868,8 @@ func checkMonitorConsolePluginReachable(t *testing.T, pluginName string) {
 }
 
 func TestClusterMonitorConsolePlugin(t *testing.T) {
+	// Cannot run in parallel: modifies the cluster-monitoring-config ConfigMap.
+	// t.Parallel()
 	const (
 		deploymentName = "monitoring-plugin"
 		cpu            = "10m"
@@ -876,11 +916,16 @@ monitoringPlugin:
 			assertion: func(t *testing.T) { checkMonitorConsolePluginReachable(t, deploymentName) },
 		},
 	} {
-		t.Run(tc.name, tc.assertion)
+		t.Run(tc.name, func(t *testing.T) {
+			t.Parallel()
+			tc.assertion(t)
+		})
 	}
 }
 
 func TestClusterMonitoringDeprecatedConfig(t *testing.T) {
+	// Cannot run in parallel: modifies the cluster-monitoring-config ConfigMap.
+	// t.Parallel()
 	metricName := "cluster_monitoring_operator_deprecated_config_in_use"
 	checkMetricValue := func(value float64) {
 		t.Helper()
