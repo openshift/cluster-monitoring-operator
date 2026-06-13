@@ -23,6 +23,7 @@ import (
 	"testing"
 	"time"
 
+	"github.com/Jeffail/gabs/v2"
 	osConfigv1 "github.com/openshift/api/config/v1"
 	"github.com/openshift/cluster-monitoring-operator/test/e2e/framework"
 	_ "github.com/prometheus/prometheus/discovery/kubernetes" // required for promConfig.Load to parse kubernetes_sd_configs
@@ -35,7 +36,7 @@ import (
 func TestPrometheusMetrics(t *testing.T) {
 	// The test is read-only, safe to run in parallel.
 	t.Parallel()
-	expected := map[string]int{
+	expectedHealthyTargetsByJob := map[string]int{
 		"prometheus-operator":           1,
 		"prometheus-k8s":                2,
 		"prometheus-k8s-thanos-sidecar": 2,
@@ -47,23 +48,29 @@ func TestPrometheusMetrics(t *testing.T) {
 		"telemeter-client":              1,
 	}
 
-	for service, metric := range expected {
-		t.Run(service, func(t *testing.T) {
+	for jobName, expectedTargets := range expectedHealthyTargetsByJob {
+		t.Run(jobName, func(t *testing.T) {
 			t.Parallel()
-			f.ThanosQuerierClient.WaitForQueryReturn(
-				// To avoid making the test wait for more than lookback-delta
-				// in case Prometheus wasn't able to write stale markers
-				// (because it was down), reduce the lookup period but not
-				// lower than the highest scrape interval (which is 2m).
-				t, time.Minute, fmt.Sprintf(`count(last_over_time(up{service="%s",namespace="openshift-monitoring"}[2m30s]) == 1)`, service),
-				func(v float64) error {
-					if v != float64(metric) {
-						return fmt.Errorf("expected %d targets to be up but got %v", metric, v)
-					}
+			f.PrometheusK8sClient.WaitForTargetsReturn(t, time.Minute, func(body []byte) error {
+				j, err := gabs.ParseJSON(body)
+				if err != nil {
+					return err
+				}
 
-					return nil
-				},
-			)
+				healthyTargets := 0
+				for _, target := range j.Path("data.activeTargets").Children() {
+					job, _ := target.Path("labels.job").Data().(string)
+					health, _ := target.Path("health").Data().(string)
+					if job == jobName && health == "up" {
+						healthyTargets++
+					}
+				}
+
+				if healthyTargets != expectedTargets {
+					return fmt.Errorf("expected %d healthy targets, got %d", expectedTargets, healthyTargets)
+				}
+				return nil
+			})
 		})
 	}
 }
