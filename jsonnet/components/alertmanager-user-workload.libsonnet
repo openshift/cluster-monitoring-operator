@@ -68,7 +68,6 @@ function(params)
 
     serviceMonitor+: {
       spec+: {
-        serviceDiscoveryRole: 'EndpointSlice',
         endpoints: [
           {
             port: 'metrics',

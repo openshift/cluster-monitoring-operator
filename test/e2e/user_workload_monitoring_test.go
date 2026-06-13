@@ -1685,7 +1685,6 @@ func TestPrometheusUserWorkloadEndpointSliceDiscovery(t *testing.T) {
 			},
 		},
 		Spec: monitoringv1.ServiceMonitorSpec{
-			ServiceDiscoveryRole: ptr.To(monitoringv1.EndpointSliceRole),
 			Endpoints: []monitoringv1.Endpoint{
 				{
 					Port:     "web",
