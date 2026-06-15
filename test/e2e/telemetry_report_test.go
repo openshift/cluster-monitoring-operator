@@ -55,11 +55,11 @@ func TestTelemetryReport(t *testing.T) {
 	t.Cleanup(cleanup)
 	promURL := fmt.Sprintf("http://%s", host)
 
-	// Wait for recording rules to produce data: a trivial one and a
-	// rate()-based one that needs multiple scrape cycles. The extra sleep
-	// gives the remaining rules time to evaluate through their chains.
-	waitForQuery(t, promURL, "e2etelemetry:const_one:gauge", 5*time.Minute)
-	waitForQuery(t, promURL, "e2etelemetry:etcd_wal_fsync:deep_rate", 5*time.Minute)
+	// rate() on a raw metric (etcd metrics here) requires >=2 scrapes (~30s apart) to return
+	// data; this implicitly confirms the PrometheusRule is loaded and targets
+	// are being scraped. The extra sleep gives the remaining rule chains
+	// time to fully evaluate.
+	waitForQuery(t, promURL, "e2etelemetry:suffix_ok:rate", 5*time.Minute)
 	time.Sleep(30 * time.Second)
 
 	tests := map[string]string{
