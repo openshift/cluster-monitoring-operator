@@ -330,8 +330,8 @@ The `NodeExporterCollectorNetClassConfig` resource works as an on/off switch for
 
 | Property | Type | Description |
 | -------- | ---- | ----------- |
-| enabled | bool | A Boolean flag that enables or disables the `netclass` collector. |
-| useNetlink | bool | A Boolean flag that activates the `netlink` implementation of the `netclass` collector. Its default value is `true`: activating the netlink mode. This implementation improves the performance of the `netclass` collector. |
+| enabled | *bool | A Boolean flag that enables or disables the `netclass` collector. |
+| useNetlink | *bool | A Boolean flag that activates the `netlink` implementation of the `netclass` collector. Its default value is `true`: activating the netlink mode. This implementation improves the performance of the `netclass` collector. |
 
 [Back to TOC](#table-of-contents)
 
@@ -346,7 +346,7 @@ The `NodeExporterCollectorNetDevConfig` resource works as an on/off switch for t
 
 | Property | Type | Description |
 | -------- | ---- | ----------- |
-| enabled | bool | A Boolean flag that enables or disables the `netdev` collector. |
+| enabled | *bool | A Boolean flag that enables or disables the `netdev` collector. |
 
 [Back to TOC](#table-of-contents)
 

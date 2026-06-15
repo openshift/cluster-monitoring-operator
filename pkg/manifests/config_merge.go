@@ -56,38 +56,22 @@ func (c *Config) mergeClusterMonitoringCRD(clusterMonitoring *configv1alpha1.Clu
 }
 
 func clusterMonitoringNodeExporterCollectorsEmpty(col configv1alpha1.NodeExporterCollectorConfig) bool {
-	if col.CpuFreq.CollectionPolicy != "" {
-		return false
-	}
-	if col.TcpStat.CollectionPolicy != "" {
-		return false
-	}
-	if col.Ethtool.CollectionPolicy != "" {
-		return false
-	}
-	if col.NetDev.CollectionPolicy != "" {
-		return false
-	}
-	if col.NetClass.CollectionPolicy != "" {
-		return false
-	}
-	if col.BuddyInfo.CollectionPolicy != "" {
-		return false
-	}
-	if col.MountStats.CollectionPolicy != "" {
-		return false
-	}
-	if col.Ksmd.CollectionPolicy != "" {
-		return false
-	}
-	if col.Processes.CollectionPolicy != "" {
-		return false
-	}
-	if col.Systemd.CollectionPolicy != "" {
-		return false
-	}
-	if col.Softirqs.CollectionPolicy != "" {
-		return false
+	for _, pol := range []configv1alpha1.NodeExporterCollectorCollectionPolicy{
+		col.CpuFreq.CollectionPolicy,
+		col.TcpStat.CollectionPolicy,
+		col.Ethtool.CollectionPolicy,
+		col.NetDev.CollectionPolicy,
+		col.NetClass.CollectionPolicy,
+		col.BuddyInfo.CollectionPolicy,
+		col.MountStats.CollectionPolicy,
+		col.Ksmd.CollectionPolicy,
+		col.Processes.CollectionPolicy,
+		col.Systemd.CollectionPolicy,
+		col.Softirqs.CollectionPolicy,
+	} {
+		if pol != "" {
+			return false
+		}
 	}
 	return true
 }
