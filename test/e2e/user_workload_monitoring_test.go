@@ -820,7 +820,7 @@ func assertTenancyForRulesAndAlerts(t *testing.T) {
 		if err != nil {
 			return err
 		}
-		t.Cleanup(cleanUp)
+		defer cleanUp()
 
 		client = framework.NewPrometheusClient(
 			host,
