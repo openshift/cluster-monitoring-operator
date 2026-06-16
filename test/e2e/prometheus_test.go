@@ -30,6 +30,7 @@ import (
 	v1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/types"
+	"k8s.io/utils/ptr"
 )
 
 func TestPrometheusMetrics(t *testing.T) {
@@ -186,6 +187,39 @@ func TestPrometheusRemoteWrite(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
+
+	// Clean up after all subtests: reset the ConfigMap, wait for
+	// Prometheus Operator to remove the remote write config from the
+	// Prometheus config secret, then force-delete the Prometheus pods to
+	// skip the ~2m shutdown delay.
+	//
+	// The last subtest deletes the receiver but leaves the ConfigMap with
+	// remoteWrite. When the ConfigMap is reset, Prometheus Operator
+	// removes the TLS certs from its TLS assets secret simultaneously
+	// with the config update. Because Prometheus re-reads cert files on
+	// every send attempt, the queue_manager drain fails with "no such file"
+	// and retries until
+	// the flush-deadline expires (2x1m for samples + metadata = ~2m).
+	// Force-deleting the pods avoids this.
+	// See https://github.com/prometheus/prometheus/issues/6747
+	t.Cleanup(func() {
+		f.MustCreateOrUpdateConfigMap(t, f.BuildCMOConfigMap(t, "{}"))
+
+		require.NoError(t, framework.Poll(5*time.Second, 5*time.Minute, func() error {
+			cfg := f.PrometheusConfigFromSecret(t, f.Ns, "prometheus-k8s")
+			if len(cfg.RemoteWriteConfigs) > 0 {
+				return fmt.Errorf("prometheus config still has %d remote write configs", len(cfg.RemoteWriteConfigs))
+			}
+			return nil
+		}))
+
+		require.NoError(t, f.KubeClient.CoreV1().Pods(f.Ns).DeleteCollection(ctx,
+			metav1.DeleteOptions{GracePeriodSeconds: ptr.To(int64(0))},
+			metav1.ListOptions{LabelSelector: "app.kubernetes.io/name=prometheus,app.kubernetes.io/instance=k8s"},
+		))
+
+		f.AssertStatefulSetExistsAndRolloutFunc("prometheus-k8s", f.Ns)(t)
+	})
 	for _, tc := range []struct {
 		name     string
 		rwSpec   string
