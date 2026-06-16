@@ -21,8 +21,12 @@ import (
 	"testing"
 	"time"
 
+	"github.com/stretchr/testify/require"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/types"
+	"k8s.io/utils/ptr"
+
+	"github.com/openshift/cluster-monitoring-operator/test/e2e/framework"
 )
 
 // TestTelemeterRemoteWrite verifies that the monitoring stack can send data to
@@ -30,10 +34,6 @@ import (
 func TestTelemeterRemoteWrite(t *testing.T) {
 	cm := f.BuildCMOConfigMap(t, "{}")
 	f.MustCreateOrUpdateConfigMap(t, cm)
-
-	t.Cleanup(func() {
-		f.MustDeleteConfigMap(t, cm)
-	})
 
 	// Put CMO deployment into unmanaged state and enable telemetry via remote-write manually.
 	ctx := context.Background()
@@ -54,8 +54,28 @@ func TestTelemeterRemoteWrite(t *testing.T) {
 	}
 
 	t.Cleanup(func() {
+		f.MustDeleteConfigMap(t, cm)
+
 		patch := []byte(`{"spec": {"overrides": []}}`)
 		_, _ = f.OpenShiftConfigClient.ConfigV1().ClusterVersions().Patch(ctx, "version", types.MergePatchType, patch, metav1.PatchOptions{})
+
+		// Wait for CVO -> CMO -> Prometheus Operator to fully restore
+		// the config, then force-delete the Prometheus pods so the
+		// next test gets fresh pods with the updated config.
+		require.NoError(t, framework.Poll(5*time.Second, 5*time.Minute, func() error {
+			cfg := f.PrometheusConfigFromSecret(t, f.Ns, "prometheus-k8s")
+			if len(cfg.RemoteWriteConfigs) > 0 {
+				return fmt.Errorf("prometheus config still has %d remote write configs", len(cfg.RemoteWriteConfigs))
+			}
+			return nil
+		}))
+
+		require.NoError(t, f.KubeClient.CoreV1().Pods(f.Ns).DeleteCollection(ctx,
+			metav1.DeleteOptions{GracePeriodSeconds: ptr.To(int64(0))},
+			metav1.ListOptions{LabelSelector: "app.kubernetes.io/name=prometheus,app.kubernetes.io/instance=k8s"},
+		))
+
+		f.AssertStatefulSetExistsAndRolloutFunc("prometheus-k8s", f.Ns)(t)
 	})
 
 	dep, err := f.KubeClient.AppsV1().Deployments(f.Ns).Get(ctx, "cluster-monitoring-operator", metav1.GetOptions{})
