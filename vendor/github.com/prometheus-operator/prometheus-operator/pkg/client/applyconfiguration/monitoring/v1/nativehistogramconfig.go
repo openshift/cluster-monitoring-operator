@@ -22,17 +22,42 @@ import (
 
 // NativeHistogramConfigApplyConfiguration represents a declarative configuration of the NativeHistogramConfig type for use
 // with apply.
+//
+// NativeHistogramConfig extends the native histogram configuration settings.
 type NativeHistogramConfigApplyConfiguration struct {
-	ScrapeClassicHistograms        *bool              `json:"scrapeClassicHistograms,omitempty"`
-	NativeHistogramBucketLimit     *uint64            `json:"nativeHistogramBucketLimit,omitempty"`
+	// scrapeNativeHistograms defines whether to enable scraping of native histograms.
+	// It requires Prometheus >= v3.8.0.
+	ScrapeNativeHistograms *bool `json:"scrapeNativeHistograms,omitempty"`
+	// scrapeClassicHistograms defines whether to scrape a classic histogram that is also exposed as a native histogram.
+	// It requires Prometheus >= v2.45.0.
+	//
+	// Notice: `scrapeClassicHistograms` corresponds to the `always_scrape_classic_histograms` field in the Prometheus configuration.
+	ScrapeClassicHistograms *bool `json:"scrapeClassicHistograms,omitempty"`
+	// nativeHistogramBucketLimit defines ff there are more than this many buckets in a native histogram,
+	// buckets will be merged to stay within the limit.
+	// It requires Prometheus >= v2.45.0.
+	NativeHistogramBucketLimit *uint64 `json:"nativeHistogramBucketLimit,omitempty"`
+	// nativeHistogramMinBucketFactor defines if the growth factor of one bucket to the next is smaller than this,
+	// buckets will be merged to increase the factor sufficiently.
+	// It requires Prometheus >= v2.50.0.
 	NativeHistogramMinBucketFactor *resource.Quantity `json:"nativeHistogramMinBucketFactor,omitempty"`
-	ConvertClassicHistogramsToNHCB *bool              `json:"convertClassicHistogramsToNHCB,omitempty"`
+	// convertClassicHistogramsToNHCB defines whether to convert all scraped classic histograms into a native histogram with custom buckets.
+	// It requires Prometheus >= v3.0.0.
+	ConvertClassicHistogramsToNHCB *bool `json:"convertClassicHistogramsToNHCB,omitempty"`
 }
 
 // NativeHistogramConfigApplyConfiguration constructs a declarative configuration of the NativeHistogramConfig type for use with
 // apply.
 func NativeHistogramConfig() *NativeHistogramConfigApplyConfiguration {
 	return &NativeHistogramConfigApplyConfiguration{}
+}
+
+// WithScrapeNativeHistograms sets the ScrapeNativeHistograms field in the declarative configuration to the given value
+// and returns the receiver, so that objects can be built by chaining "With" function invocations.
+// If called multiple times, the ScrapeNativeHistograms field is set to the value of the last call.
+func (b *NativeHistogramConfigApplyConfiguration) WithScrapeNativeHistograms(value bool) *NativeHistogramConfigApplyConfiguration {
+	b.ScrapeNativeHistograms = &value
+	return b
 }
 
 // WithScrapeClassicHistograms sets the ScrapeClassicHistograms field in the declarative configuration to the given value
