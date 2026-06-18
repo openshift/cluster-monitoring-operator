@@ -17,6 +17,7 @@
 package v1alpha1
 
 import (
+	monitoringv1 "github.com/prometheus-operator/prometheus-operator/pkg/client/applyconfiguration/monitoring/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	types "k8s.io/apimachinery/pkg/types"
 	v1 "k8s.io/client-go/applyconfigurations/meta/v1"
@@ -24,10 +25,23 @@ import (
 
 // AlertmanagerConfigApplyConfiguration represents a declarative configuration of the AlertmanagerConfig type for use
 // with apply.
+//
+// AlertmanagerConfig configures the Prometheus Alertmanager,
+// specifying how alerts should be grouped, inhibited and notified to external systems.
 type AlertmanagerConfigApplyConfiguration struct {
-	v1.TypeMetaApplyConfiguration    `json:",inline"`
+	// TypeMeta defines the versioned schema of this representation of an object.
+	v1.TypeMetaApplyConfiguration `json:",inline"`
+	// metadata defines ObjectMeta as the metadata that all persisted resources.
 	*v1.ObjectMetaApplyConfiguration `json:"metadata,omitempty"`
-	Spec                             *AlertmanagerConfigSpecApplyConfiguration `json:"spec,omitempty"`
+	// spec defines the specification of AlertmanagerConfigSpec
+	Spec *AlertmanagerConfigSpecApplyConfiguration `json:"spec,omitempty"`
+	// status defines the status subresource. It is under active development and is updated only when the
+	// "StatusForConfigurationResources" feature gate is enabled.
+	//
+	// Most recent observed status of the ServiceMonitor. Read-only.
+	// More info:
+	// https://github.com/kubernetes/community/blob/master/contributors/devel/sig-architecture/api-conventions.md#spec-and-status
+	Status *monitoringv1.ConfigResourceStatusApplyConfiguration `json:"status,omitempty"`
 }
 
 // AlertmanagerConfig constructs a declarative configuration of the AlertmanagerConfig type for use with
@@ -40,6 +54,7 @@ func AlertmanagerConfig(name, namespace string) *AlertmanagerConfigApplyConfigur
 	b.WithAPIVersion("monitoring.coreos.com/v1alpha1")
 	return b
 }
+
 func (b AlertmanagerConfigApplyConfiguration) IsApplyConfiguration() {}
 
 // WithKind sets the Kind field in the declarative configuration to the given value
@@ -205,6 +220,14 @@ func (b *AlertmanagerConfigApplyConfiguration) ensureObjectMetaApplyConfiguratio
 // If called multiple times, the Spec field is set to the value of the last call.
 func (b *AlertmanagerConfigApplyConfiguration) WithSpec(value *AlertmanagerConfigSpecApplyConfiguration) *AlertmanagerConfigApplyConfiguration {
 	b.Spec = value
+	return b
+}
+
+// WithStatus sets the Status field in the declarative configuration to the given value
+// and returns the receiver, so that objects can be built by chaining "With" function invocations.
+// If called multiple times, the Status field is set to the value of the last call.
+func (b *AlertmanagerConfigApplyConfiguration) WithStatus(value *monitoringv1.ConfigResourceStatusApplyConfiguration) *AlertmanagerConfigApplyConfiguration {
+	b.Status = value
 	return b
 }
 

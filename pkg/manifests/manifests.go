@@ -1457,7 +1457,7 @@ func (f *Factory) PrometheusK8s(grpcTLS *v1.Secret, telemetrySecret *v1.Secret) 
 		p.Spec.Secrets = append(p.Spec.Secrets, telemetrySecret.GetName())
 
 		spec := monv1.RemoteWriteSpec{
-			URL:             f.config.ClusterMonitoringConfiguration.TelemeterClientConfig.TelemeterServerURL,
+			URL:             monv1.URL(f.config.ClusterMonitoringConfiguration.TelemeterClientConfig.TelemeterServerURL),
 			BearerTokenFile: fmt.Sprintf("/etc/prometheus/secrets/%s/%s", telemetrySecret.GetName(), telemetryTokenSecretKey),
 			QueueConfig: &monv1.QueueConfig{
 				// Amount of samples to load from the WAL into the in-memory
@@ -3530,7 +3530,7 @@ func addRemoteWriteConfigs(clusterID string, rw []monv1.RemoteWriteSpec, rwTarge
 		// and append the drop rule for our temporary cluster id
 		writeRelabelConfigs = append(writeRelabelConfigs, tmpRelabelDrop)
 		rwConf := monv1.RemoteWriteSpec{
-			URL:                 target.URL,
+			URL:                 monv1.URL(target.URL),
 			Headers:             target.Headers,
 			QueueConfig:         target.QueueConfig,
 			WriteRelabelConfigs: writeRelabelConfigs,
