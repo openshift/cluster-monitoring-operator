@@ -54,17 +54,20 @@ func TestPrometheusMetrics(t *testing.T) {
 					return err
 				}
 
-				healthyTargets := 0
+				totalTargets, healthyTargets := 0, 0
 				for _, target := range j.Path("data.activeTargets").Children() {
 					job, _ := target.Path("labels.job").Data().(string)
 					health, _ := target.Path("health").Data().(string)
-					if job == jobName && health == "up" {
-						healthyTargets++
+					if job == jobName {
+						totalTargets++
+						if health == "up" {
+							healthyTargets++
+						}
 					}
 				}
 
 				if healthyTargets != expectedTargets {
-					return fmt.Errorf("expected %d healthy targets, got %d", expectedTargets, healthyTargets)
+					return fmt.Errorf("expected %d healthy targets, got %d (total targets: %d)", expectedTargets, healthyTargets, totalTargets)
 				}
 				return nil
 			})
