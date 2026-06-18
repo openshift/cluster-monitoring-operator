@@ -474,6 +474,27 @@ func assertUserWorkloadRules(t *testing.T) {
 	)
 }
 
+func withTenantThanosQuerierClient(t *testing.T, token string, port int, fn func(*framework.PrometheusClient) error) error {
+	t.Helper()
+
+	host, cleanUp, err := f.ForwardServicePort(t, f.Ns, "thanos-querier", port)
+	if err != nil {
+		return err
+	}
+	defer cleanUp()
+
+	client := framework.NewPrometheusClient(
+		host,
+		token,
+		&framework.QueryParameterInjector{
+			Name:  "namespace",
+			Value: userWorkloadTestNs,
+		},
+	)
+
+	return fn(client)
+}
+
 // assertTenancyForMetrics ensures that a tenant can access metrics from her namespace (and only from this one).
 func assertTenancyForMetrics(t *testing.T) {
 	const testAccount = "test-metrics"
@@ -553,64 +574,49 @@ func assertTenancyForMetrics(t *testing.T) {
 			}()
 
 			err = framework.Poll(5*time.Second, 5*time.Minute, func() error {
-				// The tenancy port (9092) is only exposed in-cluster, so we need to use
-				// port forwarding to access kube-rbac-proxy.
-				host, cleanUp, err := f.ForwardServicePort(t, f.Ns, "thanos-querier", 9092)
-				if err != nil {
-					return err
-				}
-				defer cleanUp()
+				return withTenantThanosQuerierClient(t, token, 9092, func(client *framework.PrometheusClient) error {
+					b, err := client.PrometheusQueryWithStatus(tc.query, tc.expStatus)
+					if err != nil {
+						return err
+					}
 
-				client := framework.NewPrometheusClient(
-					host,
-					token,
-					&framework.QueryParameterInjector{
-						Name:  "namespace",
-						Value: userWorkloadTestNs,
-					},
-				)
+					if tc.expStatus != http.StatusOK {
+						// short circuit if we don't expect HTTP 200, as we
+						// don't need to parse the response
+						return nil
+					}
 
-				b, err := client.PrometheusQueryWithStatus(tc.query, tc.expStatus)
-				if err != nil {
-					return err
-				}
+					res, err := gabs.ParseJSON(b)
+					if err != nil {
+						return err
+					}
 
-				if tc.expStatus != http.StatusOK {
-					// short circuit if we don't expect HTTP 200, as we
-					// don't need to parse the response
+					timeseries, err := res.ArrayElementP(0, "data.result")
+					if err != nil {
+						return err
+					}
+
+					labels := timeseries.Path("metric").ChildrenMap()
+					if len(labels) == 0 {
+						return errors.New("empty metric")
+					}
+
+					ns := labels["namespace"].Data().(string)
+					if ns != userWorkloadTestNs {
+						return fmt.Errorf("expecting 'namespace' label to be %q, got %q", userWorkloadTestNs, ns)
+					}
+
+					value, err := timeseries.ArrayElementP(1, "value")
+					if err != nil {
+						return err
+					}
+
+					if value.Data().(string) != "1" {
+						return fmt.Errorf("expecting value '1', got %q", value.Data().(string))
+					}
+
 					return nil
-				}
-
-				res, err := gabs.ParseJSON(b)
-				if err != nil {
-					return err
-				}
-
-				timeseries, err := res.ArrayElementP(0, "data.result")
-				if err != nil {
-					return err
-				}
-
-				labels := timeseries.Path("metric").ChildrenMap()
-				if len(labels) == 0 {
-					return errors.New("empty metric")
-				}
-
-				ns := labels["namespace"].Data().(string)
-				if ns != userWorkloadTestNs {
-					return fmt.Errorf("expecting 'namespace' label to be %q, got %q", userWorkloadTestNs, ns)
-				}
-
-				value, err := timeseries.ArrayElementP(1, "value")
-				if err != nil {
-					return err
-				}
-
-				if value.Data().(string) != "1" {
-					return fmt.Errorf("expecting value '1', got %q", value.Data().(string))
-				}
-
-				return nil
+				})
 			})
 			if err != nil {
 				t.Errorf("failed to query Thanos querier: %v", err)
@@ -621,39 +627,24 @@ func assertTenancyForMetrics(t *testing.T) {
 	// Check that the account doesn't have to access the rules and alerts endpoints.
 	for _, path := range []string{"/api/v1/rules", "/api/v1/alerts"} {
 		err = framework.Poll(5*time.Second, 5*time.Minute, func() error {
-			// The tenancy port (9092) is only exposed in-cluster, so we need to use
-			// port forwarding to access kube-rbac-proxy.
-			host, cleanUp, err := f.ForwardServicePort(t, f.Ns, "thanos-querier", 9092)
-			if err != nil {
-				return err
-			}
-			defer cleanUp()
+			return withTenantThanosQuerierClient(t, token, 9092, func(client *framework.PrometheusClient) error {
+				resp, err := client.Do("GET", path, nil)
+				if err != nil {
+					return err
+				}
+				defer resp.Body.Close()
 
-			client := framework.NewPrometheusClient(
-				host,
-				token,
-				&framework.QueryParameterInjector{
-					Name:  "namespace",
-					Value: userWorkloadTestNs,
-				},
-			)
+				b, err := io.ReadAll(resp.Body)
+				if err != nil {
+					return err
+				}
 
-			resp, err := client.Do("GET", path, nil)
-			if err != nil {
-				return err
-			}
-			defer resp.Body.Close()
+				if resp.StatusCode/100 == 2 {
+					return fmt.Errorf("expected request to be rejected, but got status code %d (%s)", resp.StatusCode, framework.ClampMax(b))
+				}
 
-			b, err := io.ReadAll(resp.Body)
-			if err != nil {
-				return err
-			}
-
-			if resp.StatusCode/100 == 2 {
-				return fmt.Errorf("expected request to be rejected, but got status code %d (%s)", resp.StatusCode, framework.ClampMax(b))
-			}
-
-			return nil
+				return nil
+			})
 		})
 		if err != nil {
 			t.Fatalf("the account has access to the %q endpoint of Thanos querier: %v", path, err)
@@ -738,45 +729,30 @@ func assertTenancyForMetrics(t *testing.T) {
 
 			// It might take some time for kube-rbac-proxy to catch up the updated permission.
 			err = framework.Poll(time.Second, 5*time.Minute, func() error {
-				// Forward the tenancy port.
-				host, cleanUp, err := f.ForwardServicePort(t, f.Ns, "thanos-querier", 9092)
-				if err != nil {
-					return err
-				}
-				defer cleanUp()
-
-				// Create a Prometheus client with the test SA token.
-				client := framework.NewPrometheusClient(
-					host,
-					token,
-					&framework.QueryParameterInjector{
-						Name:  "namespace",
-						Value: userWorkloadTestNs,
-					},
-				)
-
-				resp, err := client.Do(tc.method, "/api/v1/query?namespace="+userWorkloadTestNs+"&query=up", nil)
-				if err != nil {
-					return err
-				}
-				defer resp.Body.Close()
-				// Body: {"status":"success","data":{"resultType":"vector","result":[{"metric":{"__name__":"up",...},"value":[1695582946.784,"1"]}]}}
-				respBodyBytes, err := io.ReadAll(resp.Body)
-				if err != nil {
-					return err
-				}
-
-				if tc.expectNotOKOnQuery {
-					if resp.StatusCode == http.StatusOK {
-						return fmt.Errorf("expected request to be rejected, but succeeded")
+				return withTenantThanosQuerierClient(t, token, 9092, func(client *framework.PrometheusClient) error {
+					resp, err := client.Do(tc.method, "/api/v1/query?namespace="+userWorkloadTestNs+"&query=up", nil)
+					if err != nil {
+						return err
 					}
-				} else {
-					if resp.StatusCode != http.StatusOK {
-						return fmt.Errorf("expected request to be accepted, but got status code %d (%s)", resp.StatusCode, respBodyBytes)
+					defer resp.Body.Close()
+					// Body: {"status":"success","data":{"resultType":"vector","result":[{"metric":{"__name__":"up",...},"value":[1695582946.784,"1"]}]}}
+					respBodyBytes, err := io.ReadAll(resp.Body)
+					if err != nil {
+						return err
 					}
-				}
 
-				return nil
+					if tc.expectNotOKOnQuery {
+						if resp.StatusCode == http.StatusOK {
+							return fmt.Errorf("expected request to be rejected, but succeeded")
+						}
+					} else {
+						if resp.StatusCode != http.StatusOK {
+							return fmt.Errorf("expected request to be accepted, but got status code %d (%s)", resp.StatusCode, respBodyBytes)
+						}
+					}
+
+					return nil
+				})
 			})
 			if err != nil {
 				t.Fatal(err)
@@ -812,135 +788,9 @@ func assertTenancyForRulesAndAlerts(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	var client *framework.PrometheusClient
 	err = framework.Poll(5*time.Second, 5*time.Minute, func() error {
-		// The tenancy port (9093) is only exposed in-cluster, so we need to use
-		// port forwarding to access kube-rbac-proxy.
-		host, cleanUp, err := f.ForwardServicePort(t, f.Ns, "thanos-querier", 9093)
-		if err != nil {
-			return err
-		}
-		defer cleanUp()
-
-		client = framework.NewPrometheusClient(
-			host,
-			token,
-			&framework.QueryParameterInjector{
-				Name:  "namespace",
-				Value: userWorkloadTestNs,
-			},
-		)
-
-		resp, err := client.Do("GET", "/api/v1/rules", nil)
-		if err != nil {
-			return err
-		}
-		defer resp.Body.Close()
-
-		b, err := io.ReadAll(resp.Body)
-		if err != nil {
-			return err
-		}
-
-		if resp.StatusCode != http.StatusOK {
-			return fmt.Errorf("unexpected status code response, want %d, got %d (%s)", http.StatusOK, resp.StatusCode, framework.ClampMax(b))
-		}
-
-		res, err := gabs.ParseJSON(b)
-		if err != nil {
-			return err
-		}
-
-		groups := res.Path("data.groups").Children()
-		if groups == nil {
-			return errors.New("data.groups not found")
-		}
-
-		if len(groups) != 2 {
-			return fmt.Errorf("expecting 2 rules group, got %d", len(groups))
-		}
-
-		type testData struct {
-			ruleType  string
-			name      string
-			namespace string
-		}
-
-		expected := []testData{
-			{
-				ruleType:  "recording",
-				name:      "version:blah:leaf:count",
-				namespace: "user-workload-test",
-			},
-			{
-				ruleType:  "alerting",
-				name:      "VersionAlert",
-				namespace: "user-workload-test",
-			},
-			{
-				ruleType:  "recording",
-				name:      "version:blah:count",
-				namespace: "user-workload-test",
-			},
-		}
-
-		var got []testData
-
-		for _, group := range groups {
-			rules := group.Path("rules").Children()
-			if rules == nil {
-				return errors.New("rules not found")
-			}
-
-			for _, rule := range rules {
-				labels := rule.Path("labels").ChildrenMap()
-				if labels == nil {
-					return errors.New("labels not found")
-				}
-
-				got = append(got, testData{
-					ruleType:  rule.Path("type").Data().(string),
-					name:      rule.Path("name").Data().(string),
-					namespace: labels["namespace"].Data().(string),
-				})
-			}
-		}
-
-		if !reflect.DeepEqual(expected, got) {
-			return fmt.Errorf("expected rules %v, got %v", expected, got)
-		}
-
-		return nil
-	})
-	if err != nil {
-		t.Fatalf("failed to query rules from Thanos querier: %v", err)
-	}
-
-	err = framework.Poll(5*time.Second, 5*time.Minute, func() error {
-		resp, err := client.Do("GET", "/api/v1/alerts", nil)
-		if err != nil {
-			return err
-		}
-		defer resp.Body.Close()
-
-		b, err := io.ReadAll(resp.Body)
-		if err != nil {
-			return err
-		}
-
-		if resp.StatusCode != http.StatusOK {
-			return fmt.Errorf("unexpected status code response, want %d, got %d (%s)", http.StatusOK, resp.StatusCode, framework.ClampMax(b))
-		}
-		return nil
-	})
-	if err != nil {
-		t.Fatalf("failed to query alerts from Thanos querier: %v", err)
-	}
-
-	// Check that the account doesn't have to access the query endpoints.
-	for _, path := range []string{"/api/v1/range?query=up", "/api/v1/query_range?query=up&start=0&end=0&step=1s"} {
-		err = framework.Poll(5*time.Second, 5*time.Minute, func() error {
-			resp, err := client.Do("GET", path, nil)
+		return withTenantThanosQuerierClient(t, token, 9093, func(client *framework.PrometheusClient) error {
+			resp, err := client.Do("GET", "/api/v1/rules", nil)
 			if err != nil {
 				return err
 			}
@@ -951,11 +801,125 @@ func assertTenancyForRulesAndAlerts(t *testing.T) {
 				return err
 			}
 
-			if resp.StatusCode/100 == 2 {
-				return fmt.Errorf("unexpected status code response, got %d (%s)", resp.StatusCode, framework.ClampMax(b))
+			if resp.StatusCode != http.StatusOK {
+				return fmt.Errorf("unexpected status code response, want %d, got %d (%s)", http.StatusOK, resp.StatusCode, framework.ClampMax(b))
+			}
+
+			res, err := gabs.ParseJSON(b)
+			if err != nil {
+				return err
+			}
+
+			groups := res.Path("data.groups").Children()
+			if groups == nil {
+				return errors.New("data.groups not found")
+			}
+
+			if len(groups) != 2 {
+				return fmt.Errorf("expecting 2 rules group, got %d", len(groups))
+			}
+
+			type testData struct {
+				ruleType  string
+				name      string
+				namespace string
+			}
+
+			expected := []testData{
+				{
+					ruleType:  "recording",
+					name:      "version:blah:leaf:count",
+					namespace: "user-workload-test",
+				},
+				{
+					ruleType:  "alerting",
+					name:      "VersionAlert",
+					namespace: "user-workload-test",
+				},
+				{
+					ruleType:  "recording",
+					name:      "version:blah:count",
+					namespace: "user-workload-test",
+				},
+			}
+
+			var got []testData
+
+			for _, group := range groups {
+				rules := group.Path("rules").Children()
+				if rules == nil {
+					return errors.New("rules not found")
+				}
+
+				for _, rule := range rules {
+					labels := rule.Path("labels").ChildrenMap()
+					if labels == nil {
+						return errors.New("labels not found")
+					}
+
+					got = append(got, testData{
+						ruleType:  rule.Path("type").Data().(string),
+						name:      rule.Path("name").Data().(string),
+						namespace: labels["namespace"].Data().(string),
+					})
+				}
+			}
+
+			if !reflect.DeepEqual(expected, got) {
+				return fmt.Errorf("expected rules %v, got %v", expected, got)
 			}
 
 			return nil
+		})
+	})
+	if err != nil {
+		t.Fatalf("failed to query rules from Thanos querier: %v", err)
+	}
+
+	err = framework.Poll(5*time.Second, 5*time.Minute, func() error {
+		return withTenantThanosQuerierClient(t, token, 9093, func(client *framework.PrometheusClient) error {
+			resp, err := client.Do("GET", "/api/v1/alerts", nil)
+			if err != nil {
+				return err
+			}
+			defer resp.Body.Close()
+
+			b, err := io.ReadAll(resp.Body)
+			if err != nil {
+				return err
+			}
+
+			if resp.StatusCode != http.StatusOK {
+				return fmt.Errorf("unexpected status code response, want %d, got %d (%s)", http.StatusOK, resp.StatusCode, framework.ClampMax(b))
+			}
+			return nil
+		})
+	})
+	if err != nil {
+		t.Fatalf("failed to query alerts from Thanos querier: %v", err)
+	}
+
+	// Check that the account doesn't have to access the query endpoints.
+	for _, path := range []string{"/api/v1/range?query=up", "/api/v1/query_range?query=up&start=0&end=0&step=1s"} {
+		err = framework.Poll(5*time.Second, 5*time.Minute, func() error {
+			return withTenantThanosQuerierClient(t, token, 9093, func(client *framework.PrometheusClient) error {
+				resp, err := client.Do("GET", path, nil)
+				if err != nil {
+					return err
+				}
+				defer resp.Body.Close()
+
+				b, err := io.ReadAll(resp.Body)
+				if err != nil {
+					return err
+				}
+
+				if resp.StatusCode/100 == 2 {
+					return fmt.Errorf("unexpected status code response, got %d (%s)", resp.StatusCode, framework.ClampMax(b))
+				}
+
+				return nil
+			})
 		})
 		if err != nil {
 			t.Fatalf("the account has access to the %q endpoint of Thanos querier: %v", path, err)
@@ -1148,53 +1112,38 @@ func assertTenancyForSeriesMetadata(t *testing.T) {
 
 	// check /api/v1/labels endpoint
 	err = framework.Poll(5*time.Second, 5*time.Minute, func() error {
-		// The tenancy port (9092) is only exposed in-cluster, so we need to use
-		// port forwarding to access kube-rbac-proxy.
-		host, cleanUp, err := f.ForwardServicePort(t, f.Ns, "thanos-querier", 9092)
-		if err != nil {
-			return err
-		}
-		defer cleanUp()
+		return withTenantThanosQuerierClient(t, token, 9092, func(client *framework.PrometheusClient) error {
+			resp, err := client.Do("GET", "/api/v1/labels", nil)
+			if err != nil {
+				return err
+			}
+			defer resp.Body.Close()
 
-		client := framework.NewPrometheusClient(
-			host,
-			token,
-			&framework.QueryParameterInjector{
-				Name:  "namespace",
-				Value: userWorkloadTestNs,
-			},
-		)
+			b, err := io.ReadAll(resp.Body)
+			if err != nil {
+				return err
+			}
 
-		resp, err := client.Do("GET", "/api/v1/labels", nil)
-		if err != nil {
-			return err
-		}
-		defer resp.Body.Close()
+			if resp.StatusCode != http.StatusOK {
+				return fmt.Errorf("unexpected status code response, want %d, got %d (%s)", http.StatusOK, resp.StatusCode, framework.ClampMax(b))
+			}
 
-		b, err := io.ReadAll(resp.Body)
-		if err != nil {
-			return err
-		}
+			res, err := gabs.ParseJSON(b)
+			if err != nil {
+				return err
+			}
 
-		if resp.StatusCode != http.StatusOK {
-			return fmt.Errorf("unexpected status code response, want %d, got %d (%s)", http.StatusOK, resp.StatusCode, framework.ClampMax(b))
-		}
+			labels := res.Path("data").Children()
+			if labels == nil {
+				return errors.New("data not found")
+			}
 
-		res, err := gabs.ParseJSON(b)
-		if err != nil {
-			return err
-		}
+			if len(labels) == 0 {
+				return fmt.Errorf("expecting a label list with at least one item, got zero")
+			}
 
-		labels := res.Path("data").Children()
-		if labels == nil {
-			return errors.New("data not found")
-		}
-
-		if len(labels) == 0 {
-			return fmt.Errorf("expecting a label list with at least one item, got zero")
-		}
-
-		return nil
+			return nil
+		})
 	})
 	if err != nil {
 		t.Fatalf("failed to query labels from Thanos querier: %v", err)
@@ -1202,53 +1151,38 @@ func assertTenancyForSeriesMetadata(t *testing.T) {
 
 	// Check the /api/v1/series endpoint.
 	err = framework.Poll(5*time.Second, 5*time.Minute, func() error {
-		// The tenancy port (9092) is only exposed in-cluster, so we need to use
-		// port forwarding to access kube-rbac-proxy.
-		host, cleanUp, err := f.ForwardServicePort(t, f.Ns, "thanos-querier", 9092)
-		if err != nil {
-			return err
-		}
-		defer cleanUp()
+		return withTenantThanosQuerierClient(t, token, 9092, func(client *framework.PrometheusClient) error {
+			resp, err := client.Do("GET", "/api/v1/series?match[]=up", nil)
+			if err != nil {
+				return err
+			}
+			defer resp.Body.Close()
 
-		client := framework.NewPrometheusClient(
-			host,
-			token,
-			&framework.QueryParameterInjector{
-				Name:  "namespace",
-				Value: userWorkloadTestNs,
-			},
-		)
+			b, err := io.ReadAll(resp.Body)
+			if err != nil {
+				return err
+			}
 
-		resp, err := client.Do("GET", "/api/v1/series?match[]=up", nil)
-		if err != nil {
-			return err
-		}
-		defer resp.Body.Close()
+			if resp.StatusCode != http.StatusOK {
+				return fmt.Errorf("unexpected status code response, want %d, got %d (%s)", http.StatusOK, resp.StatusCode, framework.ClampMax(b))
+			}
 
-		b, err := io.ReadAll(resp.Body)
-		if err != nil {
-			return err
-		}
+			res, err := gabs.ParseJSON(b)
+			if err != nil {
+				return err
+			}
 
-		if resp.StatusCode != http.StatusOK {
-			return fmt.Errorf("unexpected status code response, want %d, got %d (%s)", http.StatusOK, resp.StatusCode, framework.ClampMax(b))
-		}
+			series := res.Path("data").Children()
+			if series == nil {
+				return errors.New("data not found")
+			}
 
-		res, err := gabs.ParseJSON(b)
-		if err != nil {
-			return err
-		}
+			if len(series) != 1 {
+				return fmt.Errorf("expecting a series list with one item, got %d (%s)", len(series), framework.ClampMax(b))
+			}
 
-		series := res.Path("data").Children()
-		if series == nil {
-			return errors.New("data not found")
-		}
-
-		if len(series) != 1 {
-			return fmt.Errorf("expecting a series list with one item, got %d (%s)", len(series), framework.ClampMax(b))
-		}
-
-		return nil
+			return nil
+		})
 	})
 	if err != nil {
 		t.Fatalf("failed to query series from Thanos querier: %v", err)
@@ -1256,47 +1190,32 @@ func assertTenancyForSeriesMetadata(t *testing.T) {
 
 	// Check that /api/v1/label/{namespace}/values returns a single value.
 	err = framework.Poll(5*time.Second, 5*time.Minute, func() error {
-		// The tenancy port (9092) is only exposed in-cluster, so we need to use
-		// port forwarding to access kube-rbac-proxy.
-		host, cleanUp, err := f.ForwardServicePort(t, f.Ns, "thanos-querier", 9092)
-		if err != nil {
-			return err
-		}
-		defer cleanUp()
+		return withTenantThanosQuerierClient(t, token, 9092, func(client *framework.PrometheusClient) error {
+			b, err := client.PrometheusLabel("namespace")
+			if err != nil {
+				return err
+			}
 
-		client := framework.NewPrometheusClient(
-			host,
-			token,
-			&framework.QueryParameterInjector{
-				Name:  "namespace",
-				Value: userWorkloadTestNs,
-			},
-		)
+			res, err := gabs.ParseJSON(b)
+			if err != nil {
+				return err
+			}
 
-		b, err := client.PrometheusLabel("namespace")
-		if err != nil {
-			return err
-		}
+			values := res.Path("data").Children()
+			if values == nil {
+				return errors.New("data not found")
+			}
 
-		res, err := gabs.ParseJSON(b)
-		if err != nil {
-			return err
-		}
+			if len(values) != 1 {
+				return fmt.Errorf("expecting only 1 value for the 'namespace' label but got %d", len(values))
+			}
 
-		values := res.Path("data").Children()
-		if values == nil {
-			return errors.New("data not found")
-		}
+			if values[0].Data().(string) != userWorkloadTestNs {
+				return fmt.Errorf("expecting 'namespace' label value to be %q but got %q .", userWorkloadTestNs, values[0].Data().(string))
+			}
 
-		if len(values) != 1 {
-			return fmt.Errorf("expecting only 1 value for the 'namespace' label but got %d", len(values))
-		}
-
-		if values[0].Data().(string) != userWorkloadTestNs {
-			return fmt.Errorf("expecting 'namespace' label value to be %q but got %q .", userWorkloadTestNs, values[0].Data().(string))
-		}
-
-		return nil
+			return nil
+		})
 	})
 	if err != nil {
 		t.Fatalf("failed to query namespace label from Thanos querier: %v", err)
