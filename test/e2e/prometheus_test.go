@@ -408,11 +408,13 @@ func TestBodySizeLimit(t *testing.T) {
 // the service, it is useful in some situations.
 func TestPrometheusWebUI(t *testing.T) {
 	t.Parallel()
-	host, cleanUp, err := f.ForwardPodPort(t, f.Ns, "prometheus-k8s-0", 9090)
-	require.NoError(t, err)
-	t.Cleanup(cleanUp)
+	err := framework.Poll(time.Second, 5*time.Minute, func() error {
+		host, cleanUp, err := f.ForwardPodPort(t, f.Ns, "prometheus-k8s-0", 9090)
+		if err != nil {
+			return err
+		}
+		defer cleanUp()
 
-	err = framework.Poll(time.Second, 5*time.Minute, func() error {
 		// /query is a client-side route only defined in the Mantine UI code.
 		resp, err := http.Get(fmt.Sprintf("http://%s/query", host))
 		if err != nil {
