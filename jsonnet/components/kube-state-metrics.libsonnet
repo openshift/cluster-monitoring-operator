@@ -124,6 +124,7 @@ function(params)
       'kube_pod_labels',
       'kube_pod_restart_policy',
       'kube_pod_status_phase',
+      'kube_pod_status_ready',
       'kube_storageclass_info',
     ],
 

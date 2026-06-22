@@ -290,8 +290,7 @@ type PrometheusK8sConfig struct {
 	// the `minimal` profile, Prometheus only collects metrics necessary for
 	// the default platform alerts, recording rules, telemetry and console
 	// dashboards. In the `telemetry` profile, Prometheus only collects
-	// metrics necessary for telemetry. The `minimal` profile's allow-list
-	// should always be a superset of the `telemetry` profile's allow-list.
+	// metrics necessary for telemetry.
 	CollectionProfile CollectionProfile `json:"collectionProfile,omitempty"`
 	// Defines persistent storage for Prometheus. Use this setting to
 	// configure the persistent volume claim, including storage class,
