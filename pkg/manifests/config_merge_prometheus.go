@@ -17,7 +17,6 @@ package manifests
 import (
 	"fmt"
 	"strconv"
-	"strings"
 
 	configv1alpha1 "github.com/openshift/api/config/v1alpha1"
 	monv1 "github.com/prometheus-operator/prometheus-operator/pkg/apis/monitoring/v1"
@@ -76,14 +75,16 @@ func retentionCRDEmpty(r configv1alpha1.Retention) bool {
 	return r.Duration == "" && r.Size == ""
 }
 
-func collectionProfileCRDToManifest(cp configv1alpha1.CollectionProfile) CollectionProfile {
+func collectionProfileCRDToManifest(cp configv1alpha1.CollectionProfile) (CollectionProfile, error) {
 	switch cp {
+	case "":
+		return "", nil
 	case configv1alpha1.CollectionProfileFull:
-		return FullCollectionProfile
+		return FullCollectionProfile, nil
 	case configv1alpha1.CollectionProfileMinimal:
-		return MinimalCollectionProfile
+		return MinimalCollectionProfile, nil
 	default:
-		return ""
+		return "", fmt.Errorf("unsupported collection profile %q", cp)
 	}
 }
 
@@ -108,18 +109,20 @@ func secretKeySelectorFromCRD(s configv1alpha1.SecretKeySelector) *v1.SecretKeyS
 	}
 }
 
-func alertmanagerSchemeFromCRD(scheme configv1alpha1.AlertmanagerScheme) string {
+func alertmanagerSchemeFromCRD(scheme configv1alpha1.AlertmanagerScheme) (string, error) {
 	switch scheme {
+	case "":
+		return "", nil
 	case configv1alpha1.AlertmanagerSchemeHTTPS:
-		return "https"
+		return "https", nil
 	case configv1alpha1.AlertmanagerSchemeHTTP:
-		return "http"
+		return "http", nil
 	default:
-		return ""
+		return "", fmt.Errorf("unsupported alertmanager scheme %q", scheme)
 	}
 }
 
-func tlsConfigFromCRD(tc configv1alpha1.TLSConfig) TLSConfig {
+func tlsConfigFromCRD(tc configv1alpha1.TLSConfig) (TLSConfig, error) {
 	out := TLSConfig{
 		ServerName: tc.ServerName,
 	}
@@ -132,15 +135,21 @@ func tlsConfigFromCRD(tc configv1alpha1.TLSConfig) TLSConfig {
 	if sel := secretKeySelectorFromCRD(tc.Key); sel != nil {
 		out.Key = sel
 	}
-	if tc.CertificateVerification == configv1alpha1.CertificateVerificationSkipVerify {
-		out.InsecureSkipVerify = true
+	if tc.CertificateVerification != "" {
+		switch tc.CertificateVerification {
+		case configv1alpha1.CertificateVerificationSkipVerify:
+			out.InsecureSkipVerify = true
+		case configv1alpha1.CertificateVerificationVerify:
+		default:
+			return TLSConfig{}, fmt.Errorf("unsupported certificate verification %q", tc.CertificateVerification)
+		}
 	}
-	return out
+	return out, nil
 }
 
-func safeTLSConfigFromCRD(tc configv1alpha1.TLSConfig) *monv1.SafeTLSConfig {
+func safeTLSConfigFromCRD(tc configv1alpha1.TLSConfig) (*monv1.SafeTLSConfig, error) {
 	if tc.CA.Name == "" && tc.Cert.Name == "" && tc.Key.Name == "" && tc.ServerName == "" && tc.CertificateVerification == "" {
-		return nil
+		return nil, nil
 	}
 	out := &monv1.SafeTLSConfig{}
 	if sel := secretKeySelectorFromCRD(tc.CA); sel != nil {
@@ -155,15 +164,21 @@ func safeTLSConfigFromCRD(tc configv1alpha1.TLSConfig) *monv1.SafeTLSConfig {
 	if tc.ServerName != "" {
 		out.ServerName = ptr.To(tc.ServerName)
 	}
-	if tc.CertificateVerification == configv1alpha1.CertificateVerificationSkipVerify {
-		out.InsecureSkipVerify = ptr.To(true)
+	if tc.CertificateVerification != "" {
+		switch tc.CertificateVerification {
+		case configv1alpha1.CertificateVerificationSkipVerify:
+			out.InsecureSkipVerify = ptr.To(true)
+		case configv1alpha1.CertificateVerificationVerify:
+		default:
+			return nil, fmt.Errorf("unsupported certificate verification %q", tc.CertificateVerification)
+		}
 	}
-	return out
+	return out, nil
 }
 
-func additionalAlertmanagerConfigsFromCRD(configs []configv1alpha1.AdditionalAlertmanagerConfig) []AdditionalAlertmanagerConfig {
+func additionalAlertmanagerConfigsFromCRD(configs []configv1alpha1.AdditionalAlertmanagerConfig) ([]AdditionalAlertmanagerConfig, error) {
 	if len(configs) == 0 {
-		return nil
+		return nil, nil
 	}
 	out := make([]AdditionalAlertmanagerConfig, 0, len(configs))
 	for _, ac := range configs {
@@ -172,8 +187,15 @@ func additionalAlertmanagerConfigsFromCRD(configs []configv1alpha1.AdditionalAle
 			PathPrefix:    ac.PathPrefix,
 			StaticConfigs: ac.StaticConfigs,
 		}
-		if scheme := alertmanagerSchemeFromCRD(ac.Scheme); scheme != "" {
+		if ac.Scheme != "" {
+			scheme, err := alertmanagerSchemeFromCRD(ac.Scheme)
+			if err != nil {
+				return nil, fmt.Errorf("additionalAlertmanagerConfigs.scheme: %w", err)
+			}
 			cfg.Scheme = scheme
+		}
+		if ac.Authorization.Type != "" && ac.Authorization.Type != configv1alpha1.AuthorizationTypeBearerToken {
+			return nil, fmt.Errorf("additionalAlertmanagerConfigs.authorization.type: unsupported authorization type %q", ac.Authorization.Type)
 		}
 		if ac.Authorization.Type == configv1alpha1.AuthorizationTypeBearerToken {
 			cfg.BearerToken = secretKeySelectorFromCRD(ac.Authorization.BearerToken)
@@ -184,11 +206,15 @@ func additionalAlertmanagerConfigsFromCRD(configs []configv1alpha1.AdditionalAle
 		}
 		if ac.TLSConfig.CA.Name != "" || ac.TLSConfig.Cert.Name != "" || ac.TLSConfig.Key.Name != "" ||
 			ac.TLSConfig.ServerName != "" || ac.TLSConfig.CertificateVerification != "" {
-			cfg.TLSConfig = tlsConfigFromCRD(ac.TLSConfig)
+			tlsConfig, err := tlsConfigFromCRD(ac.TLSConfig)
+			if err != nil {
+				return nil, fmt.Errorf("additionalAlertmanagerConfigs.tlsConfig: %w", err)
+			}
+			cfg.TLSConfig = tlsConfig
 		}
 		out = append(out, cfg)
 	}
-	return out
+	return out, nil
 }
 
 func remoteWriteHeadersFromCRD(headers []configv1alpha1.PrometheusRemoteWriteHeader) map[string]string {
@@ -206,29 +232,29 @@ func remoteWriteHeadersFromCRD(headers []configv1alpha1.PrometheusRemoteWriteHea
 	return out
 }
 
-func metadataConfigFromCRD(mc configv1alpha1.MetadataConfig) *monv1.MetadataConfig {
+func metadataConfigFromCRD(mc configv1alpha1.MetadataConfig) (*monv1.MetadataConfig, error) {
 	if mc.SendPolicy == "" {
-		return nil
+		return nil, nil
 	}
 	switch mc.SendPolicy {
 	case configv1alpha1.MetadataConfigSendPolicyDefault:
-		return &monv1.MetadataConfig{Send: true}
+		return &monv1.MetadataConfig{Send: true}, nil
 	case configv1alpha1.MetadataConfigSendPolicyCustom:
 		out := &monv1.MetadataConfig{Send: true}
 		if mc.Custom.SendIntervalSeconds > 0 {
 			out.SendInterval = monv1.Duration(fmt.Sprintf("%ds", mc.Custom.SendIntervalSeconds))
 		}
-		return out
+		return out, nil
 	default:
-		return nil
+		return nil, fmt.Errorf("unsupported metadata send policy %q", mc.SendPolicy)
 	}
 }
 
-func queueConfigFromCRD(qc configv1alpha1.QueueConfig) *monv1.QueueConfig {
+func queueConfigFromCRD(qc configv1alpha1.QueueConfig) (*monv1.QueueConfig, error) {
 	if qc.Capacity == 0 && qc.MaxShards == 0 && qc.MinShards == 0 && qc.MaxSamplesPerSend == 0 &&
 		qc.BatchSendDeadlineSeconds == 0 && qc.MinBackoffMilliseconds == 0 && qc.MaxBackoffMilliseconds == 0 &&
 		qc.RateLimitedAction == "" {
-		return nil
+		return nil, nil
 	}
 	out := &monv1.QueueConfig{}
 	if qc.Capacity > 0 {
@@ -252,10 +278,15 @@ func queueConfigFromCRD(qc configv1alpha1.QueueConfig) *monv1.QueueConfig {
 	if qc.MaxBackoffMilliseconds > 0 {
 		out.MaxBackoff = ptr.To(monv1.Duration(fmt.Sprintf("%dms", qc.MaxBackoffMilliseconds)))
 	}
-	if qc.RateLimitedAction == configv1alpha1.RateLimitedActionRetry {
-		out.RetryOnRateLimit = true
+	if qc.RateLimitedAction != "" {
+		switch qc.RateLimitedAction {
+		case configv1alpha1.RateLimitedActionRetry:
+			out.RetryOnRateLimit = true
+		default:
+			return nil, fmt.Errorf("unsupported rate limited action %q", qc.RateLimitedAction)
+		}
 	}
-	return out
+	return out, nil
 }
 
 func oauth2FromCRD(oauth2 configv1alpha1.OAuth2) *monv1.OAuth2 {
@@ -300,11 +331,7 @@ func sigv4FromCRD(sigv4 configv1alpha1.Sigv4) *monv1.Sigv4 {
 	return out
 }
 
-func relabelActionString(action configv1alpha1.RelabelAction) string {
-	return strings.ToLower(string(action))
-}
-
-func relabelConfigFromCRD(rc configv1alpha1.RelabelConfig) monv1.RelabelConfig {
+func relabelConfigFromCRD(rc configv1alpha1.RelabelConfig) (monv1.RelabelConfig, error) {
 	out := monv1.RelabelConfig{
 		Regex: rc.Regex,
 	}
@@ -318,9 +345,10 @@ func relabelConfigFromCRD(rc configv1alpha1.RelabelConfig) monv1.RelabelConfig {
 		out.Separator = ptr.To(rc.Separator)
 	}
 	if rc.Action.Type != "" {
-		out.Action = relabelActionString(rc.Action.Type)
+		out.Action = string(rc.Action.Type)
 	}
 	switch rc.Action.Type {
+	case "":
 	case configv1alpha1.RelabelActionReplace:
 		out.TargetLabel = rc.Action.Replace.TargetLabel
 		out.Replacement = rc.Action.Replace.Replacement
@@ -339,30 +367,35 @@ func relabelConfigFromCRD(rc configv1alpha1.RelabelConfig) monv1.RelabelConfig {
 		out.TargetLabel = rc.Action.DropEqual.TargetLabel
 	case configv1alpha1.RelabelActionLabelMap:
 		out.Replacement = ptr.To(rc.Action.LabelMap.Replacement)
+	case configv1alpha1.RelabelActionKeep,
+		configv1alpha1.RelabelActionDrop,
+		configv1alpha1.RelabelActionLabelDrop,
+		configv1alpha1.RelabelActionLabelKeep:
+	default:
+		return monv1.RelabelConfig{}, fmt.Errorf("unsupported relabel action %q", rc.Action.Type)
 	}
-	return out
+	return out, nil
 }
 
-func writeRelabelConfigsFromCRD(configs []configv1alpha1.RelabelConfig) []monv1.RelabelConfig {
+func writeRelabelConfigsFromCRD(configs []configv1alpha1.RelabelConfig) ([]monv1.RelabelConfig, error) {
 	if len(configs) == 0 {
-		return nil
+		return nil, nil
 	}
 	out := make([]monv1.RelabelConfig, 0, len(configs))
 	for _, rc := range configs {
-		out = append(out, relabelConfigFromCRD(rc))
+		cfg, err := relabelConfigFromCRD(rc)
+		if err != nil {
+			return nil, fmt.Errorf("writeRelabelConfigs: %w", err)
+		}
+		out = append(out, cfg)
 	}
-	return out
+	return out, nil
 }
 
-func applyRemoteWriteAuthorizationFromCRD(auth configv1alpha1.RemoteWriteAuthorization, dst *RemoteWriteSpec) {
+func applyRemoteWriteAuthorizationFromCRD(auth configv1alpha1.RemoteWriteAuthorization, dst *RemoteWriteSpec) error {
 	switch auth.Type {
-	case configv1alpha1.RemoteWriteAuthorizationTypeBearerToken:
-		if sel := secretKeySelectorFromCRD(auth.BearerToken); sel != nil {
-			dst.Authorization = &monv1.SafeAuthorization{
-				Type:        "Bearer",
-				Credentials: sel,
-			}
-		}
+	case "":
+		return nil
 	case configv1alpha1.RemoteWriteAuthorizationTypeBasicAuth:
 		username := secretKeySelectorFromCRD(auth.BasicAuth.Username)
 		password := secretKeySelectorFromCRD(auth.BasicAuth.Password)
@@ -377,20 +410,34 @@ func applyRemoteWriteAuthorizationFromCRD(auth configv1alpha1.RemoteWriteAuthori
 	case configv1alpha1.RemoteWriteAuthorizationTypeSigV4:
 		dst.Sigv4 = sigv4FromCRD(auth.Sigv4)
 	case configv1alpha1.RemoteWriteAuthorizationTypeSafeAuthorization:
-		if auth.SafeAuthorization != nil {
-			dst.Authorization = &monv1.SafeAuthorization{
-				Type:        "Bearer",
-				Credentials: auth.SafeAuthorization,
-			}
+		authorization, err := remoteWriteAuthorizationFromCRD(auth)
+		if err != nil {
+			return err
 		}
+		dst.Authorization = authorization
 	case configv1alpha1.RemoteWriteAuthorizationTypeServiceAccount:
 		dst.BearerTokenFile = serviceAccountTokenPath
+	default:
+		return fmt.Errorf("unsupported remote write authorization type %q", auth.Type)
 	}
+	return nil
 }
 
-func remoteWriteSpecsFromCRD(configs []configv1alpha1.RemoteWriteSpec) []RemoteWriteSpec {
+// remoteWriteAuthorizationFromCRD maps CRD authorization credentials to the
+// Prometheus Operator SafeAuthorization shape. The openshift/api field is still
+// named safeAuthorization pending a rename to authorization.
+func remoteWriteAuthorizationFromCRD(auth configv1alpha1.RemoteWriteAuthorization) (*monv1.SafeAuthorization, error) {
+	if auth.SafeAuthorization == nil {
+		return nil, fmt.Errorf("authorization is required when type is %q", auth.Type)
+	}
+	return &monv1.SafeAuthorization{
+		Credentials: auth.SafeAuthorization,
+	}, nil
+}
+
+func remoteWriteSpecsFromCRD(configs []configv1alpha1.RemoteWriteSpec) ([]RemoteWriteSpec, error) {
 	if len(configs) == 0 {
-		return nil
+		return nil, nil
 	}
 	out := make([]RemoteWriteSpec, 0, len(configs))
 	for _, rw := range configs {
@@ -403,38 +450,63 @@ func remoteWriteSpecsFromCRD(configs []configv1alpha1.RemoteWriteSpec) []RemoteW
 		if rw.RemoteTimeoutSeconds > 0 {
 			cfg.RemoteTimeout = fmt.Sprintf("%ds", rw.RemoteTimeoutSeconds)
 		}
-		if rw.ExemplarsMode == configv1alpha1.ExemplarsModeSend {
-			cfg.SendExemplars = ptr.To(true)
+		if rw.ExemplarsMode != "" {
+			switch rw.ExemplarsMode {
+			case configv1alpha1.ExemplarsModeSend:
+				cfg.SendExemplars = ptr.To(true)
+			case configv1alpha1.ExemplarsModeDoNotSend:
+			default:
+				return nil, fmt.Errorf("remoteWrite.exemplarsMode: unsupported exemplars mode %q", rw.ExemplarsMode)
+			}
 		}
-		if tls := safeTLSConfigFromCRD(rw.TLSConfig); tls != nil {
+		if rw.TLSConfig.CA.Name != "" || rw.TLSConfig.Cert.Name != "" || rw.TLSConfig.Key.Name != "" ||
+			rw.TLSConfig.ServerName != "" || rw.TLSConfig.CertificateVerification != "" {
+			tls, err := safeTLSConfigFromCRD(rw.TLSConfig)
+			if err != nil {
+				return nil, fmt.Errorf("remoteWrite.tlsConfig: %w", err)
+			}
 			cfg.TLSConfig = tls
 		}
-		if mc := metadataConfigFromCRD(rw.MetadataConfig); mc != nil {
+		if mc, err := metadataConfigFromCRD(rw.MetadataConfig); err != nil {
+			return nil, fmt.Errorf("remoteWrite.metadataConfig: %w", err)
+		} else if mc != nil {
 			cfg.MetadataConfig = mc
 		}
-		if qc := queueConfigFromCRD(rw.QueueConfig); qc != nil {
+		if qc, err := queueConfigFromCRD(rw.QueueConfig); err != nil {
+			return nil, fmt.Errorf("remoteWrite.queueConfig: %w", err)
+		} else if qc != nil {
 			cfg.QueueConfig = qc
 		}
-		cfg.WriteRelabelConfigs = writeRelabelConfigsFromCRD(rw.WriteRelabelConfigs)
+		writeRelabelConfigs, err := writeRelabelConfigsFromCRD(rw.WriteRelabelConfigs)
+		if err != nil {
+			return nil, err
+		}
+		cfg.WriteRelabelConfigs = writeRelabelConfigs
 		if rw.AuthorizationConfig.Type != "" {
-			applyRemoteWriteAuthorizationFromCRD(rw.AuthorizationConfig, &cfg)
+			if err := applyRemoteWriteAuthorizationFromCRD(rw.AuthorizationConfig, &cfg); err != nil {
+				return nil, fmt.Errorf("remoteWrite.authorizationConfig: %w", err)
+			}
 		}
 		out = append(out, cfg)
 	}
-	return out
+	return out, nil
 }
 
-func (c *Config) mergePrometheusK8sConfiguration(pc configv1alpha1.PrometheusConfig) {
+func (c *Config) mergePrometheusK8sConfiguration(pc configv1alpha1.PrometheusConfig) error {
 	if c.ClusterMonitoringConfiguration.PrometheusK8sConfig != nil {
-		return
+		return nil
 	}
 	if clusterMonitoringPrometheusSpecEmpty(pc) {
-		return
+		return nil
 	}
 
 	cfg := &PrometheusK8sConfig{}
 
-	if ll := logLevelCRDToManifest(pc.LogLevel); ll != "" {
+	if pc.LogLevel != "" {
+		ll, err := logLevelCRDToManifest(pc.LogLevel)
+		if err != nil {
+			return fmt.Errorf("logLevel: %w", err)
+		}
 		cfg.LogLevel = ll
 	}
 	cfg.NodeSelector = pc.NodeSelector
@@ -443,13 +515,25 @@ func (c *Config) mergePrometheusK8sConfiguration(pc configv1alpha1.PrometheusCon
 	cfg.Resources = containerResourcesFromCRD(pc.Resources)
 	cfg.QueryLogFile = pc.QueryLogFile
 	cfg.ExternalLabels = externalLabelsFromCRD(pc.ExternalLabels)
-	cfg.AlertmanagerConfigs = additionalAlertmanagerConfigsFromCRD(pc.AdditionalAlertmanagerConfigs)
-	cfg.RemoteWrite = remoteWriteSpecsFromCRD(pc.RemoteWrite)
+	alertmanagerConfigs, err := additionalAlertmanagerConfigsFromCRD(pc.AdditionalAlertmanagerConfigs)
+	if err != nil {
+		return err
+	}
+	cfg.AlertmanagerConfigs = alertmanagerConfigs
+	remoteWrite, err := remoteWriteSpecsFromCRD(pc.RemoteWrite)
+	if err != nil {
+		return err
+	}
+	cfg.RemoteWrite = remoteWrite
 
 	if pc.EnforcedBodySizeLimitBytes > 0 {
-		cfg.EnforcedBodySizeLimit = strconv.FormatInt(pc.EnforcedBodySizeLimitBytes, 10)
+		cfg.EnforcedBodySizeLimit = strconv.Itoa(int(pc.EnforcedBodySizeLimitBytes))
 	}
-	if cp := collectionProfileCRDToManifest(pc.CollectionProfile); cp != "" {
+	if pc.CollectionProfile != "" {
+		cp, err := collectionProfileCRDToManifest(pc.CollectionProfile)
+		if err != nil {
+			return fmt.Errorf("collectionProfile: %w", err)
+		}
 		cfg.CollectionProfile = cp
 	}
 	if pc.Retention.Duration != "" {
@@ -463,4 +547,5 @@ func (c *Config) mergePrometheusK8sConfiguration(pc configv1alpha1.PrometheusCon
 	}
 
 	c.ClusterMonitoringConfiguration.PrometheusK8sConfig = cfg
+	return nil
 }

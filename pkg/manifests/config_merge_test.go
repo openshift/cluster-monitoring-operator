@@ -19,6 +19,7 @@ import (
 
 	configv1alpha1 "github.com/openshift/api/config/v1alpha1"
 	"github.com/stretchr/testify/require"
+	auditv1 "k8s.io/apiserver/pkg/apis/audit/v1"
 	v1 "k8s.io/api/core/v1"
 	"k8s.io/apimachinery/pkg/api/resource"
 )
@@ -218,8 +219,51 @@ func TestClusterMonitoringPrometheusSpecEmpty(t *testing.T) {
 }
 
 func TestLogLevelCRDToManifest(t *testing.T) {
-	require.Equal(t, "debug", logLevelCRDToManifest(configv1alpha1.LogLevelDebug))
-	require.Equal(t, "", logLevelCRDToManifest(configv1alpha1.LogLevel("Unknown")))
+	ll, err := logLevelCRDToManifest(configv1alpha1.LogLevelDebug)
+	require.NoError(t, err)
+	require.Equal(t, "debug", ll)
+
+	ll, err = logLevelCRDToManifest("")
+	require.NoError(t, err)
+	require.Equal(t, "", ll)
+
+	_, err = logLevelCRDToManifest(configv1alpha1.LogLevel("Unknown"))
+	require.Error(t, err)
+	require.Contains(t, err.Error(), "unsupported log level")
+}
+
+func TestCollectionProfileCRDToManifest(t *testing.T) {
+	cp, err := collectionProfileCRDToManifest(configv1alpha1.CollectionProfileMinimal)
+	require.NoError(t, err)
+	require.Equal(t, CollectionProfile(MinimalCollectionProfile), cp)
+
+	cp, err = collectionProfileCRDToManifest("")
+	require.NoError(t, err)
+	require.Equal(t, CollectionProfile(""), cp)
+
+	_, err = collectionProfileCRDToManifest(configv1alpha1.CollectionProfile("Invalid"))
+	require.Error(t, err)
+	require.Contains(t, err.Error(), "unsupported collection profile")
+}
+
+func TestVerbosityLevelToNumeric(t *testing.T) {
+	v, err := verbosityLevelToNumeric(configv1alpha1.VerbosityLevelInfo)
+	require.NoError(t, err)
+	require.Equal(t, uint8(2), v)
+
+	_, err = verbosityLevelToNumeric(configv1alpha1.VerbosityLevel("Invalid"))
+	require.Error(t, err)
+	require.Contains(t, err.Error(), "unsupported verbosity level")
+}
+
+func TestAuditProfileCRDToManifest(t *testing.T) {
+	p, err := auditProfileCRDToManifest(configv1alpha1.AuditProfileMetadata)
+	require.NoError(t, err)
+	require.Equal(t, auditv1.LevelMetadata, p)
+
+	_, err = auditProfileCRDToManifest(configv1alpha1.AuditProfile("Invalid"))
+	require.Error(t, err)
+	require.Contains(t, err.Error(), "unsupported audit profile")
 }
 
 func TestConfig_MergeClusterMonitoringCRD_MetricsServerConfigPhase1(t *testing.T) {
@@ -267,6 +311,18 @@ func TestConfig_MergeClusterMonitoringCRD_MetricsServerConfigPhase1(t *testing.T
 		require.NotNil(t, c.ClusterMonitoringConfiguration.MetricsServerConfig.Resources)
 		require.Equal(t, resource.MustParse("100m"), c.ClusterMonitoringConfiguration.MetricsServerConfig.Resources.Requests[v1.ResourceCPU])
 		require.Equal(t, resource.MustParse("200m"), c.ClusterMonitoringConfiguration.MetricsServerConfig.Resources.Limits[v1.ResourceCPU])
+	})
+	t.Run("CR returns error for unsupported verbosity", func(t *testing.T) {
+		cm := &configv1alpha1.ClusterMonitoring{
+			Spec: configv1alpha1.ClusterMonitoringSpec{
+				MetricsServerConfig: configv1alpha1.MetricsServerConfig{
+					Verbosity: configv1alpha1.VerbosityLevel("Invalid"),
+				},
+			},
+		}
+		_, err := NewConfigFromStringAndClusterMonitoringResource("{}", cm)
+		require.Error(t, err)
+		require.Contains(t, err.Error(), "unsupported verbosity level")
 	})
 }
 
@@ -796,6 +852,18 @@ func TestConfig_MergeClusterMonitoringCRD_AlertmanagerMainConfigPhase1(t *testin
 		require.NotNil(t, c.ClusterMonitoringConfiguration.AlertmanagerMainConfig.Enabled)
 		require.False(t, *c.ClusterMonitoringConfiguration.AlertmanagerMainConfig.Enabled)
 	})
+	t.Run("CR returns error for unsupported deployment mode", func(t *testing.T) {
+		cm := &configv1alpha1.ClusterMonitoring{
+			Spec: configv1alpha1.ClusterMonitoringSpec{
+				AlertmanagerConfig: configv1alpha1.AlertmanagerConfig{
+					DeploymentMode: configv1alpha1.AlertManagerDeployMode("Invalid"),
+				},
+			},
+		}
+		_, err := NewConfigFromStringAndClusterMonitoringResource("{}", cm)
+		require.Error(t, err)
+		require.Contains(t, err.Error(), "unsupported alertmanager deployment mode")
+	})
 }
 
 func TestConfig_MergeClusterMonitoringCRD_PrometheusK8sConfigPhase1(t *testing.T) {
@@ -879,5 +947,48 @@ func TestConfig_MergeClusterMonitoringCRD_PrometheusK8sConfigPhase1(t *testing.T
 		require.NoError(t, err)
 		require.Equal(t, "15h", c.ClusterMonitoringConfiguration.PrometheusK8sConfig.Retention)
 		require.Equal(t, "500MiB", c.ClusterMonitoringConfiguration.PrometheusK8sConfig.RetentionSize)
+	})
+	t.Run("CR returns error for unsupported collection profile", func(t *testing.T) {
+		cm := &configv1alpha1.ClusterMonitoring{
+			Spec: configv1alpha1.ClusterMonitoringSpec{
+				PrometheusConfig: configv1alpha1.PrometheusConfig{
+					CollectionProfile: configv1alpha1.CollectionProfile("Invalid"),
+				},
+			},
+		}
+		_, err := NewConfigFromStringAndClusterMonitoringResource("{}", cm)
+		require.Error(t, err)
+		require.Contains(t, err.Error(), "unsupported collection profile")
+	})
+	t.Run("CR returns error for unsupported log level", func(t *testing.T) {
+		cm := &configv1alpha1.ClusterMonitoring{
+			Spec: configv1alpha1.ClusterMonitoringSpec{
+				PrometheusConfig: configv1alpha1.PrometheusConfig{
+					LogLevel: configv1alpha1.LogLevel("Unknown"),
+				},
+			},
+		}
+		_, err := NewConfigFromStringAndClusterMonitoringResource("{}", cm)
+		require.Error(t, err)
+		require.Contains(t, err.Error(), "unsupported log level")
+	})
+	t.Run("CR returns error when authorization credentials are missing", func(t *testing.T) {
+		cm := &configv1alpha1.ClusterMonitoring{
+			Spec: configv1alpha1.ClusterMonitoringSpec{
+				PrometheusConfig: configv1alpha1.PrometheusConfig{
+					RemoteWrite: []configv1alpha1.RemoteWriteSpec{
+						{
+							URL: "https://example.com/api/v1/write",
+							AuthorizationConfig: configv1alpha1.RemoteWriteAuthorization{
+								Type: configv1alpha1.RemoteWriteAuthorizationTypeSafeAuthorization,
+							},
+						},
+					},
+				},
+			},
+		}
+		_, err := NewConfigFromStringAndClusterMonitoringResource("{}", cm)
+		require.Error(t, err)
+		require.Contains(t, err.Error(), "authorization is required")
 	})
 }

@@ -38,15 +38,23 @@ func (c *Config) mergeClusterMonitoringCRD(clusterMonitoring *configv1alpha1.Clu
 		c.ClusterMonitoringConfiguration.UserWorkloadEnabled = ptr.To(clusterMonitoring.Spec.UserDefined.Mode == configv1alpha1.UserDefinedNamespaceIsolated)
 	}
 
-	c.mergeMetricsServerConfiguration(clusterMonitoring.Spec.MetricsServerConfig)
-	c.mergePrometheusOperatorConfiguration(clusterMonitoring.Spec.PrometheusOperatorConfig)
+	if err := c.mergeMetricsServerConfiguration(clusterMonitoring.Spec.MetricsServerConfig); err != nil {
+		return fmt.Errorf("metricsServerConfig: %w", err)
+	}
+	if err := c.mergePrometheusOperatorConfiguration(clusterMonitoring.Spec.PrometheusOperatorConfig); err != nil {
+		return fmt.Errorf("prometheusOperatorConfig: %w", err)
+	}
 	c.mergePrometheusOperatorAdmissionWebhookConfiguration(clusterMonitoring.Spec.PrometheusOperatorAdmissionWebhookConfig)
-	c.mergeAlertmanagerConfiguration(clusterMonitoring.Spec.AlertmanagerConfig)
+	if err := c.mergeAlertmanagerConfiguration(clusterMonitoring.Spec.AlertmanagerConfig); err != nil {
+		return fmt.Errorf("alertmanagerConfig: %w", err)
+	}
 	c.mergeMonitoringPluginConfiguration(clusterMonitoring.Spec.MonitoringPluginConfig)
 	c.mergeTelemeterClientConfiguration(clusterMonitoring.Spec.TelemeterClientConfig)
 	c.mergeThanosQuerierConfiguration(clusterMonitoring.Spec.ThanosQuerierConfig)
 	c.mergeOpenShiftStateMetricsConfiguration(clusterMonitoring.Spec.OpenShiftStateMetricsConfig)
-	c.mergePrometheusK8sConfiguration(clusterMonitoring.Spec.PrometheusConfig)
+	if err := c.mergePrometheusK8sConfiguration(clusterMonitoring.Spec.PrometheusConfig); err != nil {
+		return fmt.Errorf("prometheusConfig: %w", err)
+	}
 
 	if err := c.mergeKubeStateMetricsConfiguration(clusterMonitoring.Spec.KubeStateMetricsConfig); err != nil {
 		return err
@@ -335,33 +343,52 @@ func clusterMonitoringKubeStateMetricsSpecEmpty(ksmc configv1alpha1.KubeStateMet
 	return true
 }
 
-func verbosityLevelToNumeric(level configv1alpha1.VerbosityLevel) uint8 {
+func verbosityLevelToNumeric(level configv1alpha1.VerbosityLevel) (uint8, error) {
 	switch level {
 	case configv1alpha1.VerbosityLevelErrors:
-		return 0
+		return 0, nil
 	case configv1alpha1.VerbosityLevelInfo:
-		return 2
+		return 2, nil
 	case configv1alpha1.VerbosityLevelTrace:
-		return 3
+		return 3, nil
 	case configv1alpha1.VerbosityLevelTraceAll:
-		return 4
+		return 4, nil
 	default:
-		return 0
+		return 0, fmt.Errorf("unsupported verbosity level %q", level)
 	}
 }
 
-func logLevelCRDToManifest(ll configv1alpha1.LogLevel) string {
-	switch ll {
-	case configv1alpha1.LogLevelError:
-		return "error"
-	case configv1alpha1.LogLevelWarn:
-		return "warn"
-	case configv1alpha1.LogLevelInfo:
-		return "info"
-	case configv1alpha1.LogLevelDebug:
-		return "debug"
+func auditProfileCRDToManifest(profile configv1alpha1.AuditProfile) (auditv1.Level, error) {
+	switch profile {
+	case "":
+		return "", nil
+	case configv1alpha1.AuditProfileNone:
+		return auditv1.LevelNone, nil
+	case configv1alpha1.AuditProfileMetadata:
+		return auditv1.LevelMetadata, nil
+	case configv1alpha1.AuditProfileRequest:
+		return auditv1.LevelRequest, nil
+	case configv1alpha1.AuditProfileRequestResponse:
+		return auditv1.LevelRequestResponse, nil
 	default:
-		return ""
+		return "", fmt.Errorf("unsupported audit profile %q", profile)
+	}
+}
+
+func logLevelCRDToManifest(ll configv1alpha1.LogLevel) (string, error) {
+	switch ll {
+	case "":
+		return "", nil
+	case configv1alpha1.LogLevelError:
+		return "error", nil
+	case configv1alpha1.LogLevelWarn:
+		return "warn", nil
+	case configv1alpha1.LogLevelInfo:
+		return "info", nil
+	case configv1alpha1.LogLevelDebug:
+		return "debug", nil
+	default:
+		return "", fmt.Errorf("unsupported log level %q", ll)
 	}
 }
 
@@ -384,24 +411,28 @@ func containerResourcesFromCRD(resources []configv1alpha1.ContainerResource) *v1
 	return out
 }
 
-func (c *Config) mergeMetricsServerConfiguration(msc configv1alpha1.MetricsServerConfig) {
+func (c *Config) mergeMetricsServerConfiguration(msc configv1alpha1.MetricsServerConfig) error {
 	// Metrics Server (Phase 1): if the ConfigMap already has metricsServer, mergeMetricsServerConfiguration
 	// is a no-op.
 	if c.ClusterMonitoringConfiguration.MetricsServerConfig != nil {
-		return
+		return nil
 	}
 
 	// Spec.MetricsServerConfig is a struct value—unset in YAML is a zero
 	// struct in Go, not nil— so only merge when the CR author defined at least
 	// one field.
 	if clusterMonitoringMetricsServerSpecEmpty(msc) {
-		return
+		return nil
 	}
 
 	cfg := &MetricsServerConfig{}
 
 	if msc.Verbosity != "" {
-		cfg.Verbosity = verbosityLevelToNumeric(msc.Verbosity)
+		verbosity, err := verbosityLevelToNumeric(msc.Verbosity)
+		if err != nil {
+			return fmt.Errorf("verbosity: %w", err)
+		}
+		cfg.Verbosity = verbosity
 	}
 	cfg.NodeSelector = msc.NodeSelector
 	cfg.Tolerations = msc.Tolerations
@@ -409,27 +440,36 @@ func (c *Config) mergeMetricsServerConfiguration(msc configv1alpha1.MetricsServe
 		cfg.Resources = res
 	}
 	if msc.Audit.Profile != "" {
+		profile, err := auditProfileCRDToManifest(msc.Audit.Profile)
+		if err != nil {
+			return fmt.Errorf("audit.profile: %w", err)
+		}
 		cfg.Audit = &Audit{
-			Profile: auditv1.Level(string(msc.Audit.Profile)),
+			Profile: profile,
 		}
 	}
 	cfg.TopologySpreadConstraints = msc.TopologySpreadConstraints
 
 	c.ClusterMonitoringConfiguration.MetricsServerConfig = cfg
+	return nil
 }
 
-func (c *Config) mergePrometheusOperatorConfiguration(poc configv1alpha1.PrometheusOperatorConfig) {
+func (c *Config) mergePrometheusOperatorConfiguration(poc configv1alpha1.PrometheusOperatorConfig) error {
 	if c.ClusterMonitoringConfiguration.PrometheusOperatorConfig != nil {
-		return
+		return nil
 	}
 	if clusterMonitoringPrometheusOperatorSpecEmpty(poc) {
-		return
+		return nil
 	}
 
 	cfg := &PrometheusOperatorConfig{}
 
 	if poc.LogLevel != "" {
-		cfg.LogLevel = logLevelCRDToManifest(poc.LogLevel)
+		ll, err := logLevelCRDToManifest(poc.LogLevel)
+		if err != nil {
+			return fmt.Errorf("logLevel: %w", err)
+		}
+		cfg.LogLevel = ll
 	}
 	cfg.NodeSelector = poc.NodeSelector
 	cfg.Tolerations = poc.Tolerations
@@ -437,6 +477,7 @@ func (c *Config) mergePrometheusOperatorConfiguration(poc configv1alpha1.Prometh
 	cfg.TopologySpreadConstraints = poc.TopologySpreadConstraints
 
 	c.ClusterMonitoringConfiguration.PrometheusOperatorConfig = cfg
+	return nil
 }
 
 func (c *Config) mergePrometheusOperatorAdmissionWebhookConfiguration(pawc configv1alpha1.PrometheusOperatorAdmissionWebhookConfig) {
@@ -582,12 +623,12 @@ func (c *Config) mergeKubeStateMetricsConfiguration(ksmc configv1alpha1.KubeStat
 	return nil
 }
 
-func (c *Config) mergeAlertmanagerConfiguration(ac configv1alpha1.AlertmanagerConfig) {
+func (c *Config) mergeAlertmanagerConfiguration(ac configv1alpha1.AlertmanagerConfig) error {
 	if c.ClusterMonitoringConfiguration.AlertmanagerMainConfig != nil {
-		return
+		return nil
 	}
 	if clusterMonitoringAlertmanagerSpecEmpty(ac) {
-		return
+		return nil
 	}
 
 	cfg := &AlertmanagerMainConfig{}
@@ -598,15 +639,22 @@ func (c *Config) mergeAlertmanagerConfiguration(ac configv1alpha1.AlertmanagerCo
 		cfg.Enabled = ptr.To(true)
 	case configv1alpha1.AlertManagerDeployModeCustomConfig:
 		cfg.Enabled = ptr.To(true)
-		mergeAlertmanagerCustomConfigFromCRD(cfg, ac.CustomConfig)
+		if err := mergeAlertmanagerCustomConfigFromCRD(cfg, ac.CustomConfig); err != nil {
+			return err
+		}
 	default:
-		return
+		return fmt.Errorf("unsupported alertmanager deployment mode %q", ac.DeploymentMode)
 	}
 	c.ClusterMonitoringConfiguration.AlertmanagerMainConfig = cfg
+	return nil
 }
 
-func mergeAlertmanagerCustomConfigFromCRD(dst *AlertmanagerMainConfig, cc configv1alpha1.AlertmanagerCustomConfig) {
-	if ll := logLevelCRDToManifest(cc.LogLevel); ll != "" {
+func mergeAlertmanagerCustomConfigFromCRD(dst *AlertmanagerMainConfig, cc configv1alpha1.AlertmanagerCustomConfig) error {
+	if cc.LogLevel != "" {
+		ll, err := logLevelCRDToManifest(cc.LogLevel)
+		if err != nil {
+			return fmt.Errorf("logLevel: %w", err)
+		}
 		dst.LogLevel = ll
 	}
 	if len(cc.NodeSelector) > 0 {
@@ -627,6 +675,7 @@ func mergeAlertmanagerCustomConfigFromCRD(dst *AlertmanagerMainConfig, cc config
 	if cc.VolumeClaimTemplate != nil {
 		dst.VolumeClaimTemplate = persistentVolumeClaimToEmbedded(cc.VolumeClaimTemplate)
 	}
+	return nil
 }
 
 func persistentVolumeClaimToEmbedded(pvc *v1.PersistentVolumeClaim) *monv1.EmbeddedPersistentVolumeClaim {
