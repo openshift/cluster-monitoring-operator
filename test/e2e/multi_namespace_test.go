@@ -29,8 +29,8 @@ import (
 )
 
 func TestMultinamespacePrometheusRule(t *testing.T) {
-	// The test shouldn't be disruptive, safe to run in parallel with others.
-	t.Parallel()
+	// Not safe to run in parallel: creates a namespace with openshift.io/cluster-monitoring label, adds PrometheusRules, and triggers operator reconciliation.
+	// t.Parallel()
 	nsName := "openshift-test-prometheus-rules"
 	firingAlertName := "FiringAlertInNamespace"
 

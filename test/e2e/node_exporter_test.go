@@ -21,6 +21,8 @@ import (
 )
 
 func TestNodeExporterCollectorEnablement(t *testing.T) {
+	// Not safe to run in parallel: modifies the cluster-monitoring-config ConfigMap.
+	// t.Parallel()
 	t.Cleanup(func() {
 		f.MustDeleteConfigMap(t, f.BuildCMOConfigMap(t, ""))
 	})
@@ -132,6 +134,8 @@ nodeExporter:
 }
 
 func TestNodeExporterCollectorDisablement(t *testing.T) {
+	// Not safe to run in parallel: modifies the cluster-monitoring-config ConfigMap.
+	// t.Parallel()
 	t.Cleanup(func() {
 		f.MustDeleteConfigMap(t, f.BuildCMOConfigMap(t, ""))
 	})
@@ -236,6 +240,8 @@ nodeExporter:
 
 // This test ensures necessary collectors stay operational after changing generic options in Node Exporter.
 func TestNodeExporterGenericOptions(t *testing.T) {
+	// Not safe to run in parallel: modifies the cluster-monitoring-config ConfigMap.
+	// t.Parallel()
 	t.Cleanup(func() {
 		f.MustDeleteConfigMap(t, f.BuildCMOConfigMap(t, ""))
 	})
@@ -296,6 +302,8 @@ nodeExporter:
 }
 
 func TestNodeExporterNetworkDevicesExclusion(t *testing.T) {
+	// Not safe to run in parallel: modifies the cluster-monitoring-config ConfigMap.
+	// t.Parallel()
 	t.Cleanup(func() {
 		f.MustDeleteConfigMap(t, f.BuildCMOConfigMap(t, ""))
 	})
@@ -362,6 +370,8 @@ nodeExporter:
 }
 
 func TestNodeExporterSystemdUnits(t *testing.T) {
+	// Not safe to run in parallel: modifies the cluster-monitoring-config ConfigMap.
+	// t.Parallel()
 	t.Cleanup(func() {
 		f.MustDeleteConfigMap(t, f.BuildCMOConfigMap(t, ""))
 	})
