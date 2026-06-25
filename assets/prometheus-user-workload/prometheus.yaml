@@ -284,6 +284,7 @@ spec:
       operator: NotIn
       values:
       - "false"
+  shards: 1
   thanos:
     grpcServerTlsConfig:
       caFile: /etc/tls/grpc/ca.crt
