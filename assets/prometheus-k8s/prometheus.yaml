@@ -231,6 +231,7 @@ spec:
     matchLabels:
       openshift.io/cluster-monitoring: "true"
   serviceMonitorSelector: {}
+  shards: 1
   thanos:
     image: ""
     resources:
