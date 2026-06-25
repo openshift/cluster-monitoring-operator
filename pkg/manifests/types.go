@@ -82,7 +82,7 @@ type ClusterMonitoringConfiguration struct {
 	// `ThanosQuerierConfig` defines settings for the Thanos Querier component.
 	ThanosQuerierConfig *ThanosQuerierConfig `json:"thanosQuerier,omitempty"`
 	// `NodeExporterConfig` defines settings for the `node-exporter` agent.
-	NodeExporterConfig NodeExporterConfig `json:"nodeExporter,omitempty"`
+	NodeExporterConfig *NodeExporterConfig `json:"nodeExporter,omitempty"`
 	// `MonitoringPluginConfig` defines settings for the monitoring `console-plugin`.
 	MonitoringPluginConfig *MonitoringPluginConfig `json:"monitoringPlugin,omitempty"`
 }
@@ -468,7 +468,7 @@ type NodeExporterCollectorEthtoolConfig struct {
 // `node_network_transmit_packets_total`.
 type NodeExporterCollectorNetDevConfig struct {
 	// A Boolean flag that enables or disables the `netdev` collector.
-	Enabled bool `json:"enabled,omitempty"`
+	Enabled *bool `json:"enabled,omitempty"`
 }
 
 // The `NodeExporterCollectorNetClassConfig` resource works as an on/off switch for
@@ -495,11 +495,11 @@ type NodeExporterCollectorNetDevConfig struct {
 // `node_network_protocol_type`.
 type NodeExporterCollectorNetClassConfig struct {
 	// A Boolean flag that enables or disables the `netclass` collector.
-	Enabled bool `json:"enabled,omitempty"`
+	Enabled *bool `json:"enabled,omitempty"`
 	// A Boolean flag that activates the `netlink` implementation of the `netclass` collector.
 	// Its default value is `true`: activating the netlink mode.
 	// This implementation improves the performance of the `netclass` collector.
-	UseNetlink bool `json:"useNetlink,omitempty"`
+	UseNetlink *bool `json:"useNetlink,omitempty"`
 }
 
 // The `NodeExporterCollectorBuddyInfoConfig` resource works as an on/off switch for

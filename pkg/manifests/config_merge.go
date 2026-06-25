@@ -51,7 +51,130 @@ func (c *Config) mergeClusterMonitoringCRD(clusterMonitoring *configv1alpha1.Clu
 		return err
 	}
 
+	c.mergeNodeExporterConfiguration(clusterMonitoring.Spec.NodeExporterConfig)
 	return nil
+}
+
+func clusterMonitoringNodeExporterCollectorsEmpty(col configv1alpha1.NodeExporterCollectorConfig) bool {
+	for _, pol := range []configv1alpha1.NodeExporterCollectorCollectionPolicy{
+		col.CpuFreq.CollectionPolicy,
+		col.TcpStat.CollectionPolicy,
+		col.Ethtool.CollectionPolicy,
+		col.NetDev.CollectionPolicy,
+		col.NetClass.CollectionPolicy,
+		col.BuddyInfo.CollectionPolicy,
+		col.MountStats.CollectionPolicy,
+		col.Ksmd.CollectionPolicy,
+		col.Processes.CollectionPolicy,
+		col.Systemd.CollectionPolicy,
+		col.Softirqs.CollectionPolicy,
+	} {
+		if pol != "" {
+			return false
+		}
+	}
+	return true
+}
+
+// clusterMonitoringNodeExporterSpecEmpty reports whether the CR's nodeExporterConfig stanza
+// contains no user-set field.
+func clusterMonitoringNodeExporterSpecEmpty(nec configv1alpha1.NodeExporterConfig) bool {
+	if len(nec.Resources) > 0 {
+		return false
+	}
+	if nec.MaxProcs != 0 {
+		return false
+	}
+	if nec.IgnoredNetworkDevices != nil {
+		return false
+	}
+	if !clusterMonitoringNodeExporterCollectorsEmpty(nec.Collectors) {
+		return false
+	}
+	return true
+}
+
+func nodeExporterCollectorEnabledFromPolicy(p configv1alpha1.NodeExporterCollectorCollectionPolicy) (enabled bool, set bool) {
+	switch p {
+	case configv1alpha1.NodeExporterCollectorCollectionPolicyCollect:
+		return true, true
+	case configv1alpha1.NodeExporterCollectorCollectionPolicyDoNotCollect:
+		return false, true
+	default:
+		return false, false
+	}
+}
+
+func mergeNodeExporterCollectorsFromCRD(dst *NodeExporterCollectorConfig, src configv1alpha1.NodeExporterCollectorConfig) {
+	if enabled, set := nodeExporterCollectorEnabledFromPolicy(src.CpuFreq.CollectionPolicy); set {
+		dst.CpuFreq.Enabled = enabled
+	}
+	if enabled, set := nodeExporterCollectorEnabledFromPolicy(src.TcpStat.CollectionPolicy); set {
+		dst.TcpStat.Enabled = enabled
+	}
+	if enabled, set := nodeExporterCollectorEnabledFromPolicy(src.Ethtool.CollectionPolicy); set {
+		dst.Ethtool.Enabled = enabled
+	}
+	if enabled, set := nodeExporterCollectorEnabledFromPolicy(src.NetDev.CollectionPolicy); set {
+		dst.NetDev.Enabled = ptr.To(enabled)
+	}
+	if enabled, set := nodeExporterCollectorEnabledFromPolicy(src.NetClass.CollectionPolicy); set {
+		dst.NetClass.Enabled = ptr.To(enabled)
+		if enabled && src.NetClass.Collect.StatsGatherer != "" {
+			dst.NetClass.UseNetlink = ptr.To(src.NetClass.Collect.StatsGatherer == configv1alpha1.NodeExporterNetclassStatsGathererNetlink)
+		}
+	}
+	if enabled, set := nodeExporterCollectorEnabledFromPolicy(src.BuddyInfo.CollectionPolicy); set {
+		dst.BuddyInfo.Enabled = enabled
+	}
+	if enabled, set := nodeExporterCollectorEnabledFromPolicy(src.MountStats.CollectionPolicy); set {
+		dst.MountStats.Enabled = enabled
+	}
+	if enabled, set := nodeExporterCollectorEnabledFromPolicy(src.Ksmd.CollectionPolicy); set {
+		dst.Ksmd.Enabled = enabled
+	}
+	if enabled, set := nodeExporterCollectorEnabledFromPolicy(src.Processes.CollectionPolicy); set {
+		dst.Processes.Enabled = enabled
+	}
+	if enabled, set := nodeExporterCollectorEnabledFromPolicy(src.Systemd.CollectionPolicy); set {
+		dst.Systemd.Enabled = enabled
+		if enabled && len(src.Systemd.Collect.Units) > 0 {
+			units := make([]string, len(src.Systemd.Collect.Units))
+			for i, u := range src.Systemd.Collect.Units {
+				units[i] = string(u)
+			}
+			dst.Systemd.Units = units
+		}
+	}
+	if enabled, set := nodeExporterCollectorEnabledFromPolicy(src.Softirqs.CollectionPolicy); set {
+		dst.Softirqs.Enabled = enabled
+	}
+}
+
+func (c *Config) mergeNodeExporterConfiguration(nec configv1alpha1.NodeExporterConfig) {
+	if c.ClusterMonitoringConfiguration.NodeExporterConfig != nil {
+		return
+	}
+	if clusterMonitoringNodeExporterSpecEmpty(nec) {
+		return
+	}
+
+	ne := defaultNodeExporterConfig()
+	if nec.MaxProcs > 0 {
+		ne.MaxProcs = uint32(nec.MaxProcs)
+	}
+	if nec.IgnoredNetworkDevices != nil {
+		devs := make([]string, len(*nec.IgnoredNetworkDevices))
+		for i, d := range *nec.IgnoredNetworkDevices {
+			devs[i] = string(d)
+		}
+		ne.IgnoredNetworkDevices = &devs
+	}
+	if res := containerResourcesFromCRD(nec.Resources); res != nil {
+		ne.Resources = res
+	}
+	mergeNodeExporterCollectorsFromCRD(&ne.Collectors, nec.Collectors)
+	c.ClusterMonitoringConfiguration.NodeExporterConfig = ne
 }
 
 // clusterMonitoringMetricsServerSpecEmpty reports whether the CR's
