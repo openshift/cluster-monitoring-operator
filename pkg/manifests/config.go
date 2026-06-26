@@ -196,6 +196,10 @@ func (u *UserWorkloadConfiguration) validate() error {
 		return fmt.Errorf("prometheus: %w", err)
 	}
 
+	if err := validateRemoteWriteConfigs(u.Prometheus.RemoteWrite); err != nil {
+		return fmt.Errorf("prometheus: %w", err)
+	}
+
 	return nil
 }
 
@@ -373,6 +377,10 @@ func (c *Config) validate() error {
 		return fmt.Errorf("prometheus: %w", err)
 	}
 
+	if err := validateRemoteWriteConfigs(c.ClusterMonitoringConfiguration.PrometheusK8sConfig.RemoteWrite); err != nil {
+		return fmt.Errorf("prometheus: %w", err)
+	}
+
 	return nil
 }
 
@@ -400,6 +408,18 @@ func validateQueryLogFile(path string) error {
 		return errors.New("query log file can't be stored on a new file on the dev directory")
 	}
 
+	return nil
+}
+
+var supportedRemoteWriteMessageVersions = []string{"V1.0", "V2.0"}
+
+func validateRemoteWriteConfigs(rwSpecs []RemoteWriteSpec) error {
+	for i, rw := range rwSpecs {
+		if rw.MessageVersion != "" && !slices.Contains(supportedRemoteWriteMessageVersions, rw.MessageVersion) {
+			return fmt.Errorf("remoteWrite[%d]: messageVersion %q is not supported, supported values are: %v",
+				i, rw.MessageVersion, supportedRemoteWriteMessageVersions)
+		}
+	}
 	return nil
 }
 
