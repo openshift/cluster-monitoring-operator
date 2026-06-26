@@ -1452,6 +1452,50 @@ func TestRemoteWriteAuthorizationConfig(t *testing.T) {
 	}
 }
 
+func TestRemoteWriteMessageVersion(t *testing.T) {
+	for _, tc := range []struct {
+		name            string
+		messageVersion  string
+		expectedVersion *monv1.RemoteWriteMessageVersion
+	}{
+		{
+			name:           "defaults to V1.0 when not set",
+			messageVersion: "",
+		},
+		{
+			name:            "V1.0 is passed through",
+			messageVersion:  "V1.0",
+			expectedVersion: new(monv1.RemoteWriteMessageVersion1_0),
+		},
+		{
+			name:            "V2.0 is passed through",
+			messageVersion:  "V2.0",
+			expectedVersion: new(monv1.RemoteWriteMessageVersion2_0),
+		},
+	} {
+		t.Run(tc.name, func(t *testing.T) {
+			c, err := NewConfigFromString("")
+			require.NoError(t, err)
+			c.ClusterMonitoringConfiguration.PrometheusK8sConfig.RemoteWrite = []RemoteWriteSpec{
+				{URL: "http://remote", MessageVersion: tc.messageVersion},
+			}
+			f := NewFactory("openshift-monitoring", "openshift-user-workload-monitoring", c, defaultInfrastructureReader(), &fakeProxyReader{}, NewAssets(assetsPath), &APIServerConfig{}, &configv1.Console{})
+			p, err := f.PrometheusK8s(
+				&v1.Secret{ObjectMeta: metav1.ObjectMeta{Name: "foo"}},
+				nil,
+			)
+			require.NoError(t, err)
+			require.Len(t, p.Spec.RemoteWrite, 1)
+			if tc.expectedVersion == nil {
+				require.Nil(t, p.Spec.RemoteWrite[0].MessageVersion)
+			} else {
+				require.NotNil(t, p.Spec.RemoteWrite[0].MessageVersion)
+				require.Equal(t, *tc.expectedVersion, *p.Spec.RemoteWrite[0].MessageVersion)
+			}
+		})
+	}
+}
+
 func TestPrometheusRemoteWriteProxy(t *testing.T) {
 	// This is not required, as the configuration is overridden below, set to maintain consistency.
 	config := func() *Config {

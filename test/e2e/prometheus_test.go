@@ -258,6 +258,24 @@ func TestPrometheusRemoteWrite(t *testing.T) {
 			},
 		},
 		{
+			name: "assert remote write with message version v2.0",
+			rwSpec: `
+  - url: https://%[1]s/api/v1/write
+    messageVersion: V2.0`,
+			expected: []remoteWriteTest{
+				{
+					query:       `sum (prometheus_build_info{cluster_id="",prometheus_replica="prometheus-k8s-0"})`,
+					expected:    func(v float64) bool { return v == 2 },
+					description: "expected 2 prometheus_build_info metrics for prometheus-k8s-0",
+				},
+				{
+					query:       `sum (prometheus_build_info{cluster_id="",prometheus_replica="prometheus-k8s-1"})`,
+					expected:    func(v float64) bool { return v == 2 },
+					description: "expected 2 prometheus_build_info metrics for prometheus-k8s-1",
+				},
+			},
+		},
+		{
 			name: "assert remote write with mtls authorization works",
 			rwSpec: `
   - url: https://%[1]s/api/v1/write
