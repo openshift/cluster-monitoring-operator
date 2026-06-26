@@ -560,6 +560,7 @@ The `RemoteWriteSpec` resource defines the settings for remote write storage.
 | basicAuth | *[monv1.BasicAuth](https://github.com/prometheus-operator/prometheus-operator/blob/v0.87.0/Documentation/api.md#basicauth) | Defines basic authentication settings for the remote write endpoint URL. |
 | bearerTokenFile | string | Defines the file that contains the bearer token for the remote write endpoint. However, because you cannot mount secrets in a pod, in practice you can only reference the token of the service account. |
 | headers | map[string]string | Specifies the custom HTTP headers to be sent along with each remote write request. Headers set by Prometheus cannot be overwritten. |
+| messageVersion | string | Defines the Remote Write message version to use when writing to the remote write endpoint. Allowed values are \"V1.0\" and \"V2.0\". Defaults to \"V1.0\". |
 | metadataConfig | *[monv1.MetadataConfig](https://github.com/prometheus-operator/prometheus-operator/blob/v0.87.0/Documentation/api.md#metadataconfig) | Defines settings for sending series metadata to remote write storage. |
 | name | string | Defines the name of the remote write queue. This name is used in metrics and logging to differentiate queues. If specified, this name must be unique. |
 | oauth2 | *monv1.OAuth2 | Defines OAuth2 authentication settings for the remote write endpoint. |
