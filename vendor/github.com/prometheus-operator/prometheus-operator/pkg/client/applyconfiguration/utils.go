@@ -70,6 +70,8 @@ func ForKind(kind schema.GroupVersionKind) interface{} {
 		return &monitoringv1.AzureOAuthApplyConfiguration{}
 	case v1.SchemeGroupVersion.WithKind("AzureSDK"):
 		return &monitoringv1.AzureSDKApplyConfiguration{}
+	case v1.SchemeGroupVersion.WithKind("AzureWorkloadIdentity"):
+		return &monitoringv1.AzureWorkloadIdentityApplyConfiguration{}
 	case v1.SchemeGroupVersion.WithKind("BasicAuth"):
 		return &monitoringv1.BasicAuthApplyConfiguration{}
 	case v1.SchemeGroupVersion.WithKind("ClusterTLSConfig"):
@@ -94,6 +96,8 @@ func ForKind(kind schema.GroupVersionKind) interface{} {
 		return &monitoringv1.ExemplarsApplyConfiguration{}
 	case v1.SchemeGroupVersion.WithKind("GlobalJiraConfig"):
 		return &monitoringv1.GlobalJiraConfigApplyConfiguration{}
+	case v1.SchemeGroupVersion.WithKind("GlobalMattermostConfig"):
+		return &monitoringv1.GlobalMattermostConfigApplyConfiguration{}
 	case v1.SchemeGroupVersion.WithKind("GlobalRocketChatConfig"):
 		return &monitoringv1.GlobalRocketChatConfigApplyConfiguration{}
 	case v1.SchemeGroupVersion.WithKind("GlobalSMTPConfig"):
@@ -106,12 +110,22 @@ func ForKind(kind schema.GroupVersionKind) interface{} {
 		return &monitoringv1.GlobalWebexConfigApplyConfiguration{}
 	case v1.SchemeGroupVersion.WithKind("GlobalWeChatConfig"):
 		return &monitoringv1.GlobalWeChatConfigApplyConfiguration{}
+	case v1.SchemeGroupVersion.WithKind("GRPCServerTLSConfig"):
+		return &monitoringv1.GRPCServerTLSConfigApplyConfiguration{}
 	case v1.SchemeGroupVersion.WithKind("HostAlias"):
 		return &monitoringv1.HostAliasApplyConfiguration{}
 	case v1.SchemeGroupVersion.WithKind("HostPort"):
 		return &monitoringv1.HostPortApplyConfiguration{}
 	case v1.SchemeGroupVersion.WithKind("HTTPConfig"):
 		return &monitoringv1.HTTPConfigApplyConfiguration{}
+	case v1.SchemeGroupVersion.WithKind("HTTPConfigWithoutTLS"):
+		return &monitoringv1.HTTPConfigWithoutTLSApplyConfiguration{}
+	case v1.SchemeGroupVersion.WithKind("HTTPConfigWithProxy"):
+		return &monitoringv1.HTTPConfigWithProxyApplyConfiguration{}
+	case v1.SchemeGroupVersion.WithKind("HTTPConfigWithProxyAndTLSFiles"):
+		return &monitoringv1.HTTPConfigWithProxyAndTLSFilesApplyConfiguration{}
+	case v1.SchemeGroupVersion.WithKind("HTTPConfigWithTLSFiles"):
+		return &monitoringv1.HTTPConfigWithTLSFilesApplyConfiguration{}
 	case v1.SchemeGroupVersion.WithKind("ManagedIdentity"):
 		return &monitoringv1.ManagedIdentityApplyConfiguration{}
 	case v1.SchemeGroupVersion.WithKind("MetadataConfig"):
@@ -162,8 +176,6 @@ func ForKind(kind schema.GroupVersionKind) interface{} {
 		return &monitoringv1.PrometheusSpecApplyConfiguration{}
 	case v1.SchemeGroupVersion.WithKind("PrometheusStatus"):
 		return &monitoringv1.PrometheusStatusApplyConfiguration{}
-	case v1.SchemeGroupVersion.WithKind("PrometheusTracingConfig"):
-		return &monitoringv1.PrometheusTracingConfigApplyConfiguration{}
 	case v1.SchemeGroupVersion.WithKind("PrometheusWebSpec"):
 		return &monitoringv1.PrometheusWebSpecApplyConfiguration{}
 	case v1.SchemeGroupVersion.WithKind("ProxyConfig"):
@@ -180,6 +192,8 @@ func ForKind(kind schema.GroupVersionKind) interface{} {
 		return &monitoringv1.RemoteWriteSpecApplyConfiguration{}
 	case v1.SchemeGroupVersion.WithKind("RetainConfig"):
 		return &monitoringv1.RetainConfigApplyConfiguration{}
+	case v1.SchemeGroupVersion.WithKind("RollingUpdateStatefulSetStrategy"):
+		return &monitoringv1.RollingUpdateStatefulSetStrategyApplyConfiguration{}
 	case v1.SchemeGroupVersion.WithKind("Rule"):
 		return &monitoringv1.RuleApplyConfiguration{}
 	case v1.SchemeGroupVersion.WithKind("RuleGroup"):
@@ -202,12 +216,16 @@ func ForKind(kind schema.GroupVersionKind) interface{} {
 		return &monitoringv1.ServiceMonitorApplyConfiguration{}
 	case v1.SchemeGroupVersion.WithKind("ServiceMonitorSpec"):
 		return &monitoringv1.ServiceMonitorSpecApplyConfiguration{}
+	case v1.SchemeGroupVersion.WithKind("ShardingStrategy"):
+		return &monitoringv1.ShardingStrategyApplyConfiguration{}
 	case v1.SchemeGroupVersion.WithKind("ShardRetentionPolicy"):
 		return &monitoringv1.ShardRetentionPolicyApplyConfiguration{}
 	case v1.SchemeGroupVersion.WithKind("ShardStatus"):
 		return &monitoringv1.ShardStatusApplyConfiguration{}
 	case v1.SchemeGroupVersion.WithKind("Sigv4"):
 		return &monitoringv1.Sigv4ApplyConfiguration{}
+	case v1.SchemeGroupVersion.WithKind("StatefulSetUpdateStrategy"):
+		return &monitoringv1.StatefulSetUpdateStrategyApplyConfiguration{}
 	case v1.SchemeGroupVersion.WithKind("StorageSpec"):
 		return &monitoringv1.StorageSpecApplyConfiguration{}
 	case v1.SchemeGroupVersion.WithKind("ThanosRuler"):
@@ -222,8 +240,14 @@ func ForKind(kind schema.GroupVersionKind) interface{} {
 		return &monitoringv1.ThanosSpecApplyConfiguration{}
 	case v1.SchemeGroupVersion.WithKind("TLSConfig"):
 		return &monitoringv1.TLSConfigApplyConfiguration{}
+	case v1.SchemeGroupVersion.WithKind("TLSFilesConfig"):
+		return &monitoringv1.TLSFilesConfigApplyConfiguration{}
+	case v1.SchemeGroupVersion.WithKind("TopologyShardingStrategy"):
+		return &monitoringv1.TopologyShardingStrategyApplyConfiguration{}
 	case v1.SchemeGroupVersion.WithKind("TopologySpreadConstraint"):
 		return &monitoringv1.TopologySpreadConstraintApplyConfiguration{}
+	case v1.SchemeGroupVersion.WithKind("TracingConfig"):
+		return &monitoringv1.TracingConfigApplyConfiguration{}
 	case v1.SchemeGroupVersion.WithKind("TSDBSpec"):
 		return &monitoringv1.TSDBSpecApplyConfiguration{}
 	case v1.SchemeGroupVersion.WithKind("WebConfigFileFields"):
@@ -264,6 +288,8 @@ func ForKind(kind schema.GroupVersionKind) interface{} {
 		return &monitoringv1alpha1.EC2SDConfigApplyConfiguration{}
 	case v1alpha1.SchemeGroupVersion.WithKind("EmailConfig"):
 		return &monitoringv1alpha1.EmailConfigApplyConfiguration{}
+	case v1alpha1.SchemeGroupVersion.WithKind("EmailThreadingConfig"):
+		return &monitoringv1alpha1.EmailThreadingConfigApplyConfiguration{}
 	case v1alpha1.SchemeGroupVersion.WithKind("EurekaSDConfig"):
 		return &monitoringv1alpha1.EurekaSDConfigApplyConfiguration{}
 	case v1alpha1.SchemeGroupVersion.WithKind("FileSDConfig"):
@@ -382,6 +408,8 @@ func ForKind(kind schema.GroupVersionKind) interface{} {
 		return &monitoringv1beta1.DiscordConfigApplyConfiguration{}
 	case v1beta1.SchemeGroupVersion.WithKind("EmailConfig"):
 		return &monitoringv1beta1.EmailConfigApplyConfiguration{}
+	case v1beta1.SchemeGroupVersion.WithKind("EmailThreadingConfig"):
+		return &monitoringv1beta1.EmailThreadingConfigApplyConfiguration{}
 	case v1beta1.SchemeGroupVersion.WithKind("HTTPConfig"):
 		return &monitoringv1beta1.HTTPConfigApplyConfiguration{}
 	case v1beta1.SchemeGroupVersion.WithKind("InhibitRule"):

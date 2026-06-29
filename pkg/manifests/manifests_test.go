@@ -1238,7 +1238,7 @@ func TestPrometheusK8sRemoteWriteURLs(t *testing.T) {
 
 			var got []string
 			for _, rw := range p.Spec.RemoteWrite {
-				got = append(got, rw.URL)
+				got = append(got, string(rw.URL))
 			}
 			sort.Strings(got)
 			sort.Strings(tc.expectedRemoteWriteURLs)
@@ -1305,7 +1305,7 @@ func TestPrometheusK8sRemoteWriteOauth2(t *testing.T) {
 		nil,
 	)
 	require.NoError(t, err)
-	require.Equal(t, p.Spec.RemoteWrite[0].URL, "https://test.remotewrite.com/api/write")
+	require.Equal(t, string(p.Spec.RemoteWrite[0].URL), "https://test.remotewrite.com/api/write")
 	require.Equal(t, p.Spec.RemoteWrite[0].OAuth2, &expectedOauth2Config)
 }
 func TestRemoteWriteAuthorizationConfig(t *testing.T) {
