@@ -222,6 +222,7 @@ spec:
     matchLabels:
       openshift.io/cluster-monitoring: "true"
   serviceMonitorSelector: {}
+  shards: 1
   thanos:
     grpcServerTlsConfig:
       caFile: /etc/tls/grpc/ca.crt
