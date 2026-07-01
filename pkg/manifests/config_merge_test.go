@@ -980,7 +980,7 @@ func TestConfig_MergeClusterMonitoringCRD_PrometheusK8sConfigPhase1(t *testing.T
 						{
 							URL: "https://example.com/api/v1/write",
 							AuthorizationConfig: configv1alpha1.RemoteWriteAuthorization{
-								Type: configv1alpha1.RemoteWriteAuthorizationTypeSafeAuthorization,
+								Type: configv1alpha1.RemoteWriteAuthorizationTypeAuthorization,
 							},
 						},
 					},

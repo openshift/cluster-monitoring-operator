@@ -409,7 +409,7 @@ func applyRemoteWriteAuthorizationFromCRD(auth configv1alpha1.RemoteWriteAuthori
 		dst.OAuth2 = oauth2FromCRD(auth.OAuth2)
 	case configv1alpha1.RemoteWriteAuthorizationTypeSigV4:
 		dst.Sigv4 = sigv4FromCRD(auth.Sigv4)
-	case configv1alpha1.RemoteWriteAuthorizationTypeSafeAuthorization:
+	case configv1alpha1.RemoteWriteAuthorizationTypeAuthorization:
 		authorization, err := remoteWriteAuthorizationFromCRD(auth)
 		if err != nil {
 			return err
@@ -424,14 +424,14 @@ func applyRemoteWriteAuthorizationFromCRD(auth configv1alpha1.RemoteWriteAuthori
 }
 
 // remoteWriteAuthorizationFromCRD maps CRD authorization credentials to the
-// Prometheus Operator SafeAuthorization shape. The openshift/api field is still
-// named safeAuthorization pending a rename to authorization.
+// Prometheus Operator SafeAuthorization shape.
 func remoteWriteAuthorizationFromCRD(auth configv1alpha1.RemoteWriteAuthorization) (*monv1.SafeAuthorization, error) {
-	if auth.SafeAuthorization == nil {
+	credentials := secretKeySelectorFromCRD(auth.Authorization)
+	if credentials == nil {
 		return nil, fmt.Errorf("authorization is required when type is %q", auth.Type)
 	}
 	return &monv1.SafeAuthorization{
-		Credentials: auth.SafeAuthorization,
+		Credentials: credentials,
 	}, nil
 }
 
