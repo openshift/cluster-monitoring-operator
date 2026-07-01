@@ -3482,15 +3482,15 @@ nodeExporter:
 			argsAbsent:  []string{"--no-collector.ethtool"},
 		},
 		{
-			name: "enable interrupts collector",
+			name: "enable interrupts collector with include pattern",
 			config: `
 nodeExporter:
   collectors:
     interrupts:
-      enabled: true
+      include: ["^LOC;.*"]
 `,
 			argsPresent: []string{"--collector.interrupts",
-				"--collector.interrupts.name-include=^()$"},
+				"--collector.interrupts.name-include=^(^LOC;.*)$"},
 			argsAbsent: []string{"--no-collector.interrupts"},
 		},
 		{
@@ -3499,12 +3499,22 @@ nodeExporter:
 nodeExporter:
   collectors:
     interrupts:
-      enabled: true
       include: ["^LOC;.*", "^NMI;.*"]
 `,
 			argsPresent: []string{"--collector.interrupts",
 				"--collector.interrupts.name-include=^(^LOC;.*|^NMI;.*)$"},
 			argsAbsent: []string{"--no-collector.interrupts"},
+		},
+		{
+			name: "disable interrupts collector when include is empty",
+			config: `
+nodeExporter:
+  collectors:
+    interrupts:
+      include: []
+`,
+			argsPresent: []string{"--no-collector.interrupts"},
+			argsAbsent:  []string{"--collector.interrupts"},
 		},
 		{
 			name: "enable softirqs collector",

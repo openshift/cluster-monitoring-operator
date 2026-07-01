@@ -970,7 +970,7 @@ func (f *Factory) updateNodeExporterArgs(args []string) ([]string, error) {
 		args = setArg(args, "--no-collector.ethtool", "")
 	}
 
-	if f.config.ClusterMonitoringConfiguration.NodeExporterConfig.Collectors.Interrupts.Enabled {
+	if len(f.config.ClusterMonitoringConfiguration.NodeExporterConfig.Collectors.Interrupts.Include) > 0 {
 		args = setArg(args, "--collector.interrupts", "")
 		pattern, err := regexListToArg(f.config.ClusterMonitoringConfiguration.NodeExporterConfig.Collectors.Interrupts.Include)
 		if err != nil {

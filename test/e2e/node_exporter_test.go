@@ -59,7 +59,7 @@ nodeExporter:
 nodeExporter:
   collectors:
     interrupts:
-      enabled: true`,
+      include: ["^LOC;.*"]`,
 		},
 		{
 			nameCollector: "softirqs",
