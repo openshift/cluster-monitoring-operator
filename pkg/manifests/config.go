@@ -299,26 +299,29 @@ func NewConfigFromString(content string) (*Config, error) {
 	return NewConfigFromStringAndClusterMonitoringResource(content, nil)
 }
 
+// defaultNodeExporterConfig returns the baseline node-exporter configuration.
+func defaultNodeExporterConfig() *NodeExporterConfig {
+	return &NodeExporterConfig{
+		Collectors: NodeExporterCollectorConfig{
+			NetDev: NodeExporterCollectorNetDevConfig{
+				Enabled: ptr.To(true),
+			},
+			NetClass: NodeExporterCollectorNetClassConfig{
+				Enabled:    ptr.To(true),
+				UseNetlink: ptr.To(true),
+			},
+			Systemd: NodeExporterCollectorSystemdConfig{
+				Enabled: false,
+			},
+		},
+	}
+}
+
 // NewConfigFromStringAndClusterMonitoringResource returns the Config
 // initialized from the provided string and merged with the ClusterMonitoring
 // resource.
 func NewConfigFromStringAndClusterMonitoringResource(content string, cmr *configv1alpha1.ClusterMonitoring) (*Config, error) {
-	cmc := ClusterMonitoringConfiguration{
-		NodeExporterConfig: NodeExporterConfig{
-			Collectors: NodeExporterCollectorConfig{
-				NetDev: NodeExporterCollectorNetDevConfig{
-					Enabled: true,
-				},
-				NetClass: NodeExporterCollectorNetClassConfig{
-					Enabled:    true,
-					UseNetlink: true,
-				},
-				Systemd: NodeExporterCollectorSystemdConfig{
-					Enabled: false,
-				},
-			},
-		},
-	}
+	cmc := ClusterMonitoringConfiguration{}
 
 	err := UnmarshalStrict([]byte(content), &cmc)
 	if err != nil {
@@ -329,7 +332,9 @@ func NewConfigFromStringAndClusterMonitoringResource(content string, cmr *config
 		ClusterMonitoringConfiguration: &cmc,
 		UserWorkloadConfiguration:      NewDefaultUserWorkloadMonitoringConfig(),
 	}
-	c.mergeClusterMonitoringCRD(cmr)
+	if err := c.mergeClusterMonitoringCRD(cmr); err != nil {
+		return nil, fmt.Errorf("merging ClusterMonitoring CR: %w", err)
+	}
 
 	c.applyDefaults()
 
@@ -441,6 +446,21 @@ func (c *Config) applyDefaults() {
 
 	if c.ClusterMonitoringConfiguration == nil {
 		c.ClusterMonitoringConfiguration = &ClusterMonitoringConfiguration{}
+	}
+
+	if c.ClusterMonitoringConfiguration.NodeExporterConfig == nil {
+		c.ClusterMonitoringConfiguration.NodeExporterConfig = defaultNodeExporterConfig()
+	}
+
+	collectors := &c.ClusterMonitoringConfiguration.NodeExporterConfig.Collectors
+	if collectors.NetDev.Enabled == nil {
+		collectors.NetDev.Enabled = ptr.To(true)
+	}
+	if collectors.NetClass.Enabled == nil {
+		collectors.NetClass.Enabled = ptr.To(true)
+	}
+	if collectors.NetClass.UseNetlink == nil {
+		collectors.NetClass.UseNetlink = ptr.To(true)
 	}
 
 	if c.ClusterMonitoringConfiguration.UserWorkloadEnabled == nil {

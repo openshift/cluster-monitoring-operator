@@ -33,14 +33,17 @@ import (
 	"github.com/stretchr/testify/require"
 	admissionv1 "k8s.io/api/admissionregistration/v1"
 	appsv1 "k8s.io/api/apps/v1"
+	authzv1 "k8s.io/api/authorization/v1"
 	v1 "k8s.io/api/core/v1"
 	rbacv1 "k8s.io/api/rbac/v1"
 	"k8s.io/apimachinery/pkg/api/resource"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/apimachinery/pkg/types"
 	"k8s.io/apimachinery/pkg/util/intstr"
 	"k8s.io/apimachinery/pkg/util/wait"
 	"k8s.io/client-go/kubernetes/fake"
+	k8stesting "k8s.io/client-go/testing"
 	clocktesting "k8s.io/utils/clock/testing"
 	"k8s.io/utils/ptr"
 )
@@ -2331,4 +2334,84 @@ func TestPollUntil(t *testing.T) {
 	cancelParentCtx3()
 	wg.Wait()
 	require.ErrorContains(t, pollErr, "context deadline exceeded")
+}
+
+func TestWaitForClusterRoleBindingSCCUse(t *testing.T) {
+	ctx := context.Background()
+
+	cr := &rbacv1.ClusterRole{
+		ObjectMeta: metav1.ObjectMeta{Name: "alertmanager-main"},
+		Rules: []rbacv1.PolicyRule{{
+			APIGroups:     []string{"security.openshift.io"},
+			Resources:     []string{"securitycontextconstraints"},
+			ResourceNames: []string{"nonroot"},
+			Verbs:         []string{"use"},
+		}},
+	}
+	crb := &rbacv1.ClusterRoleBinding{
+		ObjectMeta: metav1.ObjectMeta{Name: "alertmanager-main"},
+		RoleRef: rbacv1.RoleRef{
+			APIGroup: "rbac.authorization.k8s.io",
+			Kind:     "ClusterRole",
+			Name:     cr.Name,
+		},
+		Subjects: []rbacv1.Subject{{
+			Kind:      rbacv1.ServiceAccountKind,
+			Name:      "alertmanager-main",
+			Namespace: ns,
+		}},
+	}
+
+	t.Run("allowed", func(t *testing.T) {
+		kclient := fake.NewClientset(cr)
+		kclient.PrependReactor("create", "subjectaccessreviews", func(action k8stesting.Action) (bool, runtime.Object, error) {
+			return true, &authzv1.SubjectAccessReview{
+				Status: authzv1.SubjectAccessReviewStatus{Allowed: true},
+			}, nil
+		})
+
+		c := Client{kclient: kclient}
+		require.NoError(t, c.WaitForClusterRoleBindingSCCUse(ctx, cr, crb))
+	})
+
+	t.Run("denied then allowed", func(t *testing.T) {
+		kclient := fake.NewClientset(cr)
+		var calls int
+		kclient.PrependReactor("create", "subjectaccessreviews", func(action k8stesting.Action) (bool, runtime.Object, error) {
+			calls++
+			allowed := calls > 1
+			return true, &authzv1.SubjectAccessReview{
+				Status: authzv1.SubjectAccessReviewStatus{
+					Allowed: allowed,
+					Reason:  "waiting for RBAC",
+				},
+			}, nil
+		})
+
+		c := Client{kclient: kclient}
+		require.NoError(t, c.WaitForClusterRoleBindingSCCUse(ctx, cr, crb))
+		require.Greater(t, calls, 1)
+	})
+
+	t.Run("no scc rules", func(t *testing.T) {
+		noSCCRole := &rbacv1.ClusterRole{
+			ObjectMeta: metav1.ObjectMeta{Name: "no-scc"},
+			Rules: []rbacv1.PolicyRule{{
+				APIGroups: []string{""},
+				Resources: []string{"pods"},
+				Verbs:     []string{"get"},
+			}},
+		}
+		noSCCBinding := &rbacv1.ClusterRoleBinding{
+			ObjectMeta: metav1.ObjectMeta{Name: "no-scc"},
+			RoleRef: rbacv1.RoleRef{
+				APIGroup: "rbac.authorization.k8s.io",
+				Kind:     "ClusterRole",
+				Name:     "no-scc",
+			},
+		}
+
+		c := Client{kclient: fake.NewClientset()}
+		require.NoError(t, c.WaitForClusterRoleBindingSCCUse(ctx, noSCCRole, noSCCBinding))
+	})
 }

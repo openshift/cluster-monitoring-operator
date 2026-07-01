@@ -95,6 +95,7 @@ var (
 	AlertmanagerPrometheusRule        = "alertmanager/prometheus-rule.yaml"
 	AlertmanagerPodDisruptionBudget   = "alertmanager/pod-disruption-budget.yaml"
 	AlertmanagerNetworkPolicy         = "alertmanager/network-policy-downstream.yaml"
+	AlertmanagerMinimalServiceMonitor = "alertmanager/minimal-service-monitor.yaml"
 
 	AlertmanagerUserWorkloadSecret                 = "alertmanager-user-workload/secret.yaml"
 	AlertmanagerUserWorkloadService                = "alertmanager-user-workload/service.yaml"
@@ -122,14 +123,15 @@ var (
 	KubeStateMetricsCRSConfig             = "kube-state-metrics/custom-resource-state-configmap.yaml"
 	KubeStateMetricsNetworkPolicy         = "kube-state-metrics/network-policy-downstream.yaml"
 
-	OpenShiftStateMetricsClusterRoleBinding  = "openshift-state-metrics/cluster-role-binding.yaml"
-	OpenShiftStateMetricsClusterRole         = "openshift-state-metrics/cluster-role.yaml"
-	OpenShiftStateMetricsDeployment          = "openshift-state-metrics/deployment.yaml"
-	OpenShiftStateMetricsServiceAccount      = "openshift-state-metrics/service-account.yaml"
-	OpenShiftStateMetricsService             = "openshift-state-metrics/service.yaml"
-	OpenShiftStateMetricsServiceMonitor      = "openshift-state-metrics/service-monitor.yaml"
-	OpenShiftStateMetricsKubeRbacProxySecret = "openshift-state-metrics/kube-rbac-proxy-secret.yaml"
-	OpenShiftStateMetricsNetworkPolicy       = "openshift-state-metrics/network-policy-downstream.yaml"
+	OpenShiftStateMetricsClusterRoleBinding    = "openshift-state-metrics/cluster-role-binding.yaml"
+	OpenShiftStateMetricsClusterRole           = "openshift-state-metrics/cluster-role.yaml"
+	OpenShiftStateMetricsDeployment            = "openshift-state-metrics/deployment.yaml"
+	OpenShiftStateMetricsServiceAccount        = "openshift-state-metrics/service-account.yaml"
+	OpenShiftStateMetricsService               = "openshift-state-metrics/service.yaml"
+	OpenShiftStateMetricsMinimalServiceMonitor = "openshift-state-metrics/minimal-service-monitor.yaml"
+	OpenShiftStateMetricsServiceMonitor        = "openshift-state-metrics/service-monitor.yaml"
+	OpenShiftStateMetricsKubeRbacProxySecret   = "openshift-state-metrics/kube-rbac-proxy-secret.yaml"
+	OpenShiftStateMetricsNetworkPolicy         = "openshift-state-metrics/network-policy-downstream.yaml"
 
 	NodeExporterDaemonSet                  = "node-exporter/daemonset.yaml"
 	NodeExporterService                    = "node-exporter/service.yaml"
@@ -154,6 +156,7 @@ var (
 	PrometheusK8sServiceAccount                   = "prometheus-k8s/service-account.yaml"
 	PrometheusK8s                                 = "prometheus-k8s/prometheus.yaml"
 	PrometheusK8sPrometheusServiceMonitor         = "prometheus-k8s/service-monitor.yaml"
+	PrometheusK8sPrometheusMinimalServiceMonitor  = "prometheus-k8s/minimal-service-monitor.yaml"
 	PrometheusK8sService                          = "prometheus-k8s/service.yaml"
 	PrometheusK8sServiceThanosSidecar             = "prometheus-k8s/service-thanos-sidecar.yaml"
 	PrometheusK8sRBACProxyWebSecret               = "prometheus-k8s/kube-rbac-proxy-web-secret.yaml"
@@ -234,6 +237,7 @@ var (
 	PrometheusOperatorUserWorkloadKubeRbacProxySecret = "prometheus-operator-user-workload/kube-rbac-proxy-secret.yaml"
 	PrometheusOperatorUserWorkloadNetworkPolicy       = "prometheus-operator-user-workload/network-policy-downstream.yaml"
 
+	ClusterMonitoringOperatorMinimalServiceMonitor         = "cluster-monitoring-operator/minimal-service-monitor.yaml"
 	ClusterMonitoringOperatorServiceMonitor                = "cluster-monitoring-operator/service-monitor.yaml"
 	ClusterMonitoringClusterRoleView                       = "cluster-monitoring-operator/cluster-role-view.yaml"
 	ClusterMonitoringClusterRoleAggregatedMetricsReader    = "cluster-monitoring-operator/cluster-role-aggregated-metrics-reader.yaml"
@@ -264,6 +268,7 @@ var (
 	TelemeterClientService                = "telemeter-client/service.yaml"
 	TelemeterClientServiceAccount         = "telemeter-client/service-account.yaml"
 	TelemeterClientServiceMonitor         = "telemeter-client/service-monitor.yaml"
+	TelemeterClientMinimalServiceMonitor  = "telemeter-client/minimal-service-monitor.yaml"
 	TelemeterClientServingCertsCABundle   = "telemeter-client/serving-certs-ca-bundle.yaml"
 	TelemeterClientKubeRbacProxySecret    = "telemeter-client/kube-rbac-proxy-secret.yaml"
 	TelemeterClientPrometheusRule         = "telemeter-client/prometheus-rule.yaml"
@@ -434,8 +439,11 @@ func (f *Factory) AlertmanagerUserWorkloadClusterRole() (*rbacv1.ClusterRole, er
 	return f.NewClusterRole(f.assets.MustNewAssetSlice(AlertmanagerUserWorkloadClusterRole))
 }
 
-func (f *Factory) AlertmanagerServiceMonitor() (*monv1.ServiceMonitor, error) {
-	return f.NewServiceMonitor(f.assets.MustNewAssetSlice(AlertmanagerServiceMonitor))
+func (f *Factory) AlertmanagerServiceMonitors() ([]*monv1.ServiceMonitor, error) {
+	return f.serviceMonitors(
+		AlertmanagerServiceMonitor,
+		AlertmanagerMinimalServiceMonitor,
+	)
 }
 
 func (f *Factory) AlertmanagerUserWorkloadServiceMonitor() (*monv1.ServiceMonitor, error) {
@@ -760,15 +768,10 @@ func (f *Factory) KubeStateMetricsClusterRole() (*rbacv1.ClusterRole, error) {
 }
 
 func (f *Factory) KubeStateMetricsServiceMonitors() ([]*monv1.ServiceMonitor, error) {
-	return serviceMonitors(f.KubeStateMetricsServiceMonitor, f.KubeStateMetricsMinimalServiceMonitor)
-}
-
-func (f *Factory) KubeStateMetricsServiceMonitor() (*monv1.ServiceMonitor, error) {
-	return f.NewServiceMonitor(f.assets.MustNewAssetSlice(KubeStateMetricsServiceMonitor))
-}
-
-func (f *Factory) KubeStateMetricsMinimalServiceMonitor() (*monv1.ServiceMonitor, error) {
-	return f.NewServiceMonitor(f.assets.MustNewAssetSlice(KubeStateMetricsMinimalServiceMonitor))
+	return f.serviceMonitors(
+		KubeStateMetricsServiceMonitor,
+		KubeStateMetricsMinimalServiceMonitor,
+	)
 }
 
 func (f *Factory) KubeStateMetricsDeployment() (*appsv1.Deployment, error) {
@@ -848,8 +851,11 @@ func (f *Factory) OpenShiftStateMetricsClusterRole() (*rbacv1.ClusterRole, error
 	return f.NewClusterRole(f.assets.MustNewAssetSlice(OpenShiftStateMetricsClusterRole))
 }
 
-func (f *Factory) OpenShiftStateMetricsServiceMonitor() (*monv1.ServiceMonitor, error) {
-	return f.NewServiceMonitor(f.assets.MustNewAssetSlice(OpenShiftStateMetricsServiceMonitor))
+func (f *Factory) OpenShiftStateMetricsServiceMonitors() ([]*monv1.ServiceMonitor, error) {
+	return f.serviceMonitors(
+		OpenShiftStateMetricsServiceMonitor,
+		OpenShiftStateMetricsMinimalServiceMonitor,
+	)
 }
 
 func (f *Factory) OpenShiftStateMetricsDeployment() (*appsv1.Deployment, error) {
@@ -904,11 +910,10 @@ func (f *Factory) OpenShiftStateMetricsNetworkPolicy() (*networkingv1.NetworkPol
 }
 
 func (f *Factory) NodeExporterServiceMonitors() ([]*monv1.ServiceMonitor, error) {
-	return serviceMonitors(f.NodeExporterServiceMonitor, f.NodeExporterMinimalServiceMonitor)
-}
-
-func (f *Factory) NodeExporterServiceMonitor() (*monv1.ServiceMonitor, error) {
-	return f.NewServiceMonitor(f.assets.MustNewAssetSlice(NodeExporterServiceMonitor))
+	return f.serviceMonitors(
+		NodeExporterServiceMonitor,
+		NodeExporterMinimalServiceMonitor,
+	)
 }
 
 func (f *Factory) updateNodeExporterArgs(args []string) ([]string, error) {
@@ -926,8 +931,8 @@ func (f *Factory) updateNodeExporterArgs(args []string) ([]string, error) {
 	}
 
 	var excludedDevices string
-	if f.config.ClusterMonitoringConfiguration.NodeExporterConfig.Collectors.NetDev.Enabled ||
-		f.config.ClusterMonitoringConfiguration.NodeExporterConfig.Collectors.NetClass.Enabled ||
+	if ptr.Deref(f.config.ClusterMonitoringConfiguration.NodeExporterConfig.Collectors.NetDev.Enabled, true) ||
+		ptr.Deref(f.config.ClusterMonitoringConfiguration.NodeExporterConfig.Collectors.NetClass.Enabled, true) ||
 		f.config.ClusterMonitoringConfiguration.NodeExporterConfig.Collectors.Ethtool.Enabled {
 		devs := *f.config.ClusterMonitoringConfiguration.NodeExporterConfig.IgnoredNetworkDevices
 		// An empty list generates a regular expression matching empty strings: `^()$`
@@ -941,16 +946,16 @@ func (f *Factory) updateNodeExporterArgs(args []string) ([]string, error) {
 		}
 	}
 
-	if f.config.ClusterMonitoringConfiguration.NodeExporterConfig.Collectors.NetDev.Enabled {
+	if ptr.Deref(f.config.ClusterMonitoringConfiguration.NodeExporterConfig.Collectors.NetDev.Enabled, true) {
 		args = setArg(args, "--collector.netdev", "")
 		args = setArg(args, "--collector.netdev.device-exclude=", excludedDevices)
 	} else {
 		args = setArg(args, "--no-collector.netdev", "")
 	}
 
-	if f.config.ClusterMonitoringConfiguration.NodeExporterConfig.Collectors.NetClass.Enabled {
+	if ptr.Deref(f.config.ClusterMonitoringConfiguration.NodeExporterConfig.Collectors.NetClass.Enabled, true) {
 		args = setArg(args, "--collector.netclass", "")
-		if f.config.ClusterMonitoringConfiguration.NodeExporterConfig.Collectors.NetClass.UseNetlink {
+		if ptr.Deref(f.config.ClusterMonitoringConfiguration.NodeExporterConfig.Collectors.NetClass.UseNetlink, true) {
 			args = setArg(args, "--collector.netclass.netlink", "")
 		}
 		args = setArg(args, "--collector.netclass.ignored-devices=", excludedDevices)
@@ -1032,10 +1037,6 @@ func regexListToArg(list []string) (string, error) {
 	r := "^(" + strings.Join(list, "|") + ")$"
 	_, err := regexp.Compile(r)
 	return r, err
-}
-
-func (f *Factory) NodeExporterMinimalServiceMonitor() (*monv1.ServiceMonitor, error) {
-	return f.NewServiceMonitor(f.assets.MustNewAssetSlice(NodeExporterMinimalServiceMonitor))
 }
 
 func (f *Factory) NodeExporterDaemonSet() (*appsv1.DaemonSet, error) {
@@ -1923,8 +1924,11 @@ func (f *Factory) excludedFromEnforcement() []monv1.ObjectReference {
 	return refs
 }
 
-func (f *Factory) PrometheusK8sPrometheusServiceMonitor() (*monv1.ServiceMonitor, error) {
-	return f.NewServiceMonitor(f.assets.MustNewAssetSlice(PrometheusK8sPrometheusServiceMonitor))
+func (f *Factory) PrometheusK8sPrometheusServiceMonitors() ([]*monv1.ServiceMonitor, error) {
+	return f.serviceMonitors(
+		PrometheusK8sPrometheusServiceMonitor,
+		PrometheusK8sPrometheusMinimalServiceMonitor,
+	)
 }
 
 func (f *Factory) PrometheusUserWorkloadPrometheusServiceMonitor() (*monv1.ServiceMonitor, error) {
@@ -2542,8 +2546,11 @@ func (f *Factory) ClusterMonitoringApiReaderRole() (*rbacv1.Role, error) {
 	return f.NewRole(f.assets.MustNewAssetSlice(ClusterMonitoringApiReaderRole))
 }
 
-func (f *Factory) ClusterMonitoringOperatorServiceMonitor() (*monv1.ServiceMonitor, error) {
-	return f.NewServiceMonitor(f.assets.MustNewAssetSlice(ClusterMonitoringOperatorServiceMonitor))
+func (f *Factory) ClusterMonitoringOperatorServiceMonitors() ([]*monv1.ServiceMonitor, error) {
+	return f.serviceMonitors(
+		ClusterMonitoringOperatorServiceMonitor,
+		ClusterMonitoringOperatorMinimalServiceMonitor,
+	)
 }
 
 func (f *Factory) ClusterMonitoringOperatorPrometheusRule() (*monv1.PrometheusRule, error) {
@@ -2570,15 +2577,10 @@ func (f *Factory) ControlPlanePrometheusRule() (*monv1.PrometheusRule, error) {
 }
 
 func (f *Factory) ControlPlaneKubeletServiceMonitors() ([]*monv1.ServiceMonitor, error) {
-	return serviceMonitors(f.ControlPlaneKubeletServiceMonitor, f.ControlPlaneKubeletMinimalServiceMonitor)
-}
-
-func (f *Factory) ControlPlaneKubeletServiceMonitor() (*monv1.ServiceMonitor, error) {
-	return f.NewServiceMonitor(f.assets.MustNewAssetSlice(ControlPlaneKubeletServiceMonitor))
-}
-
-func (f *Factory) ControlPlaneKubeletMinimalServiceMonitor() (*monv1.ServiceMonitor, error) {
-	return f.NewServiceMonitor(f.assets.MustNewAssetSlice(ControlPlaneKubeletMinimalServiceMonitor))
+	return f.serviceMonitors(
+		ControlPlaneKubeletServiceMonitor,
+		ControlPlaneKubeletMinimalServiceMonitor,
+	)
 }
 
 func (f *Factory) NewDaemonSet(manifest []byte) (*appsv1.DaemonSet, error) {
@@ -3060,9 +3062,11 @@ func (f *Factory) TelemeterClientClusterRoleBindingView() (*rbacv1.ClusterRoleBi
 	return f.NewClusterRoleBinding(f.assets.MustNewAssetSlice(TelemeterClientClusterRoleBindingView))
 }
 
-// TelemeterClientServiceMonitor generates a new ServiceMonitor for Telemeter client.
-func (f *Factory) TelemeterClientServiceMonitor() (*monv1.ServiceMonitor, error) {
-	return f.NewServiceMonitor(f.assets.MustNewAssetSlice(TelemeterClientServiceMonitor))
+func (f *Factory) TelemeterClientServiceMonitors() ([]*monv1.ServiceMonitor, error) {
+	return f.serviceMonitors(
+		TelemeterClientServiceMonitor,
+		TelemeterClientMinimalServiceMonitor,
+	)
 }
 
 func (f *Factory) TelemeterClientKubeRbacProxySecret() (*v1.Secret, error) {
@@ -3484,16 +3488,39 @@ func makeConsoleURL(c *configv1.Console, path string) (string, error) {
 	return "", nil
 }
 
-func serviceMonitors(fullServiceMonitor, minimalServiceMonitor func() (*monv1.ServiceMonitor, error)) ([]*monv1.ServiceMonitor, error) {
-	sMonitor, err := fullServiceMonitor()
-	if err != nil {
-		return nil, err
+// serviceMonitors creates service monitors from the given asset paths.
+// It expects exactly one service monitor per supported collection profile
+// and validates that all service monitors carry a supported collection
+// profile label and that each profile is covered exactly once.
+func (f *Factory) serviceMonitors(assetPaths ...string) ([]*monv1.ServiceMonitor, error) {
+	if len(assetPaths) != len(SupportedCollectionProfiles) {
+		return nil, fmt.Errorf("expected %d service monitors (one per collection profile), got %d", len(SupportedCollectionProfiles), len(assetPaths))
 	}
-	sMonitorMinimal, err := minimalServiceMonitor()
-	if err != nil {
-		return nil, err
+
+	sms := make([]*monv1.ServiceMonitor, 0, len(assetPaths))
+	seenProfiles := make(map[CollectionProfile]string, len(assetPaths))
+	for _, path := range assetPaths {
+		sm, err := f.NewServiceMonitor(f.assets.MustNewAssetSlice(path))
+		if err != nil {
+			return nil, err
+		}
+
+		profileValue, ok := sm.Labels[collectionProfileLabel]
+		if !ok {
+			return nil, fmt.Errorf("service monitor %q is missing the %q label", sm.Name, collectionProfileLabel)
+		}
+		profile := CollectionProfile(profileValue)
+		if !slices.Contains(SupportedCollectionProfiles, profile) {
+			return nil, fmt.Errorf("service monitor %q has unsupported collection profile label value %q", sm.Name, profileValue)
+		}
+		if other, exists := seenProfiles[profile]; exists {
+			return nil, fmt.Errorf("service monitors %q and %q have the same collection profile %q", other, sm.Name, profile)
+		}
+		seenProfiles[profile] = sm.Name
+
+		sms = append(sms, sm)
 	}
-	return []*monv1.ServiceMonitor{sMonitor, sMonitorMinimal}, nil
+	return sms, nil
 }
 
 func addRemoteWriteConfigs(clusterID string, rw []monv1.RemoteWriteSpec, rwTargets ...RemoteWriteSpec) []monv1.RemoteWriteSpec {

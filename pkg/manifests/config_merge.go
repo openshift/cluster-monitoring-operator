@@ -15,6 +15,8 @@
 package manifests
 
 import (
+	"fmt"
+
 	configv1alpha1 "github.com/openshift/api/config/v1alpha1"
 	monv1 "github.com/prometheus-operator/prometheus-operator/pkg/apis/monitoring/v1"
 	v1 "k8s.io/api/core/v1"
@@ -26,9 +28,9 @@ import (
 // mergeClusterMonitoringCRD merges the ClusterMonitoring CR spec into the ConfigMap-derived
 // config when clusterMonitoring is non-nil. Phase 1 (pre-GA): for each top-level field, if the
 // ConfigMap did not set it, use the CR; otherwise keep the ConfigMap and ignore the CR for that field.
-func (c *Config) mergeClusterMonitoringCRD(clusterMonitoring *configv1alpha1.ClusterMonitoring) {
+func (c *Config) mergeClusterMonitoringCRD(clusterMonitoring *configv1alpha1.ClusterMonitoring) error {
 	if clusterMonitoring == nil {
-		return
+		return nil
 	}
 
 	// User workload: use the CR only if the ConfigMap did not set enableUserWorkload.
@@ -44,6 +46,135 @@ func (c *Config) mergeClusterMonitoringCRD(clusterMonitoring *configv1alpha1.Clu
 	c.mergeTelemeterClientConfiguration(clusterMonitoring.Spec.TelemeterClientConfig)
 	c.mergeThanosQuerierConfiguration(clusterMonitoring.Spec.ThanosQuerierConfig)
 	c.mergeOpenShiftStateMetricsConfiguration(clusterMonitoring.Spec.OpenShiftStateMetricsConfig)
+
+	if err := c.mergeKubeStateMetricsConfiguration(clusterMonitoring.Spec.KubeStateMetricsConfig); err != nil {
+		return err
+	}
+
+	c.mergeNodeExporterConfiguration(clusterMonitoring.Spec.NodeExporterConfig)
+	return nil
+}
+
+func clusterMonitoringNodeExporterCollectorsEmpty(col configv1alpha1.NodeExporterCollectorConfig) bool {
+	for _, pol := range []configv1alpha1.NodeExporterCollectorCollectionPolicy{
+		col.CpuFreq.CollectionPolicy,
+		col.TcpStat.CollectionPolicy,
+		col.Ethtool.CollectionPolicy,
+		col.NetDev.CollectionPolicy,
+		col.NetClass.CollectionPolicy,
+		col.BuddyInfo.CollectionPolicy,
+		col.MountStats.CollectionPolicy,
+		col.Ksmd.CollectionPolicy,
+		col.Processes.CollectionPolicy,
+		col.Systemd.CollectionPolicy,
+		col.Softirqs.CollectionPolicy,
+	} {
+		if pol != "" {
+			return false
+		}
+	}
+	return true
+}
+
+// clusterMonitoringNodeExporterSpecEmpty reports whether the CR's nodeExporterConfig stanza
+// contains no user-set field.
+func clusterMonitoringNodeExporterSpecEmpty(nec configv1alpha1.NodeExporterConfig) bool {
+	if len(nec.Resources) > 0 {
+		return false
+	}
+	if nec.MaxProcs != 0 {
+		return false
+	}
+	if nec.IgnoredNetworkDevices != nil {
+		return false
+	}
+	if !clusterMonitoringNodeExporterCollectorsEmpty(nec.Collectors) {
+		return false
+	}
+	return true
+}
+
+func nodeExporterCollectorEnabledFromPolicy(p configv1alpha1.NodeExporterCollectorCollectionPolicy) (enabled bool, set bool) {
+	switch p {
+	case configv1alpha1.NodeExporterCollectorCollectionPolicyCollect:
+		return true, true
+	case configv1alpha1.NodeExporterCollectorCollectionPolicyDoNotCollect:
+		return false, true
+	default:
+		return false, false
+	}
+}
+
+func mergeNodeExporterCollectorsFromCRD(dst *NodeExporterCollectorConfig, src configv1alpha1.NodeExporterCollectorConfig) {
+	if enabled, set := nodeExporterCollectorEnabledFromPolicy(src.CpuFreq.CollectionPolicy); set {
+		dst.CpuFreq.Enabled = enabled
+	}
+	if enabled, set := nodeExporterCollectorEnabledFromPolicy(src.TcpStat.CollectionPolicy); set {
+		dst.TcpStat.Enabled = enabled
+	}
+	if enabled, set := nodeExporterCollectorEnabledFromPolicy(src.Ethtool.CollectionPolicy); set {
+		dst.Ethtool.Enabled = enabled
+	}
+	if enabled, set := nodeExporterCollectorEnabledFromPolicy(src.NetDev.CollectionPolicy); set {
+		dst.NetDev.Enabled = ptr.To(enabled)
+	}
+	if enabled, set := nodeExporterCollectorEnabledFromPolicy(src.NetClass.CollectionPolicy); set {
+		dst.NetClass.Enabled = ptr.To(enabled)
+		if enabled && src.NetClass.Collect.StatsGatherer != "" {
+			dst.NetClass.UseNetlink = ptr.To(src.NetClass.Collect.StatsGatherer == configv1alpha1.NodeExporterNetclassStatsGathererNetlink)
+		}
+	}
+	if enabled, set := nodeExporterCollectorEnabledFromPolicy(src.BuddyInfo.CollectionPolicy); set {
+		dst.BuddyInfo.Enabled = enabled
+	}
+	if enabled, set := nodeExporterCollectorEnabledFromPolicy(src.MountStats.CollectionPolicy); set {
+		dst.MountStats.Enabled = enabled
+	}
+	if enabled, set := nodeExporterCollectorEnabledFromPolicy(src.Ksmd.CollectionPolicy); set {
+		dst.Ksmd.Enabled = enabled
+	}
+	if enabled, set := nodeExporterCollectorEnabledFromPolicy(src.Processes.CollectionPolicy); set {
+		dst.Processes.Enabled = enabled
+	}
+	if enabled, set := nodeExporterCollectorEnabledFromPolicy(src.Systemd.CollectionPolicy); set {
+		dst.Systemd.Enabled = enabled
+		if enabled && len(src.Systemd.Collect.Units) > 0 {
+			units := make([]string, len(src.Systemd.Collect.Units))
+			for i, u := range src.Systemd.Collect.Units {
+				units[i] = string(u)
+			}
+			dst.Systemd.Units = units
+		}
+	}
+	if enabled, set := nodeExporterCollectorEnabledFromPolicy(src.Softirqs.CollectionPolicy); set {
+		dst.Softirqs.Enabled = enabled
+	}
+}
+
+func (c *Config) mergeNodeExporterConfiguration(nec configv1alpha1.NodeExporterConfig) {
+	if c.ClusterMonitoringConfiguration.NodeExporterConfig != nil {
+		return
+	}
+	if clusterMonitoringNodeExporterSpecEmpty(nec) {
+		return
+	}
+
+	ne := defaultNodeExporterConfig()
+	if nec.MaxProcs > 0 {
+		ne.MaxProcs = uint32(nec.MaxProcs)
+	}
+	if nec.IgnoredNetworkDevices != nil {
+		devs := make([]string, len(*nec.IgnoredNetworkDevices))
+		for i, d := range *nec.IgnoredNetworkDevices {
+			devs[i] = string(d)
+		}
+		ne.IgnoredNetworkDevices = &devs
+	}
+	if res := containerResourcesFromCRD(nec.Resources); res != nil {
+		ne.Resources = res
+	}
+	mergeNodeExporterCollectorsFromCRD(&ne.Collectors, nec.Collectors)
+	c.ClusterMonitoringConfiguration.NodeExporterConfig = ne
 }
 
 // clusterMonitoringMetricsServerSpecEmpty reports whether the CR's
@@ -177,6 +308,27 @@ func clusterMonitoringOpenShiftStateMetricsSpecEmpty(osmc configv1alpha1.OpenShi
 		return false
 	}
 	if len(osmc.TopologySpreadConstraints) > 0 {
+		return false
+	}
+	return true
+}
+
+// clusterMonitoringKubeStateMetricsSpecEmpty reports whether the CR's
+// kubeStateMetricsConfig stanza contains no user-set field.
+func clusterMonitoringKubeStateMetricsSpecEmpty(ksmc configv1alpha1.KubeStateMetricsConfig) bool {
+	if len(ksmc.NodeSelector) > 0 {
+		return false
+	}
+	if len(ksmc.Tolerations) > 0 {
+		return false
+	}
+	if len(ksmc.Resources) > 0 {
+		return false
+	}
+	if len(ksmc.TopologySpreadConstraints) > 0 {
+		return false
+	}
+	if len(ksmc.AdditionalResourceLabels) > 0 {
 		return false
 	}
 	return true
@@ -373,6 +525,60 @@ func (c *Config) mergeOpenShiftStateMetricsConfiguration(osmc configv1alpha1.Ope
 	cfg.TopologySpreadConstraints = osmc.TopologySpreadConstraints
 
 	c.ClusterMonitoringConfiguration.OpenShiftMetricsConfig = cfg
+}
+
+// kubeStateMetricsResourceNameToInternal maps the CRD PascalCase resource
+// names ("Job", "CronJob") to the lowercase plural form used by the internal
+// KubeStateMetricsConfig / validateAdditionalResourceLabels ("jobs", "cronjobs").
+var kubeStateMetricsResourceNameToInternal = map[configv1alpha1.KubeStateMetricsResourceName]string{
+	configv1alpha1.KubeStateMetricsResourceJob:     "jobs",
+	configv1alpha1.KubeStateMetricsResourceCronJob: "cronjobs",
+}
+
+func additionalResourceLabelsFromCRD(crdLabels []configv1alpha1.KubeStateMetricsResourceLabels) ([]ResourceLabels, error) {
+	if len(crdLabels) == 0 {
+		return nil, nil
+	}
+	out := make([]ResourceLabels, 0, len(crdLabels))
+	for _, rl := range crdLabels {
+		internalName, ok := kubeStateMetricsResourceNameToInternal[rl.Resource]
+		if !ok {
+			return nil, fmt.Errorf("unknown kube-state-metrics resource name %q", rl.Resource)
+		}
+		labels := make([]string, 0, len(rl.Labels))
+		for _, l := range rl.Labels {
+			labels = append(labels, string(l))
+		}
+		out = append(out, ResourceLabels{
+			Resource: internalName,
+			Labels:   labels,
+		})
+	}
+	return out, nil
+}
+
+func (c *Config) mergeKubeStateMetricsConfiguration(ksmc configv1alpha1.KubeStateMetricsConfig) error {
+	if c.ClusterMonitoringConfiguration.KubeStateMetricsConfig != nil {
+		return nil
+	}
+	if clusterMonitoringKubeStateMetricsSpecEmpty(ksmc) {
+		return nil
+	}
+
+	cfg := &KubeStateMetricsConfig{}
+	cfg.NodeSelector = ksmc.NodeSelector
+	cfg.Tolerations = ksmc.Tolerations
+	cfg.Resources = containerResourcesFromCRD(ksmc.Resources)
+	cfg.TopologySpreadConstraints = ksmc.TopologySpreadConstraints
+
+	rl, err := additionalResourceLabelsFromCRD(ksmc.AdditionalResourceLabels)
+	if err != nil {
+		return fmt.Errorf("kubeStateMetrics.additionalResourceLabels: %w", err)
+	}
+	cfg.AdditionalResourceLabels = rl
+
+	c.ClusterMonitoringConfiguration.KubeStateMetricsConfig = cfg
+	return nil
 }
 
 func (c *Config) mergeAlertmanagerConfiguration(ac configv1alpha1.AlertmanagerConfig) {

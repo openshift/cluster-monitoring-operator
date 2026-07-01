@@ -23,6 +23,7 @@ import (
 	"testing"
 	"time"
 
+	"github.com/Jeffail/gabs/v2"
 	osConfigv1 "github.com/openshift/api/config/v1"
 	"github.com/openshift/cluster-monitoring-operator/test/e2e/framework"
 	_ "github.com/prometheus/prometheus/discovery/kubernetes" // required for promConfig.Load to parse kubernetes_sd_configs
@@ -30,10 +31,11 @@ import (
 	v1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/types"
+	"k8s.io/utils/ptr"
 )
 
 func TestPrometheusMetrics(t *testing.T) {
-	expected := map[string]int{
+	expectedHealthyTargetsByJob := map[string]int{
 		"prometheus-operator":           1,
 		"prometheus-k8s":                2,
 		"prometheus-k8s-thanos-sidecar": 2,
@@ -45,22 +47,31 @@ func TestPrometheusMetrics(t *testing.T) {
 		"telemeter-client":              1,
 	}
 
-	for service, metric := range expected {
-		t.Run(service, func(t *testing.T) {
-			f.ThanosQuerierClient.WaitForQueryReturn(
-				// To avoid making the test wait for more than lookback-delta
-				// in case Prometheus wasn't able to write stale markers
-				// (because it was down), reduce the lookup period but not
-				// lower than the highest scrape interval (which is 2m).
-				t, time.Minute, fmt.Sprintf(`count(last_over_time(up{service="%s",namespace="openshift-monitoring"}[2m30s]) == 1)`, service),
-				func(v float64) error {
-					if v != float64(metric) {
-						return fmt.Errorf("expected %d targets to be up but got %v", metric, v)
-					}
+	for jobName, expectedTargets := range expectedHealthyTargetsByJob {
+		t.Run(jobName, func(t *testing.T) {
+			f.PrometheusK8sClient.WaitForTargetsReturn(t, time.Minute, func(body []byte) error {
+				j, err := gabs.ParseJSON(body)
+				if err != nil {
+					return err
+				}
 
-					return nil
-				},
-			)
+				totalTargets, healthyTargets := 0, 0
+				for _, target := range j.Path("data.activeTargets").Children() {
+					job, _ := target.Path("labels.job").Data().(string)
+					health, _ := target.Path("health").Data().(string)
+					if job == jobName {
+						totalTargets++
+						if health == "up" {
+							healthyTargets++
+						}
+					}
+				}
+
+				if healthyTargets != expectedTargets {
+					return fmt.Errorf("expected %d healthy targets, got %d (total targets: %d)", expectedTargets, healthyTargets, totalTargets)
+				}
+				return nil
+			})
 		})
 	}
 }
@@ -186,6 +197,39 @@ func TestPrometheusRemoteWrite(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
+
+	// Clean up after all subtests: reset the ConfigMap, wait for
+	// Prometheus Operator to remove the remote write config from the
+	// Prometheus config secret, then force-delete the Prometheus pods to
+	// skip the ~2m shutdown delay.
+	//
+	// The last subtest deletes the receiver but leaves the ConfigMap with
+	// remoteWrite. When the ConfigMap is reset, Prometheus Operator
+	// removes the TLS certs from its TLS assets secret simultaneously
+	// with the config update. Because Prometheus re-reads cert files on
+	// every send attempt, the queue_manager drain fails with "no such file"
+	// and retries until
+	// the flush-deadline expires (2x1m for samples + metadata = ~2m).
+	// Force-deleting the pods avoids this.
+	// See https://github.com/prometheus/prometheus/issues/6747
+	t.Cleanup(func() {
+		f.MustCreateOrUpdateConfigMap(t, f.BuildCMOConfigMap(t, "{}"))
+
+		require.NoError(t, framework.Poll(5*time.Second, 5*time.Minute, func() error {
+			cfg := f.PrometheusConfigFromSecret(t, f.Ns, "prometheus-k8s")
+			if len(cfg.RemoteWriteConfigs) > 0 {
+				return fmt.Errorf("prometheus config still has %d remote write configs", len(cfg.RemoteWriteConfigs))
+			}
+			return nil
+		}))
+
+		require.NoError(t, f.KubeClient.CoreV1().Pods(f.Ns).DeleteCollection(ctx,
+			metav1.DeleteOptions{GracePeriodSeconds: ptr.To(int64(0))},
+			metav1.ListOptions{LabelSelector: "app.kubernetes.io/name=prometheus,app.kubernetes.io/instance=k8s"},
+		))
+
+		f.AssertStatefulSetExistsAndRolloutFunc("prometheus-k8s", f.Ns)(t)
+	})
 	for _, tc := range []struct {
 		name     string
 		rwSpec   string
@@ -398,11 +442,13 @@ func TestBodySizeLimit(t *testing.T) {
 // the service, it is useful in some situations.
 func TestPrometheusWebUI(t *testing.T) {
 	t.Parallel()
-	host, cleanUp, err := f.ForwardPodPort(t, f.Ns, "prometheus-k8s-0", 9090)
-	require.NoError(t, err)
-	t.Cleanup(cleanUp)
+	err := framework.Poll(time.Second, 5*time.Minute, func() error {
+		host, cleanUp, err := f.ForwardPodPort(t, f.Ns, "prometheus-k8s-0", 9090)
+		if err != nil {
+			return err
+		}
+		defer cleanUp()
 
-	err = framework.Poll(time.Second, 5*time.Minute, func() error {
 		// /query is a client-side route only defined in the Mantine UI code.
 		resp, err := http.Get(fmt.Sprintf("http://%s/query", host))
 		if err != nil {

@@ -23,6 +23,7 @@ import (
 	"net/http"
 	"reflect"
 	"slices"
+	"strings"
 	"testing"
 	"time"
 
@@ -36,6 +37,7 @@ import (
 	monitoringv1 "github.com/prometheus-operator/prometheus-operator/pkg/apis/monitoring/v1"
 	monitoringv1beta1 "github.com/prometheus-operator/prometheus-operator/pkg/apis/monitoring/v1beta1"
 	amapimodels "github.com/prometheus/alertmanager/api/v2/models"
+	"github.com/stretchr/testify/require"
 	v1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/util/intstr"
@@ -1124,4 +1126,58 @@ func TestAlertmanagerUWMSecrets(t *testing.T) {
 			}
 		})
 	}
+}
+
+// TestAlertmanagerWebUI verifies that the Alertmanager Elm web UI is reachable
+// via pod port-forwarding to port 9093. Even though it is not exposed through
+// the service, it is useful to catch broken UI embeds after a version bump.
+func TestAlertmanagerWebUI(t *testing.T) {
+	t.Parallel()
+	err := framework.Poll(time.Second, 5*time.Minute, func() error {
+		host, cleanUp, err := f.ForwardPodPort(t, f.Ns, "alertmanager-main-0", 9093)
+		if err != nil {
+			return err
+		}
+		defer cleanUp()
+
+		resp, err := http.Get(fmt.Sprintf("http://%s/", host))
+		if err != nil {
+			return err
+		}
+		defer resp.Body.Close()
+
+		b, err := io.ReadAll(resp.Body)
+		if err != nil {
+			return fmt.Errorf("failed to read / response: %w", err)
+		}
+		if resp.StatusCode != http.StatusOK {
+			return fmt.Errorf("/: expected 200, got %d (%s)", resp.StatusCode, framework.ClampMax(b))
+		}
+
+		body := string(b)
+		// The Elm UI (built by Vite via vite-plugin-elm) mounts into
+		// <div id="root"> and the HTML references hashed JS assets.
+		// If either is missing, the UI assets weren't embedded correctly.
+		if !strings.Contains(body, "<title>Alertmanager</title>") {
+			return fmt.Errorf("/: missing Alertmanager UI title, got: %s", framework.ClampMax(b))
+		}
+		if !strings.Contains(body, `src="./assets/index-`) {
+			return fmt.Errorf("/: missing embedded JS asset reference, got: %s", framework.ClampMax(b))
+		}
+
+		// Sanity check: an unknown path should 404 to confirm we're
+		// getting real responses from Alertmanager, not a blanket 200.
+		resp, err = http.Get(fmt.Sprintf("http://%s/doesnotexist", host))
+		if err != nil {
+			return err
+		}
+		defer resp.Body.Close()
+
+		if resp.StatusCode != http.StatusNotFound {
+			return fmt.Errorf("/doesnotexist: expected 404, got %d", resp.StatusCode)
+		}
+
+		return nil
+	})
+	require.NoError(t, err)
 }

@@ -2,6 +2,7 @@ local metrics = import 'github.com/openshift/telemeter/jsonnet/telemeter/metrics
 
 local generateCertInjection = import '../utils/generate-certificate-injection.libsonnet';
 local generateSecret = import '../utils/generate-secret.libsonnet';
+local generateServiceMonitor = import '../utils/generate-service-monitors.libsonnet';
 local prometheus = import 'github.com/prometheus-operator/kube-prometheus/jsonnet/kube-prometheus/components/prometheus.libsonnet';
 local withDescription = (import '../utils/add-annotations.libsonnet').withDescription;
 local requiredClusterRoles = (import '../utils/add-annotations.libsonnet').requiredClusterRoles;
@@ -285,6 +286,11 @@ function(params)
     },
 
     serviceMonitor+: {
+      metadata+: {
+        labels+: {
+          'monitoring.openshift.io/collection-profile': 'full',
+        },
+      },
       spec+: {
         serviceDiscoveryRole: 'EndpointSlice',
         endpoints: [
@@ -296,6 +302,7 @@ function(params)
         ],
       },
     },
+    minimalServiceMonitor: generateServiceMonitor.serviceMonitorForMinimalProfile(self.serviceMonitor),
 
     serviceThanosSidecar+: {
       metadata+: {
@@ -412,6 +419,8 @@ function(params)
         // failures when the WAL replay takes a long time.
         // See https://issues.redhat.com/browse/OCPBUGS-4168 for details.
         maximumStartupDurationSeconds: 3600,
+        // Explicitly set the shards value to 1 to support VPA use cases.
+        shards: 1,
         containers: [
           {
             name: 'kube-rbac-proxy-web',

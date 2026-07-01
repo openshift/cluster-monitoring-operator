@@ -139,6 +139,20 @@ func TestClusterMonitoringPrometheusOperatorAdmissionWebhookSpecEmpty(t *testing
 	}))
 }
 
+func TestClusterMonitoringNodeExporterCollectorsEmpty(t *testing.T) {
+	require.True(t, clusterMonitoringNodeExporterCollectorsEmpty(configv1alpha1.NodeExporterCollectorConfig{}))
+	require.False(t, clusterMonitoringNodeExporterCollectorsEmpty(configv1alpha1.NodeExporterCollectorConfig{
+		Softirqs: configv1alpha1.NodeExporterCollectorSoftirqsConfig{
+			CollectionPolicy: configv1alpha1.NodeExporterCollectorCollectionPolicyCollect,
+		},
+	}))
+	require.False(t, clusterMonitoringNodeExporterCollectorsEmpty(configv1alpha1.NodeExporterCollectorConfig{
+		CpuFreq: configv1alpha1.NodeExporterCollectorCpufreqConfig{
+			CollectionPolicy: configv1alpha1.NodeExporterCollectorCollectionPolicyDoNotCollect,
+		},
+	}))
+}
+
 func TestClusterMonitoringTelemeterClientSpecEmpty(t *testing.T) {
 	require.True(t, clusterMonitoringTelemeterClientSpecEmpty(configv1alpha1.TelemeterClientConfig{}))
 	require.False(t, clusterMonitoringTelemeterClientSpecEmpty(configv1alpha1.TelemeterClientConfig{
@@ -169,6 +183,20 @@ func TestClusterMonitoringThanosQuerierSpecEmpty(t *testing.T) {
 	require.False(t, clusterMonitoringThanosQuerierSpecEmpty(configv1alpha1.ThanosQuerierConfig{
 		Tolerations: []v1.Toleration{
 			{Key: "key", Operator: v1.TolerationOpEqual, Value: "val"},
+		},
+	}))
+}
+
+func TestClusterMonitoringNodeExporterSpecEmpty(t *testing.T) {
+	require.True(t, clusterMonitoringNodeExporterSpecEmpty(configv1alpha1.NodeExporterConfig{}))
+	require.False(t, clusterMonitoringNodeExporterSpecEmpty(configv1alpha1.NodeExporterConfig{
+		MaxProcs: 2,
+	}))
+	require.False(t, clusterMonitoringNodeExporterSpecEmpty(configv1alpha1.NodeExporterConfig{
+		Collectors: configv1alpha1.NodeExporterCollectorConfig{
+			Softirqs: configv1alpha1.NodeExporterCollectorSoftirqsConfig{
+				CollectionPolicy: configv1alpha1.NodeExporterCollectorCollectionPolicyCollect,
+			},
 		},
 	}))
 }
@@ -471,6 +499,54 @@ func TestConfig_MergeClusterMonitoringCRD_ThanosQuerierConfigPhase1(t *testing.T
 	})
 }
 
+func TestConfig_MergeClusterMonitoringCRD_NodeExporterConfigPhase1(t *testing.T) {
+	softirqsCR := func(policy configv1alpha1.NodeExporterCollectorCollectionPolicy) *configv1alpha1.ClusterMonitoring {
+		return &configv1alpha1.ClusterMonitoring{
+			Spec: configv1alpha1.ClusterMonitoringSpec{
+				NodeExporterConfig: configv1alpha1.NodeExporterConfig{
+					Collectors: configv1alpha1.NodeExporterCollectorConfig{
+						Softirqs: configv1alpha1.NodeExporterCollectorSoftirqsConfig{
+							CollectionPolicy: policy,
+						},
+					},
+				},
+			},
+		}
+	}
+	t.Run("CR applies when ConfigMap omits nodeExporter", func(t *testing.T) {
+		c, err := NewConfigFromStringAndClusterMonitoringResource("{}", softirqsCR(configv1alpha1.NodeExporterCollectorCollectionPolicyCollect))
+		require.NoError(t, err)
+		require.True(t, c.ClusterMonitoringConfiguration.NodeExporterConfig.Collectors.Softirqs.Enabled)
+	})
+	t.Run("CR applies when ConfigMap sets nodeExporter to null", func(t *testing.T) {
+		c, err := NewConfigFromStringAndClusterMonitoringResource("nodeExporter: null", softirqsCR(configv1alpha1.NodeExporterCollectorCollectionPolicyCollect))
+		require.NoError(t, err)
+		require.True(t, c.ClusterMonitoringConfiguration.NodeExporterConfig.Collectors.Softirqs.Enabled)
+	})
+	t.Run("CR ignored when ConfigMap declares nodeExporter without softirqs", func(t *testing.T) {
+		c, err := NewConfigFromStringAndClusterMonitoringResource(`nodeExporter:
+  maxProcs: 2
+`, softirqsCR(configv1alpha1.NodeExporterCollectorCollectionPolicyCollect))
+		require.NoError(t, err)
+		require.Equal(t, uint32(2), c.ClusterMonitoringConfiguration.NodeExporterConfig.MaxProcs)
+		require.False(t, c.ClusterMonitoringConfiguration.NodeExporterConfig.Collectors.Softirqs.Enabled)
+	})
+	t.Run("CR ignored when ConfigMap declares collectors.softirqs", func(t *testing.T) {
+		c, err := NewConfigFromStringAndClusterMonitoringResource(`nodeExporter:
+  collectors:
+    softirqs:
+      enabled: false
+`, softirqsCR(configv1alpha1.NodeExporterCollectorCollectionPolicyCollect))
+		require.NoError(t, err)
+		require.False(t, c.ClusterMonitoringConfiguration.NodeExporterConfig.Collectors.Softirqs.Enabled)
+	})
+	t.Run("CR maps DoNotCollect to disabled", func(t *testing.T) {
+		c, err := NewConfigFromStringAndClusterMonitoringResource("{}", softirqsCR(configv1alpha1.NodeExporterCollectorCollectionPolicyDoNotCollect))
+		require.NoError(t, err)
+		require.False(t, c.ClusterMonitoringConfiguration.NodeExporterConfig.Collectors.Softirqs.Enabled)
+	})
+}
+
 func TestClusterMonitoringOpenShiftStateMetricsSpecEmpty(t *testing.T) {
 	require.True(t, clusterMonitoringOpenShiftStateMetricsSpecEmpty(configv1alpha1.OpenShiftStateMetricsConfig{}))
 	require.False(t, clusterMonitoringOpenShiftStateMetricsSpecEmpty(configv1alpha1.OpenShiftStateMetricsConfig{
@@ -489,6 +565,33 @@ func TestClusterMonitoringOpenShiftStateMetricsSpecEmpty(t *testing.T) {
 	require.False(t, clusterMonitoringOpenShiftStateMetricsSpecEmpty(configv1alpha1.OpenShiftStateMetricsConfig{
 		TopologySpreadConstraints: []v1.TopologySpreadConstraint{
 			{MaxSkew: 1, TopologyKey: "kubernetes.io/hostname"},
+		},
+	}))
+}
+
+func TestClusterMonitoringKubeStateMetricsSpecEmpty(t *testing.T) {
+	require.True(t, clusterMonitoringKubeStateMetricsSpecEmpty(configv1alpha1.KubeStateMetricsConfig{}))
+	require.False(t, clusterMonitoringKubeStateMetricsSpecEmpty(configv1alpha1.KubeStateMetricsConfig{
+		NodeSelector: map[string]string{"k": "v"},
+	}))
+	require.False(t, clusterMonitoringKubeStateMetricsSpecEmpty(configv1alpha1.KubeStateMetricsConfig{
+		Resources: []configv1alpha1.ContainerResource{
+			{Name: "cpu", Request: resource.MustParse("10m")},
+		},
+	}))
+	require.False(t, clusterMonitoringKubeStateMetricsSpecEmpty(configv1alpha1.KubeStateMetricsConfig{
+		Tolerations: []v1.Toleration{
+			{Key: "key", Operator: v1.TolerationOpEqual, Value: "val"},
+		},
+	}))
+	require.False(t, clusterMonitoringKubeStateMetricsSpecEmpty(configv1alpha1.KubeStateMetricsConfig{
+		TopologySpreadConstraints: []v1.TopologySpreadConstraint{
+			{MaxSkew: 1, TopologyKey: "kubernetes.io/hostname"},
+		},
+	}))
+	require.False(t, clusterMonitoringKubeStateMetricsSpecEmpty(configv1alpha1.KubeStateMetricsConfig{
+		AdditionalResourceLabels: []configv1alpha1.KubeStateMetricsResourceLabels{
+			{Resource: configv1alpha1.KubeStateMetricsResourceJob, Labels: []configv1alpha1.KubeStateMetricsLabelName{"app"}},
 		},
 	}))
 }
@@ -538,6 +641,97 @@ func TestConfig_MergeClusterMonitoringCRD_OpenShiftStateMetricsConfigPhase1(t *t
 		require.NotNil(t, c.ClusterMonitoringConfiguration.OpenShiftMetricsConfig.Resources)
 		require.Equal(t, resource.MustParse("100m"), c.ClusterMonitoringConfiguration.OpenShiftMetricsConfig.Resources.Requests[v1.ResourceCPU])
 		require.Equal(t, resource.MustParse("200m"), c.ClusterMonitoringConfiguration.OpenShiftMetricsConfig.Resources.Limits[v1.ResourceCPU])
+	})
+}
+
+func TestConfig_MergeClusterMonitoringCRD_KubeStateMetricsConfigPhase1(t *testing.T) {
+	t.Run("CR applies when ConfigMap left KubeStateMetricsConfig nil", func(t *testing.T) {
+		cm := &configv1alpha1.ClusterMonitoring{
+			Spec: configv1alpha1.ClusterMonitoringSpec{
+				KubeStateMetricsConfig: configv1alpha1.KubeStateMetricsConfig{
+					NodeSelector: map[string]string{"role": "infra"},
+				},
+			},
+		}
+		c, err := NewConfigFromStringAndClusterMonitoringResource("{}", cm)
+		require.NoError(t, err)
+		require.NotNil(t, c.ClusterMonitoringConfiguration.KubeStateMetricsConfig)
+		require.Equal(t, map[string]string{"role": "infra"}, c.ClusterMonitoringConfiguration.KubeStateMetricsConfig.NodeSelector)
+	})
+	t.Run("CR ignored when ConfigMap already set KubeStateMetricsConfig", func(t *testing.T) {
+		cm := &configv1alpha1.ClusterMonitoring{
+			Spec: configv1alpha1.ClusterMonitoringSpec{
+				KubeStateMetricsConfig: configv1alpha1.KubeStateMetricsConfig{
+					NodeSelector: map[string]string{"from": "crd"},
+				},
+			},
+		}
+		c, err := NewConfigFromStringAndClusterMonitoringResource("{kubeStateMetrics: {nodeSelector: {from: configmap}}}", cm)
+		require.NoError(t, err)
+		require.Equal(t, map[string]string{"from": "configmap"}, c.ClusterMonitoringConfiguration.KubeStateMetricsConfig.NodeSelector)
+	})
+	t.Run("CR maps ContainerResource to Resources", func(t *testing.T) {
+		cm := &configv1alpha1.ClusterMonitoring{
+			Spec: configv1alpha1.ClusterMonitoringSpec{
+				KubeStateMetricsConfig: configv1alpha1.KubeStateMetricsConfig{
+					Resources: []configv1alpha1.ContainerResource{
+						{
+							Name:    "cpu",
+							Request: resource.MustParse("100m"),
+							Limit:   resource.MustParse("200m"),
+						},
+					},
+				},
+			},
+		}
+		c, err := NewConfigFromStringAndClusterMonitoringResource("{}", cm)
+		require.NoError(t, err)
+		require.NotNil(t, c.ClusterMonitoringConfiguration.KubeStateMetricsConfig.Resources)
+		require.Equal(t, resource.MustParse("100m"), c.ClusterMonitoringConfiguration.KubeStateMetricsConfig.Resources.Requests[v1.ResourceCPU])
+		require.Equal(t, resource.MustParse("200m"), c.ClusterMonitoringConfiguration.KubeStateMetricsConfig.Resources.Limits[v1.ResourceCPU])
+	})
+	t.Run("CR maps AdditionalResourceLabels with resource name conversion", func(t *testing.T) {
+		cm := &configv1alpha1.ClusterMonitoring{
+			Spec: configv1alpha1.ClusterMonitoringSpec{
+				KubeStateMetricsConfig: configv1alpha1.KubeStateMetricsConfig{
+					AdditionalResourceLabels: []configv1alpha1.KubeStateMetricsResourceLabels{
+						{
+							Resource: configv1alpha1.KubeStateMetricsResourceJob,
+							Labels:   []configv1alpha1.KubeStateMetricsLabelName{"app", "team"},
+						},
+						{
+							Resource: configv1alpha1.KubeStateMetricsResourceCronJob,
+							Labels:   []configv1alpha1.KubeStateMetricsLabelName{"*"},
+						},
+					},
+				},
+			},
+		}
+		c, err := NewConfigFromStringAndClusterMonitoringResource("{}", cm)
+		require.NoError(t, err)
+		require.NotNil(t, c.ClusterMonitoringConfiguration.KubeStateMetricsConfig)
+		require.Len(t, c.ClusterMonitoringConfiguration.KubeStateMetricsConfig.AdditionalResourceLabels, 2)
+		require.Equal(t, "jobs", c.ClusterMonitoringConfiguration.KubeStateMetricsConfig.AdditionalResourceLabels[0].Resource)
+		require.Equal(t, []string{"app", "team"}, c.ClusterMonitoringConfiguration.KubeStateMetricsConfig.AdditionalResourceLabels[0].Labels)
+		require.Equal(t, "cronjobs", c.ClusterMonitoringConfiguration.KubeStateMetricsConfig.AdditionalResourceLabels[1].Resource)
+		require.Equal(t, []string{"*"}, c.ClusterMonitoringConfiguration.KubeStateMetricsConfig.AdditionalResourceLabels[1].Labels)
+	})
+	t.Run("CR returns error for unknown resource name", func(t *testing.T) {
+		cm := &configv1alpha1.ClusterMonitoring{
+			Spec: configv1alpha1.ClusterMonitoringSpec{
+				KubeStateMetricsConfig: configv1alpha1.KubeStateMetricsConfig{
+					AdditionalResourceLabels: []configv1alpha1.KubeStateMetricsResourceLabels{
+						{
+							Resource: "UnknownResource",
+							Labels:   []configv1alpha1.KubeStateMetricsLabelName{"foo"},
+						},
+					},
+				},
+			},
+		}
+		_, err := NewConfigFromStringAndClusterMonitoringResource("{}", cm)
+		require.Error(t, err)
+		require.Contains(t, err.Error(), "unknown kube-state-metrics resource name")
 	})
 }
 

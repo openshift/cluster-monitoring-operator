@@ -5,6 +5,7 @@ metadata:
     app.kubernetes.io/managed-by: cluster-monitoring-operator
     app.kubernetes.io/name: cluster-monitoring-operator
     app.kubernetes.io/part-of: openshift-monitoring
+    monitoring.openshift.io/collection-profile: full
   name: cluster-monitoring-operator
   namespace: openshift-monitoring
 spec:

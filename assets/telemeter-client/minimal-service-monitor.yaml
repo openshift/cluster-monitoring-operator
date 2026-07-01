@@ -5,8 +5,8 @@ metadata:
     app.kubernetes.io/managed-by: cluster-monitoring-operator
     app.kubernetes.io/part-of: openshift-monitoring
     k8s-app: telemeter-client
-    monitoring.openshift.io/collection-profile: full
-  name: telemeter-client
+    monitoring.openshift.io/collection-profile: minimal
+  name: telemeter-client-minimal
   namespace: openshift-monitoring
 spec:
   endpoints:
