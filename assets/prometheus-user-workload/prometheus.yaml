@@ -298,6 +298,7 @@ spec:
       operator: NotIn
       values:
       - "false"
+  shards: 1
   thanos:
     image: ""
     resources:
