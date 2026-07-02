@@ -412,6 +412,9 @@ type NodeExporterCollectorConfig struct {
 	// Defines the configuration of the `systemd` collector, which collects statistics on the systemd daemon and its managed services.
 	// Disabled by default.
 	Systemd NodeExporterCollectorSystemdConfig `json:"systemd,omitempty"`
+	// Defines the configuration of the `interrupts` collector, which exposes interrupt counts from `/proc/interrupts`.
+	// Disabled by default.
+	Interrupts NodeExporterCollectorInterruptsConfig `json:"interrupts,omitempty"`
 	// Defines the configuration of the `softirqs` collector, which exposes detailed softirq metrics from `/proc/softirqs`.
 	// Disabled by default.
 	Softirqs NodeExporterCollectorSoftirqsConfig `json:"softirqs,omitempty"`
@@ -578,6 +581,26 @@ type NodeExporterCollectorSystemdConfig struct {
 	// A list of regular expression (regex) patterns that match systemd units to be included by the `systemd` collector.
 	// By default, the list is empty, so the collector exposes no metrics for systemd units.
 	Units []string `json:"units,omitempty"`
+}
+
+// The `NodeExporterCollectorInterruptsConfig` resource configures the `interrupts`
+// collector of the `node-exporter` agent.
+// By default, the collector is disabled.
+// A non-empty `include` list enables the collector and allow-lists which interrupt
+// lines are exposed (each entry is a regular expression; they are combined with OR).
+// This limits metric cardinality compared to exposing every line from `/proc/interrupts`.
+// If `include` is empty, the collector is disabled.
+type NodeExporterCollectorInterruptsConfig struct {
+	// A list of regular expression patterns. Each line in `/proc/interrupts` is matched
+	// against the same string node-exporter uses: the IRQ name, info, and devices fields
+	// joined with `;`, for example `LOC;77;IO-APIC 2-edge …`. Patterns are combined with OR
+	// and each pattern is anchored on both ends (the full string must match).
+	// An empty list disables the collector.
+	// Examples: `FOO;.*` matches all interrupts named FOO; `.*;some_dev` matches all interrupts
+	// on device `some_dev`; `.;.;(eth|eno|ens|em[0-9]|bond|team|mlx|.TxRx.).*` matches network
+	// interface interrupts (passed to node-exporter as
+	// `--collector.interrupts.name-include=.;.;(eth|eno|ens|em[0-9]|bond|team|mlx|.TxRx.).*`).
+	Include []string `json:"include,omitempty"`
 }
 
 // The `NodeExporterCollectorSoftirqsConfig` resource works as an on/off switch for
