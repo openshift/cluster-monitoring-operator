@@ -108,8 +108,9 @@ func GroupLabelSelectors(matches []string) (string, error) {
 func parseMetricSelectorFromArray(matches []string) ([][]*labels.Matcher, error) {
 	labelSets := make([][]*labels.Matcher, len(matches))
 	var err error
+	parser := promql.NewParser(promql.Options{})
 	for i, m := range matches {
-		labelSets[i], err = promql.ParseMetricSelector(m)
+		labelSets[i], err = parser.ParseMetricSelector(m)
 		if err != nil {
 			return nil, err
 		}
