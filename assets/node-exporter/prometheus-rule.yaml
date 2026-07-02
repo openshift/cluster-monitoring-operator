@@ -358,3 +358,5 @@ spec:
     rules:
     - expr: sum by(vendor,model) (node_accelerator_card_info)
       record: vendor_model:node_accelerator_cards:sum
+    - expr: avg by(collector) (node_scrape_collector_success)
+      record: collector:node_scrape_collector_success:avg
