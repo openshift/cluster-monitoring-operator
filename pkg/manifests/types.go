@@ -861,6 +861,9 @@ type RemoteWriteSpec struct {
 	// Specifies the custom HTTP headers to be sent along with each remote write request.
 	// Headers set by Prometheus cannot be overwritten.
 	Headers map[string]string `json:"headers,omitempty"`
+	// Defines the Remote Write message version to use when writing to the remote write endpoint.
+	// Allowed values are "V1.0" and "V2.0". Defaults to "V1.0".
+	MessageVersion string `json:"messageVersion,omitempty"`
 	// Defines settings for sending series metadata to remote write storage.
 	MetadataConfig *monv1.MetadataConfig `json:"metadataConfig,omitempty"`
 	// Defines the name of the remote write queue. This name is used in
