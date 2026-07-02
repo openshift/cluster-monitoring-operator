@@ -898,7 +898,52 @@ type AWSNetworkLoadBalancerParameters struct {
 	// +kubebuilder:validation:XValidation:rule=`self.all(x, self.exists_one(y, x == y))`,message="eipAllocations cannot contain duplicates"
 	// +kubebuilder:validation:MaxItems=10
 	EIPAllocations []EIPAllocation `json:"eipAllocations"`
+
+	// protocol specifies whether the Network Load Balancer uses PROXY
+	// protocol to forward connections to the IngressController.
+	//
+	// When set to "TCP", the NLB uses AWS's native client IP preservation.
+	// This may cause hairpin connection failures for internal load
+	// balancers when connections are made from pods to router pods on
+	// the same node.
+	//
+	// When set to "PROXY", the NLB disables native client IP preservation
+	// and uses PROXY protocol v2. The IngressController enables PROXY
+	// protocol on HAProxy so that it can parse PROXY protocol headers to
+	// obtain the original client IP. This avoids hairpin connection
+	// failures.
+	//
+	// The following values are valid for this field:
+	//
+	// * "TCP".
+	// * "PROXY".
+	//
+	// When omitted, this means the user has no opinion and the value is
+	// left to the platform to choose a reasonable default, which is subject to
+	// change over time. The current default is "PROXY".
+	//
+	// Note that changing this field may cause brief connection failures
+	// during the transition as the NLB attribute change and router rollout
+	// occur independently.
+	//
+	// +optional
+	Protocol NLBProtocol `json:"protocol,omitempty"`
 }
+
+// NLBProtocol specifies whether the AWS Network Load Balancer uses
+// PROXY protocol to forward connections to the IngressController.
+// +kubebuilder:validation:Enum=TCP;PROXY
+// +enum
+type NLBProtocol string
+
+const (
+	// NLBProtocolTCP instructs the NLB to forward connections using TCP
+	// without PROXY protocol.
+	NLBProtocolTCP NLBProtocol = "TCP"
+	// NLBProtocolProxy instructs the NLB to forward connections using
+	// PROXY protocol v2.
+	NLBProtocolProxy NLBProtocol = "PROXY"
+)
 
 // EIPAllocation is an ID for an Elastic IP (EIP) address that can be allocated to an ELB in the AWS environment.
 // Values must begin with `eipalloc-` followed by exactly 17 hexadecimal (`[0-9a-fA-F]`) characters.
@@ -2034,6 +2079,7 @@ type IngressControllerTuningOptions struct {
 	// processes in router containers with the following metric:
 	// 'container_memory_working_set_bytes{container="router",namespace="openshift-ingress"}/container_processes{container="router",namespace="openshift-ingress"}'.
 	//
+	// +kubebuilder:validation:XValidation:rule="self == 0 || self == -1 || (self >= 2000 && self <= 2000000)",message="maxConnections must be 0, -1, or between 2000 and 2000000"
 	// +optional
 	MaxConnections int32 `json:"maxConnections,omitempty"`
 
