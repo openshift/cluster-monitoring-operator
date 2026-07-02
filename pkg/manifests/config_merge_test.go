@@ -19,9 +19,9 @@ import (
 
 	configv1alpha1 "github.com/openshift/api/config/v1alpha1"
 	"github.com/stretchr/testify/require"
-	auditv1 "k8s.io/apiserver/pkg/apis/audit/v1"
 	v1 "k8s.io/api/core/v1"
 	"k8s.io/apimachinery/pkg/api/resource"
+	auditv1 "k8s.io/apiserver/pkg/apis/audit/v1"
 )
 
 func TestConfig_MergeClusterMonitoringCRD(t *testing.T) {

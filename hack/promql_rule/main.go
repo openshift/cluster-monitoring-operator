@@ -46,9 +46,10 @@ func extractMetricNamesNew(fileName string) ([]string, error) {
 		return metricNames, err
 	}
 
+	parser := promql.NewParser(promql.Options{})
 	for _, group := range ruleGroups.Groups {
 		for _, rule := range group.Rules {
-			expr, err := promql.ParseExpr(rule.Expr)
+			expr, err := parser.ParseExpr(rule.Expr)
 			if err != nil {
 				return nil, err
 			}
