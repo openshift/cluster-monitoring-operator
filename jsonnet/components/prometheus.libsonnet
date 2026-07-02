@@ -303,6 +303,16 @@ function(params)
       },
     },
     minimalServiceMonitor: generateServiceMonitor.serviceMonitorForMinimalProfile(self.serviceMonitor),
+    telemetryServiceMonitor: generateServiceMonitor.serviceMonitorForTelemetryProfile(
+      generateServiceMonitor.keepOnlyMetrics(
+        self.serviceMonitor,
+        [
+          'ALERTS',
+          'prometheus_tsdb_head_samples_appended_total',
+          'prometheus_tsdb_head_series',
+        ]
+      )
+    ),
 
     serviceThanosSidecar+: {
       metadata+: {

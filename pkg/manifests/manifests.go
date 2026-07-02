@@ -80,22 +80,23 @@ const (
 )
 
 var (
-	AlertmanagerConfig                = "alertmanager/secret.yaml"
-	AlertmanagerService               = "alertmanager/service.yaml"
-	AlertmanagerMain                  = "alertmanager/alertmanager.yaml"
-	AlertmanagerServiceAccount        = "alertmanager/service-account.yaml"
-	AlertmanagerClusterRoleBinding    = "alertmanager/cluster-role-binding.yaml"
-	AlertmanagerClusterRole           = "alertmanager/cluster-role.yaml"
-	AlertmanagerRBACProxySecret       = "alertmanager/kube-rbac-proxy-secret.yaml"
-	AlertmanagerRBACProxyMetricSecret = "alertmanager/kube-rbac-proxy-metric-secret.yaml"
-	AlertmanagerRBACProxyWebSecret    = "alertmanager/kube-rbac-proxy-web-secret.yaml"
-	AlertmanagerRoute                 = "alertmanager/route.yaml"
-	AlertmanagerServiceMonitor        = "alertmanager/service-monitor.yaml"
-	AlertmanagerTrustedCABundle       = "alertmanager/trusted-ca-bundle.yaml"
-	AlertmanagerPrometheusRule        = "alertmanager/prometheus-rule.yaml"
-	AlertmanagerPodDisruptionBudget   = "alertmanager/pod-disruption-budget.yaml"
-	AlertmanagerNetworkPolicy         = "alertmanager/network-policy-downstream.yaml"
-	AlertmanagerMinimalServiceMonitor = "alertmanager/minimal-service-monitor.yaml"
+	AlertmanagerConfig                  = "alertmanager/secret.yaml"
+	AlertmanagerService                 = "alertmanager/service.yaml"
+	AlertmanagerMain                    = "alertmanager/alertmanager.yaml"
+	AlertmanagerServiceAccount          = "alertmanager/service-account.yaml"
+	AlertmanagerClusterRoleBinding      = "alertmanager/cluster-role-binding.yaml"
+	AlertmanagerClusterRole             = "alertmanager/cluster-role.yaml"
+	AlertmanagerRBACProxySecret         = "alertmanager/kube-rbac-proxy-secret.yaml"
+	AlertmanagerRBACProxyMetricSecret   = "alertmanager/kube-rbac-proxy-metric-secret.yaml"
+	AlertmanagerRBACProxyWebSecret      = "alertmanager/kube-rbac-proxy-web-secret.yaml"
+	AlertmanagerRoute                   = "alertmanager/route.yaml"
+	AlertmanagerServiceMonitor          = "alertmanager/service-monitor.yaml"
+	AlertmanagerTrustedCABundle         = "alertmanager/trusted-ca-bundle.yaml"
+	AlertmanagerPrometheusRule          = "alertmanager/prometheus-rule.yaml"
+	AlertmanagerPodDisruptionBudget     = "alertmanager/pod-disruption-budget.yaml"
+	AlertmanagerNetworkPolicy           = "alertmanager/network-policy-downstream.yaml"
+	AlertmanagerMinimalServiceMonitor   = "alertmanager/minimal-service-monitor.yaml"
+	AlertmanagerTelemetryServiceMonitor = "alertmanager/telemetry-service-monitor.yaml"
 
 	AlertmanagerUserWorkloadSecret                 = "alertmanager-user-workload/secret.yaml"
 	AlertmanagerUserWorkloadService                = "alertmanager-user-workload/service.yaml"
@@ -111,27 +112,29 @@ var (
 	AlertmanagerUserWorkloadServiceMonitor         = "alertmanager-user-workload/service-monitor.yaml"
 	AlertmanagerUserWorkloadNetworkPolicy          = "alertmanager-user-workload/network-policy-downstream.yaml"
 
-	KubeStateMetricsClusterRoleBinding    = "kube-state-metrics/cluster-role-binding.yaml"
-	KubeStateMetricsClusterRole           = "kube-state-metrics/cluster-role.yaml"
-	KubeStateMetricsDeployment            = "kube-state-metrics/deployment.yaml"
-	KubeStateMetricsServiceAccount        = "kube-state-metrics/service-account.yaml"
-	KubeStateMetricsService               = "kube-state-metrics/service.yaml"
-	KubeStateMetricsServiceMonitor        = "kube-state-metrics/service-monitor.yaml"
-	KubeStateMetricsMinimalServiceMonitor = "kube-state-metrics/minimal-service-monitor.yaml"
-	KubeStateMetricsPrometheusRule        = "kube-state-metrics/prometheus-rule.yaml"
-	KubeStateMetricsKubeRbacProxySecret   = "kube-state-metrics/kube-rbac-proxy-secret.yaml"
-	KubeStateMetricsCRSConfig             = "kube-state-metrics/custom-resource-state-configmap.yaml"
-	KubeStateMetricsNetworkPolicy         = "kube-state-metrics/network-policy-downstream.yaml"
+	KubeStateMetricsClusterRoleBinding      = "kube-state-metrics/cluster-role-binding.yaml"
+	KubeStateMetricsClusterRole             = "kube-state-metrics/cluster-role.yaml"
+	KubeStateMetricsDeployment              = "kube-state-metrics/deployment.yaml"
+	KubeStateMetricsServiceAccount          = "kube-state-metrics/service-account.yaml"
+	KubeStateMetricsService                 = "kube-state-metrics/service.yaml"
+	KubeStateMetricsServiceMonitor          = "kube-state-metrics/service-monitor.yaml"
+	KubeStateMetricsMinimalServiceMonitor   = "kube-state-metrics/minimal-service-monitor.yaml"
+	KubeStateMetricsTelemetryServiceMonitor = "kube-state-metrics/telemetry-service-monitor.yaml"
+	KubeStateMetricsPrometheusRule          = "kube-state-metrics/prometheus-rule.yaml"
+	KubeStateMetricsKubeRbacProxySecret     = "kube-state-metrics/kube-rbac-proxy-secret.yaml"
+	KubeStateMetricsCRSConfig               = "kube-state-metrics/custom-resource-state-configmap.yaml"
+	KubeStateMetricsNetworkPolicy           = "kube-state-metrics/network-policy-downstream.yaml"
 
-	OpenShiftStateMetricsClusterRoleBinding    = "openshift-state-metrics/cluster-role-binding.yaml"
-	OpenShiftStateMetricsClusterRole           = "openshift-state-metrics/cluster-role.yaml"
-	OpenShiftStateMetricsDeployment            = "openshift-state-metrics/deployment.yaml"
-	OpenShiftStateMetricsServiceAccount        = "openshift-state-metrics/service-account.yaml"
-	OpenShiftStateMetricsService               = "openshift-state-metrics/service.yaml"
-	OpenShiftStateMetricsMinimalServiceMonitor = "openshift-state-metrics/minimal-service-monitor.yaml"
-	OpenShiftStateMetricsServiceMonitor        = "openshift-state-metrics/service-monitor.yaml"
-	OpenShiftStateMetricsKubeRbacProxySecret   = "openshift-state-metrics/kube-rbac-proxy-secret.yaml"
-	OpenShiftStateMetricsNetworkPolicy         = "openshift-state-metrics/network-policy-downstream.yaml"
+	OpenShiftStateMetricsClusterRoleBinding      = "openshift-state-metrics/cluster-role-binding.yaml"
+	OpenShiftStateMetricsClusterRole             = "openshift-state-metrics/cluster-role.yaml"
+	OpenShiftStateMetricsDeployment              = "openshift-state-metrics/deployment.yaml"
+	OpenShiftStateMetricsServiceAccount          = "openshift-state-metrics/service-account.yaml"
+	OpenShiftStateMetricsService                 = "openshift-state-metrics/service.yaml"
+	OpenShiftStateMetricsMinimalServiceMonitor   = "openshift-state-metrics/minimal-service-monitor.yaml"
+	OpenShiftStateMetricsServiceMonitor          = "openshift-state-metrics/service-monitor.yaml"
+	OpenShiftStateMetricsTelemetryServiceMonitor = "openshift-state-metrics/telemetry-service-monitor.yaml"
+	OpenShiftStateMetricsKubeRbacProxySecret     = "openshift-state-metrics/kube-rbac-proxy-secret.yaml"
+	OpenShiftStateMetricsNetworkPolicy           = "openshift-state-metrics/network-policy-downstream.yaml"
 
 	NodeExporterDaemonSet                  = "node-exporter/daemonset.yaml"
 	NodeExporterService                    = "node-exporter/service.yaml"
@@ -141,39 +144,41 @@ var (
 	NodeExporterSecurityContextConstraints = "node-exporter/security-context-constraints.yaml"
 	NodeExporterServiceMonitor             = "node-exporter/service-monitor.yaml"
 	NodeExporterMinimalServiceMonitor      = "node-exporter/minimal-service-monitor.yaml"
+	NodeExporterTelemetryServiceMonitor    = "node-exporter/telemetry-service-monitor.yaml"
 	NodeExporterPrometheusRule             = "node-exporter/prometheus-rule.yaml"
 	NodeExporterKubeRbacProxySecret        = "node-exporter/kube-rbac-proxy-secret.yaml"
 	NodeExporterAcceleratorsConfigMap      = "node-exporter/accelerators-collector-configmap.yaml"
 
-	PrometheusK8sClusterRoleBinding               = "prometheus-k8s/cluster-role-binding.yaml"
-	PrometheusK8sRoleBindingConfig                = "prometheus-k8s/role-binding-config.yaml"
-	PrometheusK8sRoleBindingList                  = "prometheus-k8s/role-binding-specific-namespaces.yaml"
-	PrometheusK8sClusterRole                      = "prometheus-k8s/cluster-role.yaml"
-	PrometheusK8sRoleConfig                       = "prometheus-k8s/role-config.yaml"
-	PrometheusK8sRoleList                         = "prometheus-k8s/role-specific-namespaces.yaml"
-	PrometheusK8sPrometheusRule                   = "prometheus-k8s/prometheus-rule.yaml"
-	PrometheusK8sThanosSidecarPrometheusRule      = "prometheus-k8s/prometheus-rule-thanos-sidecar.yaml"
-	PrometheusK8sServiceAccount                   = "prometheus-k8s/service-account.yaml"
-	PrometheusK8s                                 = "prometheus-k8s/prometheus.yaml"
-	PrometheusK8sPrometheusServiceMonitor         = "prometheus-k8s/service-monitor.yaml"
-	PrometheusK8sPrometheusMinimalServiceMonitor  = "prometheus-k8s/minimal-service-monitor.yaml"
-	PrometheusK8sService                          = "prometheus-k8s/service.yaml"
-	PrometheusK8sServiceThanosSidecar             = "prometheus-k8s/service-thanos-sidecar.yaml"
-	PrometheusK8sRBACProxyWebSecret               = "prometheus-k8s/kube-rbac-proxy-web-secret.yaml"
-	PrometheusRBACProxySecret                     = "prometheus-k8s/kube-rbac-proxy-secret.yaml"
-	PrometheusUserWorkloadRBACProxyMetricsSecret  = "prometheus-user-workload/kube-rbac-proxy-metrics-secret.yaml"
-	PrometheusUserWorkloadRBACProxyFederateSecret = "prometheus-user-workload/kube-rbac-proxy-federate-secret.yaml"
-	PrometheusK8sAPIRoute                         = "prometheus-k8s/api-route.yaml"
-	PrometheusK8sFederateRoute                    = "prometheus-k8s/federate-route.yaml"
-	PrometheusK8sServingCertsCABundle             = "prometheus-k8s/serving-certs-ca-bundle.yaml"
-	PrometheusK8sKubeletServingCABundle           = "prometheus-k8s/kubelet-serving-ca-bundle.yaml"
-	PrometheusK8sGrpcTLSSecret                    = "prometheus-k8s/grpc-tls-secret.yaml"
-	PrometheusK8sTrustedCABundle                  = "prometheus-k8s/trusted-ca-bundle.yaml"
-	PrometheusK8sThanosSidecarServiceMonitor      = "prometheus-k8s/service-monitor-thanos-sidecar.yaml"
-	PrometheusK8sTAlertmanagerRoleBinding         = "prometheus-k8s/alertmanager-role-binding.yaml"
-	PrometheusK8sPodDisruptionBudget              = "prometheus-k8s/pod-disruption-budget.yaml"
-	PrometheusK8sTelemetry                        = "prometheus-k8s/telemetry-secret.yaml"
-	PrometheusK8sNetworkPolicy                    = "prometheus-k8s/network-policy-downstream.yaml"
+	PrometheusK8sClusterRoleBinding                = "prometheus-k8s/cluster-role-binding.yaml"
+	PrometheusK8sRoleBindingConfig                 = "prometheus-k8s/role-binding-config.yaml"
+	PrometheusK8sRoleBindingList                   = "prometheus-k8s/role-binding-specific-namespaces.yaml"
+	PrometheusK8sClusterRole                       = "prometheus-k8s/cluster-role.yaml"
+	PrometheusK8sRoleConfig                        = "prometheus-k8s/role-config.yaml"
+	PrometheusK8sRoleList                          = "prometheus-k8s/role-specific-namespaces.yaml"
+	PrometheusK8sPrometheusRule                    = "prometheus-k8s/prometheus-rule.yaml"
+	PrometheusK8sThanosSidecarPrometheusRule       = "prometheus-k8s/prometheus-rule-thanos-sidecar.yaml"
+	PrometheusK8sServiceAccount                    = "prometheus-k8s/service-account.yaml"
+	PrometheusK8s                                  = "prometheus-k8s/prometheus.yaml"
+	PrometheusK8sPrometheusServiceMonitor          = "prometheus-k8s/service-monitor.yaml"
+	PrometheusK8sPrometheusMinimalServiceMonitor   = "prometheus-k8s/minimal-service-monitor.yaml"
+	PrometheusK8sPrometheusTelemetryServiceMonitor = "prometheus-k8s/telemetry-service-monitor.yaml"
+	PrometheusK8sService                           = "prometheus-k8s/service.yaml"
+	PrometheusK8sServiceThanosSidecar              = "prometheus-k8s/service-thanos-sidecar.yaml"
+	PrometheusK8sRBACProxyWebSecret                = "prometheus-k8s/kube-rbac-proxy-web-secret.yaml"
+	PrometheusRBACProxySecret                      = "prometheus-k8s/kube-rbac-proxy-secret.yaml"
+	PrometheusUserWorkloadRBACProxyMetricsSecret   = "prometheus-user-workload/kube-rbac-proxy-metrics-secret.yaml"
+	PrometheusUserWorkloadRBACProxyFederateSecret  = "prometheus-user-workload/kube-rbac-proxy-federate-secret.yaml"
+	PrometheusK8sAPIRoute                          = "prometheus-k8s/api-route.yaml"
+	PrometheusK8sFederateRoute                     = "prometheus-k8s/federate-route.yaml"
+	PrometheusK8sServingCertsCABundle              = "prometheus-k8s/serving-certs-ca-bundle.yaml"
+	PrometheusK8sKubeletServingCABundle            = "prometheus-k8s/kubelet-serving-ca-bundle.yaml"
+	PrometheusK8sGrpcTLSSecret                     = "prometheus-k8s/grpc-tls-secret.yaml"
+	PrometheusK8sTrustedCABundle                   = "prometheus-k8s/trusted-ca-bundle.yaml"
+	PrometheusK8sThanosSidecarServiceMonitor       = "prometheus-k8s/service-monitor-thanos-sidecar.yaml"
+	PrometheusK8sTAlertmanagerRoleBinding          = "prometheus-k8s/alertmanager-role-binding.yaml"
+	PrometheusK8sPodDisruptionBudget               = "prometheus-k8s/pod-disruption-budget.yaml"
+	PrometheusK8sTelemetry                         = "prometheus-k8s/telemetry-secret.yaml"
+	PrometheusK8sNetworkPolicy                     = "prometheus-k8s/network-policy-downstream.yaml"
 
 	PrometheusUserWorkloadServingCertsCABundle                = "prometheus-user-workload/serving-certs-ca-bundle.yaml"
 	PrometheusUserWorkloadTrustedCABundle                     = "prometheus-user-workload/trusted-ca-bundle.yaml"
@@ -238,6 +243,7 @@ var (
 	PrometheusOperatorUserWorkloadNetworkPolicy       = "prometheus-operator-user-workload/network-policy-downstream.yaml"
 
 	ClusterMonitoringOperatorMinimalServiceMonitor         = "cluster-monitoring-operator/minimal-service-monitor.yaml"
+	ClusterMonitoringOperatorTelemetryServiceMonitor       = "cluster-monitoring-operator/telemetry-service-monitor.yaml"
 	ClusterMonitoringOperatorServiceMonitor                = "cluster-monitoring-operator/service-monitor.yaml"
 	ClusterMonitoringClusterRoleView                       = "cluster-monitoring-operator/cluster-role-view.yaml"
 	ClusterMonitoringClusterRoleAggregatedMetricsReader    = "cluster-monitoring-operator/cluster-role-aggregated-metrics-reader.yaml"
@@ -260,19 +266,20 @@ var (
 	ClusterMonitoringMetricsClientCACM                     = "cluster-monitoring-operator/metrics-client-ca.yaml"
 	ClusterMonitoringDenyAllTraffic                        = "cluster-monitoring-operator/network-policy-default-deny.yaml"
 
-	TelemeterClientClusterRole            = "telemeter-client/cluster-role.yaml"
-	TelemeterClientClusterRoleBinding     = "telemeter-client/cluster-role-binding.yaml"
-	TelemeterClientClusterRoleBindingView = "telemeter-client/cluster-role-binding-view.yaml"
-	TelemeterClientDeployment             = "telemeter-client/deployment.yaml"
-	TelemeterClientSecret                 = "telemeter-client/secret.yaml"
-	TelemeterClientService                = "telemeter-client/service.yaml"
-	TelemeterClientServiceAccount         = "telemeter-client/service-account.yaml"
-	TelemeterClientServiceMonitor         = "telemeter-client/service-monitor.yaml"
-	TelemeterClientMinimalServiceMonitor  = "telemeter-client/minimal-service-monitor.yaml"
-	TelemeterClientServingCertsCABundle   = "telemeter-client/serving-certs-ca-bundle.yaml"
-	TelemeterClientKubeRbacProxySecret    = "telemeter-client/kube-rbac-proxy-secret.yaml"
-	TelemeterClientPrometheusRule         = "telemeter-client/prometheus-rule.yaml"
-	TelemeterClientNetworkPolicy          = "telemeter-client/network-policy-downstream.yaml"
+	TelemeterClientClusterRole             = "telemeter-client/cluster-role.yaml"
+	TelemeterClientClusterRoleBinding      = "telemeter-client/cluster-role-binding.yaml"
+	TelemeterClientClusterRoleBindingView  = "telemeter-client/cluster-role-binding-view.yaml"
+	TelemeterClientDeployment              = "telemeter-client/deployment.yaml"
+	TelemeterClientSecret                  = "telemeter-client/secret.yaml"
+	TelemeterClientService                 = "telemeter-client/service.yaml"
+	TelemeterClientServiceAccount          = "telemeter-client/service-account.yaml"
+	TelemeterClientServiceMonitor          = "telemeter-client/service-monitor.yaml"
+	TelemeterClientMinimalServiceMonitor   = "telemeter-client/minimal-service-monitor.yaml"
+	TelemeterClientTelemetryServiceMonitor = "telemeter-client/telemetry-service-monitor.yaml"
+	TelemeterClientServingCertsCABundle    = "telemeter-client/serving-certs-ca-bundle.yaml"
+	TelemeterClientKubeRbacProxySecret     = "telemeter-client/kube-rbac-proxy-secret.yaml"
+	TelemeterClientPrometheusRule          = "telemeter-client/prometheus-rule.yaml"
+	TelemeterClientNetworkPolicy           = "telemeter-client/network-policy-downstream.yaml"
 
 	ThanosQuerierDeployment             = "thanos-querier/deployment.yaml"
 	ThanosQuerierPodDisruptionBudget    = "thanos-querier/pod-disruption-budget.yaml"
@@ -311,9 +318,10 @@ var (
 
 	TelemeterTrustedCABundle = "telemeter-client/trusted-ca-bundle.yaml"
 
-	ControlPlanePrometheusRule               = "control-plane/prometheus-rule.yaml"
-	ControlPlaneKubeletServiceMonitor        = "control-plane/service-monitor-kubelet.yaml"
-	ControlPlaneKubeletMinimalServiceMonitor = "control-plane/minimal-service-monitor-kubelet.yaml"
+	ControlPlanePrometheusRule                 = "control-plane/prometheus-rule.yaml"
+	ControlPlaneKubeletServiceMonitor          = "control-plane/service-monitor-kubelet.yaml"
+	ControlPlaneKubeletMinimalServiceMonitor   = "control-plane/minimal-service-monitor-kubelet.yaml"
+	ControlPlaneKubeletTelemetryServiceMonitor = "control-plane/telemetry-service-monitor-kubelet.yaml"
 
 	MonitoringPlugin                    = "monitoring-plugin/console-plugin.yaml"
 	MonitoringPluginDeployment          = "monitoring-plugin/deployment.yaml"
@@ -443,6 +451,7 @@ func (f *Factory) AlertmanagerServiceMonitors() ([]*monv1.ServiceMonitor, error)
 	return f.serviceMonitors(
 		AlertmanagerServiceMonitor,
 		AlertmanagerMinimalServiceMonitor,
+		AlertmanagerTelemetryServiceMonitor,
 	)
 }
 
@@ -771,6 +780,7 @@ func (f *Factory) KubeStateMetricsServiceMonitors() ([]*monv1.ServiceMonitor, er
 	return f.serviceMonitors(
 		KubeStateMetricsServiceMonitor,
 		KubeStateMetricsMinimalServiceMonitor,
+		KubeStateMetricsTelemetryServiceMonitor,
 	)
 }
 
@@ -855,6 +865,7 @@ func (f *Factory) OpenShiftStateMetricsServiceMonitors() ([]*monv1.ServiceMonito
 	return f.serviceMonitors(
 		OpenShiftStateMetricsServiceMonitor,
 		OpenShiftStateMetricsMinimalServiceMonitor,
+		OpenShiftStateMetricsTelemetryServiceMonitor,
 	)
 }
 
@@ -913,6 +924,7 @@ func (f *Factory) NodeExporterServiceMonitors() ([]*monv1.ServiceMonitor, error)
 	return f.serviceMonitors(
 		NodeExporterServiceMonitor,
 		NodeExporterMinimalServiceMonitor,
+		NodeExporterTelemetryServiceMonitor,
 	)
 }
 
@@ -1917,6 +1929,7 @@ func (f *Factory) PrometheusK8sPrometheusServiceMonitors() ([]*monv1.ServiceMoni
 	return f.serviceMonitors(
 		PrometheusK8sPrometheusServiceMonitor,
 		PrometheusK8sPrometheusMinimalServiceMonitor,
+		PrometheusK8sPrometheusTelemetryServiceMonitor,
 	)
 }
 
@@ -2539,6 +2552,7 @@ func (f *Factory) ClusterMonitoringOperatorServiceMonitors() ([]*monv1.ServiceMo
 	return f.serviceMonitors(
 		ClusterMonitoringOperatorServiceMonitor,
 		ClusterMonitoringOperatorMinimalServiceMonitor,
+		ClusterMonitoringOperatorTelemetryServiceMonitor,
 	)
 }
 
@@ -2569,6 +2583,7 @@ func (f *Factory) ControlPlaneKubeletServiceMonitors() ([]*monv1.ServiceMonitor,
 	return f.serviceMonitors(
 		ControlPlaneKubeletServiceMonitor,
 		ControlPlaneKubeletMinimalServiceMonitor,
+		ControlPlaneKubeletTelemetryServiceMonitor,
 	)
 }
 
@@ -3055,6 +3070,7 @@ func (f *Factory) TelemeterClientServiceMonitors() ([]*monv1.ServiceMonitor, err
 	return f.serviceMonitors(
 		TelemeterClientServiceMonitor,
 		TelemeterClientMinimalServiceMonitor,
+		TelemeterClientTelemetryServiceMonitor,
 	)
 }
 
@@ -3500,7 +3516,7 @@ func (f *Factory) serviceMonitors(assetPaths ...string) ([]*monv1.ServiceMonitor
 		}
 		profile := CollectionProfile(profileValue)
 		if !slices.Contains(SupportedCollectionProfiles, profile) {
-			return nil, fmt.Errorf("service monitor %q has unsupported collection profile label value %q", sm.Name, profileValue)
+			return nil, fmt.Errorf("service monitor %q has unsupported collection profile label value %q, supported values are: %s", sm.Name, profileValue, SupportedCollectionProfiles.String())
 		}
 		if other, exists := seenProfiles[profile]; exists {
 			return nil, fmt.Errorf("service monitors %q and %q have the same collection profile %q", other, sm.Name, profile)
