@@ -17,6 +17,13 @@ spec:
       protocol: TCP
     - port: 9097
       protocol: TCP
+  - from:
+    - podSelector:
+        matchLabels:
+          app.kubernetes.io/instance: main
+          app.kubernetes.io/name: alertmanager
+          app.kubernetes.io/part-of: openshift-monitoring
+    ports:
     - port: 9094
       protocol: TCP
     - port: 9094

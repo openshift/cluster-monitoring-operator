@@ -346,6 +346,11 @@ func TestNetworkPolicy(t *testing.T) {
 
 				var allowed []int32
 				for _, rule := range np.Spec.Ingress {
+					if len(rule.From) > 0 {
+						// Won't go this way; this test is a safeguard,
+						// not a validation of NP enforcement semantics.
+						continue
+					}
 					for _, p := range rule.Ports {
 						allowed = append(allowed, p.Port.IntVal)
 					}
