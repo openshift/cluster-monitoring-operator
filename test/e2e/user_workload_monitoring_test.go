@@ -50,6 +50,8 @@ type scenario struct {
 }
 
 func TestUserWorkloadMonitoringInvalidConfig(t *testing.T) {
+	// Not safe to run in parallel: modifies the user-workload-monitoring-config and cluster-monitoring-config ConfigMaps.
+	// t.Parallel()
 	uwmCM := &v1.ConfigMap{
 		ObjectMeta: metav1.ObjectMeta{
 			Name:      framework.UserWorkloadMonitorConfigMapName,
@@ -97,6 +99,8 @@ func TestUserWorkloadMonitoringInvalidConfig(t *testing.T) {
 }
 
 func TestUserWorkloadMonitoring(t *testing.T) {
+	// Not safe to run in parallel: modifies the user-workload-monitoring-config and cluster-monitoring-config ConfigMaps.
+	// t.Parallel()
 	setupUserWorkloadAssetsWithTeardownHook(t, f)
 
 	uwmCM := f.BuildUserWorkloadConfigMap(t,
@@ -121,20 +125,37 @@ namespacesWithoutLabelEnforcement:
 		t.Fatalf("failed to deploy global rules: %s", err)
 	}
 
+	// Read-only subtests run in parallel. The parent subtest acts as a barrier
+	// so all parallel checks complete before the sequential ones start.
+	t.Run("read-only", func(t *testing.T) {
+		for _, check := range []struct {
+			name string
+			f    func(*testing.T)
+		}{
+			{"assert metrics for user workload components", assertMetricsForMonitoringComponents},
+			{"assert user workload metrics", assertUserWorkloadMetrics},
+			{"assert prometheus is not deployed in user namespace", f.AssertStatefulsetDoesNotExistFunc("prometheus-not-to-be-reconciled", userWorkloadTestNs)},
+			{"assert alertmanager is not deployed in user namespace", f.AssertStatefulsetDoesNotExistFunc("alertmanager-not-to-be-reconciled", userWorkloadTestNs)},
+			{"assert user workload rules", assertUserWorkloadRules},
+			{"assert rules without namespace enforcement", assertGlobalRulesWithoutNamespaceEnforcement},
+		} {
+			t.Run(check.name, func(t *testing.T) {
+				t.Parallel()
+				check.f(t)
+			})
+		}
+	})
+
+	// Sequential subtests: these create RBAC resources (ServiceAccounts,
+	// RoleBindings) in shared namespaces or mutate cluster state.
 	for _, check := range []struct {
 		name string
 		f    func(*testing.T)
 	}{
-		{"assert metrics for user workload components", assertMetricsForMonitoringComponents},
-		{"assert user workload metrics", assertUserWorkloadMetrics},
 		{"assert tenancy model is enforced for metrics", assertTenancyForMetrics},
 		{"assert tenancy model is enforced for series metadata", assertTenancyForSeriesMetadata},
-		{"assert prometheus is not deployed in user namespace", f.AssertStatefulsetDoesNotExistFunc("prometheus-not-to-be-reconciled", userWorkloadTestNs)},
-		{"assert alertmanager is not deployed in user namespace", f.AssertStatefulsetDoesNotExistFunc("alertmanager-not-to-be-reconciled", userWorkloadTestNs)},
 		{"assert UWM federate endpoint is exposed", assertUWMFederateEndpoint},
-		{"assert user workload rules", assertUserWorkloadRules},
 		{"assert tenancy model is enforced for rules and alerts", assertTenancyForRulesAndAlerts},
-		{"assert rules without namespace enforcement", assertGlobalRulesWithoutNamespaceEnforcement},
 		{"assert namespace opt out removes appropriate targets", assertNamespaceOptOut},
 		{"assert grpc tls rotation", assertGRPCTLSRotation},
 		{"assert service monitor opt out removes appropriate targets", assertServiceMonitorOptOut},
@@ -151,6 +172,8 @@ userWorkload:
 }
 
 func TestUserWorkloadMonitoringWithAdditionalAlertmanagerConfigs(t *testing.T) {
+	// Not safe to run in parallel: modifies the user-workload-monitoring-config ConfigMap.
+	// t.Parallel()
 	setupUserWorkloadAssetsWithTeardownHook(t, f)
 
 	if err := createSelfSignedCertificateSecret("alertmanager-tls"); err != nil {
@@ -1415,6 +1438,8 @@ func assertServiceMonitorOptOut(t *testing.T) {
 }
 
 func TestPrometheusUserWorkloadEndpointSliceDiscovery(t *testing.T) {
+	// Not safe to run in parallel: modifies the cluster-monitoring-config ConfigMap and sets up UWM assets.
+	// t.Parallel()
 	ctx := context.Background()
 	setupUserWorkloadAssetsWithTeardownHook(t, f)
 

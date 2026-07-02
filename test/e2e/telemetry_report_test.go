@@ -36,6 +36,8 @@ import (
 var testdataDir = filepath.Join("..", "..", "hack", "telemetry_report", "testdata")
 
 func TestTelemetryReport(t *testing.T) {
+	// Not safe to run in parallel: creates PrometheusRules in the shared namespace.
+	// t.Parallel()
 	ctx := context.Background()
 
 	data, err := os.ReadFile(filepath.Join(testdataDir, "prometheusrule.yaml"))
