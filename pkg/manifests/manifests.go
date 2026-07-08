@@ -1519,6 +1519,12 @@ func (f *Factory) PrometheusK8s(grpcTLS *v1.Secret, telemetrySecret *v1.Secret) 
 	for i, container := range p.Spec.Containers {
 		switch container.Name {
 		case "prometheus":
+			// Increase the startup probe timeout to 1h from 15m to avoid restart failures when the WAL replay
+			// takes a long time. See https://issues.redhat.com/browse/OCPBUGS-4168 for details.
+			p.Spec.Containers[i].StartupProbe = &v1.Probe{
+				PeriodSeconds:    15,
+				FailureThreshold: 240,
+			}
 			// Inject the proxy env vars into the Prometheus container
 			// Mainly intended for all configs that support proxyConfig.proxyFromEnvironment
 			f.injectProxyVariables(&p.Spec.Containers[i])
@@ -1856,9 +1862,6 @@ func (f *Factory) PrometheusUserWorkload(grpcTLS *v1.Secret) (*monv1.Prometheus,
 		case "prometheus":
 			// Increase the startup probe timeout to 1h from 15m to avoid restart failures when the WAL replay
 			// takes a long time. See https://issues.redhat.com/browse/OCPBUGS-4168 for details.
-			// TODO (JoaoBraveCoding): Once prometheus-operator adds CRD support to configure startupProbe directly
-			// we should use that instead of using strategic merge patch
-			// See https://github.com/prometheus-operator/prometheus-operator/issues/4730
 			p.Spec.Containers[i].StartupProbe = &v1.Probe{
 				PeriodSeconds:    15,
 				FailureThreshold: 240,
