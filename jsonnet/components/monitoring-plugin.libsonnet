@@ -197,7 +197,7 @@ function(params)
                   $.volumeMount(tlsVolumeName, tlsMountPath),
                 ],
                 args: [
-                  '--config-path=/opt/app-root/web/dist',
+                  '--config-path=/opt/app-root/config',
                   '--static-path=/opt/app-root/web/dist',
                   '--cert=' + tlsCertPath,
                   '--key=' + tlsKeyPath,
