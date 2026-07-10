@@ -511,18 +511,13 @@ func (c *Config) LoadClusterID(load func() (*configv1.ClusterVersion, error)) er
 	return nil
 }
 
-func (c *Config) LoadToken(load func() (*v1.Secret, error)) error {
+func (c *Config) LoadToken(pullSecret *v1.Secret) error {
 	if c.ClusterMonitoringConfiguration.TelemeterClientConfig.Token != "" {
 		return nil
 	}
 
-	secret, err := load()
-	if err != nil {
-		return fmt.Errorf("error loading secret: %w", err)
-	}
-
-	if secret.Type != v1.SecretTypeDockerConfigJson {
-		return fmt.Errorf("error expecting secret type %s got %s", v1.SecretTypeDockerConfigJson, secret.Type)
+	if pullSecret.Type != v1.SecretTypeDockerConfigJson {
+		return fmt.Errorf("error expecting secret type %s got %s", v1.SecretTypeDockerConfigJson, pullSecret.Type)
 	}
 
 	ps := struct {
@@ -533,7 +528,7 @@ func (c *Config) LoadToken(load func() (*v1.Secret, error)) error {
 		} `json:"auths"`
 	}{}
 
-	if err := json.Unmarshal(secret.Data[v1.DockerConfigJsonKey], &ps); err != nil {
+	if err := json.Unmarshal(pullSecret.Data[v1.DockerConfigJsonKey], &ps); err != nil {
 		return fmt.Errorf("unmarshaling pull secret failed: %w", err)
 	}
 
