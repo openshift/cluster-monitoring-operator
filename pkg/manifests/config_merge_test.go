@@ -991,4 +991,77 @@ func TestConfig_MergeClusterMonitoringCRD_PrometheusK8sConfigPhase1(t *testing.T
 		require.Error(t, err)
 		require.Contains(t, err.Error(), "authorization is required")
 	})
+	t.Run("CR maps remote write basic auth credentials", func(t *testing.T) {
+		cm := &configv1alpha1.ClusterMonitoring{
+			Spec: configv1alpha1.ClusterMonitoringSpec{
+				PrometheusConfig: configv1alpha1.PrometheusConfig{
+					RemoteWrite: []configv1alpha1.RemoteWriteSpec{
+						{
+							URL: "https://example.com/api/v1/write",
+							AuthorizationConfig: configv1alpha1.RemoteWriteAuthorization{
+								Type: configv1alpha1.RemoteWriteAuthorizationTypeBasicAuth,
+								BasicAuth: configv1alpha1.BasicAuth{
+									Username: configv1alpha1.SecretKeySelector{Name: "rw-auth", Key: "user"},
+									Password: configv1alpha1.SecretKeySelector{Name: "rw-auth", Key: "password"},
+								},
+							},
+						},
+					},
+				},
+			},
+		}
+		c, err := NewConfigFromStringAndClusterMonitoringResource("{}", cm)
+		require.NoError(t, err)
+		require.Len(t, c.ClusterMonitoringConfiguration.PrometheusK8sConfig.RemoteWrite, 1)
+		basicAuth := c.ClusterMonitoringConfiguration.PrometheusK8sConfig.RemoteWrite[0].BasicAuth
+		require.NotNil(t, basicAuth)
+		require.Equal(t, "rw-auth", basicAuth.Username.Name)
+		require.Equal(t, "user", basicAuth.Username.Key)
+		require.Equal(t, "rw-auth", basicAuth.Password.Name)
+		require.Equal(t, "password", basicAuth.Password.Key)
+	})
+	t.Run("CR returns error when remote write basic auth username is missing", func(t *testing.T) {
+		cm := &configv1alpha1.ClusterMonitoring{
+			Spec: configv1alpha1.ClusterMonitoringSpec{
+				PrometheusConfig: configv1alpha1.PrometheusConfig{
+					RemoteWrite: []configv1alpha1.RemoteWriteSpec{
+						{
+							URL: "https://example.com/api/v1/write",
+							AuthorizationConfig: configv1alpha1.RemoteWriteAuthorization{
+								Type: configv1alpha1.RemoteWriteAuthorizationTypeBasicAuth,
+								BasicAuth: configv1alpha1.BasicAuth{
+									Password: configv1alpha1.SecretKeySelector{Name: "rw-auth", Key: "password"},
+								},
+							},
+						},
+					},
+				},
+			},
+		}
+		_, err := NewConfigFromStringAndClusterMonitoringResource("{}", cm)
+		require.Error(t, err)
+		require.Contains(t, err.Error(), "basicAuth requires both username and password")
+	})
+	t.Run("CR returns error when remote write basic auth password is missing", func(t *testing.T) {
+		cm := &configv1alpha1.ClusterMonitoring{
+			Spec: configv1alpha1.ClusterMonitoringSpec{
+				PrometheusConfig: configv1alpha1.PrometheusConfig{
+					RemoteWrite: []configv1alpha1.RemoteWriteSpec{
+						{
+							URL: "https://example.com/api/v1/write",
+							AuthorizationConfig: configv1alpha1.RemoteWriteAuthorization{
+								Type: configv1alpha1.RemoteWriteAuthorizationTypeBasicAuth,
+								BasicAuth: configv1alpha1.BasicAuth{
+									Username: configv1alpha1.SecretKeySelector{Name: "rw-auth", Key: "user"},
+								},
+							},
+						},
+					},
+				},
+			},
+		}
+		_, err := NewConfigFromStringAndClusterMonitoringResource("{}", cm)
+		require.Error(t, err)
+		require.Contains(t, err.Error(), "basicAuth requires both username and password")
+	})
 }

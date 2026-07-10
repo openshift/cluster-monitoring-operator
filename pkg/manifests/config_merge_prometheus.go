@@ -28,6 +28,8 @@ const serviceAccountTokenPath = "/var/run/secrets/kubernetes.io/serviceaccount/t
 
 // clusterMonitoringPrometheusSpecEmpty reports whether the CR's prometheusConfig stanza
 // contains no user-set field.
+//
+// NOTE: must be updated when PrometheusConfig fields change in openshift/api.
 func clusterMonitoringPrometheusSpecEmpty(pc configv1alpha1.PrometheusConfig) bool {
 	if len(pc.AdditionalAlertmanagerConfigs) > 0 {
 		return false
@@ -399,11 +401,15 @@ func applyRemoteWriteAuthorizationFromCRD(auth configv1alpha1.RemoteWriteAuthori
 	case configv1alpha1.RemoteWriteAuthorizationTypeBasicAuth:
 		username := secretKeySelectorFromCRD(auth.BasicAuth.Username)
 		password := secretKeySelectorFromCRD(auth.BasicAuth.Password)
-		if username != nil && password != nil {
-			dst.BasicAuth = &monv1.BasicAuth{
-				Username: *username,
-				Password: *password,
-			}
+		if username == nil && password == nil {
+			return fmt.Errorf("basicAuth credentials are required when type is %q", auth.Type)
+		}
+		if username == nil || password == nil {
+			return fmt.Errorf("basicAuth requires both username and password when type is %q", auth.Type)
+		}
+		dst.BasicAuth = &monv1.BasicAuth{
+			Username: *username,
+			Password: *password,
 		}
 	case configv1alpha1.RemoteWriteAuthorizationTypeOAuth2:
 		dst.OAuth2 = oauth2FromCRD(auth.OAuth2)
@@ -455,6 +461,8 @@ func remoteWriteSpecsFromCRD(configs []configv1alpha1.RemoteWriteSpec) ([]Remote
 			case configv1alpha1.ExemplarsModeSend:
 				cfg.SendExemplars = ptr.To(true)
 			case configv1alpha1.ExemplarsModeDoNotSend:
+				// Intentionally unset: nil SendExemplars means "do not send" in the
+				// Prometheus Operator API.
 			default:
 				return nil, fmt.Errorf("remoteWrite.exemplarsMode: unsupported exemplars mode %q", rw.ExemplarsMode)
 			}
@@ -527,7 +535,7 @@ func (c *Config) mergePrometheusK8sConfiguration(pc configv1alpha1.PrometheusCon
 	cfg.RemoteWrite = remoteWrite
 
 	if pc.EnforcedBodySizeLimitBytes > 0 {
-		cfg.EnforcedBodySizeLimit = strconv.Itoa(int(pc.EnforcedBodySizeLimitBytes))
+		cfg.EnforcedBodySizeLimit = strconv.FormatInt(pc.EnforcedBodySizeLimitBytes, 10)
 	}
 	if pc.CollectionProfile != "" {
 		cp, err := collectionProfileCRDToManifest(pc.CollectionProfile)
