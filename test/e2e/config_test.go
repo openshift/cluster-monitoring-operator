@@ -790,19 +790,27 @@ func assertThanosRulerEvaluationInterval(evaluationInterval string) func(*testin
 
 // checkMonitorConsolePluginReachable makes sure that one of the pods at least can serve /plugin-manifest.json
 func checkMonitorConsolePluginReachable(t *testing.T, pluginName string) {
+	client := &http.Client{
+		Transport: &http.Transport{
+			TLSClientConfig: &tls.Config{InsecureSkipVerify: true},
+		},
+	}
 	err := framework.Poll(time.Second, 5*time.Minute, func() error {
 		host, cleanUp, err := f.ForwardServicePort(t, f.Ns, pluginName, 9443)
 		if err != nil {
-			t.Fatal(err)
+			return fmt.Errorf("port-forward failed: %w", err)
 		}
 		defer cleanUp()
 
-		client := &http.Client{
-			Transport: &http.Transport{
-				TLSClientConfig: &tls.Config{InsecureSkipVerify: true},
-			},
+		ctx, cancel := context.WithTimeout(context.Background(), 30*time.Second)
+		defer cancel()
+
+		req, err := http.NewRequestWithContext(ctx, http.MethodGet, fmt.Sprintf("https://%s/plugin-manifest.json", host), nil)
+		if err != nil {
+			return fmt.Errorf("fail to create request: %w", err)
 		}
-		resp, err := client.Get(fmt.Sprintf("https://%s/plugin-manifest.json", host))
+
+		resp, err := client.Do(req)
 		if err != nil {
 			return err
 		}
@@ -832,19 +840,27 @@ func checkMonitorConsolePluginReachable(t *testing.T, pluginName string) {
 
 // checkMonitorConsolePluginFeatures makes sure that the monitoring related features are enabled
 func checkMonitorConsolePluginFeatures(t *testing.T, pluginName string) {
+	client := &http.Client{
+		Transport: &http.Transport{
+			TLSClientConfig: &tls.Config{InsecureSkipVerify: true},
+		},
+	}
 	err := framework.Poll(time.Second, 5*time.Minute, func() error {
 		host, cleanUp, err := f.ForwardServicePort(t, f.Ns, pluginName, 9443)
 		if err != nil {
-			t.Fatal(err)
+			return fmt.Errorf("port-forward failed: %w", err)
 		}
 		defer cleanUp()
 
-		client := &http.Client{
-			Transport: &http.Transport{
-				TLSClientConfig: &tls.Config{InsecureSkipVerify: true},
-			},
+		ctx, cancel := context.WithTimeout(context.Background(), 30*time.Second)
+		defer cancel()
+
+		req, err := http.NewRequestWithContext(ctx, http.MethodGet, fmt.Sprintf("https://%s/features", host), nil)
+		if err != nil {
+			return fmt.Errorf("fail to create request: %w", err)
 		}
-		resp, err := client.Get(fmt.Sprintf("https://%s/features", host))
+
+		resp, err := client.Do(req)
 		if err != nil {
 			return err
 		}
