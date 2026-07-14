@@ -17,6 +17,7 @@ package e2e
 import (
 	"context"
 	"crypto/tls"
+	"encoding/json"
 	"errors"
 	"fmt"
 	"io"
@@ -829,6 +830,50 @@ func checkMonitorConsolePluginReachable(t *testing.T, pluginName string) {
 	require.NoError(t, err)
 }
 
+// checkMonitorConsolePluginFeatures makes sure that the monitoring related features are enabled
+func checkMonitorConsolePluginFeatures(t *testing.T, pluginName string) {
+	err := framework.Poll(time.Second, 5*time.Minute, func() error {
+		host, cleanUp, err := f.ForwardServicePort(t, f.Ns, pluginName, 9443)
+		if err != nil {
+			t.Fatal(err)
+		}
+		defer cleanUp()
+
+		client := &http.Client{
+			Transport: &http.Transport{
+				TLSClientConfig: &tls.Config{InsecureSkipVerify: true},
+			},
+		}
+		resp, err := client.Get(fmt.Sprintf("https://%s/features", host))
+		if err != nil {
+			return err
+		}
+		defer resp.Body.Close()
+
+		b, err := io.ReadAll(resp.Body)
+		if err != nil {
+			return fmt.Errorf("fail to read response body: %w", err)
+		}
+
+		if resp.StatusCode != http.StatusOK {
+			return fmt.Errorf("expected status %d, got %d (%q)", http.StatusOK, resp.StatusCode, framework.ClampMax(b))
+		}
+
+		var features map[string]bool
+		if err := json.Unmarshal(b, &features); err != nil {
+			return fmt.Errorf("fail to parse features response: %w", err)
+		}
+
+		for _, feature := range []string{"alerting", "legacy-dashboards", "targets", "metrics"} {
+			if !features[feature] {
+				return fmt.Errorf("expected feature %q to be enabled, got features: %v", feature, features)
+			}
+		}
+		return nil
+	})
+	require.NoError(t, err)
+}
+
 func TestClusterMonitorConsolePlugin(t *testing.T) {
 	const (
 		deploymentName = "monitoring-plugin"
@@ -841,6 +886,7 @@ func TestClusterMonitorConsolePlugin(t *testing.T) {
 	// ensure console-plugin is running and reachable before the change
 	f.AssertDeploymentExistsAndRolloutFunc(deploymentName, f.Ns)(t)
 	checkMonitorConsolePluginReachable(t, deploymentName)
+	checkMonitorConsolePluginFeatures(t, deploymentName)
 
 	data := fmt.Sprintf(`
 monitoringPlugin:
@@ -874,6 +920,10 @@ monitoringPlugin:
 		{
 			name:      "assert one of the pods can serve /plugin-manifest.json",
 			assertion: func(t *testing.T) { checkMonitorConsolePluginReachable(t, deploymentName) },
+		},
+		{
+			name:      "assert monitoring related features are enabled",
+			assertion: func(t *testing.T) { checkMonitorConsolePluginFeatures(t, deploymentName) },
 		},
 	} {
 		t.Run(tc.name, tc.assertion)

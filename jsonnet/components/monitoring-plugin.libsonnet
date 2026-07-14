@@ -202,6 +202,7 @@ function(params)
                   '--cert=' + tlsCertPath,
                   '--key=' + tlsKeyPath,
                   '--tls-cipher-suites=' + cfg.tlsCipherSuites,
+                  '--features=alerting,legacy-dashboards,targets,metrics',
                 ],
                 command: [
                   '/opt/app-root/plugin-backend',
