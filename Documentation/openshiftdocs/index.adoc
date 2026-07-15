@@ -35,6 +35,20 @@ The configuration file itself is always defined under the `config.yaml` key in t
 * If the configuration is invalid YAML data, the Cluster Monitoring Operator stops reconciling the resources and reports `Degraded=True` in the status conditions of the Operator.
 ====
 
+[id="clustermonitoring-custom-resource-techpreview"]
+=== ClusterMonitoring Custom Resource (TechPreview)
+
+[IMPORTANT]
+====
+This feature is gated behind the `ClusterMonitoringConfig` feature gate and is only available in TechPreview/DevPreview clusters.
+====
+
+In addition to config maps, platform monitoring components can be configured through a cluster-scoped `ClusterMonitoring` custom resource named `cluster` in the `config.openshift.io/v1alpha1` API group. The CRD is defined in the https://github.com/openshift/api/blob/master/config/v1alpha1/types_cluster_monitoring.go[openshift/api] repository.
+
+During Phase 1 (pre-GA), the config map takes precedence: for each top-level component, if the config map sets a value, the corresponding CRD field is ignored. CRD values are only applied when the config map does not configure that component.
+
+Detailed user workload monitoring configuration (`user-workload-monitoring-config`) is not yet configurable through a CRD and remains config map only, though enablement (`enableUserWorkload`) can be set via the CRD's `userDefined.mode` field.
+
 
 === Table of Contents
 
