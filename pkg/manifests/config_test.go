@@ -883,29 +883,52 @@ func TestRemoteWriteMessageVersionValidation(t *testing.T) {
 `,
 		},
 		{
-			name:   "cluster monitoring: V1.0 is valid",
-			config: "prometheusK8s:\n  remoteWrite:\n  - url: http://example.com\n    messageVersion: V1.0\n",
+			name: "cluster monitoring: V1.0 is valid",
+			config: `prometheusK8s:
+  remoteWrite:
+  - url: http://example.com
+    messageVersion: V1.0
+`,
 		},
 		{
-			name:   "cluster monitoring: V2.0 is valid",
-			config: "prometheusK8s:\n  remoteWrite:\n  - url: http://example.com\n    messageVersion: V2.0\n",
+			name: "cluster monitoring: V2.0 is valid",
+			config: `prometheusK8s:
+  remoteWrite:
+  - url: http://example.com
+    messageVersion: V2.0
+`,
 		},
 		{
-			name:        "cluster monitoring: unknown version is invalid",
-			config:      "prometheusK8s:\n  remoteWrite:\n  - url: http://example.com\n    messageVersion: V3.0\n",
+			name: "cluster monitoring: unknown version is invalid",
+			config: `prometheusK8s:
+  remoteWrite:
+  - url: http://example.com
+    messageVersion: V3.0
+`,
 			expectError: true,
 		},
 		{
-			name:      "user workload monitoring: omitted messageVersion is valid",
-			uwmconfig: "prometheus:\n  remoteWrite:\n  - url: http://example.com\n",
+			name: "user workload monitoring: omitted messageVersion is valid",
+			uwmconfig: `prometheus:
+  remoteWrite:
+  - url: http://example.com
+`,
 		},
 		{
-			name:      "user workload monitoring: V2.0 is valid",
-			uwmconfig: "prometheus:\n  remoteWrite:\n  - url: http://example.com\n    messageVersion: V2.0\n",
+			name: "user workload monitoring: V2.0 is valid",
+			uwmconfig: `prometheus:
+  remoteWrite:
+  - url: http://example.com
+    messageVersion: V2.0
+`,
 		},
 		{
-			name:        "user workload monitoring: unknown version is invalid",
-			uwmconfig:   "prometheus:\n  remoteWrite:\n  - url: http://example.com\n    messageVersion: V3.0\n",
+			name: "user workload monitoring: unknown version is invalid",
+			uwmconfig: `prometheus:
+  remoteWrite:
+  - url: http://example.com
+    messageVersion: V3.0
+`,
 			expectError: true,
 		},
 	} {
