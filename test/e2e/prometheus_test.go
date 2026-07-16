@@ -146,58 +146,6 @@ func TestPrometheusRemoteWrite(t *testing.T) {
 	}
 	image := k8sProm.Spec.Image
 
-	name := "rwe2e"
-
-	// deploy a service for our remote write target
-	svc := f.MakePrometheusService(f.Ns, name, name, v1.ServiceTypeClusterIP)
-
-	if err := f.OperatorClient.CreateOrUpdateService(ctx, svc); err != nil {
-		t.Fatal(err)
-	}
-	prometheusReceiverURL := svc.Name + "." + svc.Namespace + ".svc.cluster.local"
-
-	// set up a self-signed ca and store the artifacts in a secret
-	secName := fmt.Sprintf("selfsigned-%s-bundle", name)
-	tlsSecret := &v1.Secret{
-		ObjectMeta: metav1.ObjectMeta{
-			Name:      secName,
-			Namespace: f.Ns,
-			Labels: map[string]string{
-				"group":                    name,
-				framework.E2eTestLabelName: framework.E2eTestLabelValue,
-			},
-		},
-		Data: map[string][]byte{
-			"client-cert-name": []byte("remoteWrite-client"),
-			"serving-cert-url": []byte(prometheusReceiverURL),
-		},
-	}
-	if err := createSelfSignedMTLSArtifacts(tlsSecret); err != nil {
-		t.Fatal(err)
-	}
-	if err := f.OperatorClient.CreateIfNotExistSecret(ctx, tlsSecret); err != nil {
-		t.Fatal(err)
-	}
-
-	route := f.MakePrometheusServiceRoute(svc)
-	if err := f.OperatorClient.CreateOrUpdateRoute(ctx, route); err != nil {
-		t.Fatal(err)
-	}
-
-	if _, err := f.OperatorClient.WaitForRouteReady(ctx, route); err != nil {
-		t.Fatal(err)
-	}
-
-	prometheusReceiveClient, err := framework.NewPrometheusClientFromRoute(
-		ctx,
-		f.OpenShiftRouteClient,
-		route.Namespace,
-		route.Name,
-		"")
-	if err != nil {
-		t.Fatal(err)
-	}
-
 	// Clean up after all subtests: reset the ConfigMap, wait for
 	// Prometheus Operator to remove the remote write config from the
 	// Prometheus config secret, then force-delete the Prometheus pods to
@@ -230,7 +178,8 @@ func TestPrometheusRemoteWrite(t *testing.T) {
 
 		f.AssertStatefulSetExistsAndRolloutFunc("prometheus-k8s", f.Ns)(t)
 	})
-	for _, tc := range []struct {
+
+	for i, tc := range []struct {
 		name     string
 		rwSpec   string
 		expected []remoteWriteTest
@@ -261,6 +210,11 @@ func TestPrometheusRemoteWrite(t *testing.T) {
 			name: "assert remote write with message version v2.0",
 			rwSpec: `
   - url: https://%[1]s/api/v1/write
+    tlsConfig:
+      ca:
+        secret:
+          name: %[2]s
+          key: ca.crt
     messageVersion: V2.0`,
 			expected: []remoteWriteTest{
 				{
@@ -356,23 +310,84 @@ func TestPrometheusRemoteWrite(t *testing.T) {
 			},
 		},
 	} {
-		rw := fmt.Sprintf(tc.rwSpec, prometheusReceiverURL, tlsSecret.Name)
-
-		cmoConfigMap := fmt.Sprintf(`prometheusK8s:
-  logLevel: debug
-  remoteWrite:%s
-`, rw)
 
 		t.Run(tc.name, func(t *testing.T) {
-			// deploy remote write target
+			// Deploy the resources necessary for the Prometheus receiver. We
+			// use different resources for each sub-test to ensure that the
+			// in-cluster Prometheus fails to send metrics once the sub-test
+			// has ended.
+			name := fmt.Sprintf("rwe2e-%d", i)
+			svc := f.MakePrometheusService(f.Ns, name, v1.ServiceTypeClusterIP)
+			if err := f.OperatorClient.CreateOrUpdateService(ctx, svc); err != nil {
+				t.Fatal(err)
+			}
+			t.Cleanup(func() {
+				require.NoError(t, f.OperatorClient.DeleteService(ctx, svc))
+			})
+
+			prometheusReceiverURL := svc.Name + "." + svc.Namespace + ".svc.cluster.local"
+
+			// Set up a self-signed CA and store the artifacts in a secret.
+			secName := fmt.Sprintf("selfsigned-%s-bundle", name)
+			tlsSecret := &v1.Secret{
+				ObjectMeta: metav1.ObjectMeta{
+					Name:      secName,
+					Namespace: f.Ns,
+					Labels: map[string]string{
+						framework.E2eTestLabelName: framework.E2eTestLabelValue,
+					},
+				},
+				Data: map[string][]byte{
+					"client-cert-name": []byte("remoteWrite-client"),
+					"serving-cert-url": []byte(prometheusReceiverURL),
+				},
+			}
+			if err := createSelfSignedMTLSArtifacts(tlsSecret); err != nil {
+				t.Fatal(err)
+			}
+			if err := f.OperatorClient.CreateIfNotExistSecret(ctx, tlsSecret); err != nil {
+				t.Fatal(err)
+			}
+			t.Cleanup(func() {
+				require.NoError(t, f.OperatorClient.DeleteSecret(ctx, tlsSecret))
+			})
+
+			route := f.MakePrometheusServiceRoute(svc)
+			if err := f.OperatorClient.CreateOrUpdateRoute(ctx, route); err != nil {
+				t.Fatal(err)
+			}
+			t.Cleanup(func() {
+				require.NoError(t, f.OperatorClient.DeleteRoute(ctx, route))
+			})
+
+			if _, err := f.OperatorClient.WaitForRouteReady(ctx, route); err != nil {
+				t.Fatal(err)
+			}
+
+			// Deploy the Prometheus remote write receiver.
 			prometheusReceiver := f.MakePrometheusWithWebTLSRemoteReceive(name, secName, image)
 			if err := f.OperatorClient.CreateOrUpdatePrometheus(ctx, prometheusReceiver); err != nil {
 				t.Fatal(err)
 			}
+			t.Cleanup(func() {
+				require.NoError(t, f.OperatorClient.DeletePrometheus(ctx, prometheusReceiver))
+			})
+
 			if err := f.OperatorClient.ValidatePrometheus(ctx, types.NamespacedName{
 				Name:      prometheusReceiver.Name,
 				Namespace: prometheusReceiver.Namespace,
 			}); err != nil {
+				t.Fatal(err)
+			}
+
+			// Configure the in-cluster Prometheus to send metrics to the Prometheus receiver.
+			cmoConfigMap := fmt.Sprintf(`prometheusK8s:
+  logLevel: debug
+  remoteWrite:%s
+`, fmt.Sprintf(tc.rwSpec, prometheusReceiverURL, tlsSecret.Name))
+
+			prometheusK8s, err := f.MonitoringClient.Prometheuses(f.Ns).Get(ctx, "k8s", metav1.GetOptions{})
+			if err != nil {
 				t.Fatal(err)
 			}
 
@@ -382,11 +397,20 @@ func TestPrometheusRemoteWrite(t *testing.T) {
 			f.AssertOperatorConditionFunc(osConfigv1.OperatorProgressing, osConfigv1.ConditionFalse)(t)
 			f.AssertOperatorConditionFunc(osConfigv1.OperatorAvailable, osConfigv1.ConditionTrue)(t)
 
-			remoteWriteCheckMetrics(ctx, t, prometheusReceiveClient, tc.expected)
-
-			if err := f.OperatorClient.DeletePrometheus(ctx, prometheusReceiver); err != nil {
+			// Wait for the remote-write configuration to be propagated to the Prometheus resource.
+			if err := f.WaitForPrometheusUpdate(ctx, prometheusK8s); err != nil {
 				t.Fatal(err)
 			}
+
+			prometheusReceiveClient, err := framework.NewPrometheusClientFromRoute(
+				ctx,
+				f.OpenShiftRouteClient,
+				route.Namespace,
+				route.Name,
+				"")
+			require.NoError(t, err)
+
+			remoteWriteCheckMetrics(ctx, t, prometheusReceiveClient, tc.expected)
 		})
 	}
 }
