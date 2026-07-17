@@ -29,6 +29,12 @@ local excludedRules = [
       { alert: 'AlertmanagerClusterCrashlooping' },
       //
       { alert: 'AlertmanagerClusterFailedToSendAlerts', severity: 'warning' },
+      // New upstream mixin alert (prometheus/alertmanager). It fires when a peer
+      // is temporarily unreachable during Alertmanager StatefulSet rollouts
+      // (DNS/no-such-host / stale peer IP), which is common in CI and creates
+      // Origin "No new alerts should be firing" failures. Sustained HA issues
+      // remain covered by AlertmanagerMembersInconsistent / AlertmanagerClusterDown.
+      { alert: 'AlertmanagerClusterFailedPeers' },
     ],
   },
   {
