@@ -294,6 +294,7 @@ spec:
       operator: NotIn
       values:
       - "false"
+  shards: 1
   thanos:
     image: quay.io/thanos/thanos:v0.39.2
     resources:

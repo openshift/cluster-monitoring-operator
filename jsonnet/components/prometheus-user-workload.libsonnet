@@ -377,6 +377,8 @@ function(params)
             value: '15ms',
           },
         ],
+        // Explicitly set the shards value to 1 to support VPA use cases.
+        shards: 1,
         containers: [
           {
             name: 'kube-rbac-proxy-federate',
