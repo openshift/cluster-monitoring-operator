@@ -17,17 +17,21 @@ package e2e
 import (
 	"errors"
 	"fmt"
-	v1 "k8s.io/api/autoscaling/v1"
-	apiextv1 "k8s.io/apiextensions-apiserver/pkg/apis/apiextensions/v1"
-	apierrors "k8s.io/apimachinery/pkg/api/errors"
-	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
-	vpav1 "k8s.io/autoscaler/vertical-pod-autoscaler/pkg/apis/autoscaling.k8s.io/v1"
 	"path"
 	"regexp"
 	"testing"
 	"time"
 
 	"github.com/Jeffail/gabs/v2"
+	"github.com/stretchr/testify/require"
+	v1 "k8s.io/api/autoscaling/v1"
+	batchv1 "k8s.io/api/batch/v1"
+	corev1 "k8s.io/api/core/v1"
+	apiextv1 "k8s.io/apiextensions-apiserver/pkg/apis/apiextensions/v1"
+	apierrors "k8s.io/apimachinery/pkg/api/errors"
+	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	vpav1 "k8s.io/autoscaler/vertical-pod-autoscaler/pkg/apis/autoscaling.k8s.io/v1"
+
 	"github.com/openshift/cluster-monitoring-operator/test/e2e/framework"
 )
 
@@ -75,6 +79,7 @@ func TestKSMMetricsSuppression(t *testing.T) {
 
 func TestKSMCRSMetrics(t *testing.T) {
 	const timeout = 5 * time.Minute
+
 	assetsDir := "./assets"
 	ksmCRSMetricPrefix := "kube_customresource"
 	updateMode := vpav1.UpdateModeOff
@@ -167,4 +172,66 @@ func deleteVPACRD(t *testing.T, vpaCRD interface{}) {
 	if err != nil {
 		t.Fatalf("failed to delete existing VPA CRD: %v", err)
 	}
+}
+
+func TestCronJobWithTimezone(t *testing.T) {
+	const timeout = 5 * time.Minute
+
+	// Example take from the Kubernetes documentation.
+	tz := "America/New_York"
+	cronJob := &batchv1.CronJob{
+		ObjectMeta: metav1.ObjectMeta{
+			Name:      "hello-timezone",
+			Namespace: f.Ns,
+		},
+		Spec: batchv1.CronJobSpec{
+			Schedule: "0 9 * * *",
+			TimeZone: &tz,
+			JobTemplate: batchv1.JobTemplateSpec{
+				Spec: batchv1.JobSpec{
+					Template: corev1.PodTemplateSpec{
+						Spec: corev1.PodSpec{
+							RestartPolicy: corev1.RestartPolicyOnFailure,
+							Containers: []corev1.Container{
+								{
+									Name:    "hello",
+									Image:   "busybox:1.28",
+									Command: []string{"/bin/sh", "-c", "date; echo Hello"},
+								},
+							},
+						},
+					},
+				},
+			},
+		},
+	}
+
+	_, err := f.KubeClient.BatchV1().CronJobs(f.Ns).Create(ctx, cronJob, metav1.CreateOptions{})
+	require.NoError(t, err)
+	t.Cleanup(func() {
+		err := f.KubeClient.BatchV1().CronJobs(f.Ns).Delete(ctx, cronJob.Name, metav1.DeleteOptions{})
+		if err != nil && !apierrors.IsNotFound(err) {
+			t.Logf("failed to delete CronJob: %v", err)
+		}
+	})
+
+	f.ThanosQuerierClient.WaitForQueryReturnOne(
+		t,
+		5*time.Minute,
+		fmt.Sprintf(`group(kube_cronjob_info{cronjob="hello-timezone",namespace="%s",timezone="%s"})`, f.Ns, tz),
+	)
+
+	// Ensure that the schedule with the timezone could be parsed. If not the
+	// kube_cronjob_schedule_invalid metric is emitted with a value of 1.
+	f.ThanosQuerierClient.WaitForQueryReturn(
+		t,
+		time.Minute,
+		fmt.Sprintf(`group(kube_cronjob_schedule_invalid{cronjob="hello-timezone",namespace="%s"} == 1) or vector(0)`, f.Ns),
+		func(v float64) error {
+			if v != 0.0 {
+				return fmt.Errorf("expecting 0, got %f", v)
+			}
+			return nil
+		},
+	)
 }
