@@ -982,6 +982,12 @@ func (f *Factory) updateNodeExporterArgs(args []string) ([]string, error) {
 		args = setArg(args, "--no-collector.zoneinfo", "")
 	}
 
+	if ptr.Deref(f.config.ClusterMonitoringConfiguration.NodeExporterConfig.Collectors.DmMultipath.Enabled, true) {
+		args = setArg(args, "--collector.dmmultipath", "")
+	} else {
+		args = setArg(args, "--no-collector.dmmultipath", "")
+	}
+
 	if f.config.ClusterMonitoringConfiguration.NodeExporterConfig.Collectors.BuddyInfo.Enabled {
 		args = setArg(args, "--collector.buddyinfo", "")
 	} else {

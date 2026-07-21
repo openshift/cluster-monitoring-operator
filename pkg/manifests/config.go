@@ -313,6 +313,9 @@ func defaultNodeExporterConfig() *NodeExporterConfig {
 			Systemd: NodeExporterCollectorSystemdConfig{
 				Enabled: false,
 			},
+			DmMultipath: NodeExporterCollectorDmMultipathConfig{
+				Enabled: ptr.To(true),
+			},
 		},
 	}
 }
@@ -461,6 +464,9 @@ func (c *Config) applyDefaults() {
 	}
 	if collectors.NetClass.UseNetlink == nil {
 		collectors.NetClass.UseNetlink = ptr.To(true)
+	}
+	if collectors.DmMultipath.Enabled == nil {
+		collectors.DmMultipath.Enabled = ptr.To(true)
 	}
 
 	if c.ClusterMonitoringConfiguration.UserWorkloadEnabled == nil {
