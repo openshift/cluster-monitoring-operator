@@ -180,6 +180,14 @@ nodeExporter:
 			},
 		},
 		{
+			nameCollector: "dmmultipath",
+			config: `
+nodeExporter:
+  collectors:
+    dmMultipath:
+      enabled: false`,
+		},
+		{
 			nameCollector: "netclass",
 			config: `
 nodeExporter:

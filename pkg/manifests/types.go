@@ -397,6 +397,10 @@ type NodeExporterCollectorConfig struct {
 	// Defines the configuration of the `systemd` collector, which collects statistics on the systemd daemon and its managed services.
 	// Disabled by default.
 	Systemd NodeExporterCollectorSystemdConfig `json:"systemd,omitempty"`
+	// Defines the configuration of the `dmmultipath` collector, which exposes
+	// DM-multipath device and path metrics from `/sys/block/dm-*`.
+	// Enabled by default.
+	DmMultipath NodeExporterCollectorDmMultipathConfig `json:"dmMultipath,omitempty"`
 }
 
 // The `NodeExporterCollectorCpufreqConfig` resource works as an on/off switch for
@@ -560,6 +564,14 @@ type NodeExporterCollectorSystemdConfig struct {
 	// A list of regular expression (regex) patterns that match systemd units to be included by the `systemd` collector.
 	// By default, the list is empty, so the collector exposes no metrics for systemd units.
 	Units []string `json:"units,omitempty"`
+}
+
+// The `NodeExporterCollectorDmMultipathConfig` resource works as an on/off switch for
+// the `dmmultipath` collector of the `node-exporter` agent.
+// By default, the `dmmultipath` collector is enabled.
+type NodeExporterCollectorDmMultipathConfig struct {
+	// A Boolean flag that enables or disables the `dmmultipath` collector.
+	Enabled *bool `json:"enabled,omitempty"`
 }
 
 // The `UserWorkloadConfiguration` resource defines the settings
