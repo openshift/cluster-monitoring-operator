@@ -38,6 +38,8 @@ Appears in: link:nodeexporterconfig.adoc[NodeExporterConfig]
 
 |systemd|link:nodeexportercollectorsystemdconfig.adoc[NodeExporterCollectorSystemdConfig]|Defines the configuration of the `systemd` collector, which collects statistics on the systemd daemon and its managed services. Disabled by default.
 
+|dmMultipath|link:nodeexportercollectordmmultipathconfig.adoc[NodeExporterCollectorDmMultipathConfig]|Defines the configuration of the `dmmultipath` collector, which exposes DM-multipath device and path metrics from `/sys/block/dm-*`. Enabled by default.
+
 |===
 
 link:../index.adoc[Back to TOC]
