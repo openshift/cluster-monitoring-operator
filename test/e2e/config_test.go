@@ -1138,7 +1138,7 @@ func assertRemoteWriteWasSet(namespace, crName, urlValue string) func(t *testing
 			}
 
 			for _, gotValue := range prom.Spec.RemoteWrite {
-				if gotValue.URL == urlValue {
+				if string(gotValue.URL) == urlValue {
 					return nil
 				}
 			}

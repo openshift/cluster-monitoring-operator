@@ -17,7 +17,7 @@
           "subdir": "jsonnet/prometheus-operator"
         }
       },
-      "version": "release-0.90"
+      "version": "release-0.92"
     },
     {
       "source": {

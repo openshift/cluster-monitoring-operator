@@ -296,7 +296,7 @@ func oauth2FromCRD(oauth2 configv1alpha1.OAuth2) *monv1.OAuth2 {
 		return nil
 	}
 	out := &monv1.OAuth2{
-		TokenURL: oauth2.TokenURL,
+		TokenURL: monv1.URL(oauth2.TokenURL),
 		Scopes:   oauth2.Scopes,
 	}
 	if sel := secretKeySelectorFromCRD(oauth2.ClientID); sel != nil {
