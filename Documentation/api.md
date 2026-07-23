@@ -35,6 +35,7 @@ Configuring Cluster Monitoring is optional. If the config does not exist or is e
 * [NodeExporterCollectorMountStatsConfig](#nodeexportercollectormountstatsconfig)
 * [NodeExporterCollectorNetClassConfig](#nodeexportercollectornetclassconfig)
 * [NodeExporterCollectorNetDevConfig](#nodeexportercollectornetdevconfig)
+* [NodeExporterCollectorNvmeSubsystemConfig](#nodeexportercollectornvmesubsystemconfig)
 * [NodeExporterCollectorProcessesConfig](#nodeexportercollectorprocessesconfig)
 * [NodeExporterCollectorSoftirqsConfig](#nodeexportercollectorsoftirqsconfig)
 * [NodeExporterCollectorSystemdConfig](#nodeexportercollectorsystemdconfig)
@@ -260,6 +261,7 @@ The `NodeExporterCollectorConfig` resource defines settings for individual colle
 | softirqs | [NodeExporterCollectorSoftirqsConfig](#nodeexportercollectorsoftirqsconfig) | Defines the configuration of the `softirqs` collector, which exposes detailed softirq metrics from `/proc/softirqs`. Disabled by default. |
 | zoneinfo | [NodeExporterCollectorZoneinfoConfig](#nodeexportercollectorzoneinfoconfig) | Defines the configuration of the `zoneinfo` collector, which exposes detailed memory zone statistics from `/proc/zoneinfo`. Disabled by default. |
 | dmMultipath | [NodeExporterCollectorDmMultipathConfig](#nodeexportercollectordmmultipathconfig) | Defines the configuration of the `dmmultipath` collector, which exposes DM-multipath device and path metrics from `/sys/block/dm-*`. Enabled by default. |
+| nvmeSubsystem | [NodeExporterCollectorNvmeSubsystemConfig](#nodeexportercollectornvmesubsystemconfig) | Defines the configuration of the `nvmesubsystem` collector, which exposes NVMe subsystem metrics from `/sys/class/nvme-subsystem/`. Enabled by default. |
 
 [Back to TOC](#table-of-contents)
 
@@ -366,6 +368,21 @@ The `NodeExporterCollectorNetDevConfig` resource works as an on/off switch for t
 | Property | Type | Description |
 | -------- | ---- | ----------- |
 | enabled | *bool | A Boolean flag that enables or disables the `netdev` collector. |
+
+[Back to TOC](#table-of-contents)
+
+## NodeExporterCollectorNvmeSubsystemConfig
+
+#### Description
+
+The `NodeExporterCollectorNvmeSubsystemConfig` resource works as an on/off switch for the `nvmesubsystem` collector of the `node-exporter` agent. By default, the `nvmesubsystem` collector is enabled.
+
+
+<em>appears in: [NodeExporterCollectorConfig](#nodeexportercollectorconfig)</em>
+
+| Property | Type | Description |
+| -------- | ---- | ----------- |
+| enabled | *bool | A Boolean flag that enables or disables the `nvmesubsystem` collector. |
 
 [Back to TOC](#table-of-contents)
 

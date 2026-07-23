@@ -316,6 +316,9 @@ func defaultNodeExporterConfig() *NodeExporterConfig {
 			DmMultipath: NodeExporterCollectorDmMultipathConfig{
 				Enabled: ptr.To(true),
 			},
+			NvmeSubsystem: NodeExporterCollectorNvmeSubsystemConfig{
+				Enabled: ptr.To(true),
+			},
 		},
 	}
 }
@@ -467,6 +470,9 @@ func (c *Config) applyDefaults() {
 	}
 	if collectors.DmMultipath.Enabled == nil {
 		collectors.DmMultipath.Enabled = ptr.To(true)
+	}
+	if collectors.NvmeSubsystem.Enabled == nil {
+		collectors.NvmeSubsystem.Enabled = ptr.To(true)
 	}
 
 	if c.ClusterMonitoringConfiguration.UserWorkloadEnabled == nil {

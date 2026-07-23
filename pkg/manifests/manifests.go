@@ -988,6 +988,12 @@ func (f *Factory) updateNodeExporterArgs(args []string) ([]string, error) {
 		args = setArg(args, "--no-collector.dmmultipath", "")
 	}
 
+	if ptr.Deref(f.config.ClusterMonitoringConfiguration.NodeExporterConfig.Collectors.NvmeSubsystem.Enabled, true) {
+		args = setArg(args, "--collector.nvmesubsystem", "")
+	} else {
+		args = setArg(args, "--no-collector.nvmesubsystem", "")
+	}
+
 	if f.config.ClusterMonitoringConfiguration.NodeExporterConfig.Collectors.BuddyInfo.Enabled {
 		args = setArg(args, "--collector.buddyinfo", "")
 	} else {

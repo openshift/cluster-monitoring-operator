@@ -422,6 +422,10 @@ type NodeExporterCollectorConfig struct {
 	// DM-multipath device and path metrics from `/sys/block/dm-*`.
 	// Enabled by default.
 	DmMultipath NodeExporterCollectorDmMultipathConfig `json:"dmMultipath,omitempty"`
+	// Defines the configuration of the `nvmesubsystem` collector, which exposes
+	// NVMe subsystem metrics from `/sys/class/nvme-subsystem/`.
+	// Enabled by default.
+	NvmeSubsystem NodeExporterCollectorNvmeSubsystemConfig `json:"nvmeSubsystem,omitempty"`
 }
 
 // The `NodeExporterCollectorCpufreqConfig` resource works as an on/off switch for
@@ -610,6 +614,14 @@ type NodeExporterCollectorZoneinfoConfig struct {
 // By default, the `dmmultipath` collector is enabled.
 type NodeExporterCollectorDmMultipathConfig struct {
 	// A Boolean flag that enables or disables the `dmmultipath` collector.
+	Enabled *bool `json:"enabled,omitempty"`
+}
+
+// The `NodeExporterCollectorNvmeSubsystemConfig` resource works as an on/off switch for
+// the `nvmesubsystem` collector of the `node-exporter` agent.
+// By default, the `nvmesubsystem` collector is enabled.
+type NodeExporterCollectorNvmeSubsystemConfig struct {
+	// A Boolean flag that enables or disables the `nvmesubsystem` collector.
 	Enabled *bool `json:"enabled,omitempty"`
 }
 
