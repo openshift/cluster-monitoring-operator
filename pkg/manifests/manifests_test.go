@@ -3412,6 +3412,7 @@ func TestNodeExporterCollectorSettings(t *testing.T) {
 				"--no-collector.tcpstat",
 				"--no-collector.ethtool",
 				"--no-collector.softirqs",
+				"--no-collector.zoneinfo",
 				"--collector.netdev",
 				"--collector.netclass",
 				"--collector.netclass.netlink",
@@ -3426,6 +3427,7 @@ func TestNodeExporterCollectorSettings(t *testing.T) {
 				"--collector.tcpstat",
 				"--collector.ethtool",
 				"--collector.softirqs",
+				"--collector.zoneinfo",
 				"--no-collector.netdev",
 				"--no-collector.netclass",
 				"--collector.buddyinfo",
@@ -3489,6 +3491,17 @@ nodeExporter:
 `,
 			argsPresent: []string{"--collector.softirqs"},
 			argsAbsent:  []string{"--no-collector.softirqs"},
+		},
+		{
+			name: "enable zoneinfo collector",
+			config: `
+nodeExporter:
+  collectors:
+    zoneinfo:
+      enabled: true
+`,
+			argsPresent: []string{"--collector.zoneinfo"},
+			argsAbsent:  []string{"--no-collector.zoneinfo"},
 		},
 		{
 			name: "disable netdev collector",

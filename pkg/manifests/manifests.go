@@ -976,6 +976,12 @@ func (f *Factory) updateNodeExporterArgs(args []string) ([]string, error) {
 		args = setArg(args, "--no-collector.softirqs", "")
 	}
 
+	if f.config.ClusterMonitoringConfiguration.NodeExporterConfig.Collectors.Zoneinfo.Enabled {
+		args = setArg(args, "--collector.zoneinfo", "")
+	} else {
+		args = setArg(args, "--no-collector.zoneinfo", "")
+	}
+
 	if f.config.ClusterMonitoringConfiguration.NodeExporterConfig.Collectors.BuddyInfo.Enabled {
 		args = setArg(args, "--collector.buddyinfo", "")
 	} else {

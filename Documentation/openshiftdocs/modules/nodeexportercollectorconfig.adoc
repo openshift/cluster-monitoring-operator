@@ -40,6 +40,8 @@ Appears in: link:nodeexporterconfig.adoc[NodeExporterConfig]
 
 |softirqs|link:nodeexportercollectorsoftirqsconfig.adoc[NodeExporterCollectorSoftirqsConfig]|Defines the configuration of the `softirqs` collector, which exposes detailed softirq metrics from `/proc/softirqs`. Disabled by default.
 
+|zoneinfo|link:nodeexportercollectorzoneinfoconfig.adoc[NodeExporterCollectorZoneinfoConfig]|Defines the configuration of the `zoneinfo` collector, which exposes detailed memory zone statistics from `/proc/zoneinfo`. Disabled by default.
+
 |===
 
 link:../index.adoc[Back to TOC]

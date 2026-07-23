@@ -38,6 +38,7 @@ Configuring Cluster Monitoring is optional. If the config does not exist or is e
 * [NodeExporterCollectorSoftirqsConfig](#nodeexportercollectorsoftirqsconfig)
 * [NodeExporterCollectorSystemdConfig](#nodeexportercollectorsystemdconfig)
 * [NodeExporterCollectorTcpStatConfig](#nodeexportercollectortcpstatconfig)
+* [NodeExporterCollectorZoneinfoConfig](#nodeexportercollectorzoneinfoconfig)
 * [NodeExporterConfig](#nodeexporterconfig)
 * [OpenShiftStateMetricsConfig](#openshiftstatemetricsconfig)
 * [PrometheusK8sConfig](#prometheusk8sconfig)
@@ -256,6 +257,7 @@ The `NodeExporterCollectorConfig` resource defines settings for individual colle
 | processes | [NodeExporterCollectorProcessesConfig](#nodeexportercollectorprocessesconfig) | Defines the configuration of the `processes` collector, which collects statistics from processes and threads running in the system. Disabled by default. |
 | systemd | [NodeExporterCollectorSystemdConfig](#nodeexportercollectorsystemdconfig) | Defines the configuration of the `systemd` collector, which collects statistics on the systemd daemon and its managed services. Disabled by default. |
 | softirqs | [NodeExporterCollectorSoftirqsConfig](#nodeexportercollectorsoftirqsconfig) | Defines the configuration of the `softirqs` collector, which exposes detailed softirq metrics from `/proc/softirqs`. Disabled by default. |
+| zoneinfo | [NodeExporterCollectorZoneinfoConfig](#nodeexportercollectorzoneinfoconfig) | Defines the configuration of the `zoneinfo` collector, which exposes detailed memory zone statistics from `/proc/zoneinfo`. Disabled by default. |
 
 [Back to TOC](#table-of-contents)
 
@@ -408,6 +410,21 @@ The `NodeExporterCollectorTcpStatConfig` resource works as an on/off switch for 
 | Property | Type | Description |
 | -------- | ---- | ----------- |
 | enabled | bool | A Boolean flag that enables or disables the `tcpstat` collector. |
+
+[Back to TOC](#table-of-contents)
+
+## NodeExporterCollectorZoneinfoConfig
+
+#### Description
+
+The `NodeExporterCollectorZoneinfoConfig` resource works as an on/off switch for the `zoneinfo` collector of the `node-exporter` agent. The `zoneinfo` collector exposes per-zone memory page counts, watermarks, and protection thresholds from `/proc/zoneinfo`. By default, the `zoneinfo` collector is disabled.
+
+
+<em>appears in: [NodeExporterCollectorConfig](#nodeexportercollectorconfig)</em>
+
+| Property | Type | Description |
+| -------- | ---- | ----------- |
+| enabled | bool | A Boolean flag that enables or disables the `zoneinfo` collector. |
 
 [Back to TOC](#table-of-contents)
 

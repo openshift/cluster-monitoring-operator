@@ -415,6 +415,9 @@ type NodeExporterCollectorConfig struct {
 	// Defines the configuration of the `softirqs` collector, which exposes detailed softirq metrics from `/proc/softirqs`.
 	// Disabled by default.
 	Softirqs NodeExporterCollectorSoftirqsConfig `json:"softirqs,omitempty"`
+	// Defines the configuration of the `zoneinfo` collector, which exposes detailed memory zone statistics from `/proc/zoneinfo`.
+	// Disabled by default.
+	Zoneinfo NodeExporterCollectorZoneinfoConfig `json:"zoneinfo,omitempty"`
 }
 
 // The `NodeExporterCollectorCpufreqConfig` resource works as an on/off switch for
@@ -585,6 +588,16 @@ type NodeExporterCollectorSystemdConfig struct {
 // By default, the `softirqs` collector is disabled.
 type NodeExporterCollectorSoftirqsConfig struct {
 	// A Boolean flag that enables or disables the `softirqs` collector.
+	Enabled bool `json:"enabled,omitempty"`
+}
+
+// The `NodeExporterCollectorZoneinfoConfig` resource works as an on/off switch for
+// the `zoneinfo` collector of the `node-exporter` agent.
+// The `zoneinfo` collector exposes per-zone memory page counts, watermarks, and
+// protection thresholds from `/proc/zoneinfo`.
+// By default, the `zoneinfo` collector is disabled.
+type NodeExporterCollectorZoneinfoConfig struct {
+	// A Boolean flag that enables or disables the `zoneinfo` collector.
 	Enabled bool `json:"enabled,omitempty"`
 }
 

@@ -670,7 +670,7 @@ data:
     # owners: (@openshift/openshift-team-monitoring)
     #
     # collector:node_scrape_collector_success:avg reports the average success of optional node_exporter's collectors running in the cluster.
-    - '{__name__="collector:node_scrape_collector_success:avg",collector=~"ethtool|cpufreq|tcpstat|netdev|netclass|buddyinfo|mountstats|ksmd|processes|systemd|softirqs"}'
+    - '{__name__="collector:node_scrape_collector_success:avg",collector=~"ethtool|cpufreq|tcpstat|netdev|netclass|buddyinfo|mountstats|ksmd|processes|systemd|softirqs|zoneinfo"}'
     #
     # owners: (@openshift/openshift-team-monitoring)
     #
