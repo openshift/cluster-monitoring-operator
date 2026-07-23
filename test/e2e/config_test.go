@@ -235,7 +235,7 @@ func TestClusterMonitorPrometheusOperatorConfig(t *testing.T) {
 	}
 }
 
-func TestClusterMonitorPrometheusK8Config(t *testing.T) {
+func TestPrometheusK8sConfig(t *testing.T) {
 	const (
 		pvcClaimName    = "prometheus-k8s-db-prometheus-k8s-0"
 		statefulsetName = "prometheus-k8s"
@@ -294,8 +294,6 @@ func TestClusterMonitorPrometheusK8Config(t *testing.T) {
 					expectContainerArg("--enable-feature=delayed-compaction,use-uncached-io", containerName),
 					// Set via the config above.
 					expectContainerArg("--log.level=debug", containerName),
-					expectContainerArg("--storage.tsdb.retention.time=10h", containerName),
-					expectContainerArg("--storage.tsdb.retention.size=15GB", containerName),
 				},
 			),
 		},
@@ -314,6 +312,14 @@ func TestClusterMonitorPrometheusK8Config(t *testing.T) {
 		{
 			name:      "assert rule for Thanos sidecar exists",
 			assertion: f.AssertPrometheusRuleExistsFunc(thanosRule, f.Ns),
+		},
+		{
+			name:      "assert retention time is configured",
+			assertion: assertPrometheusRetentionTime(f.Ns, crName, "10h"),
+		},
+		{
+			name:      "assert retention size is configured",
+			assertion: assertPrometheusRetentionSize(f.Ns, crName, "15GB"),
 		},
 	} {
 		t.Run(tc.name, tc.assertion)
@@ -585,7 +591,7 @@ func TestUserWorkloadMonitorPromOperatorConfig(t *testing.T) {
 	}
 }
 
-func TestUserWorkloadMonitorPrometheusK8Config(t *testing.T) {
+func TestUserWorkloadPrometheusConfig(t *testing.T) {
 	setupUserWorkloadAssetsWithTeardownHook(t, f)
 	const (
 		pvcClaimName    = "prometheus-user-workload-db-prometheus-user-workload-0"
@@ -652,8 +658,6 @@ func TestUserWorkloadMonitorPrometheusK8Config(t *testing.T) {
 					expectContainerArg("--enable-feature=extra-scrape-metrics,delayed-compaction,use-uncached-io,exemplar-storage", containerName),
 					// Set via the config above.
 					expectContainerArg("--log.level=debug", containerName),
-					expectContainerArg("--storage.tsdb.retention.time=10h", containerName),
-					expectContainerArg("--storage.tsdb.retention.size=15GB", containerName),
 				},
 			),
 		},
@@ -696,6 +700,14 @@ func TestUserWorkloadMonitorPrometheusK8Config(t *testing.T) {
 		{
 			name:      "assert evaluation interval is configured",
 			assertion: assertPrometheusEvaluationInterval("15s"),
+		},
+		{
+			name:      "assert retention time is configured",
+			assertion: assertPrometheusRetentionTime(f.UserWorkloadMonitoringNs, crName, "10h"),
+		},
+		{
+			name:      "assert retention size is configured",
+			assertion: assertPrometheusRetentionSize(f.UserWorkloadMonitoringNs, crName, "15GB"),
 		},
 	} {
 		t.Run(tc.name, tc.assertion)
@@ -1312,6 +1324,44 @@ func assertQueryLogValueEquals(namespace, crName, value string) func(t *testing.
 		})
 		if err != nil {
 			t.Fatal(err)
+		}
+	}
+}
+
+func assertPrometheusRetentionTime(namespace, name, duration string) func(*testing.T) {
+	ctx := context.Background()
+	return func(t *testing.T) {
+		err := framework.Poll(time.Second, 5*time.Minute, func() error {
+			prom, err := f.MonitoringClient.Prometheuses(namespace).Get(ctx, name, metav1.GetOptions{})
+			if err != nil {
+				return err
+			}
+			if prom.Spec.Retention != monv1.Duration(duration) {
+				return fmt.Errorf("expected retention time %s, got %s", duration, prom.Spec.Retention)
+			}
+			return nil
+		})
+		if err != nil {
+			t.Fatalf("timed out waiting for retention time configuration: %v", err)
+		}
+	}
+}
+
+func assertPrometheusRetentionSize(namespace, name, size string) func(*testing.T) {
+	ctx := context.Background()
+	return func(t *testing.T) {
+		err := framework.Poll(time.Second, 5*time.Minute, func() error {
+			prom, err := f.MonitoringClient.Prometheuses(namespace).Get(ctx, name, metav1.GetOptions{})
+			if err != nil {
+				return err
+			}
+			if prom.Spec.RetentionSize != monv1.ByteSize(size) {
+				return fmt.Errorf("expected retention size %s, got %s", size, prom.Spec.RetentionSize)
+			}
+			return nil
+		})
+		if err != nil {
+			t.Fatalf("timed out waiting for retention size configuration: %v", err)
 		}
 	}
 }
