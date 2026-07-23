@@ -343,6 +343,9 @@ func NewConfigFromString(content string) (*Config, error) {
 				DmMultipath: NodeExporterCollectorDmMultipathConfig{
 					Enabled: ptr.To(true),
 				},
+				NvmeSubsystem: NodeExporterCollectorNvmeSubsystemConfig{
+					Enabled: ptr.To(true),
+				},
 			},
 		},
 	}

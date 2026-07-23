@@ -3395,6 +3395,7 @@ func TestNodeExporterCollectorSettings(t *testing.T) {
 				"--collector.netclass.ignored-devices=^(veth.*|[a-f0-9]{15}|enP.*|ovn-k8s-mp[0-9]*|br-ex|br-int|br-ext|br[0-9]*|tun[0-9]*|cali[a-f0-9]*|bond.*)$",
 				"--no-collector.systemd",
 				"--collector.dmmultipath",
+				"--collector.nvmesubsystem",
 			},
 			argsAbsent: []string{"--collector.cpufreq",
 				"--collector.tcpstat",
@@ -3406,6 +3407,7 @@ func TestNodeExporterCollectorSettings(t *testing.T) {
 				"--collector.processes",
 				"--collector.systemd",
 				"--no-collector.dmmultipath",
+				"--no-collector.nvmesubsystem",
 			},
 		},
 		{
@@ -3463,6 +3465,17 @@ nodeExporter:
 `,
 			argsPresent: []string{"--no-collector.dmmultipath"},
 			argsAbsent:  []string{"--collector.dmmultipath"},
+		},
+		{
+			name: "disable nvmesubsystem collector",
+			config: `
+nodeExporter:
+  collectors:
+    nvmeSubsystem:
+      enabled: false
+`,
+			argsPresent: []string{"--no-collector.nvmesubsystem"},
+			argsAbsent:  []string{"--collector.nvmesubsystem"},
 		},
 		{
 			name: "disable netdev collector",
