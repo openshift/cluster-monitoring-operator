@@ -181,7 +181,7 @@ spec:
       expr: |
         time() - max by(namespace, job_name, cluster) (kube_job_status_start_time{namespace=~"(openshift-.*|kube-.*|default)",job="kube-state-metrics"}
           and
-        kube_job_status_active{namespace=~"(openshift-.*|kube-.*|default)",job="kube-state-metrics"} > 0) > 43200
+        ( kube_job_status_active{namespace=~"(openshift-.*|kube-.*|default)",job="kube-state-metrics"} > 0 ) > 0) > 43200
       labels:
         severity: warning
     - alert: KubeJobFailed
