@@ -65,6 +65,8 @@ func setupEnv(t *testing.T) {
 }
 
 func TestDocExamples(t *testing.T) {
+	// The test creates its own isolated namespace, safe to run in parallel.
+	t.Parallel()
 	filesDir := "test_command/scripts/"
 	tempDir := t.TempDir()
 	kubeConfigPath := f.KubeConfigPath

@@ -151,6 +151,8 @@ func testMain(m *testing.M) error {
 }
 
 func TestTargetsUp(t *testing.T) {
+	// Not safe to run in parallel: deletes and waits for secret recreation, other tests may trigger scrape failures.
+	// t.Parallel()
 	ctx := context.Background()
 
 	// Check that all targets are up initially.
@@ -207,6 +209,8 @@ func testTargetsUp(t *testing.T) {
 // Once we have the need to test multiple recording rules, we can unite them in
 // a single test function.
 func TestMemoryUsageRecordingRule(t *testing.T) {
+	// The test is read-only, safe to run in parallel.
+	t.Parallel()
 	f.ThanosQuerierClient.WaitForQueryReturnGreaterEqualOne(
 		t,
 		time.Minute,
@@ -251,6 +255,8 @@ const npProbeNamespace = "e2e-test-np-connectivity"
 // TestNetworkPolicy validates NetworkPolicy configuration and enforcement
 // across all monitoring namespaces.
 func TestNetworkPolicy(t *testing.T) {
+	// Not safe to run in parallel: modifies the user-workload-monitoring-config ConfigMap and creates probe pods.
+	// t.Parallel()
 	ctx := context.Background()
 
 	setupUserWorkloadAssetsWithTeardownHook(t, f)

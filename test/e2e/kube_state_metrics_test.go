@@ -32,7 +32,8 @@ import (
 )
 
 func TestKSMMetricsSuppression(t *testing.T) {
-
+	// The test is read-only, safe to run in parallel.
+	t.Parallel()
 	suppressedPattern, _ := regexp.Compile("kube_.*_annotations")
 
 	err := framework.Poll(5*time.Second, time.Minute, func() error {
@@ -74,6 +75,8 @@ func TestKSMMetricsSuppression(t *testing.T) {
 }
 
 func TestKSMCRSMetrics(t *testing.T) {
+	// Not safe to run in parallel: creates/deletes a VPA CRD (cluster-wide) and a VPA CR in the shared openshift-monitoring namespace.
+	// t.Parallel()
 	const timeout = 5 * time.Minute
 	assetsDir := "./assets"
 	ksmCRSMetricPrefix := "kube_customresource"
