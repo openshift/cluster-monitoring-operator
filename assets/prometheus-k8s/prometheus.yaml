@@ -163,7 +163,6 @@ spec:
   externalURL: https://prometheus-k8s.openshift-monitoring.svc:9091
   image: ""
   listenLocal: true
-  maximumStartupDurationSeconds: 3600
   nodeSelector:
     kubernetes.io/os: linux
   podMetadata:
