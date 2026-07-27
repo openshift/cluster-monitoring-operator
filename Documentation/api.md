@@ -29,6 +29,7 @@ Configuring Cluster Monitoring is optional. If the config does not exist or is e
 * [NodeExporterCollectorBuddyInfoConfig](#nodeexportercollectorbuddyinfoconfig)
 * [NodeExporterCollectorConfig](#nodeexportercollectorconfig)
 * [NodeExporterCollectorCpufreqConfig](#nodeexportercollectorcpufreqconfig)
+* [NodeExporterCollectorDmMultipathConfig](#nodeexportercollectordmmultipathconfig)
 * [NodeExporterCollectorEthtoolConfig](#nodeexportercollectorethtoolconfig)
 * [NodeExporterCollectorKSMDConfig](#nodeexportercollectorksmdconfig)
 * [NodeExporterCollectorMountStatsConfig](#nodeexportercollectormountstatsconfig)
@@ -258,6 +259,7 @@ The `NodeExporterCollectorConfig` resource defines settings for individual colle
 | systemd | [NodeExporterCollectorSystemdConfig](#nodeexportercollectorsystemdconfig) | Defines the configuration of the `systemd` collector, which collects statistics on the systemd daemon and its managed services. Disabled by default. |
 | softirqs | [NodeExporterCollectorSoftirqsConfig](#nodeexportercollectorsoftirqsconfig) | Defines the configuration of the `softirqs` collector, which exposes detailed softirq metrics from `/proc/softirqs`. Disabled by default. |
 | zoneinfo | [NodeExporterCollectorZoneinfoConfig](#nodeexportercollectorzoneinfoconfig) | Defines the configuration of the `zoneinfo` collector, which exposes detailed memory zone statistics from `/proc/zoneinfo`. Disabled by default. |
+| dmMultipath | [NodeExporterCollectorDmMultipathConfig](#nodeexportercollectordmmultipathconfig) | Defines the configuration of the `dmmultipath` collector, which exposes DM-multipath device and path metrics from `/sys/block/dm-*`. Enabled by default. |
 
 [Back to TOC](#table-of-contents)
 
@@ -273,6 +275,21 @@ The `NodeExporterCollectorCpufreqConfig` resource works as an on/off switch for 
 | Property | Type | Description |
 | -------- | ---- | ----------- |
 | enabled | bool | A Boolean flag that enables or disables the `cpufreq` collector. |
+
+[Back to TOC](#table-of-contents)
+
+## NodeExporterCollectorDmMultipathConfig
+
+#### Description
+
+The `NodeExporterCollectorDmMultipathConfig` resource works as an on/off switch for the `dmmultipath` collector of the `node-exporter` agent. By default, the `dmmultipath` collector is enabled.
+
+
+<em>appears in: [NodeExporterCollectorConfig](#nodeexportercollectorconfig)</em>
+
+| Property | Type | Description |
+| -------- | ---- | ----------- |
+| enabled | *bool | A Boolean flag that enables or disables the `dmmultipath` collector. |
 
 [Back to TOC](#table-of-contents)
 

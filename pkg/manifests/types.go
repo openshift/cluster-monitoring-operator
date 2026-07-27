@@ -418,6 +418,10 @@ type NodeExporterCollectorConfig struct {
 	// Defines the configuration of the `zoneinfo` collector, which exposes detailed memory zone statistics from `/proc/zoneinfo`.
 	// Disabled by default.
 	Zoneinfo NodeExporterCollectorZoneinfoConfig `json:"zoneinfo,omitempty"`
+	// Defines the configuration of the `dmmultipath` collector, which exposes
+	// DM-multipath device and path metrics from `/sys/block/dm-*`.
+	// Enabled by default.
+	DmMultipath NodeExporterCollectorDmMultipathConfig `json:"dmMultipath,omitempty"`
 }
 
 // The `NodeExporterCollectorCpufreqConfig` resource works as an on/off switch for
@@ -599,6 +603,14 @@ type NodeExporterCollectorSoftirqsConfig struct {
 type NodeExporterCollectorZoneinfoConfig struct {
 	// A Boolean flag that enables or disables the `zoneinfo` collector.
 	Enabled bool `json:"enabled,omitempty"`
+}
+
+// The `NodeExporterCollectorDmMultipathConfig` resource works as an on/off switch for
+// the `dmmultipath` collector of the `node-exporter` agent.
+// By default, the `dmmultipath` collector is enabled.
+type NodeExporterCollectorDmMultipathConfig struct {
+	// A Boolean flag that enables or disables the `dmmultipath` collector.
+	Enabled *bool `json:"enabled,omitempty"`
 }
 
 // The `UserWorkloadConfiguration` resource defines the settings
