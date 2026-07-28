@@ -421,6 +421,22 @@ data:
     # noobaa_total_usage gives the total usage of noobaa's storage in bytes.
     - '{__name__="noobaa_total_usage"}'
     #
+    # owners: (https://github.com/RamenDR/ramen)
+    #
+    # ramen:dr_policy_type:max tracks the number of DRPolicy resources
+    # by disaster recovery type.
+    # Labels:
+    # * dr_type: "metro", "regional", "unknown".
+    - '{__name__="ramen:dr_policy_type:max",dr_type=~"metro|regional|unknown"}'
+    #
+    # owners: (https://github.com/RamenDR/ramen)
+    #
+    # ramen:dr_protected_apps:max tracks the number of DR-protected
+    # applications by management method.
+    # Labels:
+    # * management_method: "discovered", "managed".
+    - '{__name__="ramen:dr_protected_apps:max",management_method=~"discovered|managed"}'
+    #
     # owners: (@openshift/origin-web-console-committers)
     # console_url is the url of the console running on the cluster.
     #
