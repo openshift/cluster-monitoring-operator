@@ -360,6 +360,16 @@ func (c *Client) ConsoleListWatch() *cache.ListWatch {
 	)
 }
 
+// ProxyListWatch watches for the cluster's proxy configuration resource.
+func (c *Client) ProxyListWatch() *cache.ListWatch {
+	return cache.NewListWatchFromClient(
+		c.oscclient.ConfigV1().RESTClient(),
+		"proxies",
+		"",
+		fields.OneTermEqualSelector("metadata.name", ClusterResourceName),
+	)
+}
+
 // ClusterVersionListWatch watches for the cluster version resource.
 func (c *Client) ClusterVersionListWatch() *cache.ListWatch {
 	return cache.NewListWatchFromClient(
