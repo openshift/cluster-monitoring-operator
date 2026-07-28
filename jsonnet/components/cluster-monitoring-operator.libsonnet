@@ -233,7 +233,7 @@ function(params) {
       {
         apiGroups: ['config.openshift.io'],
         resources: ['proxies'],
-        verbs: ['get'],
+        verbs: ['get', 'list', 'watch'],
       },
       {
         apiGroups: ['config.openshift.io'],
