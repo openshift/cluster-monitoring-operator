@@ -1238,7 +1238,7 @@ func TestPrometheusK8sRemoteWriteURLs(t *testing.T) {
 
 			var got []string
 			for _, rw := range p.Spec.RemoteWrite {
-				got = append(got, rw.URL)
+				got = append(got, string(rw.URL))
 			}
 			sort.Strings(got)
 			sort.Strings(tc.expectedRemoteWriteURLs)
@@ -1305,7 +1305,7 @@ func TestPrometheusK8sRemoteWriteOauth2(t *testing.T) {
 		nil,
 	)
 	require.NoError(t, err)
-	require.Equal(t, p.Spec.RemoteWrite[0].URL, "https://test.remotewrite.com/api/write")
+	require.Equal(t, string(p.Spec.RemoteWrite[0].URL), "https://test.remotewrite.com/api/write")
 	require.Equal(t, p.Spec.RemoteWrite[0].OAuth2, &expectedOauth2Config)
 }
 func TestRemoteWriteAuthorizationConfig(t *testing.T) {
@@ -3425,6 +3425,7 @@ func TestNodeExporterCollectorSettings(t *testing.T) {
 				"--no-collector.tcpstat",
 				"--no-collector.ethtool",
 				"--no-collector.softirqs",
+				"--no-collector.zoneinfo",
 				"--collector.netdev",
 				"--collector.netclass",
 				"--collector.netclass.netlink",
@@ -3434,17 +3435,20 @@ func TestNodeExporterCollectorSettings(t *testing.T) {
 				"--collector.netdev.device-exclude=^(veth.*|[a-f0-9]{15}|enP.*|ovn-k8s-mp[0-9]*|br-ex|br-int|br-ext|br[0-9]*|tun[0-9]*|cali[a-f0-9]*|bond.*)$",
 				"--collector.netclass.ignored-devices=^(veth.*|[a-f0-9]{15}|enP.*|ovn-k8s-mp[0-9]*|br-ex|br-int|br-ext|br[0-9]*|tun[0-9]*|cali[a-f0-9]*|bond.*)$",
 				"--no-collector.systemd",
+				"--collector.dmmultipath",
 			},
 			argsAbsent: []string{"--collector.cpufreq",
 				"--collector.tcpstat",
 				"--collector.ethtool",
 				"--collector.softirqs",
+				"--collector.zoneinfo",
 				"--no-collector.netdev",
 				"--no-collector.netclass",
 				"--collector.buddyinfo",
 				"--collector.ksmd",
 				"--collector.processes",
 				"--collector.systemd",
+				"--no-collector.dmmultipath",
 			},
 		},
 		{
@@ -3502,6 +3506,28 @@ nodeExporter:
 `,
 			argsPresent: []string{"--collector.softirqs"},
 			argsAbsent:  []string{"--no-collector.softirqs"},
+		},
+		{
+			name: "enable zoneinfo collector",
+			config: `
+nodeExporter:
+  collectors:
+    zoneinfo:
+      enabled: true
+`,
+			argsPresent: []string{"--collector.zoneinfo"},
+			argsAbsent:  []string{"--no-collector.zoneinfo"},
+		},
+		{
+			name: "disable dmmultipath collector",
+			config: `
+nodeExporter:
+  collectors:
+    dmMultipath:
+      enabled: false
+`,
+			argsPresent: []string{"--no-collector.dmmultipath"},
+			argsAbsent:  []string{"--collector.dmmultipath"},
 		},
 		{
 			name: "disable netdev collector",

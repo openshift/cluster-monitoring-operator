@@ -36,7 +36,7 @@ spec:
         - --prometheus-config-reloader=quay.io/prometheus-operator/prometheus-config-reloader:v0.91.0
         - --watch-referenced-objects-in-all-namespaces=true
         - --disable-unmanaged-prometheus-configuration=true
-        - --kubelet-endpoints=true
+        - --kubelet-endpoints=false
         - --kubelet-endpointslice=true
         - --repair-policy-for-statefulsets=evict
         - --prometheus-instance-namespaces=openshift-monitoring

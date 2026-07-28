@@ -288,6 +288,9 @@ local inCluster =
         },
         tlsCipherSuites: $.values.common.tlsCipherSuites,
         repairPolicy: 'evict',
+        // Kubelet discovery uses EndpointSlice since OpenShift 4.21 (#2696).
+        // kubeletEndpointSliceEnabled defaults to true in kube-prometheus.
+        kubeletEndpointsEnabled: false,
       },
       thanos: {
         image: $.values.common.images.thanos,
@@ -485,6 +488,8 @@ local userWorkload =
         configReloaderImage: $.values.common.images.prometheusOperatorReloader,
         commonLabels+: $.values.common.commonLabels,
         repairPolicy: 'evict',
+        // UWM PO strips --kubelet-service; disable kubelet Endpoints controller too.
+        kubeletEndpointsEnabled: false,
       },
     },
 

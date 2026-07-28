@@ -27,7 +27,13 @@ import (
 
 // PrometheusAgentSpecApplyConfiguration represents a declarative configuration of the PrometheusAgentSpec type for use
 // with apply.
+//
+// PrometheusAgentSpec is a specification of the desired behavior of the Prometheus agent. More info:
+// https://github.com/kubernetes/community/blob/master/contributors/devel/sig-architecture/api-conventions.md#spec-and-status
 type PrometheusAgentSpecApplyConfiguration struct {
+	// mode defines how the Prometheus operator deploys the PrometheusAgent pod(s).
+	//
+	// (Alpha) Using this field requires the `PrometheusAgentDaemonSet` feature gate to be enabled.
 	Mode                                        *monitoringv1alpha1.PrometheusAgentMode `json:"mode,omitempty"`
 	v1.CommonPrometheusFieldsApplyConfiguration `json:",inline"`
 }
@@ -173,6 +179,14 @@ func (b *PrometheusAgentSpecApplyConfiguration) WithReplicas(value int32) *Prome
 // If called multiple times, the Shards field is set to the value of the last call.
 func (b *PrometheusAgentSpecApplyConfiguration) WithShards(value int32) *PrometheusAgentSpecApplyConfiguration {
 	b.CommonPrometheusFieldsApplyConfiguration.Shards = &value
+	return b
+}
+
+// WithShardingStrategy sets the ShardingStrategy field in the declarative configuration to the given value
+// and returns the receiver, so that objects can be built by chaining "With" function invocations.
+// If called multiple times, the ShardingStrategy field is set to the value of the last call.
+func (b *PrometheusAgentSpecApplyConfiguration) WithShardingStrategy(value *v1.ShardingStrategyApplyConfiguration) *PrometheusAgentSpecApplyConfiguration {
+	b.CommonPrometheusFieldsApplyConfiguration.ShardingStrategy = value
 	return b
 }
 
@@ -366,6 +380,14 @@ func (b *PrometheusAgentSpecApplyConfiguration) WithNodeSelector(entries map[str
 	return b
 }
 
+// WithSchedulerName sets the SchedulerName field in the declarative configuration to the given value
+// and returns the receiver, so that objects can be built by chaining "With" function invocations.
+// If called multiple times, the SchedulerName field is set to the value of the last call.
+func (b *PrometheusAgentSpecApplyConfiguration) WithSchedulerName(value string) *PrometheusAgentSpecApplyConfiguration {
+	b.CommonPrometheusFieldsApplyConfiguration.SchedulerName = &value
+	return b
+}
+
 // WithServiceAccountName sets the ServiceAccountName field in the declarative configuration to the given value
 // and returns the receiver, so that objects can be built by chaining "With" function invocations.
 // If called multiple times, the ServiceAccountName field is set to the value of the last call.
@@ -483,6 +505,22 @@ func (b *PrometheusAgentSpecApplyConfiguration) WithDNSConfig(value *v1.PodDNSCo
 // If called multiple times, the ListenLocal field is set to the value of the last call.
 func (b *PrometheusAgentSpecApplyConfiguration) WithListenLocal(value bool) *PrometheusAgentSpecApplyConfiguration {
 	b.CommonPrometheusFieldsApplyConfiguration.ListenLocal = &value
+	return b
+}
+
+// WithPodManagementPolicy sets the PodManagementPolicy field in the declarative configuration to the given value
+// and returns the receiver, so that objects can be built by chaining "With" function invocations.
+// If called multiple times, the PodManagementPolicy field is set to the value of the last call.
+func (b *PrometheusAgentSpecApplyConfiguration) WithPodManagementPolicy(value monitoringv1.PodManagementPolicyType) *PrometheusAgentSpecApplyConfiguration {
+	b.CommonPrometheusFieldsApplyConfiguration.PodManagementPolicy = &value
+	return b
+}
+
+// WithUpdateStrategy sets the UpdateStrategy field in the declarative configuration to the given value
+// and returns the receiver, so that objects can be built by chaining "With" function invocations.
+// If called multiple times, the UpdateStrategy field is set to the value of the last call.
+func (b *PrometheusAgentSpecApplyConfiguration) WithUpdateStrategy(value *v1.StatefulSetUpdateStrategyApplyConfiguration) *PrometheusAgentSpecApplyConfiguration {
+	b.CommonPrometheusFieldsApplyConfiguration.UpdateStrategy = value
 	return b
 }
 
@@ -666,6 +704,14 @@ func (b *PrometheusAgentSpecApplyConfiguration) WithConvertClassicHistogramsToNH
 	return b
 }
 
+// WithScrapeNativeHistograms sets the ScrapeNativeHistograms field in the declarative configuration to the given value
+// and returns the receiver, so that objects can be built by chaining "With" function invocations.
+// If called multiple times, the ScrapeNativeHistograms field is set to the value of the last call.
+func (b *PrometheusAgentSpecApplyConfiguration) WithScrapeNativeHistograms(value bool) *PrometheusAgentSpecApplyConfiguration {
+	b.CommonPrometheusFieldsApplyConfiguration.ScrapeNativeHistograms = &value
+	return b
+}
+
 // WithScrapeClassicHistograms sets the ScrapeClassicHistograms field in the declarative configuration to the given value
 // and returns the receiver, so that objects can be built by chaining "With" function invocations.
 // If called multiple times, the ScrapeClassicHistograms field is set to the value of the last call.
@@ -750,7 +796,7 @@ func (b *PrometheusAgentSpecApplyConfiguration) WithPodTargetLabels(values ...st
 // WithTracingConfig sets the TracingConfig field in the declarative configuration to the given value
 // and returns the receiver, so that objects can be built by chaining "With" function invocations.
 // If called multiple times, the TracingConfig field is set to the value of the last call.
-func (b *PrometheusAgentSpecApplyConfiguration) WithTracingConfig(value *v1.PrometheusTracingConfigApplyConfiguration) *PrometheusAgentSpecApplyConfiguration {
+func (b *PrometheusAgentSpecApplyConfiguration) WithTracingConfig(value *v1.TracingConfigApplyConfiguration) *PrometheusAgentSpecApplyConfiguration {
 	b.CommonPrometheusFieldsApplyConfiguration.TracingConfig = value
 	return b
 }

@@ -1,4 +1,4 @@
-// Copyright 2021 The prometheus-operator Authors
+// Copyright The prometheus-operator Authors
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -17,9 +17,12 @@ package v1alpha1
 import (
 	"errors"
 	"fmt"
+	"html/template"
 	"regexp"
 	"strconv"
 	"strings"
+
+	"k8s.io/utils/ptr"
 )
 
 func (hc *HTTPConfig) Validate() error {
@@ -28,16 +31,16 @@ func (hc *HTTPConfig) Validate() error {
 	}
 
 	if (hc.BasicAuth != nil || hc.OAuth2 != nil) && (hc.BearerTokenSecret != nil) {
-		return fmt.Errorf("at most one of basicAuth, oauth2, bearerTokenSecret must be configured")
+		return fmt.Errorf("at most one of 'basicAuth', 'oauth2' and 'bearerTokenSecret' must be configured")
 	}
 
 	if hc.Authorization != nil {
 		if hc.BearerTokenSecret != nil {
-			return fmt.Errorf("authorization is not compatible with bearerTokenSecret")
+			return fmt.Errorf("'authorization' is not compatible with 'bearerTokenSecret'")
 		}
 
 		if hc.BasicAuth != nil || hc.OAuth2 != nil {
-			return fmt.Errorf("at most one of basicAuth, oauth2 & authorization must be configured")
+			return fmt.Errorf("at most one of 'basicAuth', 'oauth2' and 'authorization' must be configured")
 		}
 
 		if err := hc.Authorization.Validate(); err != nil {
@@ -47,7 +50,7 @@ func (hc *HTTPConfig) Validate() error {
 
 	if hc.OAuth2 != nil {
 		if hc.BasicAuth != nil {
-			return fmt.Errorf("at most one of basicAuth, oauth2 & authorization must be configured")
+			return fmt.Errorf("at most one of 'basicAuth', 'oauth2' and 'authorization' must be configured")
 		}
 
 		if err := hc.OAuth2.Validate(); err != nil {
@@ -353,4 +356,99 @@ func parseRange(in string) (start, end string, err error) {
 		return start, end, fmt.Errorf("invalid range provided %s", in)
 	}
 	return parts[0], parts[1], nil
+}
+
+// Validate ensures OpsGenieConfig is valid
+func (o *OpsGenieConfig) Validate() error {
+	for _, responder := range o.Responders {
+		if err := responder.Validate(); err != nil {
+			return err
+		}
+	}
+	return nil
+}
+
+const opsgenieValidTypesRe = `^(team|teams|user|escalation|schedule)$`
+
+var opsgenieTypeMatcher = regexp.MustCompile(opsgenieValidTypesRe)
+
+// Validate ensures OpsGenieConfigResponder is valid.
+func (r *OpsGenieConfigResponder) Validate() error {
+	if ptr.Deref(r.ID, "") == "" && ptr.Deref(r.Name, "") == "" && ptr.Deref(r.Username, "") == "" {
+		return errors.New("responder must have at least an ID, a Name or an Username defined")
+	}
+
+	if strings.Contains(r.Type, "{{") {
+		_, err := template.New("").Parse(r.Type)
+		if err != nil {
+			return fmt.Errorf("responder %v type is not a valid template: %w", r, err)
+		}
+		return nil
+	}
+
+	if opsgenieTypeMatcher.MatchString(strings.ToLower(r.Type)) {
+		return nil
+	}
+	return fmt.Errorf("opsGenieConfig responder %v type does not match valid options %s", r, opsgenieValidTypesRe)
+}
+
+// Validate ensures SlackAction is valid.
+func (sa *SlackAction) Validate() error {
+	if sa.Type == "" {
+		return errors.New("missing 'type' in Slack action configuration")
+	}
+
+	if sa.Text == "" {
+		return errors.New("missing 'text' in Slack action configuration")
+	}
+
+	if sa.URL == "" && ptr.Deref(sa.Name, "") == "" {
+		return errors.New("missing 'name' or 'url' in Slack action configuration")
+	}
+
+	if sa.ConfirmField != nil {
+		if err := sa.ConfirmField.Validate(); err != nil {
+			return err
+		}
+	}
+
+	return nil
+}
+
+// Validate ensures SlackConfig is valid.
+func (sc *SlackConfig) Validate() error {
+	for _, action := range sc.Actions {
+		if err := action.Validate(); err != nil {
+			return err
+		}
+	}
+
+	for _, field := range sc.Fields {
+		if err := field.Validate(); err != nil {
+			return err
+		}
+	}
+
+	return nil
+}
+
+// Validate ensures SlackConfirmationField is valid.
+func (scf *SlackConfirmationField) Validate() error {
+	if scf.Text == "" {
+		return errors.New("missing 'text' in Slack confirmation configuration")
+	}
+	return nil
+}
+
+// Validate ensures SlackField is valid
+func (sf *SlackField) Validate() error {
+	if sf.Title == "" {
+		return errors.New("missing 'title' in Slack field configuration")
+	}
+
+	if sf.Value == "" {
+		return errors.New("missing 'value' in Slack field configuration")
+	}
+
+	return nil
 }

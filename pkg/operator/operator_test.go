@@ -22,7 +22,11 @@ import (
 
 	configv1 "github.com/openshift/api/config/v1"
 	"github.com/stretchr/testify/require"
+	v1 "k8s.io/api/core/v1"
+	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	k8sruntime "k8s.io/apimachinery/pkg/runtime"
 	apiutilerrors "k8s.io/apimachinery/pkg/util/errors"
+	"k8s.io/client-go/kubernetes/fake"
 
 	"github.com/openshift/cluster-monitoring-operator/pkg/client"
 	"github.com/openshift/cluster-monitoring-operator/pkg/manifests"
@@ -555,6 +559,87 @@ func TestGenerateRunReportFromTaskErrors(t *testing.T) {
 	for _, tc := range tt {
 		t.Run(tc.name, func(t *testing.T) {
 			require.Equal(t, tc.expectedReport, generateRunReportFromTaskErrors(tc.taskGroupErrors))
+		})
+	}
+}
+
+func newPullSecret(namespace, name, auths string) *v1.Secret {
+	return &v1.Secret{
+		ObjectMeta: metav1.ObjectMeta{
+			Namespace: namespace,
+			Name:      name,
+		},
+		Type: v1.SecretTypeDockerConfigJson,
+		Data: map[string][]byte{
+			v1.DockerConfigJsonKey: []byte(fmt.Sprintf(`{"auths":{%s}}`, auths)),
+		},
+	}
+}
+
+func TestLoadTelemeterToken(t *testing.T) {
+	for _, tc := range []struct {
+		name        string
+		secrets     []*v1.Secret
+		expectToken string
+	}{
+		{
+			name: "primary has cloud.openshift.com token",
+			secrets: []*v1.Secret{
+				newPullSecret("openshift-config", "pull-secret", `"cloud.openshift.com":{"auth":"primarytoken"}`),
+			},
+			expectToken: "primarytoken",
+		},
+		{
+			name: "primary lacks token, fallback has token",
+			secrets: []*v1.Secret{
+				newPullSecret("openshift-config", "pull-secret", `"arohcpocpprod.azurecr.io":{"auth":"acrtoken"}`),
+				newPullSecret("kube-system", "global-pull-secret", `"cloud.openshift.com":{"auth":"fallbacktoken"}`),
+			},
+			expectToken: "fallbacktoken",
+		},
+		{
+			name: "primary has token, fallback ignored",
+			secrets: []*v1.Secret{
+				newPullSecret("openshift-config", "pull-secret", `"cloud.openshift.com":{"auth":"primarytoken"}`),
+				newPullSecret("kube-system", "global-pull-secret", `"cloud.openshift.com":{"auth":"fallbacktoken"}`),
+			},
+			expectToken: "primarytoken",
+		},
+		{
+			name: "both secrets lack token",
+			secrets: []*v1.Secret{
+				newPullSecret("openshift-config", "pull-secret", `"arohcpocpprod.azurecr.io":{"auth":"acrtoken"}`),
+				newPullSecret("kube-system", "global-pull-secret", `"other.registry.io":{"auth":"othertoken"}`),
+			},
+			expectToken: "",
+		},
+		{
+			name:        "no secrets exist, fallback also missing",
+			secrets:     []*v1.Secret{},
+			expectToken: "",
+		},
+	} {
+		t.Run(tc.name, func(t *testing.T) {
+			objects := make([]k8sruntime.Object, len(tc.secrets))
+			for i, s := range tc.secrets {
+				objects[i] = s
+			}
+			cl := client.New(
+				"v0.0.0",
+				"openshift-monitoring",
+				"openshift-user-workload-monitoring",
+				client.KubernetesClient(fake.NewSimpleClientset(objects...)),
+			)
+
+			c, err := manifests.NewConfigFromString("")
+			require.NoError(t, err)
+
+			o := &Operator{
+				client: cl,
+			}
+			o.loadTelemeterToken(context.Background(), c)
+
+			require.Equal(t, tc.expectToken, c.ClusterMonitoringConfiguration.TelemeterClientConfig.Token)
 		})
 	}
 }

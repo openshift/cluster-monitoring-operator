@@ -1048,15 +1048,41 @@ func (o *Operator) Config(ctx context.Context) (*manifests.Config, []string, err
 			klog.Warningf("Could not fetch cluster version from API. Proceeding without it: %v", err)
 		}
 
-		err = c.LoadToken(func() (*v1.Secret, error) {
-			return o.client.KubernetesInterface().CoreV1().Secrets("openshift-config").Get(ctx, "pull-secret", metav1.GetOptions{})
-		})
+		o.loadTelemeterToken(ctx, c)
+	}
 
+	return c, warnings, nil
+}
+
+// loadTelemeterToken tries to load the cloud.openshift.com token from
+// openshift-config/pull-secret first, then falls back to
+// kube-system/global-pull-secret (HCP clusters where the customer adds
+// cloud.openshift.com via day-2 additional-pull-secret).
+func (o *Operator) loadTelemeterToken(ctx context.Context, c *manifests.Config) {
+	tokenSources := []struct{ namespace, name string }{
+		{"openshift-config", "pull-secret"},
+		{"kube-system", "global-pull-secret"},
+	}
+	var tokenErrors []error
+	for _, s := range tokenSources {
+		pullSecret, err := o.client.GetSecret(ctx, s.namespace, s.name)
 		if err != nil {
-			klog.Warningf("Error loading token from API. Proceeding without it: %v", err)
+			tokenErrors = append(tokenErrors, fmt.Errorf("failed to get secret %s/%s: %w", s.namespace, s.name, err))
+			continue
+		}
+
+		if err = c.LoadToken(pullSecret); err != nil {
+			tokenErrors = append(tokenErrors, fmt.Errorf("failed to parse pull secret %s/%s: %w", s.namespace, s.name, err))
+			continue
+		}
+
+		if c.ClusterMonitoringConfiguration.TelemeterClientConfig.Token != "" {
+			break
 		}
 	}
-	return c, warnings, nil
+	if c.ClusterMonitoringConfiguration.TelemeterClientConfig.Token == "" && len(tokenErrors) > 0 {
+		klog.Warningf("Failed to load token from any source. Proceeding without it: %v", tokenErrors)
+	}
 }
 
 // storageNotConfiguredMessage returns the message to be set if a pvc has not

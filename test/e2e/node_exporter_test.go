@@ -62,6 +62,14 @@ nodeExporter:
       enabled: true`,
 		},
 		{
+			nameCollector: "zoneinfo",
+			config: `
+nodeExporter:
+  collectors:
+    zoneinfo:
+      enabled: true`,
+		},
+		{
 			nameCollector: "buddyinfo",
 			config: `
 nodeExporter:
@@ -168,6 +176,14 @@ nodeExporter:
 				"node_network_transmit_fifo_total",
 				"node_network_transmit_packets_total",
 			},
+		},
+		{
+			nameCollector: "dmmultipath",
+			config: `
+nodeExporter:
+  collectors:
+    dmMultipath:
+      enabled: false`,
 		},
 		{
 			nameCollector: "netclass",

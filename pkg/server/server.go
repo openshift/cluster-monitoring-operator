@@ -95,6 +95,7 @@ func (s *Server) Prepare(ctx context.Context) error {
 		s.kubeClient,
 		nil,   // disable leader election
 		false, // disable http2
+		false, // skip in-cluster authentication
 		nil,   // version info
 	)
 	if err != nil {
