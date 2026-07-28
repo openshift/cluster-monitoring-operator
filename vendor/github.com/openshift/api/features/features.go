@@ -469,7 +469,7 @@ var (
 						contactPerson("joelanford").
 						productScope(ocpSpecific).
 						enhancementPR("https://github.com/openshift/enhancements/pull/1991").
-						enable(inClusterProfile(SelfManaged), inTechPreviewNoUpgrade(), inDevPreviewNoUpgrade()).
+						enable(inDefault(), inOKD(), inClusterProfile(SelfManaged), inTechPreviewNoUpgrade(), inDevPreviewNoUpgrade()).
 						mustRegister()
 
 	FeatureGateInsightsOnDemandDataGather = newFeatureGate("InsightsOnDemandDataGather").
@@ -663,7 +663,7 @@ var (
 								contactPerson("miciah").
 								productScope(ocpSpecific).
 								enhancementPR("https://github.com/openshift/enhancements/pull/1687").
-								enable(inDevPreviewNoUpgrade(), inTechPreviewNoUpgrade()).
+								enable(inDefault(), inOKD(), inDevPreviewNoUpgrade(), inTechPreviewNoUpgrade()).
 								mustRegister()
 
 	FeatureGateIngressComponentRouteLabels = newFeatureGate("IngressComponentRouteLabels").
@@ -888,6 +888,14 @@ var (
 					enable(inTechPreviewNoUpgrade(), inDevPreviewNoUpgrade()).
 					mustRegister()
 
+	FeatureGateGCPSovereignCloudInstall = newFeatureGate("GCPSovereignCloudInstall").
+						reportProblemsToJiraComponent("Installer").
+						contactPerson("barbacbd").
+						productScope(ocpSpecific).
+						enhancementPR("https://github.com/openshift/enhancements/pull/1977").
+						enable(inDevPreviewNoUpgrade()).
+						mustRegister()
+
 	FeatureCBORServingAndStorage = newFeatureGate("CBORServingAndStorage").
 					reportProblemsToJiraComponent("kube-apiserver").
 					contactPerson("benluddy").
@@ -949,6 +957,14 @@ var (
 					enhancementPR("https://github.com/openshift/enhancements/pull/1803").
 					enable(inTechPreviewNoUpgrade(), inDevPreviewNoUpgrade()).
 					mustRegister()
+
+	FeatureGateBGPBasedVIPManagement = newFeatureGate("BGPBasedVIPManagement").
+						reportProblemsToJiraComponent("Networking / On-Prem Networking").
+						contactPerson("mkowalski").
+						productScope(ocpSpecific).
+						enhancementPR("https://github.com/openshift/enhancements/pull/1982").
+						enable(inDevPreviewNoUpgrade()).
+						mustRegister()
 
 	FeatureGateProvisioningRequestAvailable = newFeatureGate("ProvisioningRequestAvailable").
 						reportProblemsToJiraComponent("Cluster Autoscaler").

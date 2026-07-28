@@ -135,8 +135,10 @@ vendor:
 
 .PHONY: update-go-deps
 update-go-deps:
+	# Prevent go get from pulling deps that require a newer Go version.
+	GOTOOLCHAIN=go$$(go mod edit -json | jq -r .Go); \
 	for m in $$(go list -mod=readonly -m -f '{{ if and (not .Indirect) (not .Main)}}{{.Path}}{{end}}' all); do \
-		go get $$m; \
+		GOTOOLCHAIN=$$GOTOOLCHAIN go get $$m; \
 	done
 	@echo "Don't forget to run 'make vendor'"
 

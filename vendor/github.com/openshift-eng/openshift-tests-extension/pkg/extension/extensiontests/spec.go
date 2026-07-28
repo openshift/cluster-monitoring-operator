@@ -1,7 +1,9 @@
 package extensiontests
 
 import (
+	"context"
 	"fmt"
+	"os"
 	"strings"
 	"sync"
 	"sync/atomic"
@@ -105,16 +107,32 @@ func (specs ExtensionTestSpecs) MustSelectAll(selectFns []SelectFunction) (Exten
 	return filtered, nil
 }
 
-// ModuleTestsOnly ensures that ginkgo tests from vendored sources aren't selected.
+// ModuleTestsOnly ensures that ginkgo tests from vendored sources aren't selected. Unfortunately, making
+// use of kubernetes test helpers results in the entire Ginkgo suite being initialized (ginkgo loves global state),
+// so we need to be careful about which tests we select.
+//
+// A test is excluded if ALL of its code locations with full paths are external (vendored or from external test
+// suites). If at least one code location with a full path is from the local module, the test is included, because
+// local tests may legitimately call helper functions from vendored test frameworks.
 func ModuleTestsOnly() SelectFunction {
 	return func(spec *ExtensionTestSpec) bool {
+		hasLocalCode := false
+
 		for _, cl := range spec.CodeLocations {
-			if strings.Contains(cl, "/vendor/") {
-				return false
+			// Short-form code locations (e.g., "set up framework | framework.go:200") are ignored in this determination.
+			if !strings.Contains(cl, "/") {
+				continue
+			}
+
+			// If this code location is not external (vendored or k8s test), it's local code
+			if !(strings.Contains(cl, "/vendor/") || strings.HasPrefix(cl, "k8s.io/kubernetes")) {
+				hasLocalCode = true
+				break
 			}
 		}
 
-		return true
+		// Include the test only if it has at least one local code location
+		return hasLocalCode
 	}
 }
 
@@ -178,9 +196,25 @@ func (specs ExtensionTestSpecs) Names() []string {
 // are written to the given ResultWriter after each spec has completed execution.  BeforeEach,
 // BeforeAll, AfterEach, AfterAll hooks are executed when specified. "Each" hooks must be thread
 // safe. Returns an error if any test spec failed, indicating the quantity of failures.
-func (specs ExtensionTestSpecs) Run(w ResultWriter, maxConcurrent int) error {
-	queue := make(chan *ExtensionTestSpec)
-	failures := atomic.Int64{}
+//
+// Tests are scheduled using isolation-aware scheduling that respects conflicts, taints, and
+// tolerations defined in each spec's Resources.Isolation field.
+func (specs ExtensionTestSpecs) Run(ctx context.Context, w ResultWriter, maxConcurrent int, opts ...SchedulerOption) ([]*ExtensionTestResult, error) {
+	terminalFailures := atomic.Int64{}
+	nonTerminalFailures := atomic.Int64{}
+
+	// if we have only a single spec to run, we do that differently than running multiple.
+	// multiple specs can run in parallel and do so by exec-ing back into the binary with `run-test` with a single test to execute.
+	// This means that to avoid infinite recursion, when requesting a single test to run
+	// we need to run it in process.
+	runSingleSpec := len(specs) == 1
+
+	// Create scheduler before BeforeAll hooks so validation errors don't leave
+	// setup side effects without cleanup.
+	scheduler, err := NewScheduler(specs, opts...)
+	if err != nil {
+		return nil, fmt.Errorf("failed to create scheduler: %w", err)
+	}
 
 	// Execute beforeAll
 	for _, spec := range specs {
@@ -189,44 +223,53 @@ func (specs ExtensionTestSpecs) Run(w ResultWriter, maxConcurrent int) error {
 		}
 	}
 
-	// Feed the queue
-	go func() {
-		specs.Walk(func(spec *ExtensionTestSpec) {
-			queue <- spec
-		})
-		close(queue)
-	}()
-
 	// Start consumers
 	var wg sync.WaitGroup
+	resultChan := make(chan *ExtensionTestResult, len(specs))
 	for i := 0; i < maxConcurrent; i++ {
 		wg.Add(1)
 		go func() {
 			defer wg.Done()
-			for spec := range queue {
-				for _, beforeEachTask := range spec.beforeEach {
-					beforeEachTask.Run(*spec)
+			for {
+				// Get next runnable test from scheduler (blocks until available or done)
+				spec := scheduler.GetNextTestToRun(ctx)
+				if spec == nil {
+					return // No more tests or context cancelled
 				}
 
-				res := runSpec(spec)
-				if res.Result == ResultFailed {
-					failures.Add(1)
-				}
+				func() {
+					defer scheduler.MarkTestComplete(spec)
 
-				for _, afterEachTask := range spec.afterEach {
-					afterEachTask.Run(res)
-				}
+					for _, beforeEachTask := range spec.beforeEach {
+						beforeEachTask.Run(*spec)
+					}
 
-				// We can't assume the runner will set the name of a test; it may not know it. Even if
-				// it does, we may want to modify it (e.g. k8s-tests for annotations currently).
-				res.Name = spec.Name
-				w.Write(res)
+					res := runSpec(ctx, spec, runSingleSpec)
+					if res.Result == ResultFailed {
+						if res.Lifecycle.IsTerminal() {
+							terminalFailures.Add(1)
+						} else {
+							nonTerminalFailures.Add(1)
+						}
+					}
+
+					for _, afterEachTask := range spec.afterEach {
+						afterEachTask.Run(res)
+					}
+
+					// We can't assume the runner will set the name of a test; it may not know it. Even if
+					// it does, we may want to modify it (e.g. k8s-tests for annotations currently).
+					res.Name = spec.Name
+					w.Write(res)
+					resultChan <- res
+				}()
 			}
 		}()
 	}
 
 	// Wait for all consumers to finish
 	wg.Wait()
+	close(resultChan)
 
 	// Execute afterAll
 	for _, spec := range specs {
@@ -235,11 +278,28 @@ func (specs ExtensionTestSpecs) Run(w ResultWriter, maxConcurrent int) error {
 		}
 	}
 
-	failCount := failures.Load()
-	if failCount > 0 {
-		return fmt.Errorf("%d tests failed", failCount)
+	var results []*ExtensionTestResult
+	for res := range resultChan {
+		results = append(results, res)
 	}
-	return nil
+
+	terminalFailCount := terminalFailures.Load()
+	nonTerminalFailCount := nonTerminalFailures.Load()
+
+	// Non-terminal failures don't cause exit 1, but we still log them
+	if nonTerminalFailCount > 0 {
+		fmt.Fprintf(os.Stderr, "%d informing tests failed (not terminal)\n", nonTerminalFailCount)
+	}
+
+	// Only exit with error if terminal lifecycle tests failed
+	if terminalFailCount > 0 {
+		if nonTerminalFailCount > 0 {
+			return results, fmt.Errorf("%d tests failed (%d informing)", terminalFailCount+nonTerminalFailCount, nonTerminalFailCount)
+		}
+		return results, fmt.Errorf("%d tests failed", terminalFailCount)
+	}
+
+	return results, nil
 }
 
 // AddBeforeAll adds a function to be run once before all tests start executing.
@@ -540,9 +600,14 @@ func (spec *ExtensionTestSpec) Exclude(excludeCEL string) *ExtensionTestSpec {
 	return spec
 }
 
-func runSpec(spec *ExtensionTestSpec) *ExtensionTestResult {
+func runSpec(ctx context.Context, spec *ExtensionTestSpec, runSingleSpec bool) *ExtensionTestResult {
 	startTime := time.Now().UTC()
-	res := spec.Run()
+	var res *ExtensionTestResult
+	if runSingleSpec || spec.RunParallel == nil {
+		res = spec.Run(ctx)
+	} else {
+		res = spec.RunParallel(ctx)
+	}
 	duration := time.Since(startTime)
 	endTime := startTime.Add(duration).UTC()
 	if res == nil {
