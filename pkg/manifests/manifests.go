@@ -1835,23 +1835,23 @@ func (f *Factory) PrometheusUserWorkload(grpcTLS *v1.Secret) (*monv1.Prometheus,
 	f.setupPrometheusRemoteWriteProxy(p)
 
 	if f.config.UserWorkloadConfiguration.Prometheus.EnforcedSampleLimit != nil {
-		p.Spec.EnforcedSampleLimit = f.config.UserWorkloadConfiguration.Prometheus.EnforcedSampleLimit
+		p.Spec.EnforcedSampleLimit = new(int64(*f.config.UserWorkloadConfiguration.Prometheus.EnforcedSampleLimit))
 	}
 
 	if f.config.UserWorkloadConfiguration.Prometheus.EnforcedTargetLimit != nil {
-		p.Spec.EnforcedTargetLimit = f.config.UserWorkloadConfiguration.Prometheus.EnforcedTargetLimit
+		p.Spec.EnforcedTargetLimit = new(int64(*f.config.UserWorkloadConfiguration.Prometheus.EnforcedTargetLimit))
 	}
 
 	if f.config.UserWorkloadConfiguration.Prometheus.EnforcedLabelLimit != nil {
-		p.Spec.EnforcedLabelLimit = f.config.UserWorkloadConfiguration.Prometheus.EnforcedLabelLimit
+		p.Spec.EnforcedLabelLimit = new(int64(*f.config.UserWorkloadConfiguration.Prometheus.EnforcedLabelLimit))
 	}
 
 	if f.config.UserWorkloadConfiguration.Prometheus.EnforcedLabelNameLengthLimit != nil {
-		p.Spec.EnforcedLabelNameLengthLimit = f.config.UserWorkloadConfiguration.Prometheus.EnforcedLabelNameLengthLimit
+		p.Spec.EnforcedLabelNameLengthLimit = new(int64(*f.config.UserWorkloadConfiguration.Prometheus.EnforcedLabelNameLengthLimit))
 	}
 
 	if f.config.UserWorkloadConfiguration.Prometheus.EnforcedLabelValueLengthLimit != nil {
-		p.Spec.EnforcedLabelValueLengthLimit = f.config.UserWorkloadConfiguration.Prometheus.EnforcedLabelValueLengthLimit
+		p.Spec.EnforcedLabelValueLengthLimit = new(int64(*f.config.UserWorkloadConfiguration.Prometheus.EnforcedLabelValueLengthLimit))
 	}
 
 	if f.config.Images.Thanos != "" {

@@ -357,7 +357,7 @@ func relabelConfigFromCRD(rc configv1alpha1.RelabelConfig) (monv1.RelabelConfig,
 	case configv1alpha1.RelabelActionHashMod:
 		out.TargetLabel = rc.Action.HashMod.TargetLabel
 		if rc.Action.HashMod.Modulus > 0 {
-			out.Modulus = uint64(rc.Action.HashMod.Modulus)
+			out.Modulus = rc.Action.HashMod.Modulus
 		}
 	case configv1alpha1.RelabelActionLowercase:
 		out.TargetLabel = rc.Action.Lowercase.TargetLabel
