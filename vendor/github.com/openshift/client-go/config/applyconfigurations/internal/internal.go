@@ -4344,13 +4344,13 @@ var schemaYAML = typed.YAMLObject(`types:
       type:
         namedType: com.github.openshift.api.config.v1.VaultTLSConfig
       default: {}
-    - name: transitKey
-      type:
-        scalar: string
-    - name: transitMount
-      type:
-        scalar: string
     - name: vaultAddress
+      type:
+        scalar: string
+    - name: vaultAuthNamespace
+      type:
+        scalar: string
+    - name: vaultKeyPath
       type:
         scalar: string
     - name: vaultNamespace

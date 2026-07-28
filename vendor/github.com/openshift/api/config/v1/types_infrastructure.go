@@ -210,6 +210,21 @@ const (
 	DNSRecordsTypeInternal DNSRecordsType = "Internal"
 )
 
+// VIPManagementType defines which mechanism manages the API and Ingress
+// VIPs on an on-premise cluster.
+// +kubebuilder:validation:Enum=Keepalived;BGP
+// +enum
+type VIPManagementType string
+
+const (
+	// VIPManagementTypeKeepalived means the VIPs are managed by the default
+	// keepalived/VRRP mechanism.
+	VIPManagementTypeKeepalived VIPManagementType = "Keepalived"
+	// VIPManagementTypeBGP means the VIPs are advertised via BGP by kube-vip
+	// (Routing Table Mode) and frr-k8s running as static pods.
+	VIPManagementTypeBGP VIPManagementType = "BGP"
+)
+
 // PlatformType is a specific supported infrastructure provider.
 // +kubebuilder:validation:Enum="";AWS;Azure;BareMetal;GCP;Libvirt;OpenStack;None;VSphere;oVirt;IBMCloud;KubeVirt;EquinixMetal;PowerVS;AlibabaCloud;Nutanix;External
 type PlatformType string
@@ -1074,6 +1089,21 @@ type BareMetalPlatformStatus struct {
 	// +optional
 	LoadBalancer *BareMetalPlatformLoadBalancer `json:"loadBalancer,omitempty"`
 
+	// vipManagement indicates which VIP management mechanism is active
+	// on this cluster.
+	// Allowed values are `Keepalived`, `BGP`, and omitted.
+	// Once set to a non-empty value, this field is immutable.
+	// When set to `BGP`, kube-vip (Routing Table Mode) and frr-k8s are
+	// deployed as static pods to advertise VIPs via BGP, replacing the
+	// default keepalived/VRRP mechanism.
+	// When set to `Keepalived`, the default keepalived-based VIP
+	// management is used.
+	// When omitted, the default keepalived-based VIP management is used.
+	// +kubebuilder:validation:XValidation:rule="oldSelf == '' || self == oldSelf",message="vipManagement is immutable once set"
+	// +openshift:enable:FeatureGate=BGPBasedVIPManagement
+	// +optional
+	VIPManagement VIPManagementType `json:"vipManagement,omitempty"`
+
 	// dnsRecordsType determines whether records for api, api-int, and ingress
 	// are provided by the internal DNS service or externally.
 	// Allowed values are `Internal`, `External`, and omitted.
@@ -1423,6 +1453,9 @@ type VSpherePlatformFailureDomainSpec struct {
 	ZoneAffinity *VSphereFailureDomainZoneAffinity `json:"zoneAffinity,omitempty"`
 
 	// server is the fully-qualified domain name or the IP address of the vCenter server.
+	// This must match the server field of an entry in the vcenters list.
+	// The match is case-sensitive; the value must be specified exactly as it appears in the vcenters entry.
+	// The value must be between 1 and 255 characters long.
 	// +required
 	// +kubebuilder:validation:MinLength=1
 	// +kubebuilder:validation:MaxLength=255
@@ -1657,6 +1690,7 @@ type VSpherePlatformNodeNetworking struct {
 // use these fields for configuration.
 // +kubebuilder:validation:XValidation:rule="!has(oldSelf.apiServerInternalIPs) || has(self.apiServerInternalIPs)",message="apiServerInternalIPs list is required once set"
 // +kubebuilder:validation:XValidation:rule="!has(oldSelf.ingressIPs) || has(self.ingressIPs)",message="ingressIPs list is required once set"
+// +openshift:validation:FeatureGateAwareXValidation:featureGate=VSphereMultiVCenterDay2,rule="!has(self.failureDomains) || size(self.failureDomains) == 0 || (has(self.vcenters) && self.failureDomains.all(fd, self.vcenters.exists(vc, vc.server == fd.server)))",message="all failure domains must have a corresponding vCenter entry"
 type VSpherePlatformSpec struct {
 	// vcenters holds the connection details for services to communicate with vCenter.
 	// Up to 3 vCenters are supported.
@@ -1681,6 +1715,7 @@ type VSpherePlatformSpec struct {
 
 	// failureDomains contains the definition of region, zone and the vCenter topology.
 	// If this is omitted failure domains (regions and zones) will not be used.
+	// Each failure domain's server must match the server field of an entry in the vcenters list.
 	// +listType=map
 	// +listMapKey=name
 	// +optional
