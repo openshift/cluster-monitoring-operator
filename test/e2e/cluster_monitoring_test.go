@@ -710,3 +710,24 @@ func expectNodeSelector(key, value string) framework.PodAssertion {
 		return nil
 	}
 }
+
+// TestKubeletEndpointsNotCreated verifies the legacy kube-system/kubelet Endpoints object
+// is not created by the Prometheus operator.
+func TestKubeletEndpointsNotCreated(t *testing.T) {
+	ctx := context.Background()
+	var lastGetErr error
+	err := wait.PollUntilContextTimeout(ctx, 2*time.Second, 2*time.Minute, true, func(context.Context) (bool, error) {
+		_, err := f.KubeClient.CoreV1().Endpoints("kube-system").Get(ctx, "kubelet", metav1.GetOptions{})
+		if apierrors.IsNotFound(err) {
+			return true, nil
+		}
+		if err != nil {
+			lastGetErr = err
+			return false, nil
+		}
+		return false, nil
+	})
+	if err != nil {
+		t.Fatalf("expected kube-system/kubelet Endpoints to be absent: %v (last get error: %v)", err, lastGetErr)
+	}
+}

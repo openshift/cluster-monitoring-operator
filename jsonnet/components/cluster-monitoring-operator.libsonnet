@@ -291,6 +291,15 @@ function(params) {
         resources: ['consoleplugins'],
         verbs: ['get', 'create', 'update'],
       },
+      // CMO deletes leftover kube-system/kubelet Endpoints after platform PO disables
+      // the legacy kubelet Endpoints controller (--kubelet-endpoints=false).
+      // Scoped to the kubelet Endpoints name only. TODO: remove in 5.1.
+      {
+        apiGroups: [''],
+        resources: ['endpoints'],
+        resourceNames: ['kubelet'],
+        verbs: ['get', 'delete'],
+      },
     ],
   },
 
