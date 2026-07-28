@@ -868,6 +868,92 @@ func TestAdditionalResourceLabelsValidation(t *testing.T) {
 	}
 }
 
+func TestRemoteWriteMessageVersionValidation(t *testing.T) {
+	for _, tc := range []struct {
+		name        string
+		config      string
+		uwmconfig   string
+		expectError bool
+	}{
+		{
+			name: "cluster monitoring: omitted messageVersion is valid",
+			config: `prometheusK8s:
+  remoteWrite:
+  - url: http://example.com
+`,
+		},
+		{
+			name: "cluster monitoring: V1.0 is valid",
+			config: `prometheusK8s:
+  remoteWrite:
+  - url: http://example.com
+    messageVersion: V1.0
+`,
+		},
+		{
+			name: "cluster monitoring: V2.0 is valid",
+			config: `prometheusK8s:
+  remoteWrite:
+  - url: http://example.com
+    messageVersion: V2.0
+`,
+		},
+		{
+			name: "cluster monitoring: unknown version is invalid",
+			config: `prometheusK8s:
+  remoteWrite:
+  - url: http://example.com
+    messageVersion: V3.0
+`,
+			expectError: true,
+		},
+		{
+			name: "user workload monitoring: omitted messageVersion is valid",
+			uwmconfig: `prometheus:
+  remoteWrite:
+  - url: http://example.com
+`,
+		},
+		{
+			name: "user workload monitoring: V2.0 is valid",
+			uwmconfig: `prometheus:
+  remoteWrite:
+  - url: http://example.com
+    messageVersion: V2.0
+`,
+		},
+		{
+			name: "user workload monitoring: unknown version is invalid",
+			uwmconfig: `prometheus:
+  remoteWrite:
+  - url: http://example.com
+    messageVersion: V3.0
+`,
+			expectError: true,
+		},
+	} {
+		t.Run(tc.name, func(t *testing.T) {
+			if tc.config != "" {
+				_, err := NewConfigFromString(tc.config)
+				if tc.expectError {
+					require.Error(t, err)
+					return
+				}
+				require.NoError(t, err)
+			}
+
+			if tc.uwmconfig != "" {
+				_, err := NewUserConfigFromString(tc.uwmconfig)
+				if tc.expectError {
+					require.Error(t, err)
+					return
+				}
+				require.NoError(t, err)
+			}
+		})
+	}
+}
+
 func TestDeprecatedConfig(t *testing.T) {
 	for _, tc := range []struct {
 		name                string

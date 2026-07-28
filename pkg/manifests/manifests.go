@@ -3575,6 +3575,9 @@ func addRemoteWriteConfigs(clusterID string, rw []monv1.RemoteWriteSpec, rwTarge
 				SafeAuthorization: *target.Authorization,
 			}
 		}
+		if target.MessageVersion != "" {
+			rwConf.MessageVersion = new(monv1.RemoteWriteMessageVersion(target.MessageVersion))
+		}
 		rw = append(rw, rwConf)
 	}
 	return rw
