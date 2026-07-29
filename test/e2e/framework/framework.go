@@ -797,6 +797,27 @@ func (f *Framework) WaitForServiceAccountImagePullSecrets(namespace, name string
 	})
 }
 
+// WaitForNamespaceSCCAnnotation polls until the namespace has the
+// "openshift.io/sa.scc.uid-range" annotation set by the
+// namespace-security-allocation-controller.
+// Without this, pods created immediately after namespace creation may be
+// rejected by the SCC admission plugin.
+func (f *Framework) WaitForNamespaceSCCAnnotation(namespace string) error {
+	return Poll(time.Second, 3*time.Minute, func() error {
+		ns, err := f.KubeClient.CoreV1().Namespaces().Get(context.Background(), namespace, metav1.GetOptions{})
+		if err != nil {
+			if apierrors.IsNotFound(err) {
+				return fmt.Errorf("namespace %s not found yet", namespace)
+			}
+			return err
+		}
+		if _, ok := ns.Annotations["openshift.io/sa.scc.uid-range"]; !ok {
+			return fmt.Errorf("namespace %s missing openshift.io/sa.scc.uid-range annotation", namespace)
+		}
+		return nil
+	})
+}
+
 func (f *Framework) DeleteNamespace(t *testing.T, nsName string) error {
 	t.Helper()
 
