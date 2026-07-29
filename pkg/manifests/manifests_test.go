@@ -2137,18 +2137,6 @@ func TestPrometheusK8sAdditionalAlertManagerConfigsSecret(t *testing.T) {
   api_version: v2
   authorization:
     credentials_file: /etc/prometheus/secrets/alertmanager1-bearer-token/token
-  tls_config:
-    min_version: VersionTLS12
-    cipher_suites:
-    - TLS_AES_128_GCM_SHA256
-    - TLS_AES_256_GCM_SHA384
-    - TLS_CHACHA20_POLY1305_SHA256
-    - ECDHE-ECDSA-AES128-GCM-SHA256
-    - ECDHE-RSA-AES128-GCM-SHA256
-    - ECDHE-ECDSA-AES256-GCM-SHA384
-    - ECDHE-RSA-AES256-GCM-SHA384
-    - ECDHE-ECDSA-CHACHA20-POLY1305
-    - ECDHE-RSA-CHACHA20-POLY1305
   static_configs:
   - targets:
     - alertmanager1-remote.com
@@ -2444,19 +2432,6 @@ func TestThanosRulerAdditionalAlertManagerConfigsSecret(t *testing.T) {
 - scheme: https
   path_prefix: /path-prefix
   api_version: v2
-  http_config:
-    tls_config:
-      min_version: VersionTLS12
-      cipher_suites:
-      - TLS_AES_128_GCM_SHA256
-      - TLS_AES_256_GCM_SHA384
-      - TLS_CHACHA20_POLY1305_SHA256
-      - ECDHE-ECDSA-AES128-GCM-SHA256
-      - ECDHE-RSA-AES128-GCM-SHA256
-      - ECDHE-ECDSA-AES256-GCM-SHA384
-      - ECDHE-RSA-AES256-GCM-SHA384
-      - ECDHE-ECDSA-CHACHA20-POLY1305
-      - ECDHE-RSA-CHACHA20-POLY1305
   static_configs:
   - alertmanager1-remote.com
   - alertmanager1-remotex.com
