@@ -44,6 +44,8 @@ Appears in: link:nodeexporterconfig.adoc[NodeExporterConfig]
 
 |dmMultipath|link:nodeexportercollectordmmultipathconfig.adoc[NodeExporterCollectorDmMultipathConfig]|Defines the configuration of the `dmmultipath` collector, which exposes DM-multipath device and path metrics from `/sys/block/dm-*`. Enabled by default.
 
+|nvmeSubsystem|link:nodeexportercollectornvmesubsystemconfig.adoc[NodeExporterCollectorNvmeSubsystemConfig]|Defines the configuration of the `nvmesubsystem` collector, which exposes NVMe subsystem metrics from `/sys/class/nvme-subsystem/`. Enabled by default.
+
 |===
 
 link:../index.adoc[Back to TOC]
