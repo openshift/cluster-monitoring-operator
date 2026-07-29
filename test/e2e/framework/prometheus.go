@@ -17,11 +17,13 @@ package framework
 import (
 	"bytes"
 	"compress/gzip"
+	"context"
 	"fmt"
 	"io"
 	"log/slog"
 	"os"
 	"testing"
+	"time"
 
 	routev1 "github.com/openshift/api/route/v1"
 	monitoringv1 "github.com/prometheus-operator/prometheus-operator/pkg/apis/monitoring/v1"
@@ -33,10 +35,29 @@ import (
 	"k8s.io/utils/ptr"
 )
 
+// WaitForPrometheusUpdate reads the current generation from the given
+// Prometheus resource and polls the Kubernetes API until the resource's
+// generation is incremented and it matches with the status observedGeneration.
+func (f Framework) WaitForPrometheusUpdate(ctx context.Context, p *monitoringv1.Prometheus) error {
+	initialGeneration := p.Generation
+	return Poll(time.Second, 5*time.Minute, func() error {
+		current, err := f.MonitoringClient.Prometheuses(p.Namespace).Get(ctx, p.Name, metav1.GetOptions{})
+		if err != nil {
+			return err
+		}
+		if current.Generation <= initialGeneration {
+			return fmt.Errorf("generation not yet incremented (current: %d, initial: %d)", current.Generation, initialGeneration)
+		}
+		for _, c := range current.Status.Conditions {
+			if c.ObservedGeneration != current.Generation {
+				return fmt.Errorf("condition %q observedGeneration (%d) not yet caught up to generation (%d)", c.Type, c.ObservedGeneration, current.Generation)
+			}
+		}
+		return nil
+	})
+}
+
 func (f Framework) MakePrometheusWithWebTLSRemoteReceive(name, tlsSecretName string, image *string) *monitoringv1.Prometheus {
-	// This is not required in the Prometheus spec, but we inspect that value in
-	// WaitForPrometheus. Omitting it causes this code to dereference a nil.
-	replicas := int32(1)
 	return &monitoringv1.Prometheus{
 		ObjectMeta: metav1.ObjectMeta{
 			Name:        name,
@@ -49,7 +70,7 @@ func (f Framework) MakePrometheusWithWebTLSRemoteReceive(name, tlsSecretName str
 		Spec: monitoringv1.PrometheusSpec{
 			CommonPrometheusFields: monitoringv1.CommonPrometheusFields{
 				Image:                     image,
-				Replicas:                  &replicas,
+				Replicas:                  new(int32(1)),
 				ServiceAccountName:        "prometheus-k8s",
 				Secrets:                   []string{tlsSecretName},
 				EnableRemoteWriteReceiver: true,
@@ -87,12 +108,11 @@ func (f Framework) MakePrometheusWithWebTLSRemoteReceive(name, tlsSecretName str
 	}
 }
 
-func (f Framework) MakePrometheusService(ns, name, group string, serviceType v1.ServiceType) *v1.Service {
+func (f Framework) MakePrometheusService(ns, name string, serviceType v1.ServiceType) *v1.Service {
 	return &v1.Service{
 		ObjectMeta: metav1.ObjectMeta{
 			Name: fmt.Sprintf("prometheus-%s", name),
 			Labels: map[string]string{
-				"group":          group,
 				E2eTestLabelName: E2eTestLabelValue,
 			},
 			Namespace: ns,
@@ -121,10 +141,7 @@ func (f Framework) MakePrometheusService(ns, name, group string, serviceType v1.
 func (f Framework) MakePrometheusServiceRoute(svc *v1.Service) *routev1.Route {
 	return &routev1.Route{
 		ObjectMeta: metav1.ObjectMeta{
-			// naming this after the service would make sense but route
-			// names have limitations (length, character set), so
-			// its hardcoded
-			Name: "prometheusreceiver",
+			Name: svc.Name,
 			Labels: map[string]string{
 				E2eTestLabelName: E2eTestLabelValue,
 			},

@@ -29,6 +29,8 @@ link:prometheusrestrictedconfig.adoc[PrometheusRestrictedConfig]
 
 |headers|map[string]string|Specifies the custom HTTP headers to be sent along with each remote write request. Headers set by Prometheus cannot be overwritten.
 
+|messageVersion|string|Defines the Remote Write message version to use when writing to the remote write endpoint. Allowed values are \"V1.0\" and \"V2.0\". Defaults to \"V1.0\".
+
 |metadataConfig|*monv1.MetadataConfig|Defines settings for sending series metadata to remote write storage.
 
 |name|string|Defines the name of the remote write queue. This name is used in metrics and logging to differentiate queues. If specified, this name must be unique.
