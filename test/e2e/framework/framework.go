@@ -774,6 +774,29 @@ func (f *Framework) CreateNamespace(namespace string) (CleanUpFunc, error) {
 	}, nil
 }
 
+// WaitForServiceAccountImagePullSecrets polls until the named ServiceAccount
+// in the given namespace has at least one imagePullSecret containing
+// "dockercfg".
+// Without this, pods created immediately after the SA may lack imagePullSecrets
+// in their spec and fail to pull images.
+func (f *Framework) WaitForServiceAccountImagePullSecrets(namespace, name string) error {
+	return Poll(time.Second, 3*time.Minute, func() error {
+		sa, err := f.KubeClient.CoreV1().ServiceAccounts(namespace).Get(context.Background(), name, metav1.GetOptions{})
+		if err != nil {
+			if apierrors.IsNotFound(err) {
+				return fmt.Errorf("service account %s/%s not found yet", namespace, name)
+			}
+			return err
+		}
+		for _, s := range sa.ImagePullSecrets {
+			if strings.Contains(s.Name, "dockercfg") {
+				return nil
+			}
+		}
+		return fmt.Errorf("service account %s/%s has no dockercfg imagePullSecret yet", namespace, name)
+	})
+}
+
 func (f *Framework) DeleteNamespace(t *testing.T, nsName string) error {
 	t.Helper()
 
