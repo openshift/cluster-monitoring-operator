@@ -258,6 +258,8 @@ func TestNetworkPolicy(t *testing.T) {
 	require.NoError(t, err, "failed to create probe namespace")
 	t.Cleanup(func() { require.NoError(t, cleanupNS(), "failed to cleanup probe namespace") })
 
+	require.NoError(t, f.WaitForServiceAccountImagePullSecrets(npProbeNamespace, "default"))
+
 	clusterMonitoringNPNames := []string{
 		clusterMonitoringDenyAllTrafficNPName,
 		"cluster-monitoring-operator",
