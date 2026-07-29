@@ -219,11 +219,11 @@ go-fmt:
 
 .PHONY: golangci-lint
 golangci-lint: $(GOLANGCI_LINT_BIN)
-	$(GOLANGCI_LINT_BIN) run --verbose --print-resources-usage
+	$(GOLANGCI_LINT_BIN) run --verbose
 
 .PHONY: golangci-lint-fix
 golangci-lint-fix: $(GOLANGCI_LINT_BIN)
-	$(GOLANGCI_LINT_BIN) run --verbose --print-resources-usage --fix
+	$(GOLANGCI_LINT_BIN) run --verbose --fix
 
 $(GOLANGCI_LINT_BIN): $(BIN_DIR)
 	curl -sfL https://golangci-lint.run/install.sh | sh -s -- -b $(BIN_DIR) $(GOLANGCI_LINT_VERSION)
