@@ -146,6 +146,13 @@ func TestPrometheusRemoteWrite(t *testing.T) {
 	}
 	image := k8sProm.Spec.Image
 
+	// Subtests register resource deletions here instead of calling
+	// t.Cleanup. Resources are deleted after the CM reset so the
+	// Prometheus CR never references missing resources (secrets e.g.), otherwise Prometheus Operator
+	// enters exponential backoff that compounds across subtests and
+	// can block CMO past its validation timeout.
+	var cleanups []func()
+
 	// Clean up after all subtests: reset the ConfigMap, wait for
 	// Prometheus Operator to remove the remote write config from the
 	// Prometheus config secret, then force-delete the Prometheus pods to
@@ -170,6 +177,11 @@ func TestPrometheusRemoteWrite(t *testing.T) {
 			}
 			return nil
 		}))
+
+		// Clean up after all subtests.
+		for _, fn := range cleanups {
+			fn()
+		}
 
 		require.NoError(t, f.KubeClient.CoreV1().Pods(f.Ns).DeleteCollection(ctx,
 			metav1.DeleteOptions{GracePeriodSeconds: ptr.To(int64(0))},
@@ -321,9 +333,7 @@ func TestPrometheusRemoteWrite(t *testing.T) {
 			if err := f.OperatorClient.CreateOrUpdateService(ctx, svc); err != nil {
 				t.Fatal(err)
 			}
-			t.Cleanup(func() {
-				require.NoError(t, f.OperatorClient.DeleteService(ctx, svc))
-			})
+			cleanups = append(cleanups, func() { f.OperatorClient.DeleteService(ctx, svc) })
 
 			prometheusReceiverURL := svc.Name + "." + svc.Namespace + ".svc.cluster.local"
 
@@ -348,17 +358,13 @@ func TestPrometheusRemoteWrite(t *testing.T) {
 			if err := f.OperatorClient.CreateIfNotExistSecret(ctx, tlsSecret); err != nil {
 				t.Fatal(err)
 			}
-			t.Cleanup(func() {
-				require.NoError(t, f.OperatorClient.DeleteSecret(ctx, tlsSecret))
-			})
+			cleanups = append(cleanups, func() { f.OperatorClient.DeleteSecret(ctx, tlsSecret) })
 
 			route := f.MakePrometheusServiceRoute(svc)
 			if err := f.OperatorClient.CreateOrUpdateRoute(ctx, route); err != nil {
 				t.Fatal(err)
 			}
-			t.Cleanup(func() {
-				require.NoError(t, f.OperatorClient.DeleteRoute(ctx, route))
-			})
+			cleanups = append(cleanups, func() { f.OperatorClient.DeleteRoute(ctx, route) })
 
 			if _, err := f.OperatorClient.WaitForRouteReady(ctx, route); err != nil {
 				t.Fatal(err)
@@ -369,9 +375,7 @@ func TestPrometheusRemoteWrite(t *testing.T) {
 			if err := f.OperatorClient.CreateOrUpdatePrometheus(ctx, prometheusReceiver); err != nil {
 				t.Fatal(err)
 			}
-			t.Cleanup(func() {
-				require.NoError(t, f.OperatorClient.DeletePrometheus(ctx, prometheusReceiver))
-			})
+			cleanups = append(cleanups, func() { f.OperatorClient.DeletePrometheus(ctx, prometheusReceiver) })
 
 			if err := f.OperatorClient.ValidatePrometheus(ctx, types.NamespacedName{
 				Name:      prometheusReceiver.Name,
