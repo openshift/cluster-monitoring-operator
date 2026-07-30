@@ -466,6 +466,13 @@ type NodeExporterCollectorConfig struct {
 	// Enable when you need visibility into kernel softirq processing across CPUs.
 	// +optional
 	Softirqs NodeExporterCollectorSoftirqsConfig `json:"softirqs,omitempty,omitzero"`
+	// deviceMapperMultipath configures the dmmultipath collector, which collects statistics
+	// about DM-Multipath devices.
+	// deviceMapperMultipath is optional.
+	// When omitted, this means no opinion and the platform is left to choose a reasonable default,
+	// which is subject to change over time. The current default is enabled.
+	// +optional
+	DeviceMapperMultipath NodeExporterCollectorDeviceMapperMultipathConfig `json:"deviceMapperMultipath,omitzero"`
 }
 
 // NodeExporterCollectorCpufreqConfig provides configuration for the cpufreq collector
@@ -685,6 +692,20 @@ type NodeExporterCollectorSoftirqsConfig struct {
 	// Valid values are "Collect" and "DoNotCollect".
 	// When set to "Collect", the softirqs collector is active and softirq statistics are collected.
 	// When set to "DoNotCollect", the softirqs collector is inactive.
+	// +required
+	CollectionPolicy NodeExporterCollectorCollectionPolicy `json:"collectionPolicy,omitempty"`
+}
+
+// NodeExporterCollectorDeviceMapperMultipathConfig provides configuration for the dmmultipath collector
+// of the node-exporter agent. The dmmultipath collector collects statistics about
+// DM-Multipath devices.
+// It is enabled by default.
+type NodeExporterCollectorDeviceMapperMultipathConfig struct {
+	// collectionPolicy declares whether the dmmultipath collector collects metrics.
+	// This field is required.
+	// Valid values are "Collect" and "DoNotCollect".
+	// When set to "Collect", the dmmultipath collector is active and DM-Multipath device statistics are collected.
+	// When set to "DoNotCollect", the dmmultipath collector is inactive and the corresponding metrics become unavailable.
 	// +required
 	CollectionPolicy NodeExporterCollectorCollectionPolicy `json:"collectionPolicy,omitempty"`
 }
