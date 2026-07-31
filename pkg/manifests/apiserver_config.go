@@ -32,13 +32,13 @@ var (
 	// tlsGroupToGoCurveName maps OpenShift TLSGroup IETF names to Go crypto/tls CurveID string names
 	// as accepted by Thanos's --grpc-server-tls-curves flag.
 	tlsGroupToGoCurveName = map[configv1.TLSGroup]string{
-		configv1.TLSGroupX25519:              "X25519",
-		configv1.TLSGroupSecP256r1:           "CurveP256",
-		configv1.TLSGroupSecP384r1:           "CurveP384",
-		configv1.TLSGroupSecP521r1:           "CurveP521",
-		configv1.TLSGroupX25519MLKEM768:      "X25519MLKEM768",
-		configv1.TLSGroupSecP256r1MLKEM768:   "SecP256r1MLKEM768",
-		configv1.TLSGroupSecP384r1MLKEM1024:  "SecP384r1MLKEM1024",
+		configv1.TLSGroupX25519:             "X25519",
+		configv1.TLSGroupSecP256r1:          "CurveP256",
+		configv1.TLSGroupSecP384r1:          "CurveP384",
+		configv1.TLSGroupSecP521r1:          "CurveP521",
+		configv1.TLSGroupX25519MLKEM768:     "X25519MLKEM768",
+		configv1.TLSGroupSecP256r1MLKEM768:  "SecP256r1MLKEM768",
+		configv1.TLSGroupSecP384r1MLKEM1024: "SecP384r1MLKEM1024",
 	}
 )
 
