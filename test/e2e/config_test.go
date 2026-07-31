@@ -1212,7 +1212,7 @@ func assertPrometheusEvaluationInterval(evaluationInterval string) func(*testing
 	}
 }
 
-func assertEnforcedTargetLimit(limit uint64) func(*testing.T) {
+func assertEnforcedTargetLimit(limit int64) func(*testing.T) {
 	ctx := context.Background()
 	return func(t *testing.T) {
 		err := framework.Poll(time.Second, 5*time.Minute, func() error {
@@ -1236,7 +1236,7 @@ func assertEnforcedTargetLimit(limit uint64) func(*testing.T) {
 	}
 }
 
-func assertEnforcedLabelLimit(limit uint64) func(*testing.T) {
+func assertEnforcedLabelLimit(limit int64) func(*testing.T) {
 	ctx := context.Background()
 	return func(t *testing.T) {
 		err := framework.Poll(time.Second, 5*time.Minute, func() error {
@@ -1260,7 +1260,7 @@ func assertEnforcedLabelLimit(limit uint64) func(*testing.T) {
 	}
 }
 
-func assertEnforcedLabelNameLengthLimit(limit uint64) func(*testing.T) {
+func assertEnforcedLabelNameLengthLimit(limit int64) func(*testing.T) {
 	ctx := context.Background()
 	return func(t *testing.T) {
 		err := framework.Poll(time.Second, 5*time.Minute, func() error {
@@ -1284,7 +1284,7 @@ func assertEnforcedLabelNameLengthLimit(limit uint64) func(*testing.T) {
 	}
 }
 
-func assertEnforcedLabelValueLengthLimit(limit uint64) func(*testing.T) {
+func assertEnforcedLabelValueLengthLimit(limit int64) func(*testing.T) {
 	ctx := context.Background()
 	return func(t *testing.T) {
 		err := framework.Poll(time.Second, 5*time.Minute, func() error {
