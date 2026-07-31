@@ -3329,6 +3329,9 @@ func (f *Factory) ThanosRulerCustomResource(
 	}
 	t.Spec.GRPCServerTLSConfig.SafeTLSConfig.MinVersion = grpcTLSVersion
 	t.Spec.GRPCServerTLSConfig.CipherSuites = crypto.OpenSSLToIANACipherSuites(f.APIServerConfig.TLSCiphers())
+	if curves := f.APIServerConfig.TLSCurves(); len(curves) > 0 {
+		t.Spec.GRPCServerTLSConfig.Curves = curves
+	}
 
 	// Mounting TLS secret to thanos-ruler
 	if grpcTLS == nil {
