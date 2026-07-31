@@ -4520,6 +4520,7 @@ func TestThanosRulerConfiguration(t *testing.T) {
 	}
 
 	require.Equal(t, "TLS12", string(*tr.Spec.GRPCServerTLSConfig.SafeTLSConfig.MinVersion))
+	require.Equal(t, crypto.OpenSSLToIANACipherSuites(APIServerDefaultTLSCiphers), tr.Spec.GRPCServerTLSConfig.CipherSuites)
 
 }
 
