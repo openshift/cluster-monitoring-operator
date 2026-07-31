@@ -424,14 +424,6 @@ var (
 						enable(inClusterProfile(SelfManaged), inTechPreviewNoUpgrade(), inDevPreviewNoUpgrade()).
 						mustRegister()
 
-	FeatureGateNewOLMPreflightPermissionChecks = newFeatureGate("NewOLMPreflightPermissionChecks").
-							reportProblemsToJiraComponent("olm").
-							contactPerson("tshort").
-							productScope(ocpSpecific).
-							enhancementPR("https://github.com/openshift/enhancements/pull/1768").
-							enable(inClusterProfile(SelfManaged), inTechPreviewNoUpgrade(), inDevPreviewNoUpgrade()).
-							mustRegister()
-
 	FeatureGateNewOLMOwnSingleNamespace = newFeatureGate("NewOLMOwnSingleNamespace").
 						reportProblemsToJiraComponent("olm").
 						contactPerson("nschieder").
@@ -869,7 +861,7 @@ var (
 					contactPerson("sadasu").
 					productScope(ocpSpecific).
 					enhancementPR("https://github.com/openshift/enhancements/pull/1806").
-					enable(inTechPreviewNoUpgrade(), inDevPreviewNoUpgrade()).
+					enable(inDefault(), inOKD(), inTechPreviewNoUpgrade(), inDevPreviewNoUpgrade()).
 					mustRegister()
 
 	FeatureGateAzureDualStackInstall = newFeatureGate("AzureDualStackInstall").

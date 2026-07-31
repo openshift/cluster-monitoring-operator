@@ -77,6 +77,7 @@ func clusterMonitoringNodeExporterCollectorsEmpty(col configv1alpha1.NodeExporte
 		col.Processes.CollectionPolicy,
 		col.Systemd.CollectionPolicy,
 		col.Softirqs.CollectionPolicy,
+		col.DeviceMapperMultipath.CollectionPolicy,
 	} {
 		if pol != "" {
 			return false
@@ -157,6 +158,9 @@ func mergeNodeExporterCollectorsFromCRD(dst *NodeExporterCollectorConfig, src co
 	}
 	if enabled, set := nodeExporterCollectorEnabledFromPolicy(src.Softirqs.CollectionPolicy); set {
 		dst.Softirqs.Enabled = enabled
+	}
+	if enabled, set := nodeExporterCollectorEnabledFromPolicy(src.DeviceMapperMultipath.CollectionPolicy); set {
+		dst.DmMultipath.Enabled = ptr.To(enabled)
 	}
 }
 
