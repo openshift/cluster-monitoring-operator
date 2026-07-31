@@ -28,6 +28,18 @@ var (
 	APIServerDefaultTLSCiphers = configv1.TLSProfiles[configv1.TLSProfileIntermediateType].Ciphers
 	// APIServerDefaultMinTLSVersion is the default minimum TLS version for API servers
 	APIServerDefaultMinTLSVersion = configv1.TLSProfiles[configv1.TLSProfileIntermediateType].MinTLSVersion
+
+	// tlsGroupToGoCurveName maps OpenShift TLSGroup IETF names to Go crypto/tls CurveID string names
+	// as accepted by Thanos's --grpc-server-tls-curves flag.
+	tlsGroupToGoCurveName = map[configv1.TLSGroup]string{
+		configv1.TLSGroupX25519:              "X25519",
+		configv1.TLSGroupSecP256r1:           "CurveP256",
+		configv1.TLSGroupSecP384r1:           "CurveP384",
+		configv1.TLSGroupSecP521r1:           "CurveP521",
+		configv1.TLSGroupX25519MLKEM768:      "X25519MLKEM768",
+		configv1.TLSGroupSecP256r1MLKEM768:   "SecP256r1MLKEM768",
+		configv1.TLSGroupSecP384r1MLKEM1024:  "SecP384r1MLKEM1024",
+	}
 )
 
 // APIServerConfig is the cluster-wide configuration for all API servers.
@@ -46,7 +58,8 @@ func NewAPIServerConfig(config *configv1.APIServer) *APIServerConfig {
 // current configuration.
 func (c *APIServerConfig) Equal(other *APIServerConfig) bool {
 	return c.MinTLSVersion() == other.MinTLSVersion() &&
-		slices.Equal(c.TLSCiphers(), other.TLSCiphers())
+		slices.Equal(c.TLSCiphers(), other.TLSCiphers()) &&
+		slices.Equal(c.TLSCurves(), other.TLSCurves())
 }
 
 // TLSCiphers returns the TLS ciphers for the
@@ -67,6 +80,23 @@ func (c *APIServerConfig) MinTLSVersion() string {
 		return string(APIServerDefaultMinTLSVersion)
 	}
 	return string(profile.MinTLSVersion)
+}
+
+// TLSCurves returns the TLS curve preferences for the TLS security profile
+// defined in the APIServerConfig, converted to Go crypto/tls CurveID names.
+// Returns nil when no groups are configured (caller should use Go defaults).
+func (c *APIServerConfig) TLSCurves() []string {
+	profile := c.getTLSProfile()
+	if len(profile.Groups) == 0 {
+		return nil
+	}
+	curves := make([]string, 0, len(profile.Groups))
+	for _, group := range profile.Groups {
+		if name, ok := tlsGroupToGoCurveName[group]; ok {
+			curves = append(curves, name)
+		}
+	}
+	return curves
 }
 
 func convertTLSVersionToMonitoringV1(v string) (*monv1.TLSVersion, error) {
