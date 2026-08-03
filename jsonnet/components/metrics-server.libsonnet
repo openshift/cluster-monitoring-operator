@@ -368,6 +368,50 @@ function(params) {
       versionPriority: 100,
     },
   },
+  prometheusRule: {
+    apiVersion: 'monitoring.coreos.com/v1',
+    kind: 'PrometheusRule',
+    metadata: {
+      labels: {
+        'app.kubernetes.io/component': 'metrics-server',
+        'app.kubernetes.io/managed-by': 'cluster-monitoring-operator',
+        'app.kubernetes.io/name': 'metrics-server',
+        'app.kubernetes.io/version': cfg.version,
+      } + cfg.commonLabels + {
+        prometheus: 'k8s',
+        role: 'alert-rules',
+      },
+      name: 'metrics-server-rules',
+      namespace: cfg.namespace,
+    },
+    spec: {
+      groups: [
+        {
+          name: 'metrics-server',
+          rules: [
+            {
+              alert: 'MetricsServerKubeletScrapeFailures',
+              annotations: {
+                description: 'metrics-server in namespace {{ $labels.namespace }} (pod {{ $labels.pod }}) is failing to scrape one or more kubelets. Check metrics-server logs for "Failed to scrape node".',
+                summary: 'metrics-server is failing to scrape kubelet metrics.',
+              },
+              expr: |||
+                sum by (cluster, namespace, pod) (
+                  rate(metrics_server_kubelet_request_total{success="false"}[5m])
+                ) > 0
+              |||,
+              'for': '15m',
+              labels: {
+                namespace: cfg.namespace,
+                severity: 'warning',
+              },
+            },
+          ],
+        },
+      ],
+    },
+  },
+
   serviceMonitor: {
     apiVersion: 'monitoring.coreos.com/v1',
     kind: 'ServiceMonitor',
