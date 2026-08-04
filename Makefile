@@ -283,7 +283,7 @@ test-unit:
 .PHONY: test-e2e
 test-e2e: KUBECONFIG?=$(HOME)/.kube/config
 test-e2e:
-	go test -v -timeout=150m ./test/e2e/ --kubeconfig $(KUBECONFIG)
+	go test -v -timeout=150m $(E2E_TEST_ARGS) ./test/e2e/ --kubeconfig $(KUBECONFIG)
 
 .PHONY: test-ginkgo
 test-ginkgo: KUBECONFIG?=$(HOME)/.kube/config
