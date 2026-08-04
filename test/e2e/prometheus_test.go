@@ -24,6 +24,7 @@ import (
 	osConfigv1 "github.com/openshift/api/config/v1"
 	"github.com/openshift/cluster-monitoring-operator/test/e2e/framework"
 	_ "github.com/prometheus/prometheus/discovery/kubernetes" // required for promConfig.Load to parse kubernetes_sd_configs
+	"github.com/stretchr/testify/require"
 	v1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/types"
@@ -217,7 +218,7 @@ func TestPrometheusRemoteWrite(t *testing.T) {
 			metav1.ListOptions{LabelSelector: "app.kubernetes.io/name=prometheus,app.kubernetes.io/instance=k8s"},
 		))
 
-		f.AssertStatefulSetExistsAndRolloutFunc("prometheus-k8s", f.Ns)(t)
+		f.AssertStatefulSetExistsAndRollout("prometheus-k8s", f.Ns)(t)
 	})
 	for _, tc := range []struct {
 		name     string
