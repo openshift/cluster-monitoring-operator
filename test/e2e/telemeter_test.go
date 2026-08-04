@@ -75,7 +75,7 @@ func TestTelemeterRemoteWrite(t *testing.T) {
 			metav1.ListOptions{LabelSelector: "app.kubernetes.io/name=prometheus,app.kubernetes.io/instance=k8s"},
 		))
 
-		f.AssertStatefulSetExistsAndRolloutFunc("prometheus-k8s", f.Ns)(t)
+		f.AssertStatefulSetExistsAndRollout("prometheus-k8s", f.Ns)(t)
 	})
 
 	dep, err := f.KubeClient.AppsV1().Deployments(f.Ns).Get(ctx, "cluster-monitoring-operator", metav1.GetOptions{})
