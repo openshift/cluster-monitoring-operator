@@ -300,6 +300,7 @@ function(params)
                 securityContext: {
                   privileged: true,
                   runAsUser: 0,
+                  readOnlyRootFilesystem: true,
                 },
                 volumeMounts+: [
                   {
@@ -398,9 +399,12 @@ function(params)
                           memory: '32Mi',
                         },
                       },
-                      // node-exporter has issue in rolling out with security context
-                      // changes in kube-prometheus hence overidding the changes
-                      securityContext: {},
+                      // Drop the SYS_TIME capability which isn't strictly needed.
+                      securityContext+: {
+                        capabilities+: {
+                          add: [],
+                        },
+                      },
                       env: [
                         {
                           // This is required for the systemd collector to connect to the host's dbus socket.
