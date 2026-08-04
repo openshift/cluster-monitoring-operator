@@ -904,6 +904,8 @@ func checkMonitorConsolePluginFeatures(t *testing.T, pluginName string) {
 	require.NoError(t, err)
 }
 
+// TestClusterMonitorConsolePlugin exercises the monitoring-plugin configuration.
+// Don't rename the test because the monitoring-plugin CI targets it specifically.
 func TestClusterMonitorConsolePlugin(t *testing.T) {
 	const (
 		deploymentName = "monitoring-plugin"
