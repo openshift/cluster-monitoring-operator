@@ -24,6 +24,7 @@ import (
 	osConfigv1 "github.com/openshift/api/config/v1"
 	"github.com/openshift/cluster-monitoring-operator/test/e2e/framework"
 	_ "github.com/prometheus/prometheus/discovery/kubernetes" // required for promConfig.Load to parse kubernetes_sd_configs
+	"github.com/stretchr/testify/require"
 	v1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/types"
