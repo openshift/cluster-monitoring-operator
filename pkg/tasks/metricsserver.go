@@ -13,19 +13,17 @@ import (
 
 type MetricsServerTask struct {
 	client    *client.Client
-	ctx       context.Context
 	factory   *manifests.Factory
 	config    *manifests.Config
 	namespace string
 }
 
-func NewMetricsServerTask(ctx context.Context, namespace string, client *client.Client, factory *manifests.Factory, config *manifests.Config) *MetricsServerTask {
+func NewMetricsServerTask(namespace string, client *client.Client, factory *manifests.Factory, config *manifests.Config) *MetricsServerTask {
 	return &MetricsServerTask{
 		client:    client,
 		factory:   factory,
 		config:    config,
 		namespace: namespace,
-		ctx:       ctx,
 	}
 }
 
@@ -192,7 +190,7 @@ func (t *MetricsServerTask) Run(ctx context.Context) error {
 			return fmt.Errorf("failed to create metrics-server client-ca secret: %w", err)
 		}
 
-		err = t.deleteOldMetricsServerSecrets(secret.Labels["monitoring.openshift.io/hash"])
+		err = t.deleteOldMetricsServerSecrets(ctx, secret.Labels["monitoring.openshift.io/hash"])
 		if err != nil {
 			return fmt.Errorf("deleting old metrics-server secrets failed: %w", err)
 		}
@@ -251,8 +249,8 @@ func (t *MetricsServerTask) Run(ctx context.Context) error {
 	return nil
 }
 
-func (t *MetricsServerTask) deleteOldMetricsServerSecrets(newHash string) error {
-	secrets, err := t.client.KubernetesInterface().CoreV1().Secrets(t.namespace).List(t.ctx, metav1.ListOptions{
+func (t *MetricsServerTask) deleteOldMetricsServerSecrets(ctx context.Context, newHash string) error {
+	secrets, err := t.client.KubernetesInterface().CoreV1().Secrets(t.namespace).List(ctx, metav1.ListOptions{
 		LabelSelector: "monitoring.openshift.io/name=metrics-server,monitoring.openshift.io/hash!=" + newHash,
 	})
 
@@ -261,7 +259,7 @@ func (t *MetricsServerTask) deleteOldMetricsServerSecrets(newHash string) error 
 	}
 
 	for i := range secrets.Items {
-		err := t.client.KubernetesInterface().CoreV1().Secrets(t.namespace).Delete(t.ctx, secrets.Items[i].Name, metav1.DeleteOptions{})
+		err := t.client.KubernetesInterface().CoreV1().Secrets(t.namespace).Delete(ctx, secrets.Items[i].Name, metav1.DeleteOptions{})
 		if err != nil {
 			return fmt.Errorf("error deleting secret: %s: %w", secrets.Items[i].Name, err)
 		}
