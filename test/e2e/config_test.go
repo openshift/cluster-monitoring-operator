@@ -1410,6 +1410,17 @@ func TestProxyConfigWatch(t *testing.T) {
 			t.Logf("restoring proxy: %v", err)
 		}
 
+		prom, err := f.MonitoringClient.Prometheuses(f.Ns).Get(ctx, "k8s", metav1.GetOptions{})
+		if err != nil {
+			t.Logf("getting Prometheus for rollout wait: %v", err)
+		} else {
+			// Best effort: wait for the rollout triggered by the proxy
+			// cleanup so the next test doesn't start mid-rollout.
+			if err := f.WaitForPrometheusUpdate(ctx, prom); err != nil {
+				t.Logf("waiting for Prometheus update after proxy cleanup: %v", err)
+			}
+		}
+
 		scaleTo1 := []byte(`{"spec":{"replicas":1}}`)
 		if _, err := f.KubeClient.AppsV1().Deployments("openshift-cluster-version").Patch(ctx, "cluster-version-operator", types.MergePatchType, scaleTo1, metav1.PatchOptions{}); err != nil {
 			t.Logf("restoring CVO: %v", err)
