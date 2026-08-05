@@ -5,6 +5,7 @@ local sanitizeAlertRules = (import './utils/sanitize-rules.libsonnet').sanitizeA
 local removeImageLocations = (import './utils/remove-images.libsonnet').removeImageLocations;
 local removeNetworkPolicy = (import './utils/remove-network-policy.libsonnet').removeNetworkPolicy;
 local configureAuthenticationForMonitors = (import './utils/configure-authentication-for-monitors.libsonnet').configureAuthenticationForMonitors;
+local enableReadOnlyRootFilesystem = (import './utils/security-context.libsonnet').enableReadOnlyRootFilesystem;
 local setTerminationMessagePolicy = (import './utils/set-terminationMessagePolicy.libsonnet').setTerminationMessagePolicy;
 local setUnhealthyPodEvictionPolicy = (import './utils/set-unhealthyPodEvictionPolicy.libsonnet').setUnhealthyPodEvictionPolicy;
 
@@ -502,37 +503,39 @@ local userWorkload =
 
 // Manifestation
 setUnhealthyPodEvictionPolicy(
-  setTerminationMessagePolicy(
-    addLabels(
-      commonConfig.commonLabels,
-      addAnnotations(
-        sanitizeAlertRules(
-          removeImageLocations(
-            removeLimits(
-              removeNetworkPolicy(
-                // Enforce mTLS authentication + disable usage of bearer token for all service/pod monitors.
-                // See https://issues.redhat.com/browse/OCPBUGS-4184 for details.
-                configureAuthenticationForMonitors(
-                  { ['alertmanager/' + name]: inCluster.alertmanager[name] for name in std.objectFields(inCluster.alertmanager) } +
-                  { ['alertmanager-user-workload/' + name]: userWorkload.alertmanager[name] for name in std.objectFields(userWorkload.alertmanager) } +
-                  { ['cluster-monitoring-operator/' + name]: inCluster.clusterMonitoringOperator[name] for name in std.objectFields(inCluster.clusterMonitoringOperator) } +
-                  { ['kube-state-metrics/' + name]: inCluster.kubeStateMetrics[name] for name in std.objectFields(inCluster.kubeStateMetrics) } +
-                  { ['node-exporter/' + name]: inCluster.nodeExporter[name] for name in std.objectFields(inCluster.nodeExporter) } +
-                  { ['openshift-state-metrics/' + name]: inCluster.openshiftStateMetrics[name] for name in std.objectFields(inCluster.openshiftStateMetrics) } +
-                  { ['prometheus-k8s/' + name]: inCluster.prometheus[name] for name in std.objectFields(inCluster.prometheus) } +
-                  { ['admission-webhook/' + name]: inCluster.admissionWebhook[name] for name in std.objectFields(inCluster.admissionWebhook) } +
-                  { ['prometheus-operator/' + name]: inCluster.prometheusOperator[name] for name in std.objectFields(inCluster.prometheusOperator) } +
-                  { ['prometheus-operator-user-workload/' + name]: userWorkload.prometheusOperator[name] for name in std.objectFields(userWorkload.prometheusOperator) } +
-                  { ['prometheus-user-workload/' + name]: userWorkload.prometheus[name] for name in std.objectFields(userWorkload.prometheus) } +
-                  { ['metrics-server/' + name]: inCluster.metricsServer[name] for name in std.objectFields(inCluster.metricsServer) } +
-                  // needs to be removed once remote-write is allowed for sending telemetry
-                  { ['telemeter-client/' + name]: inCluster.telemeterClient[name] for name in std.objectFields(inCluster.telemeterClient) } +
-                  { ['monitoring-plugin/' + name]: inCluster.monitoringPlugin[name] for name in std.objectFields(inCluster.monitoringPlugin) } +
-                  { ['thanos-querier/' + name]: inCluster.thanosQuerier[name] for name in std.objectFields(inCluster.thanosQuerier) } +
-                  { ['thanos-ruler/' + name]: inCluster.thanosRuler[name] for name in std.objectFields(inCluster.thanosRuler) } +
-                  { ['control-plane/' + name]: inCluster.controlPlane[name] for name in std.objectFields(inCluster.controlPlane) } +
-                  { ['manifests/' + name]: inCluster.manifests[name] for name in std.objectFields(inCluster.manifests) } +
-                  {}
+  enableReadOnlyRootFilesystem(
+    setTerminationMessagePolicy(
+      addLabels(
+        commonConfig.commonLabels,
+        addAnnotations(
+          sanitizeAlertRules(
+            removeImageLocations(
+              removeLimits(
+                removeNetworkPolicy(
+                  // Enforce mTLS authentication + disable usage of bearer token for all service/pod monitors.
+                  // See https://issues.redhat.com/browse/OCPBUGS-4184 for details.
+                  configureAuthenticationForMonitors(
+                    { ['alertmanager/' + name]: inCluster.alertmanager[name] for name in std.objectFields(inCluster.alertmanager) } +
+                    { ['alertmanager-user-workload/' + name]: userWorkload.alertmanager[name] for name in std.objectFields(userWorkload.alertmanager) } +
+                    { ['cluster-monitoring-operator/' + name]: inCluster.clusterMonitoringOperator[name] for name in std.objectFields(inCluster.clusterMonitoringOperator) } +
+                    { ['kube-state-metrics/' + name]: inCluster.kubeStateMetrics[name] for name in std.objectFields(inCluster.kubeStateMetrics) } +
+                    { ['node-exporter/' + name]: inCluster.nodeExporter[name] for name in std.objectFields(inCluster.nodeExporter) } +
+                    { ['openshift-state-metrics/' + name]: inCluster.openshiftStateMetrics[name] for name in std.objectFields(inCluster.openshiftStateMetrics) } +
+                    { ['prometheus-k8s/' + name]: inCluster.prometheus[name] for name in std.objectFields(inCluster.prometheus) } +
+                    { ['admission-webhook/' + name]: inCluster.admissionWebhook[name] for name in std.objectFields(inCluster.admissionWebhook) } +
+                    { ['prometheus-operator/' + name]: inCluster.prometheusOperator[name] for name in std.objectFields(inCluster.prometheusOperator) } +
+                    { ['prometheus-operator-user-workload/' + name]: userWorkload.prometheusOperator[name] for name in std.objectFields(userWorkload.prometheusOperator) } +
+                    { ['prometheus-user-workload/' + name]: userWorkload.prometheus[name] for name in std.objectFields(userWorkload.prometheus) } +
+                    { ['metrics-server/' + name]: inCluster.metricsServer[name] for name in std.objectFields(inCluster.metricsServer) } +
+                    // needs to be removed once remote-write is allowed for sending telemetry
+                    { ['telemeter-client/' + name]: inCluster.telemeterClient[name] for name in std.objectFields(inCluster.telemeterClient) } +
+                    { ['monitoring-plugin/' + name]: inCluster.monitoringPlugin[name] for name in std.objectFields(inCluster.monitoringPlugin) } +
+                    { ['thanos-querier/' + name]: inCluster.thanosQuerier[name] for name in std.objectFields(inCluster.thanosQuerier) } +
+                    { ['thanos-ruler/' + name]: inCluster.thanosRuler[name] for name in std.objectFields(inCluster.thanosRuler) } +
+                    { ['control-plane/' + name]: inCluster.controlPlane[name] for name in std.objectFields(inCluster.controlPlane) } +
+                    { ['manifests/' + name]: inCluster.manifests[name] for name in std.objectFields(inCluster.manifests) } +
+                    {}
+                  )
                 )
               )
             )
