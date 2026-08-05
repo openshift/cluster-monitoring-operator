@@ -1403,6 +1403,7 @@ func TestProxyConfigWatch(t *testing.T) {
 			}
 		}
 
+		// CVO manages the MCO deployment; scaling it back up restores MCO automatically.
 		if _, err := f.KubeClient.AppsV1().Deployments("openshift-cluster-version").Patch(ctx, "cluster-version-operator", types.MergePatchType, []byte(`{"spec":{"replicas":1}}`), metav1.PatchOptions{}); err != nil {
 			t.Logf("restoring CVO: %v", err)
 		}
