@@ -1379,23 +1379,6 @@ func assertPrometheusRetentionSize(namespace, name, size string) func(*testing.T
 func TestProxyConfigWatch(t *testing.T) {
 	ctx := context.Background()
 
-	// Scale CVO and MCO to 0 replicas to prevent proxy changes from triggering node reboots.
-	require.NoError(t, framework.Poll(5*time.Second, 3*time.Minute, func() error {
-		for _, d := range []struct{ ns, name string }{
-			{"openshift-cluster-version", "cluster-version-operator"},
-			{"openshift-machine-config-operator", "machine-config-operator"},
-		} {
-			dep, err := f.KubeClient.AppsV1().Deployments(d.ns).Patch(ctx, d.name, types.MergePatchType, []byte(`{"spec":{"replicas":0}}`), metav1.PatchOptions{})
-			if err != nil {
-				return err
-			}
-			if dep.Status.AvailableReplicas != 0 {
-				return fmt.Errorf("waiting for %s/%s scale-down: available=%d", d.ns, d.name, dep.Status.AvailableReplicas)
-			}
-		}
-		return nil
-	}))
-
 	proxies := f.OpenShiftConfigClient.ConfigV1().Proxies()
 	proxy, err := proxies.Get(ctx, "cluster", metav1.GetOptions{})
 	require.NoError(t, err)
@@ -1424,6 +1407,23 @@ func TestProxyConfigWatch(t *testing.T) {
 			t.Logf("restoring CVO: %v", err)
 		}
 	})
+
+	// Scale CVO and MCO to 0 replicas to prevent proxy changes from triggering node reboots.
+	require.NoError(t, framework.Poll(5*time.Second, 3*time.Minute, func() error {
+		for _, d := range []struct{ ns, name string }{
+			{"openshift-cluster-version", "cluster-version-operator"},
+			{"openshift-machine-config-operator", "machine-config-operator"},
+		} {
+			dep, err := f.KubeClient.AppsV1().Deployments(d.ns).Patch(ctx, d.name, types.MergePatchType, []byte(`{"spec":{"replicas":0}}`), metav1.PatchOptions{})
+			if err != nil {
+				return err
+			}
+			if dep.Status.AvailableReplicas != 0 {
+				return fmt.Errorf("waiting for %s/%s scale-down: available=%d", d.ns, d.name, dep.Status.AvailableReplicas)
+			}
+		}
+		return nil
+	}))
 
 	patch := []byte(fmt.Sprintf(`{"spec":{"httpProxy":%q}}`, httpProxyMarker))
 	_, err = proxies.Patch(ctx, "cluster", types.MergePatchType, patch, metav1.PatchOptions{})
