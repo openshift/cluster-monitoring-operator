@@ -1380,13 +1380,12 @@ func TestProxyConfigWatch(t *testing.T) {
 	ctx := context.Background()
 
 	// Scale CVO and MCO to 0 replicas to prevent proxy changes from triggering node reboots.
-	scaleTo0 := []byte(`{"spec":{"replicas":0}}`)
 	require.NoError(t, framework.Poll(5*time.Second, 3*time.Minute, func() error {
 		for _, d := range []struct{ ns, name string }{
 			{"openshift-cluster-version", "cluster-version-operator"},
 			{"openshift-machine-config-operator", "machine-config-operator"},
 		} {
-			dep, err := f.KubeClient.AppsV1().Deployments(d.ns).Patch(ctx, d.name, types.MergePatchType, scaleTo0, metav1.PatchOptions{})
+			dep, err := f.KubeClient.AppsV1().Deployments(d.ns).Patch(ctx, d.name, types.MergePatchType, []byte(`{"spec":{"replicas":0}}`), metav1.PatchOptions{})
 			if err != nil {
 				return err
 			}
@@ -1421,8 +1420,7 @@ func TestProxyConfigWatch(t *testing.T) {
 			}
 		}
 
-		scaleTo1 := []byte(`{"spec":{"replicas":1}}`)
-		if _, err := f.KubeClient.AppsV1().Deployments("openshift-cluster-version").Patch(ctx, "cluster-version-operator", types.MergePatchType, scaleTo1, metav1.PatchOptions{}); err != nil {
+		if _, err := f.KubeClient.AppsV1().Deployments("openshift-cluster-version").Patch(ctx, "cluster-version-operator", types.MergePatchType, []byte(`{"spec":{"replicas":1}}`), metav1.PatchOptions{}); err != nil {
 			t.Logf("restoring CVO: %v", err)
 		}
 	})
