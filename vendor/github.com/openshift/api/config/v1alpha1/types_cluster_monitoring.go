@@ -1571,6 +1571,13 @@ type RemoteWriteSpec struct {
 	// +kubebuilder:validation:MaxLength=63
 	// +kubebuilder:validation:XValidation:rule="self.matches('^[a-zA-Z0-9_-]+$')",message="must contain only alphanumeric characters, hyphens, and underscores"
 	Name string `json:"name,omitempty"`
+	// messageVersion defines the Remote Write message's version to use when writing to the endpoint.
+	// When omitted, this means no opinion and the platform is left to choose a reasonable default, which is subject to change over time.
+	// The default value is "V1.0".
+	// When set to "V1.0", Prometheus uses the `prometheus.WriteRequest` protobuf message introduced in Remote Write 1.0.
+	// When set to "V2.0", Prometheus uses the `io.prometheus.write.v2.Request` protobuf message introduced in Remote Write 2.0.
+	// +optional
+	MessageVersion RemoteWriteMessageVersion `json:"messageVersion,omitempty,omitzero"`
 	// authorization defines the authorization method for the remote write endpoint.
 	// When omitted, no authorization is performed.
 	// When set, type must be one of Authorization, BasicAuth, OAuth2, SigV4, or ServiceAccount; the corresponding nested config must be set (ServiceAccount has no config).
@@ -1767,6 +1774,17 @@ type RemoteWriteAuthorization struct {
 	// +optional
 	// SafeAuthorization *v1.SecretKeySelector `json:"safeAuthorization,omitempty"`
 }
+
+// RemoteWriteMessageVersion defines the version of the remote-write protocol.
+// +kubebuilder:validation:Enum=V1.0;V2.0
+type RemoteWriteMessageVersion string
+
+const (
+	// RemoteWriteMessageVersion1_0 indicates the version 1.0 of the remote-write protocol.
+	RemoteWriteMessageVersion1_0 RemoteWriteMessageVersion = "V1.0"
+	// RemoteWriteMessageVersion2_0 indicates the version 2.0 of the remote-write protocol.
+	RemoteWriteMessageVersion2_0 RemoteWriteMessageVersion = "V2.0"
+)
 
 // MetadataConfigSendPolicy defines whether to send metadata with platform defaults or with custom settings.
 // +kubebuilder:validation:Enum=Default;Custom
