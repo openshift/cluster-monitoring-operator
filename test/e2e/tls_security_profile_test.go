@@ -37,6 +37,8 @@ func atLeastVersionTLS12(v string) string {
 	return v
 }
 
+// TestDefaultTLSSecurityProfileConfiguration exercises the TLS profile configuration.
+// Don't rename the test because the monitoring-plugin CI targets it specifically.
 func TestDefaultTLSSecurityProfileConfiguration(t *testing.T) {
 	// The admission webhook supports only TLS versions >= 1.2.
 	assertCorrectTLSConfiguration(t, "prometheus-operator-admission-webhook", "deployment",
