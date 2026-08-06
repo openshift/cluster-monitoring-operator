@@ -17,11 +17,6 @@ package e2e
 import (
 	"errors"
 	"fmt"
-	v1 "k8s.io/api/autoscaling/v1"
-	apiextv1 "k8s.io/apiextensions-apiserver/pkg/apis/apiextensions/v1"
-	apierrors "k8s.io/apimachinery/pkg/api/errors"
-	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
-	vpav1 "k8s.io/autoscaler/vertical-pod-autoscaler/pkg/apis/autoscaling.k8s.io/v1"
 	"path"
 	"regexp"
 	"testing"
@@ -29,6 +24,15 @@ import (
 
 	"github.com/Jeffail/gabs/v2"
 	"github.com/openshift/cluster-monitoring-operator/test/e2e/framework"
+	"github.com/stretchr/testify/require"
+	batchv1 "k8s.io/api/batch/v1"
+	corev1 "k8s.io/api/core/v1"
+
+	v1 "k8s.io/api/autoscaling/v1"
+	apiextv1 "k8s.io/apiextensions-apiserver/pkg/apis/apiextensions/v1"
+	apierrors "k8s.io/apimachinery/pkg/api/errors"
+	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	vpav1 "k8s.io/autoscaler/vertical-pod-autoscaler/pkg/apis/autoscaling.k8s.io/v1"
 )
 
 func TestKSMMetricsSuppression(t *testing.T) {
@@ -167,4 +171,80 @@ func deleteVPACRD(t *testing.T, vpaCRD interface{}) {
 	if err != nil {
 		t.Fatalf("failed to delete existing VPA CRD: %v", err)
 	}
+}
+
+// TestCronJobWithTimezone is a regression test for the KSM CronJob timezone panic.
+// Before the fix, kube-state-metrics panicked when encountering a CronJob with
+// .spec.timeZone set, crashing the entire exporter and losing all kube_* metrics.
+//
+// After the fix, KSM embeds tzdata and gracefully handles unparseable
+// schedules instead of panicking.
+func TestCronJobWithTimezone(t *testing.T) {
+	const timeout = 5 * time.Minute
+
+	// Create a timezone CronJob to verify KSM handles it without crashing.
+	tz := "America/New_York"
+	cronJob := &batchv1.CronJob{
+		ObjectMeta: metav1.ObjectMeta{
+			Name:      "tz-regression-test",
+			Namespace: f.Ns,
+		},
+		Spec: batchv1.CronJobSpec{
+			Schedule: "0 9 * * *",
+			TimeZone: &tz,
+			JobTemplate: batchv1.JobTemplateSpec{
+				Spec: batchv1.JobSpec{
+					Template: corev1.PodTemplateSpec{
+						Spec: corev1.PodSpec{
+							RestartPolicy: corev1.RestartPolicyOnFailure,
+							Containers: []corev1.Container{
+								{
+									Name:    "hello",
+									Image:   "busybox:1.28",
+									Command: []string{"/bin/sh", "-c", "date; echo Hello from timezone CronJob"},
+								},
+							},
+						},
+					},
+				},
+			},
+		},
+	}
+
+	_, err := f.KubeClient.BatchV1().CronJobs(f.Ns).Create(ctx, cronJob, metav1.CreateOptions{})
+	require.NoError(t, err)
+	t.Cleanup(func() {
+		err := f.KubeClient.BatchV1().CronJobs(f.Ns).Delete(ctx, cronJob.Name, metav1.DeleteOptions{})
+		if err != nil && !apierrors.IsNotFound(err) {
+			t.Logf("failed to delete CronJob %s: %v", cronJob.Name, err)
+		}
+	})
+
+	// Verify KSM is still up.
+	f.ThanosQuerierClient.WaitForQueryReturnOne(
+		t,
+		timeout,
+		`min(up{job="kube-state-metrics"})`,
+	)
+
+	// Verify timezone was resolved and next schedule time is computed.
+	f.ThanosQuerierClient.WaitForQueryReturnOne(
+		t,
+		timeout,
+		fmt.Sprintf(`group(kube_cronjob_next_schedule_time{cronjob="tz-regression-test",namespace="%s"} > 0)`, f.Ns),
+	)
+
+	// Verify the schedule is not marked as invalid.
+	f.ThanosQuerierClient.WaitForQueryReturnOne(
+		t,
+		timeout,
+		fmt.Sprintf(`group(kube_cronjob_schedule_invalid{cronjob="tz-regression-test",namespace="%s"} == 0)`, f.Ns),
+	)
+
+	// Verify kube_cronjob_info exposes the timezone label.
+	f.ThanosQuerierClient.WaitForQueryReturnOne(
+		t,
+		timeout,
+		fmt.Sprintf(`group(kube_cronjob_info{cronjob="tz-regression-test",namespace="%s",timezone="America/New_York"})`, f.Ns),
+	)
 }
