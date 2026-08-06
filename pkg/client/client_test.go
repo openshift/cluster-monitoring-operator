@@ -27,7 +27,6 @@ import (
 	osrfake "github.com/openshift/client-go/route/clientset/versioned/fake"
 	ossfake "github.com/openshift/client-go/security/clientset/versioned/fake"
 	"github.com/openshift/library-go/pkg/operator/events"
-	"github.com/openshift/library-go/pkg/operator/resource/resourceapply"
 	monv1 "github.com/prometheus-operator/prometheus-operator/pkg/apis/monitoring/v1"
 	monfake "github.com/prometheus-operator/prometheus-operator/pkg/client/versioned/fake"
 	"github.com/stretchr/testify/require"
@@ -924,13 +923,13 @@ func TestCreateOrUpdateServiceAccount(t *testing.T) {
 				c = Client{
 					kclient:       fake.NewSimpleClientset(),
 					eventRecorder: eventRecorder,
-					resourceCache: resourceapply.NewResourceCache(),
+					resourceCache: noOpResourceCache{},
 				}
 			} else {
 				c = Client{
 					kclient:       fake.NewSimpleClientset(sa.DeepCopy()),
 					eventRecorder: eventRecorder,
-					resourceCache: resourceapply.NewResourceCache(),
+					resourceCache: noOpResourceCache{},
 				}
 				_, err := c.kclient.CoreV1().ServiceAccounts(ns).Get(ctx, sa.Name, metav1.GetOptions{})
 				if err != nil {
@@ -1937,7 +1936,7 @@ func TestCreateOrUpdateValidatingWebhookConfiguration(t *testing.T) {
 	c := Client{
 		kclient:       fake.NewSimpleClientset(webhook.DeepCopy()),
 		eventRecorder: events.NewInMemoryRecorder("cluster-monitoring-operator", clocktesting.NewFakePassiveClock(time.Now())),
-		resourceCache: resourceapply.NewResourceCache(),
+		resourceCache: noOpResourceCache{},
 	}
 
 	if _, err := c.kclient.AdmissionregistrationV1().ValidatingWebhookConfigurations().Get(ctx, webhook.Name, metav1.GetOptions{}); err != nil {
@@ -2414,4 +2413,49 @@ func TestWaitForClusterRoleBindingSCCUse(t *testing.T) {
 		c := Client{kclient: fake.NewClientset()}
 		require.NoError(t, c.WaitForClusterRoleBindingSCCUse(ctx, noSCCRole, noSCCBinding))
 	})
+}
+
+// TestResourceCacheConcurrentAccess reproduces OCPBUGS-99769: concurrent map access
+// in the shared resourceCache.
+func TestResourceCacheConcurrentAccess(t *testing.T) {
+	ctx := context.Background()
+
+	// Pre-existing resources force Apply through both SafeToSkipApply (read) and
+	// UpdateCachedResourceMetadata (write).
+	existing := make([]runtime.Object, 10)
+	for i := range 10 {
+		existing[i] = &v1.ServiceAccount{
+			ObjectMeta: metav1.ObjectMeta{
+				Name:            fmt.Sprintf("sa-%d", i),
+				Namespace:       ns,
+				ResourceVersion: "1",
+			},
+		}
+	}
+
+	c := Client{
+		kclient:       fake.NewSimpleClientset(existing...),
+		eventRecorder: events.NewInMemoryRecorder("test", clocktesting.NewFakePassiveClock(time.Now())),
+		resourceCache: noOpResourceCache{},
+	}
+
+	// Mimics CMO's errgroup tasks reconciling resources concurrently.
+	var wg sync.WaitGroup
+	for range 10 {
+		wg.Add(1)
+		go func() {
+			defer wg.Done()
+			for i := range 10 {
+				sa := &v1.ServiceAccount{
+					ObjectMeta: metav1.ObjectMeta{
+						Name:      fmt.Sprintf("sa-%d", i),
+						Namespace: ns,
+						Labels:    map[string]string{"app": "test"},
+					},
+				}
+				_ = c.CreateOrUpdateServiceAccount(ctx, sa)
+			}
+		}()
+	}
+	wg.Wait()
 }
