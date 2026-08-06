@@ -389,6 +389,19 @@ func New(
 	}
 	o.informers = append(o.informers, informer)
 
+	// Watch the cluster Proxy resource to reconcile when proxy settings change.
+	informer = cache.NewSharedIndexInformer(
+		o.client.ProxyListWatch(),
+		&configv1.Proxy{}, resyncPeriod, cache.Indexers{},
+	)
+	_, err = informer.AddEventHandler(cache.ResourceEventHandlerFuncs{
+		UpdateFunc: func(_, newObj interface{}) { o.handleEvent(newObj) },
+	})
+	if err != nil {
+		return nil, err
+	}
+	o.informers = append(o.informers, informer)
+
 	informer = cache.NewSharedIndexInformer(
 		o.client.ClusterOperatorListWatch(ctx, "ingress"),
 		&configv1.ClusterOperator{}, resyncPeriod, cache.Indexers{},
@@ -630,7 +643,8 @@ func (o *Operator) handleEvent(obj interface{}) {
 		*configv1.APIServer,
 		*configv1.Console,
 		*configv1.ClusterOperator,
-		*configv1.ClusterVersion:
+		*configv1.ClusterVersion,
+		*configv1.Proxy:
 		// Log GroupKind and Name of the obj
 		rtObj := obj.(k8sruntime.Object)
 		gk := rtObj.GetObjectKind().GroupVersionKind().GroupKind()
