@@ -53,6 +53,7 @@ import (
 	apierrors "k8s.io/apimachinery/pkg/api/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/fields"
+	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/apimachinery/pkg/runtime/schema"
 	"k8s.io/apimachinery/pkg/types"
 	apiutilerrors "k8s.io/apimachinery/pkg/util/errors"
@@ -95,8 +96,18 @@ type Client struct {
 	aggclient   aggregatorclient.Interface
 
 	eventRecorder events.Recorder
+	// resourceCache is set to a no-op implementation that never caches.
+	// The library-go resourceCache is not thread-safe
+	// and CMO runs tasks concurrently with the same client, which causes data races.
+	// TODO: consider re-enabling caching once we can use a library-go that ships the thread-safe
+	// implementation (see https://github.com/openshift/library-go/pull/2380).
 	resourceCache resourceapply.ResourceCache
 }
+
+type noOpResourceCache struct{}
+
+func (noOpResourceCache) UpdateCachedResourceMetadata(_ runtime.Object, _ runtime.Object) {}
+func (noOpResourceCache) SafeToSkipApply(_ runtime.Object, _ runtime.Object) bool         { return false }
 
 func NewForConfig(cfg *rest.Config, version string, namespace, userWorkloadNamespace string, options ...Option) (*Client, error) {
 	client := New(version, namespace, userWorkloadNamespace, options...)
@@ -264,7 +275,7 @@ func New(version string, namespace, userWorkloadNamespace string, options ...Opt
 		version:               version,
 		namespace:             namespace,
 		userWorkloadNamespace: userWorkloadNamespace,
-		resourceCache:         resourceapply.NewResourceCache(),
+		resourceCache:         noOpResourceCache{},
 	}
 
 	for _, opt := range options {
