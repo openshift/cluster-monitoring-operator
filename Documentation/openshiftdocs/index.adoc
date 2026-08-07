@@ -51,6 +51,7 @@ The configuration file itself is always defined under the `config.yaml` key in t
 * link:modules/nodeexportercollectorcpufreqconfig.adoc[NodeExporterCollectorCpufreqConfig]
 * link:modules/nodeexportercollectordmmultipathconfig.adoc[NodeExporterCollectorDmMultipathConfig]
 * link:modules/nodeexportercollectorethtoolconfig.adoc[NodeExporterCollectorEthtoolConfig]
+* link:modules/nodeexportercollectorinterruptsconfig.adoc[NodeExporterCollectorInterruptsConfig]
 * link:modules/nodeexportercollectorksmdconfig.adoc[NodeExporterCollectorKSMDConfig]
 * link:modules/nodeexportercollectormountstatsconfig.adoc[NodeExporterCollectorMountStatsConfig]
 * link:modules/nodeexportercollectornetclassconfig.adoc[NodeExporterCollectorNetClassConfig]
