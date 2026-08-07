@@ -490,6 +490,9 @@ func remoteWriteSpecsFromCRD(configs []configv1alpha1.RemoteWriteSpec) ([]Remote
 			return nil, err
 		}
 		cfg.WriteRelabelConfigs = writeRelabelConfigs
+		if rw.MessageVersion != "" {
+			cfg.MessageVersion = string(rw.MessageVersion)
+		}
 		if rw.AuthorizationConfig.Type != "" {
 			if err := applyRemoteWriteAuthorizationFromCRD(rw.AuthorizationConfig, &cfg); err != nil {
 				return nil, fmt.Errorf("remoteWrite.authorizationConfig: %w", err)
