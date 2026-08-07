@@ -17,10 +17,12 @@ package framework
 import (
 	"bytes"
 	"compress/gzip"
+	"context"
 	"fmt"
 	"io"
 	"os"
 	"testing"
+	"time"
 
 	"github.com/go-kit/log"
 	routev1 "github.com/openshift/api/route/v1"
@@ -32,6 +34,28 @@ import (
 	"k8s.io/apimachinery/pkg/util/intstr"
 	"k8s.io/utils/ptr"
 )
+
+// WaitForPrometheusUpdate reads the current generation from the given
+// Prometheus resource and polls the Kubernetes API until the resource's
+// generation is incremented and it matches with the status observedGeneration.
+func (f Framework) WaitForPrometheusUpdate(ctx context.Context, p *monitoringv1.Prometheus) error {
+	initialGeneration := p.Generation
+	return Poll(time.Second, 5*time.Minute, func() error {
+		current, err := f.MonitoringClient.Prometheuses(p.Namespace).Get(ctx, p.Name, metav1.GetOptions{})
+		if err != nil {
+			return err
+		}
+		if current.Generation <= initialGeneration {
+			return fmt.Errorf("generation not yet incremented (current: %d, initial: %d)", current.Generation, initialGeneration)
+		}
+		for _, c := range current.Status.Conditions {
+			if c.ObservedGeneration != current.Generation {
+				return fmt.Errorf("condition %q observedGeneration (%d) not yet caught up to generation (%d)", c.Type, c.ObservedGeneration, current.Generation)
+			}
+		}
+		return nil
+	})
+}
 
 func (f Framework) MakePrometheusWithWebTLSRemoteReceive(name, tlsSecretName string, image *string) *monitoringv1.Prometheus {
 	// This is not required in the Prometheus spec, but we inspect that value in
