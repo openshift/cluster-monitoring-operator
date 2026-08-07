@@ -13,7 +13,7 @@ require (
 	github.com/onsi/ginkgo/v2 v2.32.0
 	github.com/onsi/gomega v1.42.1
 	github.com/openshift-eng/openshift-tests-extension v0.0.0-20260707142426-572a3e9deb7a
-	github.com/openshift/api v0.0.0-20260804225205-7c5fbe31f5c2
+	github.com/openshift/api v0.0.0-20260807110950-72ae4424ef35
 	github.com/openshift/client-go v0.0.0-20260723174158-ae2315de9d73
 	github.com/openshift/library-go v0.0.0-20260727154952-0aacacf2673e
 	github.com/prometheus-operator/prometheus-operator/pkg/apis/monitoring v0.93.0
