@@ -63,6 +63,8 @@ spec:
           requests:
             cpu: 1m
             memory: 40Mi
+        securityContext:
+          readOnlyRootFilesystem: true
         terminationMessagePolicy: FallbackToLogsOnError
         volumeMounts:
         - mountPath: /etc/serving-certs-ca-bundle
@@ -83,6 +85,8 @@ spec:
           requests:
             cpu: 1m
             memory: 10Mi
+        securityContext:
+          readOnlyRootFilesystem: true
         terminationMessagePolicy: FallbackToLogsOnError
         volumeMounts:
         - mountPath: /etc/serving-certs-ca-bundle
@@ -105,6 +109,8 @@ spec:
           requests:
             cpu: 1m
             memory: 20Mi
+        securityContext:
+          readOnlyRootFilesystem: true
         terminationMessagePolicy: FallbackToLogsOnError
         volumeMounts:
         - mountPath: /etc/tls/private
