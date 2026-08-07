@@ -1719,6 +1719,8 @@ func TestPrometheusK8sConfiguration(t *testing.T) {
 	}
 
 	require.Equal(t, "TLS12", string(*p.Spec.Thanos.GRPCServerTLSConfig.SafeTLSConfig.MinVersion))
+	require.Equal(t, crypto.OpenSSLToIANACipherSuites(APIServerDefaultTLSCiphers), p.Spec.Thanos.GRPCServerTLSConfig.CipherSuites)
+	require.Equal(t, []string{"X25519MLKEM768", "X25519", "CurveP256", "CurveP384"}, p.Spec.Thanos.GRPCServerTLSConfig.Curves)
 }
 
 func TestPrometheusUserWorkloadConfiguration(t *testing.T) {
@@ -1806,6 +1808,8 @@ func TestPrometheusUserWorkloadConfiguration(t *testing.T) {
 	require.Equal(t, p.Spec.ExternalLabels, map[string]string{"foo": "bar", "oof": "rab"})
 
 	require.Equal(t, "TLS12", string(*p.Spec.Thanos.GRPCServerTLSConfig.SafeTLSConfig.MinVersion))
+	require.Equal(t, crypto.OpenSSLToIANACipherSuites(APIServerDefaultTLSCiphers), p.Spec.Thanos.GRPCServerTLSConfig.CipherSuites)
+	require.Equal(t, []string{"X25519MLKEM768", "X25519", "CurveP256", "CurveP384"}, p.Spec.Thanos.GRPCServerTLSConfig.Curves)
 }
 
 func TestPrometheusQueryLogFileConfig(t *testing.T) {
@@ -4518,6 +4522,8 @@ func TestThanosRulerConfiguration(t *testing.T) {
 	}
 
 	require.Equal(t, "TLS12", string(*tr.Spec.GRPCServerTLSConfig.SafeTLSConfig.MinVersion))
+	require.Equal(t, crypto.OpenSSLToIANACipherSuites(APIServerDefaultTLSCiphers), tr.Spec.GRPCServerTLSConfig.CipherSuites)
+	require.Equal(t, []string{"X25519MLKEM768", "X25519", "CurveP256", "CurveP384"}, tr.Spec.GRPCServerTLSConfig.Curves)
 
 }
 
