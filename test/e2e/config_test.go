@@ -21,6 +21,7 @@ import (
 	"fmt"
 	"io"
 	"net/http"
+	"strings"
 	"testing"
 	"time"
 
@@ -34,6 +35,7 @@ import (
 	v1 "k8s.io/api/core/v1"
 	apierrors "k8s.io/apimachinery/pkg/api/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	"k8s.io/apimachinery/pkg/types"
 )
 
 func TestClusterMonitoringOperatorConfiguration(t *testing.T) {
@@ -1257,4 +1259,84 @@ func assertQueryLogValueEquals(namespace, crName, value string) func(t *testing.
 			t.Fatal(err)
 		}
 	}
+}
+
+// TestProxyConfigWatch verifies that CMO watches the cluster Proxy
+// resource and triggers a reconciliation when it changes.
+// Exact injection correctness is covered by unit tests; here we only
+// check that a Proxy spec change propagates to the Prometheus CR env
+// vars. A Proxy change triggers a full CMO sync so all components are
+// reconciled, we only assert on Prometheus for simplicity.
+//
+// It is still possible that an unrelated event triggers the sync.
+func TestProxyConfigWatch(t *testing.T) {
+	ctx := context.Background()
+
+	// Scale CVO and MCO to 0 replicas to prevent proxy changes from triggering node reboots.
+	require.NoError(t, framework.Poll(5*time.Second, 3*time.Minute, func() error {
+		for _, d := range []struct{ ns, name string }{
+			{"openshift-cluster-version", "cluster-version-operator"},
+			{"openshift-machine-config-operator", "machine-config-operator"},
+		} {
+			dep, err := f.KubeClient.AppsV1().Deployments(d.ns).Patch(ctx, d.name, types.MergePatchType, []byte(`{"spec":{"replicas":0}}`), metav1.PatchOptions{})
+			if err != nil {
+				return err
+			}
+			if dep.Status.AvailableReplicas != 0 {
+				return fmt.Errorf("waiting for %s/%s scale-down: available=%d", d.ns, d.name, dep.Status.AvailableReplicas)
+			}
+		}
+		return nil
+	}))
+
+	proxies := f.OpenShiftConfigClient.ConfigV1().Proxies()
+	proxy, err := proxies.Get(ctx, "cluster", metav1.GetOptions{})
+	require.NoError(t, err)
+	originalHTTPProxy := proxy.Spec.HTTPProxy
+
+	httpProxyMarker := fmt.Sprintf("http://cmo-e2e-proxy-%d.invalid:3128", time.Now().UnixNano())
+
+	t.Cleanup(func() {
+		patch := []byte(fmt.Sprintf(`{"spec":{"httpProxy":%q}}`, originalHTTPProxy))
+		if _, err := proxies.Patch(ctx, "cluster", types.MergePatchType, patch, metav1.PatchOptions{}); err != nil {
+			t.Logf("restoring proxy: %v", err)
+		}
+
+		prom, err := f.MonitoringClient.Prometheuses(f.Ns).Get(ctx, "k8s", metav1.GetOptions{})
+		if err != nil {
+			t.Logf("getting Prometheus for rollout wait: %v", err)
+		} else {
+			if err := f.WaitForPrometheusUpdate(ctx, prom); err != nil {
+				t.Logf("waiting for Prometheus update after proxy cleanup: %v", err)
+			}
+		}
+
+		if _, err := f.KubeClient.AppsV1().Deployments("openshift-cluster-version").Patch(ctx, "cluster-version-operator", types.MergePatchType, []byte(`{"spec":{"replicas":1}}`), metav1.PatchOptions{}); err != nil {
+			t.Logf("restoring CVO: %v", err)
+		}
+	})
+
+	patch := []byte(fmt.Sprintf(`{"spec":{"httpProxy":%q}}`, httpProxyMarker))
+	_, err = proxies.Patch(ctx, "cluster", types.MergePatchType, patch, metav1.PatchOptions{})
+	require.NoError(t, err)
+
+	require.NoError(t, framework.Poll(5*time.Second, 5*time.Minute, func() error {
+		prom, err := f.MonitoringClient.Prometheuses(f.Ns).Get(ctx, "k8s", metav1.GetOptions{})
+		if err != nil {
+			return err
+		}
+		for _, c := range prom.Spec.Containers {
+			if c.Name == "prometheus" {
+				for _, e := range c.Env {
+					if e.Name == "HTTP_PROXY" {
+						if strings.Contains(e.Value, httpProxyMarker) {
+							return nil
+						}
+						return fmt.Errorf("HTTP_PROXY=%q, want it to contain %q", e.Value, httpProxyMarker)
+					}
+				}
+			}
+		}
+		return fmt.Errorf("HTTP_PROXY not set for prometheus container")
+	}))
 }
