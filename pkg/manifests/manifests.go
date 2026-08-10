@@ -1033,14 +1033,9 @@ func (f *Factory) updateNodeExporterArgs(args []string) ([]string, error) {
 	return args, nil
 }
 
-// concatenate all patterns into a single regexp using OR
+// regexListToArg concatenates all regexp patterns into a single regexp using
+// OR and anchored on both sides.
 func regexListToArg(list []string) (string, error) {
-	for _, pattern := range list {
-		_, err := regexp.Compile(pattern)
-		if err != nil {
-			return "", fmt.Errorf("invalid regexp pattern: %s", pattern)
-		}
-	}
 	r := "^(" + strings.Join(list, "|") + ")$"
 	_, err := regexp.Compile(r)
 	return r, err

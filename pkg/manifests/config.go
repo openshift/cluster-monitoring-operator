@@ -21,6 +21,7 @@ import (
 	"fmt"
 	"math"
 	"path/filepath"
+	"regexp"
 	"slices"
 	"strings"
 
@@ -387,6 +388,10 @@ func (c *Config) validate() error {
 		return fmt.Errorf("prometheus: %w", err)
 	}
 
+	if err := validateNodeExporterConfig(c.ClusterMonitoringConfiguration.NodeExporterConfig); err != nil {
+		return fmt.Errorf("node-exporter: %w", err)
+	}
+
 	return nil
 }
 
@@ -424,6 +429,21 @@ func validateRemoteWriteConfigs(rwSpecs []RemoteWriteSpec) error {
 		if rw.MessageVersion != "" && !slices.Contains(supportedRemoteWriteMessageVersions, rw.MessageVersion) {
 			return fmt.Errorf("remoteWrite[%d]: messageVersion %q is not supported, supported values are: %v",
 				i, rw.MessageVersion, supportedRemoteWriteMessageVersions)
+		}
+	}
+	return nil
+}
+
+func validateNodeExporterConfig(config *NodeExporterConfig) error {
+	if config == nil {
+		return nil
+	}
+	if config.Collectors.Systemd.Enabled {
+		for _, unit := range config.Collectors.Systemd.Units {
+			_, err := regexp.Compile(unit)
+			if err != nil {
+				return fmt.Errorf("systemd: invalid regexp pattern: %s", unit)
+			}
 		}
 	}
 	return nil

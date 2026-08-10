@@ -996,3 +996,46 @@ func TestDeprecatedConfig(t *testing.T) {
 		})
 	}
 }
+
+func TestNodeExporterSystemdUnits(t *testing.T) {
+	for _, tc := range []struct {
+		name   string
+		config string
+		err    bool
+	}{
+		{
+			name: "valid units",
+			config: `
+nodeExporter:
+  collectors:
+    systemd:
+      enabled: true
+      units:
+      - foo
+      - bar
+`,
+		},
+		{
+			name: "invalid units",
+			config: `
+nodeExporter:
+  collectors:
+    systemd:
+      enabled: true
+      units:
+      - network
+      - /\
+`,
+			err: true,
+		},
+	} {
+		t.Run(tc.name, func(st *testing.T) {
+			_, err := NewConfigFromString(tc.config)
+			if tc.err {
+				require.ErrorIs(t, err, ErrConfigValidation)
+				return
+			}
+			require.NoError(t, err)
+		})
+	}
+}
