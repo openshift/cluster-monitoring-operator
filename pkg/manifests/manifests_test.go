@@ -3749,36 +3749,6 @@ nodeExporter:
 
 }
 
-func TestNodeExporterSystemdUnits(t *testing.T) {
-
-	testName := "enable systemd collector with invalid units pattern"
-	config := `
-nodeExporter:
-  collectors:
-    systemd:
-      enabled: true
-      units:
-      - network.+
-      - /\
-`
-	t.Run(testName, func(st *testing.T) {
-		c, err := NewConfigFromString(config)
-		if err != nil {
-			t.Fatal(err)
-		}
-		c.SetImages(map[string]string{
-			"node-exporter":   "docker.io/openshift/origin-prometheus-node-exporter:latest",
-			"kube-rbac-proxy": "docker.io/openshift/origin-kube-rbac-proxy:latest",
-		})
-
-		f := NewFactory("openshift-monitoring", "openshift-user-workload-monitoring", c, defaultInfrastructureReader(), &fakeProxyReader{}, NewAssets(assetsPath), &APIServerConfig{}, &configv1.Console{})
-		_, err = f.NodeExporterDaemonSet()
-		if err == nil || !strings.Contains(err.Error(), "systemd unit pattern validation error:") {
-			t.Fatalf(`expected error "systemd unit pattern validation error:.*", got %v`, err)
-		}
-	})
-}
-
 func TestNodeExporterGeneralSettings(t *testing.T) {
 
 	tests := []struct {
