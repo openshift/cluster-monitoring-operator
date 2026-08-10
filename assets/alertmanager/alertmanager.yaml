@@ -37,6 +37,8 @@ spec:
       value: ""
     image: ""
     name: alertmanager
+    securityContext:
+      readOnlyRootFilesystem: true
     terminationMessagePolicy: FallbackToLogsOnError
   - args:
     - --secure-listen-address=0.0.0.0:9095
@@ -55,6 +57,8 @@ spec:
       requests:
         cpu: 1m
         memory: 20Mi
+    securityContext:
+      readOnlyRootFilesystem: true
     terminationMessagePolicy: FallbackToLogsOnError
     volumeMounts:
     - mountPath: /etc/kube-rbac-proxy
@@ -79,6 +83,8 @@ spec:
       requests:
         cpu: 1m
         memory: 15Mi
+    securityContext:
+      readOnlyRootFilesystem: true
     terminationMessagePolicy: FallbackToLogsOnError
     volumeMounts:
     - mountPath: /etc/kube-rbac-proxy
@@ -103,6 +109,8 @@ spec:
       requests:
         cpu: 1m
         memory: 15Mi
+    securityContext:
+      readOnlyRootFilesystem: true
     terminationMessagePolicy: FallbackToLogsOnError
     volumeMounts:
     - mountPath: /etc/kube-rbac-proxy
@@ -125,6 +133,8 @@ spec:
       requests:
         cpu: 1m
         memory: 20Mi
+    securityContext:
+      readOnlyRootFilesystem: true
     terminationMessagePolicy: FallbackToLogsOnError
   image: ""
   listenLocal: true

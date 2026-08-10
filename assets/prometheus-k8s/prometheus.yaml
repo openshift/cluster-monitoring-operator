@@ -70,6 +70,7 @@ spec:
       capabilities:
         drop:
         - ALL
+      readOnlyRootFilesystem: true
     terminationMessagePolicy: FallbackToLogsOnError
     volumeMounts:
     - mountPath: /etc/tls/private
@@ -94,6 +95,8 @@ spec:
       requests:
         cpu: 1m
         memory: 15Mi
+    securityContext:
+      readOnlyRootFilesystem: true
     terminationMessagePolicy: FallbackToLogsOnError
     volumeMounts:
     - mountPath: /etc/tls/private
@@ -126,6 +129,8 @@ spec:
       requests:
         cpu: 1m
         memory: 10Mi
+    securityContext:
+      readOnlyRootFilesystem: true
     terminationMessagePolicy: FallbackToLogsOnError
     volumeMounts:
     - mountPath: /etc/tls/private
@@ -139,6 +144,8 @@ spec:
       readOnly: true
   - image: ""
     name: thanos-sidecar
+    securityContext:
+      readOnlyRootFilesystem: true
     terminationMessagePolicy: FallbackToLogsOnError
     volumeMounts:
     - mountPath: /etc/tls/grpc
@@ -152,6 +159,8 @@ spec:
       value: ""
     image: ""
     name: prometheus
+    securityContext:
+      readOnlyRootFilesystem: true
     terminationMessagePolicy: FallbackToLogsOnError
     volumeMounts:
     - mountPath: /etc/pki/ca-trust/extracted/pem/

@@ -233,6 +233,25 @@ func assertNetworkPolicyPortsAreNumeric(t *testing.T, nps []networkingv1.Network
 	}
 }
 
+// expectReadOnlyRootFilesystem returns a PodAssertion that verifies all containers
+// (init and regular) in a pod have ReadOnlyRootFilesystem set to true.
+func expectReadOnlyRootFilesystem() framework.PodAssertion {
+	return func(pod v1.Pod) error {
+		check := func(containers []v1.Container) error {
+			for _, c := range containers {
+				if c.SecurityContext == nil || c.SecurityContext.ReadOnlyRootFilesystem == nil || !*c.SecurityContext.ReadOnlyRootFilesystem {
+					return fmt.Errorf("container %s in pod %s/%s does not have ReadOnlyRootFilesystem=true", c.Name, pod.Namespace, pod.Name)
+				}
+			}
+			return nil
+		}
+		if err := check(pod.Spec.InitContainers); err != nil {
+			return err
+		}
+		return check(pod.Spec.Containers)
+	}
+}
+
 // expectLabel returns a PodAssertion that checks a pod has the given label with the expected value.
 func expectLabel(labelKey, expectedValue string) framework.PodAssertion {
 	return func(pod v1.Pod) error {
@@ -243,6 +262,30 @@ func expectLabel(labelKey, expectedValue string) framework.PodAssertion {
 			return fmt.Errorf("pod %s has label %s with value %q, expected %q", pod.Name, labelKey, value, expectedValue)
 		}
 		return fmt.Errorf("pod %s is missing required label %s", pod.Name, labelKey)
+	}
+}
+
+// TestPodInvariants validates that all monitoring pods (including for the
+// user-defined stack) comply with the platform invariants such as security
+// requirements.
+func TestPodInvariants(t *testing.T) {
+	// Enable all the components including the user-defined Alertmanager.
+	setupUserWorkloadAssetsWithTeardownHook(t, f)
+
+	uwmCM := f.BuildUserWorkloadConfigMap(t, `alertmanager:
+  enabled: true
+`)
+
+	f.MustCreateOrUpdateConfigMap(t, uwmCM)
+	t.Cleanup(func() { f.MustDeleteConfigMap(t, uwmCM) })
+	f.AssertStatefulSetExistsAndRolloutFunc("alertmanager-user-workload", f.UserWorkloadMonitoringNs)(t)
+
+	for _, ns := range []string{f.Ns, f.UserWorkloadMonitoringNs} {
+		t.Run(ns, func(t *testing.T) {
+			f.AssertPodConfigurationFunc(ns, "", []framework.PodAssertion{
+				expectReadOnlyRootFilesystem(),
+			})(t)
+		})
 	}
 }
 
