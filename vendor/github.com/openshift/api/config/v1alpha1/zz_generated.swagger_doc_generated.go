@@ -357,6 +357,8 @@ var map_NodeExporterCollectorConfig = map[string]string{
 	"systemd":               "systemd configures the systemd collector, which collects statistics on the systemd daemon and its managed services. systemd is optional. When omitted, this means no opinion and the platform is left to choose a reasonable default, which is subject to change over time. The current default is disabled. Enabling this collector with a long list of selected units may produce metrics with high cardinality. If you enable this collector, closely monitor the prometheus-k8s deployment for excessive memory usage. Enable when you need metrics for specific units; scope units carefully.",
 	"softirqs":              "softirqs configures the softirqs collector, which exposes detailed softirq statistics from /proc/softirqs. softirqs is optional. When omitted, this means no opinion and the platform is left to choose a reasonable default, which is subject to change over time. The current default is disabled. Enable when you need visibility into kernel softirq processing across CPUs.",
 	"deviceMapperMultipath": "deviceMapperMultipath configures the dmmultipath collector, which collects statistics about DM-Multipath devices. deviceMapperMultipath is optional. When omitted, this means no opinion and the platform is left to choose a reasonable default, which is subject to change over time. The current default is enabled.",
+	"zoneinfo":              "zoneinfo configures the zoneinfo collector, which exposes per-zone memory page counts, watermarks, and protection thresholds from /proc/zoneinfo. zoneinfo is optional. When omitted, this means no opinion and the platform is left to choose a reasonable default, which is subject to change over time. The current default is to not collect zoneinfo metrics. Enable when you need visibility into kernel memory zone allocation and pressure.",
+	"nvmExpressSubsystem":   "nvmExpressSubsystem configures the nvmesubsystem collector, which collects statistics about NVM Express (NVMe) subsystem devices. nvmExpressSubsystem is optional. When omitted, this means no opinion and the platform is left to choose a reasonable default, which is subject to change over time. The current default is enabled.",
 }
 
 func (NodeExporterCollectorConfig) SwaggerDoc() map[string]string {
@@ -406,6 +408,15 @@ var map_NodeExporterCollectorMountStatsConfig = map[string]string{
 
 func (NodeExporterCollectorMountStatsConfig) SwaggerDoc() map[string]string {
 	return map_NodeExporterCollectorMountStatsConfig
+}
+
+var map_NodeExporterCollectorNVMExpressSubsystemConfig = map[string]string{
+	"":                 "NodeExporterCollectorNVMExpressSubsystemConfig provides configuration for the nvmesubsystem collector of the node-exporter agent. The nvmesubsystem collector collects statistics about NVM Express (NVMe) subsystem devices. It is enabled by default.",
+	"collectionPolicy": "collectionPolicy declares whether the nvmesubsystem collector collects metrics. This field is required. Valid values are \"Collect\" and \"DoNotCollect\". When set to \"Collect\", the nvmesubsystem collector is active and NVMe subsystem statistics are collected. When set to \"DoNotCollect\", the nvmesubsystem collector is inactive and the corresponding metrics become unavailable.",
+}
+
+func (NodeExporterCollectorNVMExpressSubsystemConfig) SwaggerDoc() map[string]string {
+	return map_NodeExporterCollectorNVMExpressSubsystemConfig
 }
 
 var map_NodeExporterCollectorNetClassCollectConfig = map[string]string{
@@ -480,6 +491,15 @@ var map_NodeExporterCollectorTcpStatConfig = map[string]string{
 
 func (NodeExporterCollectorTcpStatConfig) SwaggerDoc() map[string]string {
 	return map_NodeExporterCollectorTcpStatConfig
+}
+
+var map_NodeExporterCollectorZoneinfoConfig = map[string]string{
+	"":                 "NodeExporterCollectorZoneinfoConfig provides configuration for the zoneinfo collector of the node-exporter agent. The zoneinfo collector exposes per-zone memory page counts, watermarks, and protection thresholds from /proc/zoneinfo. By default, the zoneinfo collector does not collect metrics.",
+	"collectionPolicy": "collectionPolicy declares whether the zoneinfo collector collects metrics. This field is required. Valid values are \"Collect\" and \"DoNotCollect\". When set to \"Collect\", the zoneinfo collector is active and zone memory statistics are collected. When set to \"DoNotCollect\", the zoneinfo collector is inactive.",
+}
+
+func (NodeExporterCollectorZoneinfoConfig) SwaggerDoc() map[string]string {
+	return map_NodeExporterCollectorZoneinfoConfig
 }
 
 var map_NodeExporterConfig = map[string]string{
