@@ -1564,6 +1564,10 @@ func (f *Factory) PrometheusK8s(grpcTLS *v1.Secret, telemetrySecret *v1.Secret) 
 		return nil, err
 	}
 	p.Spec.Thanos.GRPCServerTLSConfig.SafeTLSConfig.MinVersion = grpcTLSVersion
+	p.Spec.Thanos.GRPCServerTLSConfig.CipherSuites = crypto.OpenSSLToIANACipherSuites(f.APIServerConfig.TLSCiphers())
+	if curves := f.APIServerConfig.TLSCurves(); len(curves) > 0 {
+		p.Spec.Thanos.GRPCServerTLSConfig.Curves = curves
+	}
 
 	p.Spec.Volumes = append(p.Spec.Volumes, v1.Volume{
 		Name: "secret-grpc-tls",
@@ -1872,6 +1876,10 @@ func (f *Factory) PrometheusUserWorkload(grpcTLS *v1.Secret) (*monv1.Prometheus,
 		return nil, err
 	}
 	p.Spec.Thanos.GRPCServerTLSConfig.SafeTLSConfig.MinVersion = grpcTLSVersion
+	p.Spec.Thanos.GRPCServerTLSConfig.CipherSuites = crypto.OpenSSLToIANACipherSuites(f.APIServerConfig.TLSCiphers())
+	if curves := f.APIServerConfig.TLSCurves(); len(curves) > 0 {
+		p.Spec.Thanos.GRPCServerTLSConfig.Curves = curves
+	}
 	p.Spec.Volumes = append(p.Spec.Volumes, v1.Volume{
 		Name: "secret-grpc-tls",
 		VolumeSource: v1.VolumeSource{
@@ -3326,6 +3334,10 @@ func (f *Factory) ThanosRulerCustomResource(
 		return nil, err
 	}
 	t.Spec.GRPCServerTLSConfig.SafeTLSConfig.MinVersion = grpcTLSVersion
+	t.Spec.GRPCServerTLSConfig.CipherSuites = crypto.OpenSSLToIANACipherSuites(f.APIServerConfig.TLSCiphers())
+	if curves := f.APIServerConfig.TLSCurves(); len(curves) > 0 {
+		t.Spec.GRPCServerTLSConfig.Curves = curves
+	}
 
 	// Mounting TLS secret to thanos-ruler
 	if grpcTLS == nil {
