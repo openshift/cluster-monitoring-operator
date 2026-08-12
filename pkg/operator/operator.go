@@ -20,6 +20,7 @@ import (
 	"errors"
 	"fmt"
 	"strings"
+	"sync"
 	"time"
 
 	"github.com/blang/semver/v4"
@@ -86,6 +87,9 @@ var (
 
 	// To identify "invalid UWM config only" failures
 	ErrUserWorkloadInvalidConfiguration = fmt.Errorf("invalid UWM configuration")
+
+	// Logs once that ConfigMap and ClusterMonitoring CR are both valid config sources (Phase 1).
+	clusterMonitoringDualConfigLog sync.Once
 )
 
 // NewDefaultInfrastructureConfig returns a default InfrastructureConfig.
@@ -1019,6 +1023,12 @@ func (o *Operator) Config(ctx context.Context) (*manifests.Config, []string, err
 		if getErr != nil && !apierrors.IsNotFound(getErr) {
 			return nil, warnings, fmt.Errorf("failed to get ClusterMonitoring CRD: %w", getErr)
 		}
+
+		// Phase 1 (pre-GA): notify once that both ConfigMap and CRD are supported.
+		clusterMonitoringDualConfigLog.Do(func() {
+			klog.Infof("ClusterMonitoringConfig feature gate is enabled: platform monitoring can be configured via the %q ConfigMap or the ClusterMonitoring custom resource (config.openshift.io/v1alpha1, name %q). During Phase 1, ConfigMap values take precedence over CRD values for each top-level component.",
+				o.cmoConfigMap(), "cluster")
+		})
 	}
 
 	c, err := o.loadConfig(cm)
