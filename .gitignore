@@ -2,6 +2,7 @@
 /tests-ext
 
 jsonnet/vendor/
+hack/tools/vendor/
 /tmp
 
 # These are empty target files, created on every docker build. Their sole
