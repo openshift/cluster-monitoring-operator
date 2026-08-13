@@ -42,7 +42,8 @@ GOLANGCI_LINT_VERSION=v2.12.2
 PROMTOOL_BIN=$(BIN_DIR)/promtool
 DOCGEN_BIN=$(BIN_DIR)/docgen
 MISSPELL_BIN=$(BIN_DIR)/misspell
-TOOLING=$(EMBEDMD_BIN) $(JB_BIN) $(GOJSONTOYAML_BIN) $(JSONNET_BIN) $(JSONNETFMT_BIN) $(PROMTOOL_BIN) $(DOCGEN_BIN) $(MISSPELL_BIN)
+GOTESTSUM_BIN=$(BIN_DIR)/gotestsum
+TOOLING=$(EMBEDMD_BIN) $(JB_BIN) $(GOJSONTOYAML_BIN) $(JSONNET_BIN) $(JSONNETFMT_BIN) $(PROMTOOL_BIN) $(DOCGEN_BIN) $(MISSPELL_BIN) $(GOTESTSUM_BIN)
 
 MANIFESTS_DIR ?= $(shell pwd)/manifests
 JSON_MANIFESTS_DIR ?= $(shell pwd)/tmp/json-manifests/manifests
@@ -280,10 +281,23 @@ test: test-unit test-rules test-e2e test-ginkgo
 test-unit:
 	go test -race -short $(PKGS) -count=1
 
+E2E_JUNIT = $(ARTIFACT_DIR)/junit/junit_e2e.xml
+TEST_NAME_PREFIX = [sig-instrumentation][Jira:\&quot;Monitoring\&quot;][cluster-monitoring-operator e2e]
+
 .PHONY: test-e2e
 test-e2e: KUBECONFIG?=$(HOME)/.kube/config
+ifdef ARTIFACT_DIR
+test-e2e: $(GOTESTSUM_BIN)
+endif
 test-e2e:
+ifdef ARTIFACT_DIR
+	mkdir -p $(dir $(E2E_JUNIT))
+	$(GOTESTSUM_BIN) --format=standard-verbose --junitfile=$(E2E_JUNIT) -- -v -timeout=150m $(E2E_TEST_ARGS) ./test/e2e/ --kubeconfig $(KUBECONFIG)
+	# Add some metadata.
+	sed -i 's/ name="Test/ name="$(TEST_NAME_PREFIX) Test/g' $(E2E_JUNIT)
+else
 	go test -v -timeout=150m $(E2E_TEST_ARGS) ./test/e2e/ --kubeconfig $(KUBECONFIG)
+endif
 
 .PHONY: test-ginkgo
 test-ginkgo: KUBECONFIG?=$(HOME)/.kube/config
