@@ -23,6 +23,7 @@ import (
 	"reflect"
 	"slices"
 	"strings"
+	"sync"
 	"time"
 
 	"github.com/imdario/mergo"
@@ -91,18 +92,34 @@ type Client struct {
 	aggclient   aggregatorclient.Interface
 
 	eventRecorder events.Recorder
-	// resourceCache is set to a no-op implementation that never caches.
-	// The library-go resourceCache is not thread-safe
-	// and CMO runs tasks concurrently with the same client, which causes data races.
-	// TODO: consider re-enabling caching once we can use a library-go that ships the thread-safe
-	// implementation (see https://github.com/openshift/library-go/pull/2380).
 	resourceCache resourceapply.ResourceCache
 }
 
-type noOpResourceCache struct{}
+// threadSafeResourceCache wraps library-go's resourceCache with a mutex
+// because the upstream implementation uses a plain map that is not safe
+// for concurrent use.
+// TODO: remove once library-go ships the thread-safe resourceCache
+// from https://github.com/openshift/library-go/pull/2380.
+type threadSafeResourceCache struct {
+	mu    sync.RWMutex
+	inner resourceapply.ResourceCache
+}
 
-func (noOpResourceCache) UpdateCachedResourceMetadata(_ runtime.Object, _ runtime.Object) {}
-func (noOpResourceCache) SafeToSkipApply(_ runtime.Object, _ runtime.Object) bool         { return false }
+func newThreadSafeResourceCache() *threadSafeResourceCache {
+	return &threadSafeResourceCache{inner: resourceapply.NewResourceCache()}
+}
+
+func (c *threadSafeResourceCache) UpdateCachedResourceMetadata(required, actual runtime.Object) {
+	c.mu.Lock()
+	defer c.mu.Unlock()
+	c.inner.UpdateCachedResourceMetadata(required, actual)
+}
+
+func (c *threadSafeResourceCache) SafeToSkipApply(required, existing runtime.Object) bool {
+	c.mu.RLock()
+	defer c.mu.RUnlock()
+	return c.inner.SafeToSkipApply(required, existing)
+}
 
 func NewForConfig(cfg *rest.Config, version string, namespace, userWorkloadNamespace string, options ...Option) (*Client, error) {
 	client := New(version, namespace, userWorkloadNamespace, options...)
@@ -270,7 +287,7 @@ func New(version string, namespace, userWorkloadNamespace string, options ...Opt
 		version:               version,
 		namespace:             namespace,
 		userWorkloadNamespace: userWorkloadNamespace,
-		resourceCache:         noOpResourceCache{},
+		resourceCache:         newThreadSafeResourceCache(),
 	}
 
 	for _, opt := range options {
