@@ -920,13 +920,13 @@ func TestCreateOrUpdateServiceAccount(t *testing.T) {
 				c = Client{
 					kclient:       fake.NewSimpleClientset(),
 					eventRecorder: eventRecorder,
-					resourceCache: noOpResourceCache{},
+					resourceCache: newThreadSafeResourceCache(),
 				}
 			} else {
 				c = Client{
 					kclient:       fake.NewSimpleClientset(sa.DeepCopy()),
 					eventRecorder: eventRecorder,
-					resourceCache: noOpResourceCache{},
+					resourceCache: newThreadSafeResourceCache(),
 				}
 				_, err := c.kclient.CoreV1().ServiceAccounts(ns).Get(ctx, sa.Name, metav1.GetOptions{})
 				if err != nil {
@@ -1933,7 +1933,7 @@ func TestCreateOrUpdateValidatingWebhookConfiguration(t *testing.T) {
 	c := Client{
 		kclient:       fake.NewSimpleClientset(webhook.DeepCopy()),
 		eventRecorder: events.NewInMemoryRecorder("cluster-monitoring-operator"),
-		resourceCache: noOpResourceCache{},
+		resourceCache: newThreadSafeResourceCache(),
 	}
 
 	if _, err := c.kclient.AdmissionregistrationV1().ValidatingWebhookConfigurations().Get(ctx, webhook.Name, metav1.GetOptions{}); err != nil {
@@ -2353,7 +2353,7 @@ func TestResourceCacheConcurrentAccess(t *testing.T) {
 	c := Client{
 		kclient:       fake.NewSimpleClientset(existing...),
 		eventRecorder: events.NewInMemoryRecorder("test"),
-		resourceCache: noOpResourceCache{},
+		resourceCache: newThreadSafeResourceCache(),
 	}
 
 	// Mimics CMO's errgroup tasks reconciling resources concurrently.
