@@ -220,6 +220,8 @@ var (
 
 	PrometheusOperatorClusterRoleBinding  = "prometheus-operator/cluster-role-binding.yaml"
 	PrometheusOperatorClusterRole         = "prometheus-operator/cluster-role.yaml"
+	PrometheusOperatorRoleBinding         = "prometheus-operator/role-binding.yaml"
+	PrometheusOperatorRole                = "prometheus-operator/role.yaml"
 	PrometheusOperatorServiceAccount      = "prometheus-operator/service-account.yaml"
 	PrometheusOperatorDeployment          = "prometheus-operator/deployment.yaml"
 	PrometheusOperatorService             = "prometheus-operator/service.yaml"
@@ -231,6 +233,8 @@ var (
 	PrometheusOperatorUserWorkloadServiceAccount      = "prometheus-operator-user-workload/service-account.yaml"
 	PrometheusOperatorUserWorkloadClusterRole         = "prometheus-operator-user-workload/cluster-role.yaml"
 	PrometheusOperatorUserWorkloadClusterRoleBinding  = "prometheus-operator-user-workload/cluster-role-binding.yaml"
+	PrometheusOperatorUserWorkloadRole                = "prometheus-operator-user-workload/role.yaml"
+	PrometheusOperatorUserWorkloadRoleBinding         = "prometheus-operator-user-workload/role-binding.yaml"
 	PrometheusOperatorUserWorkloadService             = "prometheus-operator-user-workload/service.yaml"
 	PrometheusOperatorUserWorkloadDeployment          = "prometheus-operator-user-workload/deployment.yaml"
 	PrometheusOperatorUserWorkloadServiceMonitor      = "prometheus-operator-user-workload/service-monitor.yaml"
@@ -2195,8 +2199,16 @@ func (f *Factory) PrometheusOperatorClusterRoleBinding() (*rbacv1.ClusterRoleBin
 	return f.NewClusterRoleBinding(f.assets.MustNewAssetSlice(PrometheusOperatorClusterRoleBinding))
 }
 
+func (f *Factory) PrometheusOperatorRoleBinding() (*rbacv1.RoleBinding, error) {
+	return f.NewRoleBinding(f.assets.MustNewAssetSlice(PrometheusOperatorRoleBinding))
+}
+
 func (f *Factory) PrometheusOperatorUserWorkloadClusterRoleBinding() (*rbacv1.ClusterRoleBinding, error) {
 	return f.NewClusterRoleBinding(f.assets.MustNewAssetSlice(PrometheusOperatorUserWorkloadClusterRoleBinding))
+}
+
+func (f *Factory) PrometheusOperatorUserWorkloadRoleBinding() (*rbacv1.RoleBinding, error) {
+	return f.NewRoleBinding(f.assets.MustNewAssetSlice(PrometheusOperatorUserWorkloadRoleBinding))
 }
 
 func (f *Factory) PrometheusOperatorUserWorkloadCRBACProxySecret() (*v1.Secret, error) {
@@ -2211,8 +2223,16 @@ func (f *Factory) PrometheusOperatorClusterRole() (*rbacv1.ClusterRole, error) {
 	return f.NewClusterRole(f.assets.MustNewAssetSlice(PrometheusOperatorClusterRole))
 }
 
+func (f *Factory) PrometheusOperatorRole() (*rbacv1.Role, error) {
+	return f.NewRole(f.assets.MustNewAssetSlice(PrometheusOperatorRole))
+}
+
 func (f *Factory) PrometheusOperatorUserWorkloadClusterRole() (*rbacv1.ClusterRole, error) {
 	return f.NewClusterRole(f.assets.MustNewAssetSlice(PrometheusOperatorUserWorkloadClusterRole))
+}
+
+func (f *Factory) PrometheusOperatorUserWorkloadRole() (*rbacv1.Role, error) {
+	return f.NewRole(f.assets.MustNewAssetSlice(PrometheusOperatorUserWorkloadRole))
 }
 
 func (f *Factory) PrometheusOperatorServiceAccount() (*v1.ServiceAccount, error) {
