@@ -811,18 +811,6 @@ rules:
 - apiGroups:
   - ""
   resources:
-  - configmaps
-  - secrets
-  verbs:
-  - get
-  - list
-  - watch
-  - create
-  - update
-  - delete
-- apiGroups:
-  - ""
-  resources:
   - pods
   verbs:
   - list
@@ -901,6 +889,15 @@ rules:
   - subjectaccessreviews
   verbs:
   - create
+- apiGroups:
+  - ""
+  resources:
+  - secrets
+  - configmaps
+  verbs:
+  - get
+  - list
+  - watch
 - apiGroups:
   - authentication.k8s.io
   resources:

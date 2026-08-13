@@ -22,16 +22,77 @@ function(params)
     '0prometheusagentCustomResourceDefinition':: {},
     '0scrapeconfigCustomResourceDefinition':: {},
 
-    // For the same reason, the permissions on PrometheusAgent and ScrapeConfig resources should be removed.
+    // For the same reason, the permissions on PrometheusAgent and ScrapeConfig
+    // resources should be removed.
     clusterRole: rbac.removeRulesByResourcePrefix(
       rbac.removeRulesByResourcePrefix(
-        po.clusterRole,
-        'monitoring.coreos.com',
-        'prometheusagents',
+        rbac.removeRulesByResourcePrefix(
+          rbac.removeRulesByResourcePrefix(
+            po.clusterRole,
+            'monitoring.coreos.com',
+            'prometheusagents',
+          ),
+          'monitoring.coreos.com',
+          'scrapeconfigs',
+        ),
+        '',
+        'configmaps',
       ),
-      'monitoring.coreos.com',
-      'scrapeconfigs',
-    ),
+      '',
+      'secrets',
+    ) + {
+      // Grant read permissions on secrets/configmaps in all
+      // namespaces in case ServiceMonitor/PodMonitor resources
+      // have references to them.
+      rules+: [
+        {
+          apiGroups: [''],
+          resources: ['secrets', 'configmaps'],
+          verbs: ['get', 'list', 'watch'],
+        },
+      ],
+    },
+
+    // Grant write permissions on secrets and configmaps in the
+    // openshift-monitoring namespace.
+    role: {
+      apiVersion: 'rbac.authorization.k8s.io/v1',
+      kind: 'Role',
+      metadata: {
+        labels: po.config.commonLabels,
+        name: 'prometheus-operator',
+        namespace: params.namespace,
+      },
+      rules: [
+        {
+          apiGroups: [''],
+          resources: ['secrets', 'configmaps'],
+          verbs: ['create', 'update', 'delete'],
+        },
+      ],
+    },
+
+    roleBinding: {
+      apiVersion: 'rbac.authorization.k8s.io/v1',
+      kind: 'RoleBinding',
+      metadata: {
+        labels: po.config.commonLabels,
+        name: 'prometheus-operator',
+        namespace: params.namespace,
+      },
+      roleRef: {
+        apiGroup: 'rbac.authorization.k8s.io',
+        kind: 'Role',
+        name: 'prometheus-operator',
+      },
+      subjects: [
+        {
+          kind: 'ServiceAccount',
+          name: 'prometheus-operator',
+          namespace: params.namespace,
+        },
+      ],
+    },
 
     kubeRbacProxySecret: generateSecret.staticAuthSecret(params.namespace, params.commonLabels, 'prometheus-operator-kube-rbac-proxy-config'),
     deployment+: {
