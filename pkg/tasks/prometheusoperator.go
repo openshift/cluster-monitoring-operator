@@ -80,6 +80,26 @@ func (t *PrometheusOperatorTask) Run(ctx context.Context) error {
 		return fmt.Errorf("reconciling Prometheus Operator ClusterRoleBinding failed: %w", err)
 	}
 
+	r, err := t.factory.PrometheusOperatorRole()
+	if err != nil {
+		return fmt.Errorf("initializing Prometheus Operator Role failed: %w", err)
+	}
+
+	err = t.client.CreateOrUpdateRole(ctx, r)
+	if err != nil {
+		return fmt.Errorf("reconciling Prometheus Operator Role failed: %w", err)
+	}
+
+	rb, err := t.factory.PrometheusOperatorRoleBinding()
+	if err != nil {
+		return fmt.Errorf("initializing Prometheus Operator RoleBinding failed: %w", err)
+	}
+
+	err = t.client.CreateOrUpdateRoleBinding(ctx, rb)
+	if err != nil {
+		return fmt.Errorf("reconciling Prometheus Operator RoleBinding failed: %w", err)
+	}
+
 	err = t.runAdmissionWebhook(ctx)
 	if err != nil {
 		return err
