@@ -85,3 +85,12 @@ rules:
   - watch
   - update
   - delete
+- apiGroups:
+  - ""
+  resources:
+  - secrets
+  - configmaps
+  verbs:
+  - create
+  - update
+  - delete
