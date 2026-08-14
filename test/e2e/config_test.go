@@ -1262,8 +1262,8 @@ func assertQueryLogValueEquals(namespace, crName, value string) func(t *testing.
 // It is still possible that an unrelated event triggers the sync.
 func TestProxyConfigWatch(t *testing.T) {
 	ctx := context.Background()
-	proxies := f.OpenShiftConfigClient.ConfigV1().Proxies()
 
+	proxies := f.OpenShiftConfigClient.ConfigV1().Proxies()
 	proxy, err := proxies.Get(ctx, "cluster", metav1.GetOptions{})
 	require.NoError(t, err)
 	originalHTTPProxy := proxy.Spec.HTTPProxy
@@ -1272,9 +1272,32 @@ func TestProxyConfigWatch(t *testing.T) {
 
 	t.Cleanup(func() {
 		patch := []byte(fmt.Sprintf(`{"spec":{"httpProxy":%q}}`, originalHTTPProxy))
-		_, err := proxies.Patch(ctx, "cluster", types.MergePatchType, patch, metav1.PatchOptions{})
-		require.NoError(t, err)
+		if _, err := proxies.Patch(ctx, "cluster", types.MergePatchType, patch, metav1.PatchOptions{}); err != nil {
+			t.Logf("restoring proxy: %v", err)
+		}
+
+		// CVO manages the MCO deployment; scaling it back up restores MCO automatically.
+		if _, err := f.KubeClient.AppsV1().Deployments("openshift-cluster-version").Patch(ctx, "cluster-version-operator", types.MergePatchType, []byte(`{"spec":{"replicas":1}}`), metav1.PatchOptions{}); err != nil {
+			t.Logf("restoring CVO: %v", err)
+		}
 	})
+
+	// Scale CVO and MCO to 0 replicas to prevent proxy changes from triggering node reboots.
+	require.NoError(t, framework.Poll(5*time.Second, 3*time.Minute, func() error {
+		for _, d := range []struct{ ns, name string }{
+			{"openshift-cluster-version", "cluster-version-operator"},
+			{"openshift-machine-config-operator", "machine-config-operator"},
+		} {
+			dep, err := f.KubeClient.AppsV1().Deployments(d.ns).Patch(ctx, d.name, types.MergePatchType, []byte(`{"spec":{"replicas":0}}`), metav1.PatchOptions{})
+			if err != nil {
+				return err
+			}
+			if dep.Status.AvailableReplicas != 0 {
+				return fmt.Errorf("waiting for %s/%s scale-down: available=%d", d.ns, d.name, dep.Status.AvailableReplicas)
+			}
+		}
+		return nil
+	}))
 
 	patch := []byte(fmt.Sprintf(`{"spec":{"httpProxy":%q}}`, httpProxyMarker))
 	_, err = proxies.Patch(ctx, "cluster", types.MergePatchType, patch, metav1.PatchOptions{})
