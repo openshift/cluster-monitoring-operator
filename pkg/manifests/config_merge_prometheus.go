@@ -357,7 +357,7 @@ func relabelConfigFromCRD(rc configv1alpha1.RelabelConfig) (monv1.RelabelConfig,
 	case configv1alpha1.RelabelActionHashMod:
 		out.TargetLabel = rc.Action.HashMod.TargetLabel
 		if rc.Action.HashMod.Modulus > 0 {
-			out.Modulus = uint64(rc.Action.HashMod.Modulus)
+			out.Modulus = rc.Action.HashMod.Modulus
 		}
 	case configv1alpha1.RelabelActionLowercase:
 		out.TargetLabel = rc.Action.Lowercase.TargetLabel
@@ -490,6 +490,9 @@ func remoteWriteSpecsFromCRD(configs []configv1alpha1.RemoteWriteSpec) ([]Remote
 			return nil, err
 		}
 		cfg.WriteRelabelConfigs = writeRelabelConfigs
+		if rw.MessageVersion != "" {
+			cfg.MessageVersion = string(rw.MessageVersion)
+		}
 		if rw.AuthorizationConfig.Type != "" {
 			if err := applyRemoteWriteAuthorizationFromCRD(rw.AuthorizationConfig, &cfg); err != nil {
 				return nil, fmt.Errorf("remoteWrite.authorizationConfig: %w", err)

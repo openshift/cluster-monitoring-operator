@@ -62,6 +62,9 @@ func setupEnv(t *testing.T) {
 	t.Cleanup(func() {
 		require.NoError(t, cleanupBinding())
 	})
+
+	require.NoError(t, f.WaitForNamespaceSCCAnnotation(testNamespace))
+	require.NoError(t, f.WaitForServiceAccountImagePullSecrets(testNamespace, serviceAccount))
 }
 
 func TestDocExamples(t *testing.T) {

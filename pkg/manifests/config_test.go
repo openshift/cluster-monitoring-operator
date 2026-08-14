@@ -954,6 +954,50 @@ func TestRemoteWriteMessageVersionValidation(t *testing.T) {
 	}
 }
 
+func TestNodeExporterInterruptsIncludeValidation(t *testing.T) {
+	for _, tc := range []struct {
+		name        string
+		config      string
+		expectError bool
+	}{
+		{
+			name: "valid patterns",
+			config: `nodeExporter:
+  collectors:
+    interrupts:
+      include: ["LOC;.*", "NMI;.*"]
+`,
+		},
+		{
+			name: "empty include list is valid",
+			config: `nodeExporter:
+  collectors:
+    interrupts:
+      include: []
+`,
+		},
+		{
+			name: "invalid regexp pattern",
+			config: `nodeExporter:
+  collectors:
+    interrupts:
+      include: ["(invalid["]
+`,
+			expectError: true,
+		},
+	} {
+		t.Run(tc.name, func(t *testing.T) {
+			_, err := NewConfigFromString(tc.config)
+			if tc.expectError {
+				require.Error(t, err)
+				require.True(t, errors.Is(err, ErrConfigValidation))
+				return
+			}
+			require.NoError(t, err)
+		})
+	}
+}
+
 func TestDeprecatedConfig(t *testing.T) {
 	for _, tc := range []struct {
 		name                string
@@ -993,6 +1037,49 @@ func TestDeprecatedConfig(t *testing.T) {
 				require.Equal(t, tc.warning, warnings[0].Warning())
 			}
 			require.Equal(t, tc.expectedMetricValue, prom_testutil.ToFloat64(metrics.DeprecatedConfig))
+		})
+	}
+}
+
+func TestNodeExporterSystemdUnits(t *testing.T) {
+	for _, tc := range []struct {
+		name   string
+		config string
+		err    bool
+	}{
+		{
+			name: "valid units",
+			config: `
+nodeExporter:
+  collectors:
+    systemd:
+      enabled: true
+      units:
+      - foo
+      - bar
+`,
+		},
+		{
+			name: "invalid units",
+			config: `
+nodeExporter:
+  collectors:
+    systemd:
+      enabled: true
+      units:
+      - network
+      - /\
+`,
+			err: true,
+		},
+	} {
+		t.Run(tc.name, func(st *testing.T) {
+			_, err := NewConfigFromString(tc.config)
+			if tc.err {
+				require.ErrorIs(t, err, ErrConfigValidation)
+				return
+			}
+			require.NoError(t, err)
 		})
 	}
 }

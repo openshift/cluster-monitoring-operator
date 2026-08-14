@@ -152,6 +152,16 @@ func TestClusterMonitoringNodeExporterCollectorsEmpty(t *testing.T) {
 			CollectionPolicy: configv1alpha1.NodeExporterCollectorCollectionPolicyDoNotCollect,
 		},
 	}))
+	require.False(t, clusterMonitoringNodeExporterCollectorsEmpty(configv1alpha1.NodeExporterCollectorConfig{
+		DeviceMapperMultipath: configv1alpha1.NodeExporterCollectorDeviceMapperMultipathConfig{
+			CollectionPolicy: configv1alpha1.NodeExporterCollectorCollectionPolicyDoNotCollect,
+		},
+	}))
+	require.False(t, clusterMonitoringNodeExporterCollectorsEmpty(configv1alpha1.NodeExporterCollectorConfig{
+		NVMExpressSubsystem: configv1alpha1.NodeExporterCollectorNVMExpressSubsystemConfig{
+			CollectionPolicy: configv1alpha1.NodeExporterCollectorCollectionPolicyDoNotCollect,
+		},
+	}))
 }
 
 func TestClusterMonitoringTelemeterClientSpecEmpty(t *testing.T) {
@@ -617,6 +627,74 @@ func TestConfig_MergeClusterMonitoringCRD_NodeExporterConfigPhase1(t *testing.T)
 		require.NoError(t, err)
 		require.False(t, c.ClusterMonitoringConfiguration.NodeExporterConfig.Collectors.Softirqs.Enabled)
 	})
+	t.Run("CR maps DeviceMapperMultipath Collect to enabled", func(t *testing.T) {
+		cm := &configv1alpha1.ClusterMonitoring{
+			Spec: configv1alpha1.ClusterMonitoringSpec{
+				NodeExporterConfig: configv1alpha1.NodeExporterConfig{
+					Collectors: configv1alpha1.NodeExporterCollectorConfig{
+						DeviceMapperMultipath: configv1alpha1.NodeExporterCollectorDeviceMapperMultipathConfig{
+							CollectionPolicy: configv1alpha1.NodeExporterCollectorCollectionPolicyCollect,
+						},
+					},
+				},
+			},
+		}
+		c, err := NewConfigFromStringAndClusterMonitoringResource("{}", cm)
+		require.NoError(t, err)
+		require.NotNil(t, c.ClusterMonitoringConfiguration.NodeExporterConfig.Collectors.DmMultipath.Enabled)
+		require.True(t, *c.ClusterMonitoringConfiguration.NodeExporterConfig.Collectors.DmMultipath.Enabled)
+	})
+	t.Run("CR maps DeviceMapperMultipath DoNotCollect to disabled", func(t *testing.T) {
+		cm := &configv1alpha1.ClusterMonitoring{
+			Spec: configv1alpha1.ClusterMonitoringSpec{
+				NodeExporterConfig: configv1alpha1.NodeExporterConfig{
+					Collectors: configv1alpha1.NodeExporterCollectorConfig{
+						DeviceMapperMultipath: configv1alpha1.NodeExporterCollectorDeviceMapperMultipathConfig{
+							CollectionPolicy: configv1alpha1.NodeExporterCollectorCollectionPolicyDoNotCollect,
+						},
+					},
+				},
+			},
+		}
+		c, err := NewConfigFromStringAndClusterMonitoringResource("{}", cm)
+		require.NoError(t, err)
+		require.NotNil(t, c.ClusterMonitoringConfiguration.NodeExporterConfig.Collectors.DmMultipath.Enabled)
+		require.False(t, *c.ClusterMonitoringConfiguration.NodeExporterConfig.Collectors.DmMultipath.Enabled)
+	})
+	t.Run("CR maps NVMExpressSubsystem Collect to enabled", func(t *testing.T) {
+		cm := &configv1alpha1.ClusterMonitoring{
+			Spec: configv1alpha1.ClusterMonitoringSpec{
+				NodeExporterConfig: configv1alpha1.NodeExporterConfig{
+					Collectors: configv1alpha1.NodeExporterCollectorConfig{
+						NVMExpressSubsystem: configv1alpha1.NodeExporterCollectorNVMExpressSubsystemConfig{
+							CollectionPolicy: configv1alpha1.NodeExporterCollectorCollectionPolicyCollect,
+						},
+					},
+				},
+			},
+		}
+		c, err := NewConfigFromStringAndClusterMonitoringResource("{}", cm)
+		require.NoError(t, err)
+		require.NotNil(t, c.ClusterMonitoringConfiguration.NodeExporterConfig.Collectors.NvmeSubsystem.Enabled)
+		require.True(t, *c.ClusterMonitoringConfiguration.NodeExporterConfig.Collectors.NvmeSubsystem.Enabled)
+	})
+	t.Run("CR maps NVMExpressSubsystem DoNotCollect to disabled", func(t *testing.T) {
+		cm := &configv1alpha1.ClusterMonitoring{
+			Spec: configv1alpha1.ClusterMonitoringSpec{
+				NodeExporterConfig: configv1alpha1.NodeExporterConfig{
+					Collectors: configv1alpha1.NodeExporterCollectorConfig{
+						NVMExpressSubsystem: configv1alpha1.NodeExporterCollectorNVMExpressSubsystemConfig{
+							CollectionPolicy: configv1alpha1.NodeExporterCollectorCollectionPolicyDoNotCollect,
+						},
+					},
+				},
+			},
+		}
+		c, err := NewConfigFromStringAndClusterMonitoringResource("{}", cm)
+		require.NoError(t, err)
+		require.NotNil(t, c.ClusterMonitoringConfiguration.NodeExporterConfig.Collectors.NvmeSubsystem.Enabled)
+		require.False(t, *c.ClusterMonitoringConfiguration.NodeExporterConfig.Collectors.NvmeSubsystem.Enabled)
+	})
 }
 
 func TestClusterMonitoringOpenShiftStateMetricsSpecEmpty(t *testing.T) {
@@ -1063,5 +1141,56 @@ func TestConfig_MergeClusterMonitoringCRD_PrometheusK8sConfigPhase1(t *testing.T
 		_, err := NewConfigFromStringAndClusterMonitoringResource("{}", cm)
 		require.Error(t, err)
 		require.Contains(t, err.Error(), "basicAuth requires both username and password")
+	})
+	t.Run("CR maps remote write MessageVersion V1.0", func(t *testing.T) {
+		cm := &configv1alpha1.ClusterMonitoring{
+			Spec: configv1alpha1.ClusterMonitoringSpec{
+				PrometheusConfig: configv1alpha1.PrometheusConfig{
+					RemoteWrite: []configv1alpha1.RemoteWriteSpec{
+						{
+							URL:            "https://example.com/api/v1/write",
+							MessageVersion: configv1alpha1.RemoteWriteMessageVersion1_0,
+						},
+					},
+				},
+			},
+		}
+		c, err := NewConfigFromStringAndClusterMonitoringResource("{}", cm)
+		require.NoError(t, err)
+		require.Len(t, c.ClusterMonitoringConfiguration.PrometheusK8sConfig.RemoteWrite, 1)
+		require.Equal(t, "V1.0", c.ClusterMonitoringConfiguration.PrometheusK8sConfig.RemoteWrite[0].MessageVersion)
+	})
+	t.Run("CR maps remote write MessageVersion V2.0", func(t *testing.T) {
+		cm := &configv1alpha1.ClusterMonitoring{
+			Spec: configv1alpha1.ClusterMonitoringSpec{
+				PrometheusConfig: configv1alpha1.PrometheusConfig{
+					RemoteWrite: []configv1alpha1.RemoteWriteSpec{
+						{
+							URL:            "https://example.com/api/v1/write",
+							MessageVersion: configv1alpha1.RemoteWriteMessageVersion2_0,
+						},
+					},
+				},
+			},
+		}
+		c, err := NewConfigFromStringAndClusterMonitoringResource("{}", cm)
+		require.NoError(t, err)
+		require.Len(t, c.ClusterMonitoringConfiguration.PrometheusK8sConfig.RemoteWrite, 1)
+		require.Equal(t, "V2.0", c.ClusterMonitoringConfiguration.PrometheusK8sConfig.RemoteWrite[0].MessageVersion)
+	})
+	t.Run("CR omits MessageVersion when not set", func(t *testing.T) {
+		cm := &configv1alpha1.ClusterMonitoring{
+			Spec: configv1alpha1.ClusterMonitoringSpec{
+				PrometheusConfig: configv1alpha1.PrometheusConfig{
+					RemoteWrite: []configv1alpha1.RemoteWriteSpec{
+						{URL: "https://example.com/api/v1/write"},
+					},
+				},
+			},
+		}
+		c, err := NewConfigFromStringAndClusterMonitoringResource("{}", cm)
+		require.NoError(t, err)
+		require.Len(t, c.ClusterMonitoringConfiguration.PrometheusK8sConfig.RemoteWrite, 1)
+		require.Empty(t, c.ClusterMonitoringConfiguration.PrometheusK8sConfig.RemoteWrite[0].MessageVersion)
 	})
 }

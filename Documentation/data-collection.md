@@ -670,7 +670,7 @@ data:
     # owners: (@openshift/openshift-team-monitoring)
     #
     # collector:node_scrape_collector_success:avg reports the average success of optional node_exporter's collectors running in the cluster.
-    - '{__name__="collector:node_scrape_collector_success:avg",collector=~"ethtool|cpufreq|tcpstat|netdev|netclass|buddyinfo|mountstats|ksmd|processes|systemd|softirqs|zoneinfo|dmmultipath"}'
+    - '{__name__="collector:node_scrape_collector_success:avg",collector=~"ethtool|cpufreq|tcpstat|netdev|netclass|buddyinfo|mountstats|ksmd|processes|systemd|softirqs|zoneinfo|dmmultipath|nvmesubsystem|interrupts"}'
     #
     # owners: (@openshift/openshift-team-monitoring)
     #
@@ -1333,6 +1333,13 @@ data:
     #
     # cluster:k8s_mcp_http_requests:sum tracks the total HTTP requests.
     - '{__name__="cluster:k8s_mcp_http_requests:sum"}'
+    #
+    # owners: (https://github.com/opendatahub-io/ogx-k8s-operator, @openshift/openshift-team-ogx)
+    #
+    # ogx:api_info:max tracks which OGX APIs are actively used on the cluster.
+    # Expected labels:
+    # - api: "agentic", "inference", "rag", "responses" or "vector_io"
+    - '{__name__="ogx:api_info:max", api=~"agentic|inference|rag|responses|vector_io"}'
 kind: ConfigMap
 metadata:
   name: telemetry-config

@@ -982,6 +982,17 @@ func (f *Factory) updateNodeExporterArgs(args []string) ([]string, error) {
 		args = setArg(args, "--no-collector.ethtool", "")
 	}
 
+	if len(f.config.ClusterMonitoringConfiguration.NodeExporterConfig.Collectors.Interrupts.Include) > 0 {
+		args = setArg(args, "--collector.interrupts", "")
+		pattern, err := regexListToArg(f.config.ClusterMonitoringConfiguration.NodeExporterConfig.Collectors.Interrupts.Include)
+		if err != nil {
+			return nil, fmt.Errorf("interrupts include pattern error: %w", err)
+		}
+		args = setArg(args, "--collector.interrupts.name-include=", pattern)
+	} else {
+		args = setArg(args, "--no-collector.interrupts", "")
+	}
+
 	if f.config.ClusterMonitoringConfiguration.NodeExporterConfig.Collectors.Softirqs.Enabled {
 		args = setArg(args, "--collector.softirqs", "")
 	} else {
@@ -998,6 +1009,12 @@ func (f *Factory) updateNodeExporterArgs(args []string) ([]string, error) {
 		args = setArg(args, "--collector.dmmultipath", "")
 	} else {
 		args = setArg(args, "--no-collector.dmmultipath", "")
+	}
+
+	if ptr.Deref(f.config.ClusterMonitoringConfiguration.NodeExporterConfig.Collectors.NvmeSubsystem.Enabled, true) {
+		args = setArg(args, "--collector.nvmesubsystem", "")
+	} else {
+		args = setArg(args, "--no-collector.nvmesubsystem", "")
 	}
 
 	if f.config.ClusterMonitoringConfiguration.NodeExporterConfig.Collectors.BuddyInfo.Enabled {
@@ -1039,14 +1056,9 @@ func (f *Factory) updateNodeExporterArgs(args []string) ([]string, error) {
 	return args, nil
 }
 
-// concatenate all patterns into a single regexp using OR
+// regexListToArg concatenates all regexp patterns into a single regexp using
+// OR and anchored on both sides.
 func regexListToArg(list []string) (string, error) {
-	for _, pattern := range list {
-		_, err := regexp.Compile(pattern)
-		if err != nil {
-			return "", fmt.Errorf("invalid regexp pattern: %s", pattern)
-		}
-	}
 	r := "^(" + strings.Join(list, "|") + ")$"
 	_, err := regexp.Compile(r)
 	return r, err
@@ -1564,6 +1576,10 @@ func (f *Factory) PrometheusK8s(grpcTLS *v1.Secret, telemetrySecret *v1.Secret) 
 		return nil, err
 	}
 	p.Spec.Thanos.GRPCServerTLSConfig.SafeTLSConfig.MinVersion = grpcTLSVersion
+	p.Spec.Thanos.GRPCServerTLSConfig.CipherSuites = crypto.OpenSSLToIANACipherSuites(f.APIServerConfig.TLSCiphers())
+	if curves := f.APIServerConfig.TLSCurves(); len(curves) > 0 {
+		p.Spec.Thanos.GRPCServerTLSConfig.Curves = curves
+	}
 
 	p.Spec.Volumes = append(p.Spec.Volumes, v1.Volume{
 		Name: "secret-grpc-tls",
@@ -1841,23 +1857,23 @@ func (f *Factory) PrometheusUserWorkload(grpcTLS *v1.Secret) (*monv1.Prometheus,
 	f.setupPrometheusRemoteWriteProxy(p)
 
 	if f.config.UserWorkloadConfiguration.Prometheus.EnforcedSampleLimit != nil {
-		p.Spec.EnforcedSampleLimit = f.config.UserWorkloadConfiguration.Prometheus.EnforcedSampleLimit
+		p.Spec.EnforcedSampleLimit = new(int64(*f.config.UserWorkloadConfiguration.Prometheus.EnforcedSampleLimit))
 	}
 
 	if f.config.UserWorkloadConfiguration.Prometheus.EnforcedTargetLimit != nil {
-		p.Spec.EnforcedTargetLimit = f.config.UserWorkloadConfiguration.Prometheus.EnforcedTargetLimit
+		p.Spec.EnforcedTargetLimit = new(int64(*f.config.UserWorkloadConfiguration.Prometheus.EnforcedTargetLimit))
 	}
 
 	if f.config.UserWorkloadConfiguration.Prometheus.EnforcedLabelLimit != nil {
-		p.Spec.EnforcedLabelLimit = f.config.UserWorkloadConfiguration.Prometheus.EnforcedLabelLimit
+		p.Spec.EnforcedLabelLimit = new(int64(*f.config.UserWorkloadConfiguration.Prometheus.EnforcedLabelLimit))
 	}
 
 	if f.config.UserWorkloadConfiguration.Prometheus.EnforcedLabelNameLengthLimit != nil {
-		p.Spec.EnforcedLabelNameLengthLimit = f.config.UserWorkloadConfiguration.Prometheus.EnforcedLabelNameLengthLimit
+		p.Spec.EnforcedLabelNameLengthLimit = new(int64(*f.config.UserWorkloadConfiguration.Prometheus.EnforcedLabelNameLengthLimit))
 	}
 
 	if f.config.UserWorkloadConfiguration.Prometheus.EnforcedLabelValueLengthLimit != nil {
-		p.Spec.EnforcedLabelValueLengthLimit = f.config.UserWorkloadConfiguration.Prometheus.EnforcedLabelValueLengthLimit
+		p.Spec.EnforcedLabelValueLengthLimit = new(int64(*f.config.UserWorkloadConfiguration.Prometheus.EnforcedLabelValueLengthLimit))
 	}
 
 	if f.config.Images.Thanos != "" {
@@ -1872,6 +1888,10 @@ func (f *Factory) PrometheusUserWorkload(grpcTLS *v1.Secret) (*monv1.Prometheus,
 		return nil, err
 	}
 	p.Spec.Thanos.GRPCServerTLSConfig.SafeTLSConfig.MinVersion = grpcTLSVersion
+	p.Spec.Thanos.GRPCServerTLSConfig.CipherSuites = crypto.OpenSSLToIANACipherSuites(f.APIServerConfig.TLSCiphers())
+	if curves := f.APIServerConfig.TLSCurves(); len(curves) > 0 {
+		p.Spec.Thanos.GRPCServerTLSConfig.Curves = curves
+	}
 	p.Spec.Volumes = append(p.Spec.Volumes, v1.Volume{
 		Name: "secret-grpc-tls",
 		VolumeSource: v1.VolumeSource{
@@ -3330,6 +3350,10 @@ func (f *Factory) ThanosRulerCustomResource(
 		return nil, err
 	}
 	t.Spec.GRPCServerTLSConfig.SafeTLSConfig.MinVersion = grpcTLSVersion
+	t.Spec.GRPCServerTLSConfig.CipherSuites = crypto.OpenSSLToIANACipherSuites(f.APIServerConfig.TLSCiphers())
+	if curves := f.APIServerConfig.TLSCurves(); len(curves) > 0 {
+		t.Spec.GRPCServerTLSConfig.Curves = curves
+	}
 
 	// Mounting TLS secret to thanos-ruler
 	if grpcTLS == nil {

@@ -8,7 +8,7 @@ metadata:
     include.release.openshift.io/ibm-cloud-managed: "true"
     include.release.openshift.io/self-managed-high-availability: "true"
     include.release.openshift.io/single-node-developer: "true"
-    operator.prometheus.io/version: 0.92.1
+    operator.prometheus.io/version: 0.93.0
   labels:
     app.kubernetes.io/managed-by: cluster-version-operator
     app.kubernetes.io/part-of: openshift-monitoring
@@ -4909,7 +4909,10 @@ spec:
                           minimum: -1
                           type: integer
                         send:
-                          description: send defines whether metric metadata is sent to the remote storage or not.
+                          description: |-
+                            send defines whether metric metadata is sent to the remote storage or not.
+
+                            The setting is ignored when Remote Write message's version 2.0 is used.
                           type: boolean
                         sendInterval:
                           description: sendInterval defines how frequently metric metadata is sent to the remote storage.
@@ -5640,6 +5643,7 @@ spec:
 
                               Only applicable when the action is `HashMod`.
                             format: int64
+                            minimum: 0
                             type: integer
                           regex:
                             description: regex defines the regular expression against which the extracted value is matched.

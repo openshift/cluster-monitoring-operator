@@ -31,10 +31,12 @@ Configuring Cluster Monitoring is optional. If the config does not exist or is e
 * [NodeExporterCollectorCpufreqConfig](#nodeexportercollectorcpufreqconfig)
 * [NodeExporterCollectorDmMultipathConfig](#nodeexportercollectordmmultipathconfig)
 * [NodeExporterCollectorEthtoolConfig](#nodeexportercollectorethtoolconfig)
+* [NodeExporterCollectorInterruptsConfig](#nodeexportercollectorinterruptsconfig)
 * [NodeExporterCollectorKSMDConfig](#nodeexportercollectorksmdconfig)
 * [NodeExporterCollectorMountStatsConfig](#nodeexportercollectormountstatsconfig)
 * [NodeExporterCollectorNetClassConfig](#nodeexportercollectornetclassconfig)
 * [NodeExporterCollectorNetDevConfig](#nodeexportercollectornetdevconfig)
+* [NodeExporterCollectorNvmeSubsystemConfig](#nodeexportercollectornvmesubsystemconfig)
 * [NodeExporterCollectorProcessesConfig](#nodeexportercollectorprocessesconfig)
 * [NodeExporterCollectorSoftirqsConfig](#nodeexportercollectorsoftirqsconfig)
 * [NodeExporterCollectorSystemdConfig](#nodeexportercollectorsystemdconfig)
@@ -97,7 +99,7 @@ The `AlertmanagerMainConfig` resource defines settings for the Alertmanager comp
 | secrets | []string | Defines a list of secrets that need to be mounted into the Alertmanager. The secrets must reside within the same namespace as the Alertmanager object. They will be added as volumes named secret-<secret-name> and mounted at /etc/alertmanager/secrets/<secret-name> within the 'alertmanager' container of the Alertmanager Pods. |
 | tolerations | [][v1.Toleration](https://kubernetes.io/docs/reference/generated/kubernetes-api/v1.36/#toleration-v1-core) | Defines tolerations for the pods. |
 | topologySpreadConstraints | []v1.TopologySpreadConstraint | Defines a pod's topology spread constraints. |
-| volumeClaimTemplate | *[monv1.EmbeddedPersistentVolumeClaim](https://github.com/prometheus-operator/prometheus-operator/blob/v0.92.1/Documentation/api.md#embeddedpersistentvolumeclaim) | Defines persistent storage for Alertmanager. Use this setting to configure the persistent volume claim, including storage class, volume size, and name. |
+| volumeClaimTemplate | *[monv1.EmbeddedPersistentVolumeClaim](https://github.com/prometheus-operator/prometheus-operator/blob/v0.93.0/Documentation/api.md#embeddedpersistentvolumeclaim) | Defines persistent storage for Alertmanager. Use this setting to configure the persistent volume claim, including storage class, volume size, and name. |
 
 [Back to TOC](#table-of-contents)
 
@@ -120,7 +122,7 @@ The `AlertmanagerUserWorkloadConfig` resource defines the settings for the Alert
 | nodeSelector | map[string]string | Defines the nodes on which the pods are scheduled. |
 | tolerations | [][v1.Toleration](https://kubernetes.io/docs/reference/generated/kubernetes-api/v1.36/#toleration-v1-core) | Defines tolerations for the pods. |
 | topologySpreadConstraints | []v1.TopologySpreadConstraint | Defines a pod's topology spread constraints. |
-| volumeClaimTemplate | *[monv1.EmbeddedPersistentVolumeClaim](https://github.com/prometheus-operator/prometheus-operator/blob/v0.92.1/Documentation/api.md#embeddedpersistentvolumeclaim) | Defines persistent storage for Alertmanager. Use this setting to configure the persistent volume claim, including storage class, volume size and name. |
+| volumeClaimTemplate | *[monv1.EmbeddedPersistentVolumeClaim](https://github.com/prometheus-operator/prometheus-operator/blob/v0.93.0/Documentation/api.md#embeddedpersistentvolumeclaim) | Defines persistent storage for Alertmanager. Use this setting to configure the persistent volume claim, including storage class, volume size and name. |
 
 [Back to TOC](#table-of-contents)
 
@@ -257,9 +259,11 @@ The `NodeExporterCollectorConfig` resource defines settings for individual colle
 | ksmd | [NodeExporterCollectorKSMDConfig](#nodeexportercollectorksmdconfig) | Defines the configuration of the `ksmd` collector, which collects statistics from the kernel same-page merger daemon. Disabled by default. |
 | processes | [NodeExporterCollectorProcessesConfig](#nodeexportercollectorprocessesconfig) | Defines the configuration of the `processes` collector, which collects statistics from processes and threads running in the system. Disabled by default. |
 | systemd | [NodeExporterCollectorSystemdConfig](#nodeexportercollectorsystemdconfig) | Defines the configuration of the `systemd` collector, which collects statistics on the systemd daemon and its managed services. Disabled by default. |
+| interrupts | [NodeExporterCollectorInterruptsConfig](#nodeexportercollectorinterruptsconfig) | Defines the configuration of the `interrupts` collector, which exposes interrupt counts from `/proc/interrupts`. Disabled by default. |
 | softirqs | [NodeExporterCollectorSoftirqsConfig](#nodeexportercollectorsoftirqsconfig) | Defines the configuration of the `softirqs` collector, which exposes detailed softirq metrics from `/proc/softirqs`. Disabled by default. |
 | zoneinfo | [NodeExporterCollectorZoneinfoConfig](#nodeexportercollectorzoneinfoconfig) | Defines the configuration of the `zoneinfo` collector, which exposes detailed memory zone statistics from `/proc/zoneinfo`. Disabled by default. |
 | dmMultipath | [NodeExporterCollectorDmMultipathConfig](#nodeexportercollectordmmultipathconfig) | Defines the configuration of the `dmmultipath` collector, which exposes DM-multipath device and path metrics from `/sys/block/dm-*`. Enabled by default. |
+| nvmeSubsystem | [NodeExporterCollectorNvmeSubsystemConfig](#nodeexportercollectornvmesubsystemconfig) | Defines the configuration of the `nvmesubsystem` collector, which exposes NVMe subsystem metrics from `/sys/class/nvme-subsystem/`. Enabled by default. |
 
 [Back to TOC](#table-of-contents)
 
@@ -305,6 +309,21 @@ The `NodeExporterCollectorEthtoolConfig` resource works as an on/off switch for 
 | Property | Type | Description |
 | -------- | ---- | ----------- |
 | enabled | bool | A Boolean flag that enables or disables the `ethtool` collector. |
+
+[Back to TOC](#table-of-contents)
+
+## NodeExporterCollectorInterruptsConfig
+
+#### Description
+
+The `NodeExporterCollectorInterruptsConfig` resource configures the `interrupts` collector of the `node-exporter` agent. By default, the collector is disabled. A non-empty `include` list enables the collector and defines which interrupt metrics should be collected.
+
+
+<em>appears in: [NodeExporterCollectorConfig](#nodeexportercollectorconfig)</em>
+
+| Property | Type | Description |
+| -------- | ---- | ----------- |
+| include | []string | A list of regular expression patterns. Each line in `/proc/interrupts` is matched against the same string node-exporter uses: the IRQ name, info, and devices fields joined with `;`, for example `LOC;77;IO-APIC 2-edge …`. Patterns are combined with OR into a single expression anchored on both ends, so each pattern must match the entire string (use `.*` where needed). An empty list disables the collector. Examples: `FOO;.*` matches all interrupts named FOO; `.*;some_dev` matches all interrupts on device `some_dev`; `.*;.*;(eth\|eno\|ens\|em[0-9]\|bond\|team\|mlx\|.*TxRx.*).*` matches network interface interrupts (passed to node-exporter as `--collector.interrupts.name-include=^(.*;.*;(eth\|eno\|ens\|em[0-9]\|bond\|team\|mlx\|.*TxRx.*).*)$`). |
 
 [Back to TOC](#table-of-contents)
 
@@ -366,6 +385,21 @@ The `NodeExporterCollectorNetDevConfig` resource works as an on/off switch for t
 | Property | Type | Description |
 | -------- | ---- | ----------- |
 | enabled | *bool | A Boolean flag that enables or disables the `netdev` collector. |
+
+[Back to TOC](#table-of-contents)
+
+## NodeExporterCollectorNvmeSubsystemConfig
+
+#### Description
+
+The `NodeExporterCollectorNvmeSubsystemConfig` resource works as an on/off switch for the `nvmesubsystem` collector of the `node-exporter` agent. By default, the `nvmesubsystem` collector is enabled.
+
+
+<em>appears in: [NodeExporterCollectorConfig](#nodeexportercollectorconfig)</em>
+
+| Property | Type | Description |
+| -------- | ---- | ----------- |
+| enabled | *bool | A Boolean flag that enables or disables the `nvmesubsystem` collector. |
 
 [Back to TOC](#table-of-contents)
 
@@ -505,7 +539,7 @@ The `PrometheusK8sConfig` resource defines settings for the Prometheus component
 | tolerations | [][v1.Toleration](https://kubernetes.io/docs/reference/generated/kubernetes-api/v1.36/#toleration-v1-core) | Defines tolerations for the pods. |
 | topologySpreadConstraints | []v1.TopologySpreadConstraint | Defines the pod's topology spread constraints. |
 | collectionProfile | CollectionProfile | Defines the metrics collection profile that Prometheus uses to collect metrics from the platform components. Supported values are `full`, `minimal` and `telemetry`. In the `full` profile (default), Prometheus collects all metrics that are exposed by the platform components. In the `minimal` profile, Prometheus only collects metrics necessary for the default platform alerts, recording rules, telemetry and console dashboards. In the `telemetry` profile, Prometheus only collects metrics necessary for telemetry. |
-| volumeClaimTemplate | *[monv1.EmbeddedPersistentVolumeClaim](https://github.com/prometheus-operator/prometheus-operator/blob/v0.92.1/Documentation/api.md#embeddedpersistentvolumeclaim) | Defines persistent storage for Prometheus. Use this setting to configure the persistent volume claim, including storage class, volume size and name. |
+| volumeClaimTemplate | *[monv1.EmbeddedPersistentVolumeClaim](https://github.com/prometheus-operator/prometheus-operator/blob/v0.93.0/Documentation/api.md#embeddedpersistentvolumeclaim) | Defines persistent storage for Prometheus. Use this setting to configure the persistent volume claim, including storage class, volume size and name. |
 
 [Back to TOC](#table-of-contents)
 
@@ -573,7 +607,7 @@ The `PrometheusRestrictedConfig` resource defines the settings for the Prometheu
 | retentionSize | string | Defines the maximum amount of disk space used by data blocks plus the write-ahead log (WAL). Supported values are `B`, `KB`, `KiB`, `MB`, `MiB`, `GB`, `GiB`, `TB`, `TiB`, `PB`, `PiB`, `EB`, and `EiB`. The default value is `nil`. |
 | tolerations | [][v1.Toleration](https://kubernetes.io/docs/reference/generated/kubernetes-api/v1.36/#toleration-v1-core) | Defines tolerations for the pods. |
 | topologySpreadConstraints | []v1.TopologySpreadConstraint | Defines a pod's topology spread constraints. |
-| volumeClaimTemplate | *[monv1.EmbeddedPersistentVolumeClaim](https://github.com/prometheus-operator/prometheus-operator/blob/v0.92.1/Documentation/api.md#embeddedpersistentvolumeclaim) | Defines persistent storage for Prometheus. Use this setting to configure the storage class and size of a volume. |
+| volumeClaimTemplate | *[monv1.EmbeddedPersistentVolumeClaim](https://github.com/prometheus-operator/prometheus-operator/blob/v0.93.0/Documentation/api.md#embeddedpersistentvolumeclaim) | Defines persistent storage for Prometheus. Use this setting to configure the storage class and size of a volume. |
 
 [Back to TOC](#table-of-contents)
 
@@ -591,21 +625,21 @@ The `RemoteWriteSpec` resource defines the settings for remote write storage.
 | Property | Type | Description |
 | -------- | ---- | ----------- |
 | authorization | *monv1.SafeAuthorization | Defines the authorization settings for remote write storage. |
-| basicAuth | *[monv1.BasicAuth](https://github.com/prometheus-operator/prometheus-operator/blob/v0.92.1/Documentation/api.md#basicauth) | Defines basic authentication settings for the remote write endpoint URL. |
+| basicAuth | *[monv1.BasicAuth](https://github.com/prometheus-operator/prometheus-operator/blob/v0.93.0/Documentation/api.md#basicauth) | Defines basic authentication settings for the remote write endpoint URL. |
 | bearerTokenFile | string | Defines the file that contains the bearer token for the remote write endpoint. However, because you cannot mount secrets in a pod, in practice you can only reference the token of the service account. |
 | headers | map[string]string | Specifies the custom HTTP headers to be sent along with each remote write request. Headers set by Prometheus cannot be overwritten. |
 | messageVersion | string | Defines the Remote Write message version to use when writing to the remote write endpoint. Allowed values are \"V1.0\" and \"V2.0\". Defaults to \"V1.0\". |
-| metadataConfig | *[monv1.MetadataConfig](https://github.com/prometheus-operator/prometheus-operator/blob/v0.92.1/Documentation/api.md#metadataconfig) | Defines settings for sending series metadata to remote write storage. |
+| metadataConfig | *[monv1.MetadataConfig](https://github.com/prometheus-operator/prometheus-operator/blob/v0.93.0/Documentation/api.md#metadataconfig) | Defines settings for sending series metadata to remote write storage. |
 | name | string | Defines the name of the remote write queue. This name is used in metrics and logging to differentiate queues. If specified, this name must be unique. |
 | oauth2 | *monv1.OAuth2 | Defines OAuth2 authentication settings for the remote write endpoint. |
 | proxyUrl | string | Defines an optional proxy URL. If the cluster-wide proxy is enabled, it replaces the proxyUrl setting. The cluster-wide proxy supports both HTTP and HTTPS proxies, with HTTPS taking precedence. |
-| queueConfig | *[monv1.QueueConfig](https://github.com/prometheus-operator/prometheus-operator/blob/v0.92.1/Documentation/api.md#queueconfig) | Allows tuning configuration for remote write queue parameters. |
+| queueConfig | *[monv1.QueueConfig](https://github.com/prometheus-operator/prometheus-operator/blob/v0.93.0/Documentation/api.md#queueconfig) | Allows tuning configuration for remote write queue parameters. |
 | remoteTimeout | string | Defines the timeout value for requests to the remote write endpoint. |
 | sendExemplars | *bool | Enables sending exemplars via remote write. When enabled, Prometheus is configured to store a maximum of 100,000 exemplars in memory. Note that this setting only applies to user-defined monitoring. It is not applicable to default in-cluster monitoring. |
 | sigv4 | *monv1.Sigv4 | Defines AWS Signature Version 4 authentication settings. |
-| tlsConfig | *[monv1.SafeTLSConfig](https://github.com/prometheus-operator/prometheus-operator/blob/v0.92.1/Documentation/api.md#safetlsconfig) | Defines TLS authentication settings for the remote write endpoint. |
+| tlsConfig | *[monv1.SafeTLSConfig](https://github.com/prometheus-operator/prometheus-operator/blob/v0.93.0/Documentation/api.md#safetlsconfig) | Defines TLS authentication settings for the remote write endpoint. |
 | url | string | Defines the URL of the remote write endpoint to which samples will be sent. |
-| writeRelabelConfigs | [][monv1.RelabelConfig](https://github.com/prometheus-operator/prometheus-operator/blob/v0.92.1/Documentation/api.md#relabelconfig) | Defines the list of remote write relabel configurations. |
+| writeRelabelConfigs | [][monv1.RelabelConfig](https://github.com/prometheus-operator/prometheus-operator/blob/v0.93.0/Documentation/api.md#relabelconfig) | Defines the list of remote write relabel configurations. |
 
 [Back to TOC](#table-of-contents)
 
@@ -710,7 +744,7 @@ The `ThanosRulerConfig` resource defines configuration for the Thanos Ruler inst
 | retention | string | Defines the duration for which Prometheus retains data. This definition must be specified using the following regular expression pattern: `[0-9]+(ms\|s\|m\|h\|d\|w\|y)` (ms = milliseconds, s= seconds,m = minutes, h = hours, d = days, w = weeks, y = years). The default value is `24h`. |
 | tolerations | [][v1.Toleration](https://kubernetes.io/docs/reference/generated/kubernetes-api/v1.36/#toleration-v1-core) | Defines tolerations for the pods. |
 | topologySpreadConstraints | []v1.TopologySpreadConstraint | Defines topology spread constraints for the pods. |
-| volumeClaimTemplate | *[monv1.EmbeddedPersistentVolumeClaim](https://github.com/prometheus-operator/prometheus-operator/blob/v0.92.1/Documentation/api.md#embeddedpersistentvolumeclaim) | Defines persistent storage for Thanos Ruler. Use this setting to configure the storage class and size of a volume. |
+| volumeClaimTemplate | *[monv1.EmbeddedPersistentVolumeClaim](https://github.com/prometheus-operator/prometheus-operator/blob/v0.93.0/Documentation/api.md#embeddedpersistentvolumeclaim) | Defines persistent storage for Thanos Ruler. Use this setting to configure the storage class and size of a volume. |
 
 [Back to TOC](#table-of-contents)
 

@@ -9,7 +9,7 @@ metadata:
     app.kubernetes.io/managed-by: cluster-monitoring-operator
     app.kubernetes.io/name: prometheus
     app.kubernetes.io/part-of: openshift-monitoring
-    app.kubernetes.io/version: 3.13.1
+    app.kubernetes.io/version: 3.13.2
   name: user-workload
   namespace: openshift-user-workload-monitoring
 spec:
@@ -68,6 +68,7 @@ spec:
       capabilities:
         drop:
         - ALL
+      readOnlyRootFilesystem: true
     terminationMessagePolicy: FallbackToLogsOnError
     volumeMounts:
     - mountPath: /etc/tls/private
@@ -100,6 +101,7 @@ spec:
       capabilities:
         drop:
         - ALL
+      readOnlyRootFilesystem: true
     terminationMessagePolicy: FallbackToLogsOnError
     volumeMounts:
     - mountPath: /etc/tls/private
@@ -137,6 +139,7 @@ spec:
       capabilities:
         drop:
         - ALL
+      readOnlyRootFilesystem: true
     terminationMessagePolicy: FallbackToLogsOnError
     volumeMounts:
     - mountPath: /etc/tls/private
@@ -148,6 +151,8 @@ spec:
       name: secret-kube-rbac-proxy-metrics
   - image: ""
     name: thanos-sidecar
+    securityContext:
+      readOnlyRootFilesystem: true
     terminationMessagePolicy: FallbackToLogsOnError
     volumeMounts:
     - mountPath: /etc/tls/grpc
@@ -161,6 +166,8 @@ spec:
       value: ""
     image: ""
     name: prometheus
+    securityContext:
+      readOnlyRootFilesystem: true
     terminationMessagePolicy: FallbackToLogsOnError
     volumeMounts:
     - mountPath: /etc/pki/ca-trust/extracted/pem/
@@ -187,7 +194,7 @@ spec:
       app.kubernetes.io/instance: user-workload
       app.kubernetes.io/name: prometheus
       app.kubernetes.io/part-of: openshift-monitoring
-      app.kubernetes.io/version: 3.13.1
+      app.kubernetes.io/version: 3.13.2
   podMonitorNamespaceSelector:
     matchExpressions:
     - key: openshift.io/cluster-monitoring
@@ -296,8 +303,8 @@ spec:
       requests:
         cpu: 1m
         memory: 17Mi
-    version: 0.42.2
-  version: 3.13.1
+    version: 0.42.4
+  version: 3.13.2
   volumes:
   - configMap:
       items:

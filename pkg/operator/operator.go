@@ -20,6 +20,7 @@ import (
 	"errors"
 	"fmt"
 	"strings"
+	"sync"
 	"time"
 
 	"github.com/blang/semver/v4"
@@ -86,6 +87,9 @@ var (
 
 	// To identify "invalid UWM config only" failures
 	ErrUserWorkloadInvalidConfiguration = fmt.Errorf("invalid UWM configuration")
+
+	// Logs once that ConfigMap and ClusterMonitoring CR are both valid config sources (Phase 1).
+	clusterMonitoringDualConfigLog sync.Once
 )
 
 // NewDefaultInfrastructureConfig returns a default InfrastructureConfig.
@@ -369,6 +373,19 @@ func New(
 		UpdateFunc: func(_, newObj interface{}) {
 			o.handleEvent(newObj)
 		},
+	})
+	if err != nil {
+		return nil, err
+	}
+	o.informers = append(o.informers, informer)
+
+	// Watch the cluster Proxy resource to reconcile when proxy settings change.
+	informer = cache.NewSharedIndexInformer(
+		o.client.ProxyListWatch(),
+		&configv1.Proxy{}, resyncPeriod, cache.Indexers{},
+	)
+	_, err = informer.AddEventHandler(cache.ResourceEventHandlerFuncs{
+		UpdateFunc: func(_, newObj interface{}) { o.handleEvent(newObj) },
 	})
 	if err != nil {
 		return nil, err
@@ -667,6 +684,7 @@ func (o *Operator) handleEvent(obj interface{}) {
 		*configv1.Console,
 		*configv1.ClusterOperator,
 		*configv1.ClusterVersion,
+		*configv1.Proxy,
 		*configv1alpha1.ClusterMonitoring:
 		// Log GroupKind and Name of the obj
 		rtObj := obj.(k8sruntime.Object)
@@ -838,7 +856,7 @@ func (o *Operator) sync(ctx context.Context) error {
 				newTaskSpec("NodeExporter", tasks.NewNodeExporterTask(o.client, factory)),
 				newTaskSpec("KubeStateMetrics", tasks.NewKubeStateMetricsTask(o.client, factory)),
 				newTaskSpec("OpenshiftStateMetrics", tasks.NewOpenShiftStateMetricsTask(o.client, factory)),
-				newTaskSpec("MetricsServer", tasks.NewMetricsServerTask(ctx, o.namespace, o.client, factory, config)),
+				newTaskSpec("MetricsServer", tasks.NewMetricsServerTask(o.namespace, o.client, factory, config)),
 				newTaskSpec("TelemeterClient", tasks.NewTelemeterClientTask(o.client, factory, config)),
 				newTaskSpec("ThanosQuerier", tasks.NewThanosQuerierTask(o.client, factory, config)),
 				newTaskSpec("ControlPlaneComponents", tasks.NewControlPlaneTask(o.client, factory, config)),
@@ -1005,6 +1023,12 @@ func (o *Operator) Config(ctx context.Context) (*manifests.Config, []string, err
 		if getErr != nil && !apierrors.IsNotFound(getErr) {
 			return nil, warnings, fmt.Errorf("failed to get ClusterMonitoring CRD: %w", getErr)
 		}
+
+		// Phase 1 (pre-GA): notify once that both ConfigMap and CRD are supported.
+		clusterMonitoringDualConfigLog.Do(func() {
+			klog.Infof("ClusterMonitoringConfig feature gate is enabled: platform monitoring can be configured via the %q ConfigMap or the ClusterMonitoring custom resource (config.openshift.io/v1alpha1, name %q). During Phase 1, ConfigMap values take precedence over CRD values for each top-level component.",
+				o.cmoConfigMap(), "cluster")
+		})
 	}
 
 	c, err := o.loadConfig(cm)

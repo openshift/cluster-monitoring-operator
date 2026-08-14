@@ -135,8 +135,10 @@ vendor:
 
 .PHONY: update-go-deps
 update-go-deps:
+	# Prevent go get from pulling deps that require a newer Go version.
+	GOTOOLCHAIN=go$$(go mod edit -json | jq -r .Go); \
 	for m in $$(go list -mod=readonly -m -f '{{ if and (not .Indirect) (not .Main)}}{{.Path}}{{end}}' all); do \
-		go get $$m; \
+		GOTOOLCHAIN=$$GOTOOLCHAIN go get $$m; \
 	done
 	@echo "Don't forget to run 'make vendor'"
 
@@ -219,11 +221,11 @@ go-fmt:
 
 .PHONY: golangci-lint
 golangci-lint: $(GOLANGCI_LINT_BIN)
-	$(GOLANGCI_LINT_BIN) run --verbose --print-resources-usage
+	$(GOLANGCI_LINT_BIN) run --verbose
 
 .PHONY: golangci-lint-fix
 golangci-lint-fix: $(GOLANGCI_LINT_BIN)
-	$(GOLANGCI_LINT_BIN) run --verbose --print-resources-usage --fix
+	$(GOLANGCI_LINT_BIN) run --verbose --fix
 
 $(GOLANGCI_LINT_BIN): $(BIN_DIR)
 	curl -sfL https://golangci-lint.run/install.sh | sh -s -- -b $(BIN_DIR) $(GOLANGCI_LINT_VERSION)
@@ -281,7 +283,7 @@ test-unit:
 .PHONY: test-e2e
 test-e2e: KUBECONFIG?=$(HOME)/.kube/config
 test-e2e:
-	go test -v -timeout=150m ./test/e2e/ --kubeconfig $(KUBECONFIG)
+	go test -v -timeout=150m $(E2E_TEST_ARGS) ./test/e2e/ --kubeconfig $(KUBECONFIG)
 
 .PHONY: test-ginkgo
 test-ginkgo: KUBECONFIG?=$(HOME)/.kube/config

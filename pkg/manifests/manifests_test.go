@@ -1719,6 +1719,8 @@ func TestPrometheusK8sConfiguration(t *testing.T) {
 	}
 
 	require.Equal(t, "TLS12", string(*p.Spec.Thanos.GRPCServerTLSConfig.SafeTLSConfig.MinVersion))
+	require.Equal(t, crypto.OpenSSLToIANACipherSuites(APIServerDefaultTLSCiphers), p.Spec.Thanos.GRPCServerTLSConfig.CipherSuites)
+	require.Equal(t, []string{"X25519MLKEM768", "X25519", "CurveP256", "CurveP384"}, p.Spec.Thanos.GRPCServerTLSConfig.Curves)
 }
 
 func TestPrometheusUserWorkloadConfiguration(t *testing.T) {
@@ -1806,6 +1808,8 @@ func TestPrometheusUserWorkloadConfiguration(t *testing.T) {
 	require.Equal(t, p.Spec.ExternalLabels, map[string]string{"foo": "bar", "oof": "rab"})
 
 	require.Equal(t, "TLS12", string(*p.Spec.Thanos.GRPCServerTLSConfig.SafeTLSConfig.MinVersion))
+	require.Equal(t, crypto.OpenSSLToIANACipherSuites(APIServerDefaultTLSCiphers), p.Spec.Thanos.GRPCServerTLSConfig.CipherSuites)
+	require.Equal(t, []string{"X25519MLKEM768", "X25519", "CurveP256", "CurveP384"}, p.Spec.Thanos.GRPCServerTLSConfig.Curves)
 }
 
 func TestPrometheusQueryLogFileConfig(t *testing.T) {
@@ -3468,6 +3472,7 @@ func TestNodeExporterCollectorSettings(t *testing.T) {
 			argsPresent: []string{"--no-collector.cpufreq",
 				"--no-collector.tcpstat",
 				"--no-collector.ethtool",
+				"--no-collector.interrupts",
 				"--no-collector.softirqs",
 				"--no-collector.zoneinfo",
 				"--collector.netdev",
@@ -3480,10 +3485,12 @@ func TestNodeExporterCollectorSettings(t *testing.T) {
 				"--collector.netclass.ignored-devices=^(veth.*|[a-f0-9]{15}|enP.*|ovn-k8s-mp[0-9]*|br-ex|br-int|br-ext|br[0-9]*|tun[0-9]*|cali[a-f0-9]*|bond.*)$",
 				"--no-collector.systemd",
 				"--collector.dmmultipath",
+				"--collector.nvmesubsystem",
 			},
 			argsAbsent: []string{"--collector.cpufreq",
 				"--collector.tcpstat",
 				"--collector.ethtool",
+				"--collector.interrupts",
 				"--collector.softirqs",
 				"--collector.zoneinfo",
 				"--no-collector.netdev",
@@ -3493,6 +3500,7 @@ func TestNodeExporterCollectorSettings(t *testing.T) {
 				"--collector.processes",
 				"--collector.systemd",
 				"--no-collector.dmmultipath",
+				"--no-collector.nvmesubsystem",
 			},
 		},
 		{
@@ -3541,6 +3549,41 @@ nodeExporter:
 			argsAbsent:  []string{"--no-collector.ethtool"},
 		},
 		{
+			name: "enable interrupts collector with include pattern",
+			config: `
+nodeExporter:
+  collectors:
+    interrupts:
+      include: ["LOC;.*"]
+`,
+			argsPresent: []string{"--collector.interrupts",
+				"--collector.interrupts.name-include=^(LOC;.*)$"},
+			argsAbsent: []string{"--no-collector.interrupts"},
+		},
+		{
+			name: "enable interrupts collector with include patterns",
+			config: `
+nodeExporter:
+  collectors:
+    interrupts:
+      include: ["LOC;.*", "NMI;.*"]
+`,
+			argsPresent: []string{"--collector.interrupts",
+				"--collector.interrupts.name-include=^(LOC;.*|NMI;.*)$"},
+			argsAbsent: []string{"--no-collector.interrupts"},
+		},
+		{
+			name: "disable interrupts collector when include is empty",
+			config: `
+nodeExporter:
+  collectors:
+    interrupts:
+      include: []
+`,
+			argsPresent: []string{"--no-collector.interrupts"},
+			argsAbsent:  []string{"--collector.interrupts"},
+		},
+		{
 			name: "enable softirqs collector",
 			config: `
 nodeExporter:
@@ -3572,6 +3615,17 @@ nodeExporter:
 `,
 			argsPresent: []string{"--no-collector.dmmultipath"},
 			argsAbsent:  []string{"--collector.dmmultipath"},
+		},
+		{
+			name: "disable nvmesubsystem collector",
+			config: `
+nodeExporter:
+  collectors:
+    nvmeSubsystem:
+      enabled: false
+`,
+			argsPresent: []string{"--no-collector.nvmesubsystem"},
+			argsAbsent:  []string{"--collector.nvmesubsystem"},
 		},
 		{
 			name: "disable netdev collector",
@@ -3747,36 +3801,6 @@ nodeExporter:
 
 	}
 
-}
-
-func TestNodeExporterSystemdUnits(t *testing.T) {
-
-	testName := "enable systemd collector with invalid units pattern"
-	config := `
-nodeExporter:
-  collectors:
-    systemd:
-      enabled: true
-      units:
-      - network.+
-      - /\
-`
-	t.Run(testName, func(st *testing.T) {
-		c, err := NewConfigFromString(config)
-		if err != nil {
-			t.Fatal(err)
-		}
-		c.SetImages(map[string]string{
-			"node-exporter":   "docker.io/openshift/origin-prometheus-node-exporter:latest",
-			"kube-rbac-proxy": "docker.io/openshift/origin-kube-rbac-proxy:latest",
-		})
-
-		f := NewFactory("openshift-monitoring", "openshift-user-workload-monitoring", c, defaultInfrastructureReader(), &fakeProxyReader{}, NewAssets(assetsPath), &APIServerConfig{}, &configv1.Console{})
-		_, err = f.NodeExporterDaemonSet()
-		if err == nil || !strings.Contains(err.Error(), "systemd unit pattern validation error:") {
-			t.Fatalf(`expected error "systemd unit pattern validation error:.*", got %v`, err)
-		}
-	})
 }
 
 func TestNodeExporterGeneralSettings(t *testing.T) {
@@ -4518,6 +4542,8 @@ func TestThanosRulerConfiguration(t *testing.T) {
 	}
 
 	require.Equal(t, "TLS12", string(*tr.Spec.GRPCServerTLSConfig.SafeTLSConfig.MinVersion))
+	require.Equal(t, crypto.OpenSSLToIANACipherSuites(APIServerDefaultTLSCiphers), tr.Spec.GRPCServerTLSConfig.CipherSuites)
+	require.Equal(t, []string{"X25519MLKEM768", "X25519", "CurveP256", "CurveP384"}, tr.Spec.GRPCServerTLSConfig.Curves)
 
 }
 
