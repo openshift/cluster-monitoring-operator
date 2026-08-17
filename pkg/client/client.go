@@ -23,6 +23,7 @@ import (
 	"reflect"
 	"slices"
 	"strings"
+	"sync"
 	"time"
 
 	"github.com/imdario/mergo"
@@ -54,6 +55,7 @@ import (
 	apierrors "k8s.io/apimachinery/pkg/api/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/fields"
+	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/apimachinery/pkg/runtime/schema"
 	"k8s.io/apimachinery/pkg/types"
 	apiutilerrors "k8s.io/apimachinery/pkg/util/errors"
@@ -97,6 +99,32 @@ type Client struct {
 
 	eventRecorder events.Recorder
 	resourceCache resourceapply.ResourceCache
+}
+
+// threadSafeResourceCache wraps library-go's resourceCache with a mutex
+// because the upstream implementation uses a plain map that is not safe
+// for concurrent use.
+// TODO: remove once library-go ships the thread-safe resourceCache
+// from https://github.com/openshift/library-go/pull/2380.
+type threadSafeResourceCache struct {
+	mu    sync.RWMutex
+	inner resourceapply.ResourceCache
+}
+
+func newThreadSafeResourceCache() *threadSafeResourceCache {
+	return &threadSafeResourceCache{inner: resourceapply.NewResourceCache()}
+}
+
+func (c *threadSafeResourceCache) UpdateCachedResourceMetadata(required, actual runtime.Object) {
+	c.mu.Lock()
+	defer c.mu.Unlock()
+	c.inner.UpdateCachedResourceMetadata(required, actual)
+}
+
+func (c *threadSafeResourceCache) SafeToSkipApply(required, existing runtime.Object) bool {
+	c.mu.RLock()
+	defer c.mu.RUnlock()
+	return c.inner.SafeToSkipApply(required, existing)
 }
 
 func NewForConfig(cfg *rest.Config, version string, namespace, userWorkloadNamespace string, options ...Option) (*Client, error) {
@@ -265,7 +293,7 @@ func New(version string, namespace, userWorkloadNamespace string, options ...Opt
 		version:               version,
 		namespace:             namespace,
 		userWorkloadNamespace: userWorkloadNamespace,
-		resourceCache:         resourceapply.NewResourceCache(),
+		resourceCache:         newThreadSafeResourceCache(),
 	}
 
 	for _, opt := range options {
