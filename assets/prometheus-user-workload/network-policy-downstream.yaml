@@ -15,9 +15,19 @@ spec:
       protocol: TCP
     - port: 9092
       protocol: TCP
-    - port: 10901
-      protocol: TCP
     - port: 10903
+      protocol: TCP
+  - from:
+    - namespaceSelector:
+        matchLabels:
+          kubernetes.io/metadata.name: openshift-monitoring
+      podSelector:
+        matchLabels:
+          app.kubernetes.io/instance: thanos-querier
+          app.kubernetes.io/name: thanos-query
+          app.kubernetes.io/part-of: openshift-monitoring
+    ports:
+    - port: 10901
       protocol: TCP
   podSelector:
     matchLabels:
