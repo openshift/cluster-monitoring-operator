@@ -230,7 +230,7 @@ func (rc *RuleController) processNextWorkItem(ctx context.Context) bool {
 	defer rc.queue.Done(key)
 
 	if err := rc.sync(ctx, key); err != nil {
-		utilruntime.HandleError(fmt.Errorf("Error syncing AlertingRule (%s): %w", key, err))
+		utilruntime.HandleError(fmt.Errorf("error syncing AlertingRule (%s): %w", key, err))
 
 		// Re-queue failed sync.
 		rc.queue.AddRateLimited(key)

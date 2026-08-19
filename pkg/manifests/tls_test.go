@@ -124,13 +124,13 @@ func TestRotateGrpcTLSSecret(t *testing.T) {
 				time.Sleep(1 * time.Second)
 			},
 			test: func(spre, spost *v1.Secret) error {
-				if bytes.Compare(spre.Data["ca.crt"], spost.Data["ca.crt"]) == 0 {
+				if bytes.Equal(spre.Data["ca.crt"], spost.Data["ca.crt"]) {
 					return fmt.Errorf("expected ca certificate data not to be equal, but it is")
 				}
-				if bytes.Compare(spre.Data["prometheus-server.crt"], spost.Data["prometheus-server.crt"]) == 0 {
+				if bytes.Equal(spre.Data["prometheus-server.crt"], spost.Data["prometheus-server.crt"]) {
 					return fmt.Errorf("expected server certificate data not to be equal, but it is")
 				}
-				if bytes.Compare(spre.Data["thanos-querier-client.crt"], spost.Data["thanos-querier-client.crt"]) == 0 {
+				if bytes.Equal(spre.Data["thanos-querier-client.crt"], spost.Data["thanos-querier-client.crt"]) {
 					return fmt.Errorf("expected client certificate data not to be equal, but it is")
 				}
 
@@ -164,7 +164,7 @@ func TestRotateGrpcTLSSecret(t *testing.T) {
 				s.Annotations["foo/bar"] = "true"
 			},
 			test: func(spre, spost *v1.Secret) error {
-				if bytes.Compare(spre.Data["ca.crt"], spost.Data["ca.crt"]) != 0 {
+				if !bytes.Equal(spre.Data["ca.crt"], spost.Data["ca.crt"]) {
 					return fmt.Errorf("expected certificate data to be equal, but they aren't")
 				}
 				return nil
@@ -180,7 +180,7 @@ func TestRotateGrpcTLSSecret(t *testing.T) {
 					return errors.New("expected certificate data to have rotated, but it wasn't")
 				}
 
-				if bytes.Compare(spre.Data["ca.crt"], spost.Data["ca.crt"]) == 0 {
+				if bytes.Equal(spre.Data["ca.crt"], spost.Data["ca.crt"]) {
 					return errors.New("expected certificate data not to be equal, but they are")
 				}
 
