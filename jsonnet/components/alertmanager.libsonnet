@@ -236,6 +236,9 @@ function(params)
     },
 
     minimalServiceMonitor: generateServiceMonitor.serviceMonitorForMinimalProfile(self.serviceMonitor),
+    telemetryServiceMonitor: generateServiceMonitor.serviceMonitorForTelemetryProfile(
+      generateServiceMonitor.keepOnlyMetrics(self.serviceMonitor, ['alertmanager_integrations'])
+    ),
 
     alertmanager+: {
       metadata+: {
