@@ -27,20 +27,22 @@ import (
 	osrfake "github.com/openshift/client-go/route/clientset/versioned/fake"
 	ossfake "github.com/openshift/client-go/security/clientset/versioned/fake"
 	"github.com/openshift/library-go/pkg/operator/events"
-	"github.com/openshift/library-go/pkg/operator/resource/resourceapply"
 	monv1 "github.com/prometheus-operator/prometheus-operator/pkg/apis/monitoring/v1"
 	monfake "github.com/prometheus-operator/prometheus-operator/pkg/client/versioned/fake"
 	"github.com/stretchr/testify/require"
 	admissionv1 "k8s.io/api/admissionregistration/v1"
 	appsv1 "k8s.io/api/apps/v1"
+	authzv1 "k8s.io/api/authorization/v1"
 	v1 "k8s.io/api/core/v1"
 	rbacv1 "k8s.io/api/rbac/v1"
 	"k8s.io/apimachinery/pkg/api/resource"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/apimachinery/pkg/types"
 	"k8s.io/apimachinery/pkg/util/intstr"
 	"k8s.io/apimachinery/pkg/util/wait"
 	"k8s.io/client-go/kubernetes/fake"
+	k8stesting "k8s.io/client-go/testing"
 	clocktesting "k8s.io/utils/clock/testing"
 	"k8s.io/utils/ptr"
 )
@@ -921,13 +923,13 @@ func TestCreateOrUpdateServiceAccount(t *testing.T) {
 				c = Client{
 					kclient:       fake.NewSimpleClientset(),
 					eventRecorder: eventRecorder,
-					resourceCache: resourceapply.NewResourceCache(),
+					resourceCache: newThreadSafeResourceCache(),
 				}
 			} else {
 				c = Client{
 					kclient:       fake.NewSimpleClientset(sa.DeepCopy()),
 					eventRecorder: eventRecorder,
-					resourceCache: resourceapply.NewResourceCache(),
+					resourceCache: newThreadSafeResourceCache(),
 				}
 				_, err := c.kclient.CoreV1().ServiceAccounts(ns).Get(ctx, sa.Name, metav1.GetOptions{})
 				if err != nil {
@@ -1934,7 +1936,7 @@ func TestCreateOrUpdateValidatingWebhookConfiguration(t *testing.T) {
 	c := Client{
 		kclient:       fake.NewSimpleClientset(webhook.DeepCopy()),
 		eventRecorder: events.NewInMemoryRecorder("cluster-monitoring-operator", clocktesting.NewFakePassiveClock(time.Now())),
-		resourceCache: resourceapply.NewResourceCache(),
+		resourceCache: newThreadSafeResourceCache(),
 	}
 
 	if _, err := c.kclient.AdmissionregistrationV1().ValidatingWebhookConfigurations().Get(ctx, webhook.Name, metav1.GetOptions{}); err != nil {
@@ -2331,4 +2333,129 @@ func TestPollUntil(t *testing.T) {
 	cancelParentCtx3()
 	wg.Wait()
 	require.ErrorContains(t, pollErr, "context deadline exceeded")
+}
+
+func TestWaitForClusterRoleBindingSCCUse(t *testing.T) {
+	ctx := context.Background()
+
+	cr := &rbacv1.ClusterRole{
+		ObjectMeta: metav1.ObjectMeta{Name: "alertmanager-main"},
+		Rules: []rbacv1.PolicyRule{{
+			APIGroups:     []string{"security.openshift.io"},
+			Resources:     []string{"securitycontextconstraints"},
+			ResourceNames: []string{"nonroot"},
+			Verbs:         []string{"use"},
+		}},
+	}
+	crb := &rbacv1.ClusterRoleBinding{
+		ObjectMeta: metav1.ObjectMeta{Name: "alertmanager-main"},
+		RoleRef: rbacv1.RoleRef{
+			APIGroup: "rbac.authorization.k8s.io",
+			Kind:     "ClusterRole",
+			Name:     cr.Name,
+		},
+		Subjects: []rbacv1.Subject{{
+			Kind:      rbacv1.ServiceAccountKind,
+			Name:      "alertmanager-main",
+			Namespace: ns,
+		}},
+	}
+
+	t.Run("allowed", func(t *testing.T) {
+		kclient := fake.NewClientset(cr)
+		kclient.PrependReactor("create", "subjectaccessreviews", func(action k8stesting.Action) (bool, runtime.Object, error) {
+			return true, &authzv1.SubjectAccessReview{
+				Status: authzv1.SubjectAccessReviewStatus{Allowed: true},
+			}, nil
+		})
+
+		c := Client{kclient: kclient}
+		require.NoError(t, c.WaitForClusterRoleBindingSCCUse(ctx, cr, crb))
+	})
+
+	t.Run("denied then allowed", func(t *testing.T) {
+		kclient := fake.NewClientset(cr)
+		var calls int
+		kclient.PrependReactor("create", "subjectaccessreviews", func(action k8stesting.Action) (bool, runtime.Object, error) {
+			calls++
+			allowed := calls > 1
+			return true, &authzv1.SubjectAccessReview{
+				Status: authzv1.SubjectAccessReviewStatus{
+					Allowed: allowed,
+					Reason:  "waiting for RBAC",
+				},
+			}, nil
+		})
+
+		c := Client{kclient: kclient}
+		require.NoError(t, c.WaitForClusterRoleBindingSCCUse(ctx, cr, crb))
+		require.Greater(t, calls, 1)
+	})
+
+	t.Run("no scc rules", func(t *testing.T) {
+		noSCCRole := &rbacv1.ClusterRole{
+			ObjectMeta: metav1.ObjectMeta{Name: "no-scc"},
+			Rules: []rbacv1.PolicyRule{{
+				APIGroups: []string{""},
+				Resources: []string{"pods"},
+				Verbs:     []string{"get"},
+			}},
+		}
+		noSCCBinding := &rbacv1.ClusterRoleBinding{
+			ObjectMeta: metav1.ObjectMeta{Name: "no-scc"},
+			RoleRef: rbacv1.RoleRef{
+				APIGroup: "rbac.authorization.k8s.io",
+				Kind:     "ClusterRole",
+				Name:     "no-scc",
+			},
+		}
+
+		c := Client{kclient: fake.NewClientset()}
+		require.NoError(t, c.WaitForClusterRoleBindingSCCUse(ctx, noSCCRole, noSCCBinding))
+	})
+}
+
+// TestResourceCacheConcurrentAccess reproduces OCPBUGS-99769: concurrent map access
+// in the shared resourceCache.
+func TestResourceCacheConcurrentAccess(t *testing.T) {
+	ctx := context.Background()
+
+	// Pre-existing resources force Apply through both SafeToSkipApply (read) and
+	// UpdateCachedResourceMetadata (write).
+	existing := make([]runtime.Object, 10)
+	for i := range 10 {
+		existing[i] = &v1.ServiceAccount{
+			ObjectMeta: metav1.ObjectMeta{
+				Name:            fmt.Sprintf("sa-%d", i),
+				Namespace:       ns,
+				ResourceVersion: "1",
+			},
+		}
+	}
+
+	c := Client{
+		kclient:       fake.NewSimpleClientset(existing...),
+		eventRecorder: events.NewInMemoryRecorder("test", clocktesting.NewFakePassiveClock(time.Now())),
+		resourceCache: newThreadSafeResourceCache(),
+	}
+
+	// Mimics CMO's errgroup tasks reconciling resources concurrently.
+	var wg sync.WaitGroup
+	for range 10 {
+		wg.Add(1)
+		go func() {
+			defer wg.Done()
+			for i := range 10 {
+				sa := &v1.ServiceAccount{
+					ObjectMeta: metav1.ObjectMeta{
+						Name:      fmt.Sprintf("sa-%d", i),
+						Namespace: ns,
+						Labels:    map[string]string{"app": "test"},
+					},
+				}
+				_ = c.CreateOrUpdateServiceAccount(ctx, sa)
+			}
+		}()
+	}
+	wg.Wait()
 }

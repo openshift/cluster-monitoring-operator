@@ -1,5 +1,6 @@
 local metrics = import 'github.com/openshift/telemeter/jsonnet/telemeter/metrics.jsonnet';
 
+local generateServiceMonitor = import '../utils/generate-service-monitors.libsonnet';
 local cmoRules = import './../rules.libsonnet';
 local kubePrometheus = import 'github.com/prometheus-operator/kube-prometheus/jsonnet/kube-prometheus/components/mixin/custom.libsonnet';
 
@@ -134,6 +135,7 @@ function(params) {
       namespace: cfg.namespace,
       labels: {
         'app.kubernetes.io/name': cfg.name,
+        'monitoring.openshift.io/collection-profile': 'full',
       },
     },
     spec: {
@@ -158,6 +160,8 @@ function(params) {
       ],
     },
   },
+
+  minimalServiceMonitor: generateServiceMonitor.serviceMonitorForMinimalProfile(self.serviceMonitor),
 
   // This is the base for the cluster-monitoring-operator ClusterRole. It will
   // be extended with the rules from all other ClusterRoles in main.jsonnet.
@@ -229,7 +233,7 @@ function(params) {
       {
         apiGroups: ['config.openshift.io'],
         resources: ['proxies'],
-        verbs: ['get'],
+        verbs: ['get', 'list', 'watch'],
       },
       {
         apiGroups: ['config.openshift.io'],
@@ -250,6 +254,13 @@ function(params) {
       {
         apiGroups: ['config.openshift.io'],
         resources: ['clustermonitorings'],
+        verbs: ['get', 'list', 'watch'],
+      },
+      // The operator needs to read PKI configuration to resolve key algorithms
+      // for GRPC TLS certificates when the ConfigurablePKI feature gate is enabled.
+      {
+        apiGroups: ['config.openshift.io'],
+        resources: ['pkis'],
         verbs: ['get', 'list', 'watch'],
       },
       {
@@ -279,6 +290,15 @@ function(params) {
         apiGroups: ['console.openshift.io'],
         resources: ['consoleplugins'],
         verbs: ['get', 'create', 'update'],
+      },
+      // CMO deletes leftover kube-system/kubelet Endpoints after platform PO disables
+      // the legacy kubelet Endpoints controller (--kubelet-endpoints=false).
+      // Scoped to the kubelet Endpoints name only. TODO: remove in 5.1.
+      {
+        apiGroups: [''],
+        resources: ['endpoints'],
+        resourceNames: ['kubelet'],
+        verbs: ['get', 'delete'],
       },
     ],
   },

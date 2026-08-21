@@ -225,7 +225,7 @@ spec:
             ==
           kube_horizontalpodautoscaler_spec_max_replicas{namespace=~"(openshift-.*|kube-.*|default)",job="kube-state-metrics"}
         )
-        and on(namespace, horizontalpodautoscaler) (
+        and on(namespace, horizontalpodautoscaler, cluster) (
           kube_horizontalpodautoscaler_spec_max_replicas{namespace=~"(openshift-.*|kube-.*|default)",job="kube-state-metrics"}
             !=
           kube_horizontalpodautoscaler_spec_min_replicas{namespace=~"(openshift-.*|kube-.*|default)",job="kube-state-metrics"}
@@ -320,11 +320,13 @@ spec:
         description: Namespace {{ $labels.namespace }} is using {{ $value | humanizePercentage }} of its {{ $labels.resource }} quota.
         summary: Namespace quota is going to be full.
       expr: |
-        max without (instance, job, type) (
-          kube_resourcequota{namespace=~"(openshift-.*|kube-.*|default)",job="kube-state-metrics", type="used"}
+        topk by (cluster, namespace, resource, resourcequota) (1,
+          max without (instance, job, type) (
+            kube_resourcequota{namespace=~"(openshift-.*|kube-.*|default)",job="kube-state-metrics", type="used"}
+          )
         )
         / on (cluster, namespace, resource, resourcequota) group_left()
-        (
+        topk by (cluster, namespace, resource, resourcequota) (1,
           max without (instance, job, type) (
             kube_resourcequota{namespace=~"(openshift-.*|kube-.*|default)",job="kube-state-metrics", type="hard"}
           ) > 0
@@ -338,11 +340,13 @@ spec:
         description: Namespace {{ $labels.namespace }} is using {{ $value | humanizePercentage }} of its {{ $labels.resource }} quota.
         summary: Namespace quota is fully used.
       expr: |
-        max without (instance, job, type) (
-          kube_resourcequota{namespace=~"(openshift-.*|kube-.*|default)",job="kube-state-metrics", type="used"}
+        topk by (cluster, namespace, resource, resourcequota) (1,
+          max without (instance, job, type) (
+            kube_resourcequota{namespace=~"(openshift-.*|kube-.*|default)",job="kube-state-metrics", type="used"}
+          )
         )
         / on (cluster, namespace, resource, resourcequota) group_left()
-        (
+        topk by (cluster, namespace, resource, resourcequota) (1,
           max without (instance, job, type) (
             kube_resourcequota{namespace=~"(openshift-.*|kube-.*|default)",job="kube-state-metrics", type="hard"}
           ) > 0
@@ -356,11 +360,13 @@ spec:
         description: Namespace {{ $labels.namespace }} is using {{ $value | humanizePercentage }} of its {{ $labels.resource }} quota.
         summary: Namespace quota has exceeded the limits.
       expr: |
-        max without (instance, job, type) (
-          kube_resourcequota{namespace=~"(openshift-.*|kube-.*|default)",job="kube-state-metrics", type="used"}
+        topk by (cluster, namespace, resource, resourcequota) (1,
+          max without (instance, job, type) (
+            kube_resourcequota{namespace=~"(openshift-.*|kube-.*|default)",job="kube-state-metrics", type="used"}
+          )
         )
         / on (cluster, namespace, resource, resourcequota) group_left()
-        (
+        topk by (cluster, namespace, resource, resourcequota) (1,
           max without (instance, job, type) (
             kube_resourcequota{namespace=~"(openshift-.*|kube-.*|default)",job="kube-state-metrics", type="hard"}
           ) > 0
@@ -510,6 +516,15 @@ spec:
         summary: Kubelet has failed to renew its server certificate.
       expr: |
         increase(kubelet_server_expiration_renew_errors[5m]) > 0
+      for: 15m
+      labels:
+        severity: warning
+    - alert: KubeletInstanceUnreachable
+      annotations:
+        description: A Kubelet instance has been unreachable for more than 15 minutes.
+        summary: Kubelet instance is unreachable.
+      expr: |
+        up{job="kubelet", metrics_path="/metrics"} == 0
       for: 15m
       labels:
         severity: warning
@@ -772,7 +787,7 @@ spec:
             OR
             label_replace(
               group by (cluster, namespace, pod, owner_name, owner_kind) (
-                kube_pod_owner{job="kube-state-metrics", owner_kind!="ReplicaSet", owner_kind!="DaemonSet", owner_kind!="StatefulSet", owner_kind!="Job", owner_kind!="Node", owner_kind!=""}
+                kube_pod_owner{job="kube-state-metrics", owner_kind!~"ReplicaSet|ReplicationController|DaemonSet|StatefulSet|Job|Node|"}
               )
               , "workload", "$1", "owner_name", "(.+)"
             )

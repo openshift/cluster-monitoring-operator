@@ -11,11 +11,12 @@ spec:
   - {}
   ingress:
   - ports:
-    - port: https
+    - port: 9443
       protocol: TCP
   podSelector:
     matchLabels:
       app.kubernetes.io/name: monitoring-plugin
+      app.kubernetes.io/part-of: openshift-monitoring
   policyTypes:
   - Ingress
   - Egress

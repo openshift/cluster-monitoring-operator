@@ -1,0 +1,123 @@
+# Telemetry selectors report (1d)
+# args: {__name__=~"e2etelemetry:etcd_has_leader:wrong_sum|e2etelemetry:etcd_wal_fsync:wrong_ratio|e2etelemetry:process_cpu:sum_total|e2etelemetry:suffix_ok:rate|e2etelemetry:suffix_ok:sum|e2etelemetry:suffix_ok:rate5m|e2etelemetry:etcd_wal_fsync:wrong_max|e2etelemetry:suffix_max_rate:rate5m|e2etelemetry:suffix_sum_increase:increase1h|e2etelemetry:suffix_div:sum"}
+# Results depend on the queried Prometheus instance and may differ elsewhere.
+selectors:
+  - selector: '{__name__=~"e2etelemetry:etcd_has_leader:wrong_sum|e2etelemetry:etcd_wal_fsync:wrong_ratio|e2etelemetry:process_cpu:sum_total|e2etelemetry:suffix_ok:rate|e2etelemetry:suffix_ok:sum|e2etelemetry:suffix_ok:rate5m|e2etelemetry:etcd_wal_fsync:wrong_max|e2etelemetry:suffix_max_rate:rate5m|e2etelemetry:suffix_sum_increase:increase1h|e2etelemetry:suffix_div:sum"}'
+    metrics:
+      - name: e2etelemetry:etcd_has_leader:wrong_sum
+        peak_series: N
+        value_range: V
+        recording_rule:
+          file: RULEFILE
+          expr: max(etcd_server_has_leader{job="etcd"})
+          tree: |-
+            └── etcd_server_has_leader{job="etcd"}
+                  <job: etcd> <value_range: V> <peak_series: N>
+      - name: e2etelemetry:etcd_wal_fsync:wrong_max
+        peak_series: N
+        value_range: V
+        recording_rule:
+          file: RULEFILE
+          expr: sum(rate(etcd_disk_wal_fsync_duration_seconds_count{job="etcd"}[5m]))
+          tree: |-
+            └── etcd_disk_wal_fsync_duration_seconds_count{job="etcd"}
+                  <job: etcd> <value_range: V> <peak_series: N>
+      - name: e2etelemetry:etcd_wal_fsync:wrong_ratio
+        peak_series: N
+        value_range: V
+        recording_rule:
+          file: RULEFILE
+          expr: sum(etcd_disk_wal_fsync_duration_seconds_count{job="etcd"})
+          tree: |-
+            └── etcd_disk_wal_fsync_duration_seconds_count{job="etcd"}
+                  <job: etcd> <value_range: V> <peak_series: N>
+      - name: e2etelemetry:process_cpu:sum_total
+        peak_series: N
+        value_range: V
+        recording_rule:
+          file: RULEFILE
+          expr: sum(process_cpu_seconds_total{job="etcd"})
+          tree: |-
+            └── process_cpu_seconds_total{job="etcd"}
+                  <job: etcd> <value_range: V> <peak_series: N>
+      - name: e2etelemetry:suffix_div:sum
+        peak_series: N
+        value_range: V
+        recording_rule:
+          file: RULEFILE
+          expr: |-
+            max(etcd_server_has_leader{job="etcd"})
+            /
+            max(etcd_disk_wal_fsync_duration_seconds_count{job="etcd"})
+          tree: |-
+            ├── etcd_server_has_leader{job="etcd"}
+            │     <job: etcd> <value_range: V> <peak_series: N>
+            └── etcd_disk_wal_fsync_duration_seconds_count{job="etcd"}
+                  <job: etcd> <value_range: V> <peak_series: N>
+      - name: e2etelemetry:suffix_max_rate:rate5m
+        peak_series: N
+        value_range: V
+        recording_rule:
+          file: RULEFILE
+          expr: max(rate(etcd_disk_wal_fsync_duration_seconds_count{job="etcd"}[5m]))
+          tree: |-
+            └── etcd_disk_wal_fsync_duration_seconds_count{job="etcd"}
+                  <job: etcd> <value_range: V> <peak_series: N>
+      - name: e2etelemetry:suffix_ok:rate
+        peak_series: N
+        value_range: V
+        recording_rule:
+          file: RULEFILE
+          expr: sum(rate(etcd_disk_wal_fsync_duration_seconds_count{job="etcd"}[5m]))
+          tree: |-
+            └── etcd_disk_wal_fsync_duration_seconds_count{job="etcd"}
+                  <job: etcd> <value_range: V> <peak_series: N>
+      - name: e2etelemetry:suffix_ok:rate5m
+        peak_series: N
+        value_range: V
+        recording_rule:
+          file: RULEFILE
+          expr: sum(rate(etcd_disk_wal_fsync_duration_seconds_count{job="etcd"}[5m]))
+          tree: |-
+            └── etcd_disk_wal_fsync_duration_seconds_count{job="etcd"}
+                  <job: etcd> <value_range: V> <peak_series: N>
+      - name: e2etelemetry:suffix_ok:sum
+        peak_series: N
+        value_range: V
+        recording_rule:
+          file: RULEFILE
+          expr: sum(rate(etcd_disk_wal_fsync_duration_seconds_count{job="etcd"}[5m]))
+          tree: |-
+            └── etcd_disk_wal_fsync_duration_seconds_count{job="etcd"}
+                  <job: etcd> <value_range: V> <peak_series: N>
+      - name: e2etelemetry:suffix_sum_increase:increase1h
+        peak_series: N
+        value_range: V
+        recording_rule:
+          file: RULEFILE
+          expr: sum(increase(etcd_disk_wal_fsync_duration_seconds_count{job="etcd"}[1h]))
+          tree: |-
+            └── etcd_disk_wal_fsync_duration_seconds_count{job="etcd"}
+                  <job: etcd> <value_range: V> <peak_series: N>
+    failing_checks:
+      count: 19
+      messages:
+        - recording rule "e2etelemetry:etcd_has_leader:wrong_sum" is defined in CMO, it should probably live in the owning component operator
+        - recording rule "e2etelemetry:etcd_wal_fsync:wrong_max" is defined in CMO, it should probably live in the owning component operator
+        - recording rule "e2etelemetry:etcd_wal_fsync:wrong_ratio" is defined in CMO, it should probably live in the owning component operator
+        - recording rule "e2etelemetry:process_cpu:sum_total" has operations suffix _total (reserved for raw counters, consider :sum or similar)
+        - recording rule "e2etelemetry:process_cpu:sum_total" is defined in CMO, it should probably live in the owning component operator
+        - recording rule "e2etelemetry:suffix_div:sum" is defined in CMO, it should probably live in the owning component operator
+        - recording rule "e2etelemetry:suffix_max_rate:rate5m" is defined in CMO, it should probably live in the owning component operator
+        - recording rule "e2etelemetry:suffix_ok:rate" is defined in CMO, it should probably live in the owning component operator
+        - recording rule "e2etelemetry:suffix_ok:rate5m" is defined in CMO, it should probably live in the owning component operator
+        - recording rule "e2etelemetry:suffix_ok:sum" is defined in CMO, it should probably live in the owning component operator
+        - recording rule "e2etelemetry:suffix_sum_increase:increase1h" is defined in CMO, it should probably live in the owning component operator
+        - recording rule "e2etelemetry:etcd_has_leader:wrong_sum" has suffix :wrong_sum, expected :max based on the expression
+        - recording rule "e2etelemetry:etcd_wal_fsync:wrong_max" has suffix :wrong_max, expected :sum or :rate based on the expression
+        - recording rule "e2etelemetry:etcd_wal_fsync:wrong_ratio" has suffix :wrong_ratio, expected :sum based on the expression
+        - recording rule "e2etelemetry:suffix_div:sum" has suffix :sum, expected :ratio based on the expression
+        - recording rule "e2etelemetry:suffix_max_rate:rate5m" has suffix :rate5m, expected :max based on the expression
+        - recording rule "e2etelemetry:process_cpu:sum_total" uses counter "process_cpu_seconds_total" without rate()/increase(), raw counter values reset on restart and grow unbounded, making them meaningless as-is
+        - recording rule "e2etelemetry:etcd_has_leader:wrong_sum" uses the same source metrics as alert "etcdNoLeader", ALERTS is already forwarded to telemetry so this metric may be redundant
+        - matcher __name__=~"e2etelemetry:etcd_has_leader:wrong_sum|e2etelemetry:etcd_wal_fsync:wrong_ratio|e2etelemetry:process_cpu:sum_total|e2etelemetry:suffix_ok:rate|e2etelemetry:suffix_ok:sum|e2etelemetry:suffix_ok:rate5m|e2etelemetry:etcd_wal_fsync:wrong_max|e2etelemetry:suffix_max_rate:rate5m|e2etelemetry:suffix_sum_increase:increase1h|e2etelemetry:suffix_div:sum" alternation is unsorted, consider using __name__=~"e2etelemetry:etcd_has_leader:wrong_sum|e2etelemetry:etcd_wal_fsync:wrong_max|e2etelemetry:etcd_wal_fsync:wrong_ratio|e2etelemetry:process_cpu:sum_total|e2etelemetry:suffix_div:sum|e2etelemetry:suffix_max_rate:rate5m|e2etelemetry:suffix_ok:rate|e2etelemetry:suffix_ok:rate5m|e2etelemetry:suffix_ok:sum|e2etelemetry:suffix_sum_increase:increase1h"

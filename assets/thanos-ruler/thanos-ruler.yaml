@@ -31,6 +31,7 @@ spec:
       capabilities:
         drop:
         - ALL
+      readOnlyRootFilesystem: true
     terminationMessagePolicy: FallbackToLogsOnError
     volumeMounts:
     - mountPath: /etc/tls/private
@@ -59,6 +60,7 @@ spec:
       capabilities:
         drop:
         - ALL
+      readOnlyRootFilesystem: true
     terminationMessagePolicy: FallbackToLogsOnError
     volumeMounts:
     - mountPath: /etc/tls/private
@@ -89,6 +91,7 @@ spec:
       capabilities:
         drop:
         - ALL
+      readOnlyRootFilesystem: true
     terminationMessagePolicy: FallbackToLogsOnError
     volumeMounts:
     - mountPath: /etc/tls/private
@@ -116,6 +119,7 @@ spec:
     key: query.yaml
     name: thanos-ruler-query-config
   replicas: 2
+  resendDelay: 60s
   resources:
     requests:
       cpu: 1m
@@ -147,7 +151,7 @@ spec:
     seccompProfile:
       type: RuntimeDefault
   serviceAccountName: thanos-ruler
-  version: 0.41.0
+  version: 0.42.4
   volumes:
   - configmap:
       items:

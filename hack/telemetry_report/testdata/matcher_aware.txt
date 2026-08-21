@@ -1,0 +1,58 @@
+# Telemetry selectors report (1d)
+# args: {__name__=~"e2etelemetry:etcd_job_exists:max|e2etelemetry:etcd_job_ghost:max|e2etelemetry:etcd_job_mixed:sum"}
+# Results depend on the queried Prometheus instance and may differ elsewhere.
+selectors:
+  - selector: '{__name__=~"e2etelemetry:etcd_job_exists:max|e2etelemetry:etcd_job_ghost:max|e2etelemetry:etcd_job_mixed:sum"}'
+    metrics:
+      - name: e2etelemetry:etcd_job_exists:max
+        peak_series: N
+        value_range: V
+        recording_rule:
+          file: RULEFILE
+          expr: max(e2etelemetry:etcd_by_job:max{job="etcd"})
+          tree: |-
+            └── e2etelemetry:etcd_by_job:max{job="etcd"}
+                  <expr: max by (job) (etcd_server_has_leader)>
+                  <value_range: V> <peak_series: N> <file: RULEFILE>
+                └── etcd_server_has_leader
+                      <job: etcd> <peak_series: N>
+      - name: e2etelemetry:etcd_job_ghost:max
+        peak_series: N
+        value_range: V
+        recording_rule:
+          file: RULEFILE
+          expr: max(e2etelemetry:etcd_by_job:max{job="ghost"})
+          tree: |-
+            └── e2etelemetry:etcd_by_job:max{job="ghost"}
+                  <expr: max by (job) (etcd_server_has_leader)>
+                  <value_range: V> <peak_series: N> <file: RULEFILE>
+                └── etcd_server_has_leader
+                      <job: etcd> <peak_series: N>
+      - name: e2etelemetry:etcd_job_mixed:sum
+        peak_series: N
+        value_range: V
+        recording_rule:
+          file: RULEFILE
+          expr: sum(e2etelemetry:etcd_by_job:max{job="etcd"}) + sum(e2etelemetry:etcd_by_job:max{job="ghost"})
+          tree: |-
+            ├── e2etelemetry:etcd_by_job:max{job="etcd"}
+            │     <expr: max by (job) (etcd_server_has_leader)>
+            │     <value_range: V> <peak_series: N> <file: RULEFILE>
+            │   └── etcd_server_has_leader
+            │         <job: etcd> <peak_series: N>
+            └── e2etelemetry:etcd_by_job:max{job="ghost"}
+                  <expr: max by (job) (etcd_server_has_leader)>
+                  <value_range: V> <peak_series: N> <file: RULEFILE>
+    failing_checks:
+      count: 10
+      messages:
+        - metric "e2etelemetry:etcd_job_ghost:max" has 0 timeseries, source metrics may not exist or rule dependencies are not met
+        - metric "e2etelemetry:etcd_job_mixed:sum" has 0 timeseries, source metrics may not exist or rule dependencies are not met
+        - recording rule "e2etelemetry:etcd_job_exists:max" is defined in CMO, it should probably live in the owning component operator
+        - recording rule "e2etelemetry:etcd_job_ghost:max" is defined in CMO, it should probably live in the owning component operator
+        - recording rule "e2etelemetry:etcd_job_mixed:sum" is defined in CMO, it should probably live in the owning component operator
+        - recording rule "e2etelemetry:etcd_job_ghost:max" depends on "e2etelemetry:etcd_by_job:max{job=\"ghost\"}" which has 0 series, ensure it is exercised within the observation window
+        - recording rule "e2etelemetry:etcd_job_mixed:sum" depends on "e2etelemetry:etcd_by_job:max{job=\"ghost\"}" which has 0 series, ensure it is exercised within the observation window
+        - recording rule "e2etelemetry:etcd_job_exists:max" uses the same source metrics as alert "etcdNoLeader", ALERTS is already forwarded to telemetry so this metric may be redundant
+        - recording rule "e2etelemetry:etcd_job_ghost:max" uses the same source metrics as alert "etcdNoLeader", ALERTS is already forwarded to telemetry so this metric may be redundant
+        - recording rule "e2etelemetry:etcd_job_mixed:sum" uses the same source metrics as alert "etcdNoLeader", ALERTS is already forwarded to telemetry so this metric may be redundant

@@ -20,6 +20,7 @@ import (
 	"errors"
 	"fmt"
 	"strings"
+	"sync"
 	"time"
 
 	"github.com/blang/semver/v4"
@@ -30,6 +31,7 @@ import (
 	"github.com/openshift/library-go/pkg/operator/certrotation"
 	"github.com/openshift/library-go/pkg/operator/configobserver/featuregates"
 	"github.com/openshift/library-go/pkg/operator/csr"
+	"github.com/openshift/library-go/pkg/pki"
 	certapiv1 "k8s.io/api/certificates/v1"
 	v1 "k8s.io/api/core/v1"
 	apierrors "k8s.io/apimachinery/pkg/api/errors"
@@ -41,7 +43,6 @@ import (
 	"k8s.io/client-go/tools/cache"
 	"k8s.io/client-go/util/workqueue"
 	"k8s.io/klog/v2"
-	"k8s.io/utils/ptr"
 
 	"github.com/openshift/cluster-monitoring-operator/pkg/alert"
 	"github.com/openshift/cluster-monitoring-operator/pkg/client"
@@ -86,6 +87,9 @@ var (
 
 	// To identify "invalid UWM config only" failures
 	ErrUserWorkloadInvalidConfiguration = fmt.Errorf("invalid UWM configuration")
+
+	// Logs once that ConfigMap and ClusterMonitoring CR are both valid config sources (Phase 1).
+	clusterMonitoringDualConfigLog sync.Once
 )
 
 // NewDefaultInfrastructureConfig returns a default InfrastructureConfig.
@@ -171,12 +175,13 @@ const (
 type Operator struct {
 	namespace, namespaceUserWorkload string
 
-	configMapName                  string
-	userWorkloadConfigMapName      string
-	images                         map[string]string
-	telemetryMatches               []string
-	remoteWrite                    bool
-	ClusterMonitoringConfigEnabled bool
+	configMapName             string
+	userWorkloadConfigMapName string
+	images                    map[string]string
+	telemetryMatches          []string
+	remoteWrite               bool
+	clusterMonitoringConfig   bool
+	pkiProfileProvider        pki.PKIProfileProvider
 
 	apiServerConfig *manifests.APIServerConfig
 
@@ -374,6 +379,19 @@ func New(
 	}
 	o.informers = append(o.informers, informer)
 
+	// Watch the cluster Proxy resource to reconcile when proxy settings change.
+	informer = cache.NewSharedIndexInformer(
+		o.client.ProxyListWatch(),
+		&configv1.Proxy{}, resyncPeriod, cache.Indexers{},
+	)
+	_, err = informer.AddEventHandler(cache.ResourceEventHandlerFuncs{
+		UpdateFunc: func(_, newObj interface{}) { o.handleEvent(newObj) },
+	})
+	if err != nil {
+		return nil, err
+	}
+	o.informers = append(o.informers, informer)
+
 	informer = cache.NewSharedIndexInformer(
 		o.client.ClusterOperatorListWatch("ingress"),
 		&configv1.ClusterOperator{}, resyncPeriod, cache.Indexers{},
@@ -436,13 +454,25 @@ func New(
 		if err != nil {
 			return nil, err
 		}
-		o.ClusterMonitoringConfigEnabled = featureGates.Enabled(features.FeatureGateClusterMonitoringConfig)
+		o.clusterMonitoringConfig = featureGates.Enabled(features.FeatureGateClusterMonitoringConfig)
+		if featureGates.Enabled(features.FeatureGateConfigurablePKI) {
+			// Only register the PKI informer when the feature gate is enabled, since the PKI
+			// CRD only exists when the feature gate is active.
+			//
+			// The informer's lister provides cached reads for the PKI profile provider. No
+			// event handler is registered because PKI profile changes don't require
+			// immediate reconciliation, instead they are picked up at the next certificate
+			// rotation cycle.
+			pkiInformer := configInformers.Config().V1alpha1().PKIs()
+			o.informers = append(o.informers, pkiInformer.Informer())
+			o.pkiProfileProvider = pki.NewClusterPKIProfileProvider(pkiInformer.Lister())
+		}
 	case <-time.After(1 * time.Minute):
 		return nil, fmt.Errorf("timed out waiting for FeatureGate detection")
 	}
 
-	// Watch the ClusterMonitoring config resource if the feature gate is enabled
-	if o.ClusterMonitoringConfigEnabled {
+	// Watch the ClusterMonitoring config resource if the feature gate is enabled.
+	if o.clusterMonitoringConfig {
 		informer = cache.NewSharedIndexInformer(
 			o.client.ClusterMonitoringListWatch(),
 			&configv1alpha1.ClusterMonitoring{},
@@ -654,6 +684,7 @@ func (o *Operator) handleEvent(obj interface{}) {
 		*configv1.Console,
 		*configv1.ClusterOperator,
 		*configv1.ClusterVersion,
+		*configv1.Proxy,
 		*configv1alpha1.ClusterMonitoring:
 		// Log GroupKind and Name of the obj
 		rtObj := obj.(k8sruntime.Object)
@@ -819,13 +850,13 @@ func (o *Operator) sync(ctx context.Context) error {
 			}),
 		tasks.NewTaskGroup(
 			[]*tasks.TaskSpec{
-				newTaskSpec("ClusterMonitoringOperatorDeps", tasks.NewClusterMonitoringOperatorTask(o.client, factory, config)),
+				newTaskSpec("ClusterMonitoringOperatorDeps", tasks.NewClusterMonitoringOperatorTask(o.client, factory, config, o.pkiProfileProvider)),
 				newTaskSpec("Prometheus", tasks.NewPrometheusTask(o.client, factory, config)),
 				newTaskSpec("Alertmanager", tasks.NewAlertmanagerTask(o.client, factory, config)),
 				newTaskSpec("NodeExporter", tasks.NewNodeExporterTask(o.client, factory)),
 				newTaskSpec("KubeStateMetrics", tasks.NewKubeStateMetricsTask(o.client, factory)),
 				newTaskSpec("OpenshiftStateMetrics", tasks.NewOpenShiftStateMetricsTask(o.client, factory)),
-				newTaskSpec("MetricsServer", tasks.NewMetricsServerTask(ctx, o.namespace, o.client, factory, config)),
+				newTaskSpec("MetricsServer", tasks.NewMetricsServerTask(o.namespace, o.client, factory, config)),
 				newTaskSpec("TelemeterClient", tasks.NewTelemeterClientTask(o.client, factory, config)),
 				newTaskSpec("ThanosQuerier", tasks.NewThanosQuerierTask(o.client, factory, config)),
 				newTaskSpec("ControlPlaneComponents", tasks.NewControlPlaneTask(o.client, factory, config)),
@@ -962,7 +993,7 @@ func (o *Operator) loadUserWorkloadConfig(ctx context.Context) (*manifests.UserW
 	return manifests.NewUserWorkloadConfigFromConfigMap(userCM)
 }
 
-func (o *Operator) loadConfig() (*manifests.Config, error) {
+func (o *Operator) loadConfig(cm *configv1alpha1.ClusterMonitoring) (*manifests.Config, error) {
 	obj, found, err := o.cmapInf.GetStore().GetByKey(o.cmoConfigMap())
 	if err != nil {
 		return nil, fmt.Errorf("an error occurred when retrieving the Cluster Monitoring ConfigMap: %w", err)
@@ -970,17 +1001,37 @@ func (o *Operator) loadConfig() (*manifests.Config, error) {
 
 	if !found {
 		klog.Warning("No Cluster Monitoring ConfigMap was found. Using defaults.")
-		return manifests.NewConfigFromString("{}")
+		return manifests.NewConfigFromStringAndClusterMonitoringResource("{}", cm)
 	}
 
 	cmap := obj.(*v1.ConfigMap)
-	return manifests.NewConfigFromConfigMap(cmap)
+	return manifests.NewConfigFromConfigMapAndClusterMonitoringResource(cmap, cm)
 }
 
+// Config returns the final configuration which is aggregated from
+// - the openshift-monitoring/cluster-monitoring-config configmap.
+// - the openshift-user-workload-monitoring/user-workload-monitoring-config configmap.
+// - the ClusterMonitoring custom resource (when the ClusterMonitoringConfig feature gate is enabled).
 func (o *Operator) Config(ctx context.Context) (*manifests.Config, []string, error) {
 	var warnings []string
 
-	c, err := o.loadConfig()
+	// Always merge ClusterMonitoring CR (nil when FG is off or CR is missing).
+	var cm *configv1alpha1.ClusterMonitoring
+	if o.clusterMonitoringConfig {
+		var getErr error
+		cm, getErr = o.client.GetClusterMonitoring(ctx, "cluster")
+		if getErr != nil && !apierrors.IsNotFound(getErr) {
+			return nil, warnings, fmt.Errorf("failed to get ClusterMonitoring CRD: %w", getErr)
+		}
+
+		// Phase 1 (pre-GA): notify once that both ConfigMap and CRD are supported.
+		clusterMonitoringDualConfigLog.Do(func() {
+			klog.Infof("ClusterMonitoringConfig feature gate is enabled: platform monitoring can be configured via the %q ConfigMap or the ClusterMonitoring custom resource (config.openshift.io/v1alpha1, name %q). During Phase 1, ConfigMap values take precedence over CRD values for each top-level component.",
+				o.cmoConfigMap(), "cluster")
+		})
+	}
+
+	c, err := o.loadConfig(cm)
 	if err != nil {
 		return nil, warnings, err
 	}
@@ -993,24 +1044,6 @@ func (o *Operator) Config(ctx context.Context) (*manifests.Config, []string, err
 		string(c.ClusterMonitoringConfiguration.PrometheusK8sConfig.CollectionProfile),
 		manifests.SupportedCollectionProfiles.StringSlice(),
 	)
-
-	// Merge ClusterMonitoring CRD configuration if feature gate is enabled
-	if o.ClusterMonitoringConfigEnabled {
-		cm, getErr := o.client.GetClusterMonitoring(ctx, "cluster")
-		if getErr != nil && !apierrors.IsNotFound(getErr) {
-			return nil, warnings, fmt.Errorf("failed to get ClusterMonitoring CRD: %w", getErr)
-		}
-		c, err = o.mergeClusterMonitoringCRD(c, cm)
-		if err != nil {
-			return nil, warnings, fmt.Errorf("failed to merge ClusterMonitoring CRD: %w", err)
-		}
-	}
-
-	// Default UserWorkloadEnabled to false when neither ConfigMap nor CRD set it
-	// (Config leaves it nil so CRD merge can apply when the feature gate is on).
-	if c.ClusterMonitoringConfiguration.UserWorkloadEnabled == nil {
-		c.ClusterMonitoringConfiguration.UserWorkloadEnabled = ptr.To(false)
-	}
 
 	// Only use User Workload Monitoring ConfigMap from user ns and populate if
 	// it's enabled by admin via Cluster Monitoring ConfigMap.  The above
@@ -1039,47 +1072,40 @@ func (o *Operator) Config(ctx context.Context) (*manifests.Config, []string, err
 			klog.Warningf("Could not fetch cluster version from API. Proceeding without it: %v", err)
 		}
 
-		err = c.LoadToken(func() (*v1.Secret, error) {
-			return o.client.KubernetesInterface().CoreV1().Secrets("openshift-config").Get(ctx, "pull-secret", metav1.GetOptions{})
-		})
-
-		if err != nil {
-			klog.Warningf("Error loading token from API. Proceeding without it: %v", err)
-		}
+		o.loadTelemeterToken(ctx, c)
 	}
+
 	return c, warnings, nil
 }
 
-// mergeClusterMonitoringCRD merges ClusterMonitoring CRD spec into the ConfigMap-derived config.
-// Phase 1 merge rule for top-level fields: if a field is nil in the ConfigMap, use the CRD value;
-// otherwise keep the ConfigMap value.
-func (o *Operator) mergeClusterMonitoringCRD(c *manifests.Config, cm *configv1alpha1.ClusterMonitoring) (*manifests.Config, error) {
-	if cm == nil {
-		return c, nil
+// loadTelemeterToken tries to load the cloud.openshift.com token from
+// openshift-config/pull-secret first, then falls back to
+// kube-system/global-pull-secret (HCP clusters where the customer adds
+// cloud.openshift.com via day-2 additional-pull-secret).
+func (o *Operator) loadTelemeterToken(ctx context.Context, c *manifests.Config) {
+	tokenSources := []struct{ namespace, name string }{
+		{"openshift-config", "pull-secret"},
+		{"kube-system", "global-pull-secret"},
 	}
+	var tokenErrors []error
+	for _, s := range tokenSources {
+		pullSecret, err := o.client.GetSecret(ctx, s.namespace, s.name)
+		if err != nil {
+			tokenErrors = append(tokenErrors, fmt.Errorf("failed to get secret %s/%s: %w", s.namespace, s.name, err))
+			continue
+		}
 
-	if c.ClusterMonitoringConfiguration == nil {
-		c.ClusterMonitoringConfiguration = &manifests.ClusterMonitoringConfiguration{}
-	}
+		if err = c.LoadToken(pullSecret); err != nil {
+			tokenErrors = append(tokenErrors, fmt.Errorf("failed to parse pull secret %s/%s: %w", s.namespace, s.name, err))
+			continue
+		}
 
-	// UserDefined (CRD) -> UserWorkloadEnabled (ConfigMap): only set from CRD when ConfigMap has no opinion.
-	if c.ClusterMonitoringConfiguration.UserWorkloadEnabled == nil && cm.Spec.UserDefined.Mode != "" {
-		if userWorkloadEnabled := applyUserDefinedMode(cm.Spec.UserDefined); userWorkloadEnabled != nil {
-			c.ClusterMonitoringConfiguration.UserWorkloadEnabled = userWorkloadEnabled
+		if c.ClusterMonitoringConfiguration.TelemeterClientConfig.Token != "" {
+			break
 		}
 	}
-
-	return c, nil
-}
-
-func applyUserDefinedMode(udm configv1alpha1.UserDefinedMonitoring) *bool {
-	switch udm.Mode {
-	case configv1alpha1.UserDefinedDisabled:
-		return ptr.To(false)
-	case configv1alpha1.UserDefinedNamespaceIsolated:
-		return ptr.To(true)
-	default:
-		return nil
+	if c.ClusterMonitoringConfiguration.TelemeterClientConfig.Token == "" && len(tokenErrors) > 0 {
+		klog.Warningf("Failed to load token from any source. Proceeding without it: %v", tokenErrors)
 	}
 }
 

@@ -6,7 +6,7 @@ metadata:
     app.kubernetes.io/managed-by: cluster-monitoring-operator
     app.kubernetes.io/name: kube-state-metrics
     app.kubernetes.io/part-of: openshift-monitoring
-    app.kubernetes.io/version: 2.18.0
+    app.kubernetes.io/version: 2.19.1
   name: kube-state-metrics
   namespace: openshift-monitoring
 spec:
@@ -27,7 +27,7 @@ spec:
         app.kubernetes.io/managed-by: cluster-monitoring-operator
         app.kubernetes.io/name: kube-state-metrics
         app.kubernetes.io/part-of: openshift-monitoring
-        app.kubernetes.io/version: 2.18.0
+        app.kubernetes.io/version: 2.19.1
     spec:
       automountServiceAccountToken: true
       containers:
@@ -63,7 +63,8 @@ spec:
           requests:
             cpu: 2m
             memory: 80Mi
-        securityContext: {}
+        securityContext:
+          readOnlyRootFilesystem: true
         terminationMessagePolicy: FallbackToLogsOnError
         volumeMounts:
         - mountPath: /tmp
@@ -89,7 +90,8 @@ spec:
           requests:
             cpu: 1m
             memory: 15Mi
-        securityContext: {}
+        securityContext:
+          readOnlyRootFilesystem: true
         terminationMessagePolicy: FallbackToLogsOnError
         volumeMounts:
         - mountPath: /etc/tls/private
@@ -118,7 +120,8 @@ spec:
           requests:
             cpu: 1m
             memory: 15Mi
-        securityContext: {}
+        securityContext:
+          readOnlyRootFilesystem: true
         terminationMessagePolicy: FallbackToLogsOnError
         volumeMounts:
         - mountPath: /etc/tls/private

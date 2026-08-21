@@ -13,3 +13,4 @@ spec:
     matchLabels:
       app.kubernetes.io/name: thanos-ruler
       thanos-ruler: user-workload
+  unhealthyPodEvictionPolicy: AlwaysAllow

@@ -51,11 +51,9 @@ func (t *ControlPlaneTask) Run(ctx context.Context) error {
 		return fmt.Errorf("initializing control-plane kubelet ServiceMonitors failed: %w", err)
 	}
 
-	for _, sm := range sms {
-		err = t.client.CreateOrUpdateServiceMonitor(ctx, sm)
-		if err != nil {
-			return fmt.Errorf("reconciling %s/%s ServiceMonitor failed: %w", sm.Namespace, sm.Name, err)
-		}
+	err = t.client.CreateOrUpdateServiceMonitors(ctx, sms)
+	if err != nil {
+		return fmt.Errorf("reconciling control-plane kubelet ServiceMonitors failed: %w", err)
 	}
 
 	return nil

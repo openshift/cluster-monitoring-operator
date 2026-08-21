@@ -152,6 +152,109 @@ func TestGetTLSCiphers(t *testing.T) {
 	}
 }
 
+func TestTLSCurves(t *testing.T) {
+	defaultCurves := []string{"X25519MLKEM768", "X25519", "CurveP256", "CurveP384"}
+
+	testCases := []struct {
+		name           string
+		config         *APIServerConfig
+		expectedCurves []string
+	}{
+		{
+			name:           "nil config",
+			config:         nil,
+			expectedCurves: defaultCurves,
+		},
+		{
+			name:           "nil APIServer",
+			config:         NewAPIServerConfig(nil),
+			expectedCurves: defaultCurves,
+		},
+		{
+			name:           "nil profile",
+			config:         newApiserverConfig(nil),
+			expectedCurves: defaultCurves,
+		},
+		{
+			name: "intermediate profile",
+			config: newApiserverConfig(&configv1.TLSSecurityProfile{
+				Type: configv1.TLSProfileIntermediateType,
+			}),
+			expectedCurves: defaultCurves,
+		},
+		{
+			name: "old profile",
+			config: newApiserverConfig(&configv1.TLSSecurityProfile{
+				Type: configv1.TLSProfileOldType,
+			}),
+			expectedCurves: defaultCurves,
+		},
+		{
+			name: "modern profile",
+			config: newApiserverConfig(&configv1.TLSSecurityProfile{
+				Type: configv1.TLSProfileModernType,
+			}),
+			expectedCurves: defaultCurves,
+		},
+		{
+			name: "custom profile without groups",
+			config: newApiserverConfig(&configv1.TLSSecurityProfile{
+				Type: configv1.TLSProfileCustomType,
+				Custom: &configv1.CustomTLSProfile{
+					TLSProfileSpec: configv1.TLSProfileSpec{
+						Ciphers:       []string{"cipher-1"},
+						MinTLSVersion: configv1.VersionTLS12,
+					},
+				},
+			}),
+			expectedCurves: nil,
+		},
+		{
+			name: "custom profile with known groups",
+			config: newApiserverConfig(&configv1.TLSSecurityProfile{
+				Type: configv1.TLSProfileCustomType,
+				Custom: &configv1.CustomTLSProfile{
+					TLSProfileSpec: configv1.TLSProfileSpec{
+						Ciphers:       []string{"cipher-1"},
+						MinTLSVersion: configv1.VersionTLS12,
+						Groups: []configv1.TLSGroup{
+							configv1.TLSGroupX25519,
+							configv1.TLSGroupSecP256r1,
+						},
+					},
+				},
+			}),
+			expectedCurves: []string{"X25519", "CurveP256"},
+		},
+		{
+			name: "custom profile with all supported groups",
+			config: newApiserverConfig(&configv1.TLSSecurityProfile{
+				Type: configv1.TLSProfileCustomType,
+				Custom: &configv1.CustomTLSProfile{
+					TLSProfileSpec: configv1.TLSProfileSpec{
+						Ciphers:       []string{"cipher-1"},
+						MinTLSVersion: configv1.VersionTLS12,
+						Groups: []configv1.TLSGroup{
+							configv1.TLSGroupX25519,
+							configv1.TLSGroupSecP256r1MLKEM768,
+						},
+					},
+				},
+			}),
+			expectedCurves: []string{"X25519", "SecP256r1MLKEM768"},
+		},
+	}
+
+	for _, tt := range testCases {
+		t.Run(tt.name, func(t *testing.T) {
+			actualCurves := tt.config.TLSCurves()
+			if !reflect.DeepEqual(tt.expectedCurves, actualCurves) {
+				t.Fatalf("invalid curves, got %v, want %v", actualCurves, tt.expectedCurves)
+			}
+		})
+	}
+}
+
 func newApiserverConfig(profile *configv1.TLSSecurityProfile) *APIServerConfig {
 	config := NewAPIServerConfig(&configv1.APIServer{
 		Spec: configv1.APIServerSpec{

@@ -54,6 +54,30 @@ nodeExporter:
       enabled: true`,
 		},
 		{
+			nameCollector: "interrupts",
+			config: `
+nodeExporter:
+  collectors:
+    interrupts:
+      include: ["^LOC;.*"]`,
+		},
+		{
+			nameCollector: "softirqs",
+			config: `
+nodeExporter:
+  collectors:
+    softirqs:
+      enabled: true`,
+		},
+		{
+			nameCollector: "zoneinfo",
+			config: `
+nodeExporter:
+  collectors:
+    zoneinfo:
+      enabled: true`,
+		},
+		{
 			nameCollector: "buddyinfo",
 			config: `
 nodeExporter:
@@ -162,6 +186,22 @@ nodeExporter:
 			},
 		},
 		{
+			nameCollector: "dmmultipath",
+			config: `
+nodeExporter:
+  collectors:
+    dmMultipath:
+      enabled: false`,
+		},
+		{
+			nameCollector: "nvmesubsystem",
+			config: `
+nodeExporter:
+  collectors:
+    nvmeSubsystem:
+      enabled: false`,
+		},
+		{
 			nameCollector: "netclass",
 			config: `
 nodeExporter:
@@ -247,6 +287,8 @@ func TestNodeExporterGenericOptions(t *testing.T) {
 		"time",
 		"uname",
 		"vmstat",
+		"dmmultipath",
+		"nvmesubsystem",
 	}
 
 	tests := []struct {
@@ -284,7 +326,6 @@ nodeExporter:
 			}
 		})
 	}
-
 }
 
 func TestNodeExporterNetworkDevicesExclusion(t *testing.T) {
@@ -425,7 +466,5 @@ nodeExporter:
 				return nil
 			},
 		)
-
 	})
-
 }

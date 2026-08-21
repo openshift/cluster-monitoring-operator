@@ -9,7 +9,7 @@ metadata:
     app.kubernetes.io/managed-by: cluster-monitoring-operator
     app.kubernetes.io/name: prometheus
     app.kubernetes.io/part-of: openshift-monitoring
-    app.kubernetes.io/version: 3.9.1
+    app.kubernetes.io/version: 3.13.2
   name: k8s
   namespace: openshift-monitoring
 spec:
@@ -70,6 +70,7 @@ spec:
       capabilities:
         drop:
         - ALL
+      readOnlyRootFilesystem: true
     terminationMessagePolicy: FallbackToLogsOnError
     volumeMounts:
     - mountPath: /etc/tls/private
@@ -94,6 +95,8 @@ spec:
       requests:
         cpu: 1m
         memory: 15Mi
+    securityContext:
+      readOnlyRootFilesystem: true
     terminationMessagePolicy: FallbackToLogsOnError
     volumeMounts:
     - mountPath: /etc/tls/private
@@ -126,6 +129,8 @@ spec:
       requests:
         cpu: 1m
         memory: 10Mi
+    securityContext:
+      readOnlyRootFilesystem: true
     terminationMessagePolicy: FallbackToLogsOnError
     volumeMounts:
     - mountPath: /etc/tls/private
@@ -139,6 +144,8 @@ spec:
       readOnly: true
   - image: ""
     name: thanos-sidecar
+    securityContext:
+      readOnlyRootFilesystem: true
     terminationMessagePolicy: FallbackToLogsOnError
     volumeMounts:
     - mountPath: /etc/tls/grpc
@@ -152,6 +159,8 @@ spec:
       value: ""
     image: ""
     name: prometheus
+    securityContext:
+      readOnlyRootFilesystem: true
     terminationMessagePolicy: FallbackToLogsOnError
     volumeMounts:
     - mountPath: /etc/pki/ca-trust/extracted/pem/
@@ -163,7 +172,6 @@ spec:
   externalURL: https://prometheus-k8s.openshift-monitoring.svc:9091
   image: ""
   listenLocal: true
-  maximumStartupDurationSeconds: 3600
   nodeSelector:
     kubernetes.io/os: linux
   podMetadata:
@@ -175,7 +183,7 @@ spec:
       app.kubernetes.io/instance: k8s
       app.kubernetes.io/name: prometheus
       app.kubernetes.io/part-of: openshift-monitoring
-      app.kubernetes.io/version: 3.9.1
+      app.kubernetes.io/version: 3.13.2
   podMonitorNamespaceSelector:
     matchLabels:
       openshift.io/cluster-monitoring: "true"
@@ -194,6 +202,9 @@ spec:
     matchLabels:
       openshift.io/cluster-monitoring: "true"
   ruleSelector: {}
+  rules:
+    alert:
+      resendDelay: 60s
   scrapeClasses:
   - name: tls-client-certificate-auth
     tlsConfig:
@@ -219,6 +230,7 @@ spec:
     matchLabels:
       openshift.io/cluster-monitoring: "true"
   serviceMonitorSelector: {}
+  shards: 1
   thanos:
     grpcServerTlsConfig:
       caFile: /etc/tls/grpc/ca.crt
@@ -230,8 +242,8 @@ spec:
       requests:
         cpu: 1m
         memory: 25Mi
-    version: 0.41.0
-  version: 3.9.1
+    version: 0.42.4
+  version: 3.13.2
   volumes:
   - configMap:
       items:

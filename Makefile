@@ -37,12 +37,13 @@ JB_BIN=$(BIN_DIR)/jb
 GOJSONTOYAML_BIN=$(BIN_DIR)/gojsontoyaml
 JSONNET_BIN=$(BIN_DIR)/jsonnet
 JSONNETFMT_BIN=$(BIN_DIR)/jsonnetfmt
-GOLANGCI_LINT_BIN=$(BIN_DIR)/golangci-lint
-GOLANGCI_LINT_VERSION=v2.11.3
+GOLANGCI_LINT_VERSION=v2.12.2
+GOLANGCI_LINT_BIN=$(BIN_DIR)/golangci-lint-$(GOLANGCI_LINT_VERSION)
 PROMTOOL_BIN=$(BIN_DIR)/promtool
 DOCGEN_BIN=$(BIN_DIR)/docgen
 MISSPELL_BIN=$(BIN_DIR)/misspell
-TOOLING=$(EMBEDMD_BIN) $(JB_BIN) $(GOJSONTOYAML_BIN) $(JSONNET_BIN) $(JSONNETFMT_BIN) $(PROMTOOL_BIN) $(DOCGEN_BIN) $(MISSPELL_BIN)
+GOTESTSUM_BIN=$(BIN_DIR)/gotestsum
+TOOLING=$(EMBEDMD_BIN) $(JB_BIN) $(GOJSONTOYAML_BIN) $(JSONNET_BIN) $(JSONNETFMT_BIN) $(PROMTOOL_BIN) $(DOCGEN_BIN) $(MISSPELL_BIN) $(GOTESTSUM_BIN)
 
 MANIFESTS_DIR ?= $(shell pwd)/manifests
 JSON_MANIFESTS_DIR ?= $(shell pwd)/tmp/json-manifests/manifests
@@ -135,8 +136,10 @@ vendor:
 
 .PHONY: update-go-deps
 update-go-deps:
+	# Prevent go get from pulling deps that require a newer Go version.
+	GOTOOLCHAIN=go$$(go mod edit -json | jq -r .Go); \
 	for m in $$(go list -mod=readonly -m -f '{{ if and (not .Indirect) (not .Main)}}{{.Path}}{{end}}' all); do \
-		go get $$m; \
+		GOTOOLCHAIN=$$GOTOOLCHAIN go get $$m; \
 	done
 	@echo "Don't forget to run 'make vendor'"
 
@@ -219,14 +222,17 @@ go-fmt:
 
 .PHONY: golangci-lint
 golangci-lint: $(GOLANGCI_LINT_BIN)
-	$(GOLANGCI_LINT_BIN) run --verbose --print-resources-usage
+	$(GOLANGCI_LINT_BIN) run --verbose
 
 .PHONY: golangci-lint-fix
 golangci-lint-fix: $(GOLANGCI_LINT_BIN)
-	$(GOLANGCI_LINT_BIN) run --verbose --print-resources-usage --fix
+	$(GOLANGCI_LINT_BIN) run --verbose --fix
 
-$(GOLANGCI_LINT_BIN): $(BIN_DIR)
-	curl -sfL https://raw.githubusercontent.com/golangci/golangci-lint/master/install.sh| sh -s -- -b $(BIN_DIR) $(GOLANGCI_LINT_VERSION)
+# Version-stamped target ensures the correct golangci-lint is used across checkouts.
+# (|) avoids timestamp skew caused by the mv.
+$(GOLANGCI_LINT_BIN): | $(BIN_DIR)
+	curl -sfL https://golangci-lint.run/install.sh | sh -s -- -b $(BIN_DIR) $(GOLANGCI_LINT_VERSION)
+	mv $(BIN_DIR)/golangci-lint $(GOLANGCI_LINT_BIN)
 
 .PHONY:
 misspell: $(MISSPELL_BIN)
@@ -278,10 +284,23 @@ test: test-unit test-rules test-e2e test-ginkgo
 test-unit:
 	go test -race -short $(PKGS) -count=1
 
+E2E_JUNIT = $(ARTIFACT_DIR)/junit/junit_e2e.xml
+TEST_NAME_PREFIX = [sig-instrumentation][Jira:\&quot;Monitoring\&quot;][cluster-monitoring-operator e2e]
+
 .PHONY: test-e2e
 test-e2e: KUBECONFIG?=$(HOME)/.kube/config
+ifdef ARTIFACT_DIR
+test-e2e: $(GOTESTSUM_BIN)
+endif
 test-e2e:
-	go test -v -timeout=150m ./test/e2e/ --kubeconfig $(KUBECONFIG)
+ifdef ARTIFACT_DIR
+	mkdir -p $(dir $(E2E_JUNIT))
+	$(GOTESTSUM_BIN) --format=standard-verbose --junitfile=$(E2E_JUNIT) -- -v -timeout=150m $(E2E_TEST_ARGS) ./test/e2e/ --kubeconfig $(KUBECONFIG)
+	# Add some metadata.
+	sed -i 's/ name="Test/ name="$(TEST_NAME_PREFIX) Test/g' $(E2E_JUNIT)
+else
+	go test -v -timeout=150m $(E2E_TEST_ARGS) ./test/e2e/ --kubeconfig $(KUBECONFIG)
+endif
 
 .PHONY: test-ginkgo
 test-ginkgo: KUBECONFIG?=$(HOME)/.kube/config

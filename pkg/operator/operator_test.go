@@ -21,14 +21,16 @@ import (
 	"testing"
 
 	configv1 "github.com/openshift/api/config/v1"
-	configv1alpha1 "github.com/openshift/api/config/v1alpha1"
 	"github.com/stretchr/testify/require"
+	v1 "k8s.io/api/core/v1"
+	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	k8sruntime "k8s.io/apimachinery/pkg/runtime"
 	apiutilerrors "k8s.io/apimachinery/pkg/util/errors"
+	"k8s.io/client-go/kubernetes/fake"
 
 	"github.com/openshift/cluster-monitoring-operator/pkg/client"
 	"github.com/openshift/cluster-monitoring-operator/pkg/manifests"
 	"github.com/openshift/cluster-monitoring-operator/pkg/tasks"
-	"k8s.io/utils/ptr"
 )
 
 func TestNewInfrastructureConfig(t *testing.T) {
@@ -561,114 +563,83 @@ func TestGenerateRunReportFromTaskErrors(t *testing.T) {
 	}
 }
 
-func TestApplyUserDefinedMode(t *testing.T) {
-	for _, tc := range []struct {
-		name     string
-		udm      configv1alpha1.UserDefinedMonitoring
-		expected *bool
-	}{
-		{
-			name:     "Disabled",
-			udm:      configv1alpha1.UserDefinedMonitoring{Mode: configv1alpha1.UserDefinedDisabled},
-			expected: ptr.To(false),
+func newPullSecret(namespace, name, auths string) *v1.Secret {
+	return &v1.Secret{
+		ObjectMeta: metav1.ObjectMeta{
+			Namespace: namespace,
+			Name:      name,
 		},
-		{
-			name:     "NamespaceIsolated",
-			udm:      configv1alpha1.UserDefinedMonitoring{Mode: configv1alpha1.UserDefinedNamespaceIsolated},
-			expected: ptr.To(true),
+		Type: v1.SecretTypeDockerConfigJson,
+		Data: map[string][]byte{
+			v1.DockerConfigJsonKey: []byte(fmt.Sprintf(`{"auths":{%s}}`, auths)),
 		},
-		{
-			name:     "empty mode",
-			udm:      configv1alpha1.UserDefinedMonitoring{},
-			expected: nil,
-		},
-		{
-			name:     "unknown mode",
-			udm:      configv1alpha1.UserDefinedMonitoring{Mode: "Unknown"},
-			expected: nil,
-		},
-	} {
-		t.Run(tc.name, func(t *testing.T) {
-			got := applyUserDefinedMode(tc.udm)
-			if tc.expected == nil {
-				require.Nil(t, got)
-				return
-			}
-			require.NotNil(t, got)
-			require.Equal(t, *tc.expected, *got)
-		})
 	}
 }
 
-func TestMergeClusterMonitoringCRD(t *testing.T) {
-	ptrFalse := ptr.To(false)
-	ptrTrue := ptr.To(true)
-
+func TestLoadTelemeterToken(t *testing.T) {
 	for _, tc := range []struct {
 		name        string
-		c           *manifests.Config
-		cm          *configv1alpha1.ClusterMonitoring
-		expectValue *bool // expected UserWorkloadEnabled after merge (nil = no check)
+		secrets     []*v1.Secret
+		expectToken string
 	}{
 		{
-			name: "cm nil returns config unchanged",
-			c:    &manifests.Config{},
-			cm:   nil,
+			name: "primary has cloud.openshift.com token",
+			secrets: []*v1.Secret{
+				newPullSecret("openshift-config", "pull-secret", `"cloud.openshift.com":{"auth":"primarytoken"}`),
+			},
+			expectToken: "primarytoken",
 		},
 		{
-			name: "cm with empty Mode returns config unchanged",
-			c:    &manifests.Config{},
-			cm: &configv1alpha1.ClusterMonitoring{
-				Spec: configv1alpha1.ClusterMonitoringSpec{
-					UserDefined: configv1alpha1.UserDefinedMonitoring{Mode: ""},
-				},
+			name: "primary lacks token, fallback has token",
+			secrets: []*v1.Secret{
+				newPullSecret("openshift-config", "pull-secret", `"arohcpocpprod.azurecr.io":{"auth":"acrtoken"}`),
+				newPullSecret("kube-system", "global-pull-secret", `"cloud.openshift.com":{"auth":"fallbacktoken"}`),
 			},
+			expectToken: "fallbacktoken",
 		},
 		{
-			name: "UserDefinedDisabled sets UserWorkloadEnabled to false",
-			c:    &manifests.Config{},
-			cm: &configv1alpha1.ClusterMonitoring{
-				Spec: configv1alpha1.ClusterMonitoringSpec{
-					UserDefined: configv1alpha1.UserDefinedMonitoring{Mode: configv1alpha1.UserDefinedDisabled},
-				},
+			name: "primary has token, fallback ignored",
+			secrets: []*v1.Secret{
+				newPullSecret("openshift-config", "pull-secret", `"cloud.openshift.com":{"auth":"primarytoken"}`),
+				newPullSecret("kube-system", "global-pull-secret", `"cloud.openshift.com":{"auth":"fallbacktoken"}`),
 			},
-			expectValue: ptrFalse,
+			expectToken: "primarytoken",
 		},
 		{
-			name: "UserDefinedNamespaceIsolated sets UserWorkloadEnabled to true",
-			c:    &manifests.Config{},
-			cm: &configv1alpha1.ClusterMonitoring{
-				Spec: configv1alpha1.ClusterMonitoringSpec{
-					UserDefined: configv1alpha1.UserDefinedMonitoring{Mode: configv1alpha1.UserDefinedNamespaceIsolated},
-				},
+			name: "both secrets lack token",
+			secrets: []*v1.Secret{
+				newPullSecret("openshift-config", "pull-secret", `"arohcpocpprod.azurecr.io":{"auth":"acrtoken"}`),
+				newPullSecret("kube-system", "global-pull-secret", `"other.registry.io":{"auth":"othertoken"}`),
 			},
-			expectValue: ptrTrue,
+			expectToken: "",
 		},
 		{
-			name: "keeps ConfigMap UserWorkloadEnabled when set (ConfigMap wins over CRD)",
-			c: &manifests.Config{
-				ClusterMonitoringConfiguration: &manifests.ClusterMonitoringConfiguration{
-					UserWorkloadEnabled: ptrTrue,
-				},
-			},
-			cm: &configv1alpha1.ClusterMonitoring{
-				Spec: configv1alpha1.ClusterMonitoringSpec{
-					UserDefined: configv1alpha1.UserDefinedMonitoring{Mode: configv1alpha1.UserDefinedDisabled},
-				},
-			},
-			expectValue: ptrTrue,
+			name:        "no secrets exist, fallback also missing",
+			secrets:     []*v1.Secret{},
+			expectToken: "",
 		},
 	} {
 		t.Run(tc.name, func(t *testing.T) {
-			o := &Operator{}
-			out, err := o.mergeClusterMonitoringCRD(tc.c, tc.cm)
-			require.NoError(t, err)
-			require.Same(t, tc.c, out)
-			if tc.expectValue != nil {
-				require.NotNil(t, out.ClusterMonitoringConfiguration)
-				require.NotNil(t, out.ClusterMonitoringConfiguration.UserWorkloadEnabled)
-				require.Equal(t, *tc.expectValue, *out.ClusterMonitoringConfiguration.UserWorkloadEnabled)
+			objects := make([]k8sruntime.Object, len(tc.secrets))
+			for i, s := range tc.secrets {
+				objects[i] = s
 			}
+			cl := client.New(
+				"v0.0.0",
+				"openshift-monitoring",
+				"openshift-user-workload-monitoring",
+				client.KubernetesClient(fake.NewSimpleClientset(objects...)),
+			)
+
+			c, err := manifests.NewConfigFromString("")
+			require.NoError(t, err)
+
+			o := &Operator{
+				client: cl,
+			}
+			o.loadTelemeterToken(context.Background(), c)
+
+			require.Equal(t, tc.expectToken, c.ClusterMonitoringConfiguration.TelemeterClientConfig.Token)
 		})
 	}
 }

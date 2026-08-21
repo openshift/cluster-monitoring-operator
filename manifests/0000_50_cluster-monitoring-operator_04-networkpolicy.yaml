@@ -16,9 +16,9 @@ spec:
   - {}
   ingress:
   - ports:
-    # allow cluster-monitoring-operator to deploy individual component and allow prometheus
-    # to scrape cluster-monitoring-operator endpoint, 8443(port name: https) port
-    - port: https
+    # Allow Prometheus to scrape CMO's /metrics endpoint and allow CMO to serve
+    # its HTTPS API.
+    - port: 8443
       protocol: TCP
   podSelector:
     matchLabels:

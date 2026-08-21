@@ -11,11 +11,18 @@ spec:
   - {}
   ingress:
   - ports:
-    - port: tenancy
+    - port: 9091
+      protocol: TCP
+    - port: 9092
+      protocol: TCP
+    - port: 9093
+      protocol: TCP
+    - port: 9094
       protocol: TCP
   podSelector:
     matchLabels:
       app.kubernetes.io/name: thanos-query
+      app.kubernetes.io/part-of: openshift-monitoring
   policyTypes:
   - Ingress
   - Egress

@@ -24,30 +24,68 @@ import (
 
 // ProbeSpecApplyConfiguration represents a declarative configuration of the ProbeSpec type for use
 // with apply.
+//
+// ProbeSpec contains specification parameters for a Probe.
 type ProbeSpecApplyConfiguration struct {
-	JobName                                 *string                              `json:"jobName,omitempty"`
-	ProberSpec                              *ProberSpecApplyConfiguration        `json:"prober,omitempty"`
-	Module                                  *string                              `json:"module,omitempty"`
-	Targets                                 *ProbeTargetsApplyConfiguration      `json:"targets,omitempty"`
-	Interval                                *monitoringv1.Duration               `json:"interval,omitempty"`
-	ScrapeTimeout                           *monitoringv1.Duration               `json:"scrapeTimeout,omitempty"`
-	TLSConfig                               *SafeTLSConfigApplyConfiguration     `json:"tlsConfig,omitempty"`
-	BearerTokenSecret                       *corev1.SecretKeySelector            `json:"bearerTokenSecret,omitempty"`
-	BasicAuth                               *BasicAuthApplyConfiguration         `json:"basicAuth,omitempty"`
-	OAuth2                                  *OAuth2ApplyConfiguration            `json:"oauth2,omitempty"`
-	MetricRelabelConfigs                    []RelabelConfigApplyConfiguration    `json:"metricRelabelings,omitempty"`
-	Authorization                           *SafeAuthorizationApplyConfiguration `json:"authorization,omitempty"`
-	SampleLimit                             *uint64                              `json:"sampleLimit,omitempty"`
-	TargetLimit                             *uint64                              `json:"targetLimit,omitempty"`
-	ScrapeProtocols                         []monitoringv1.ScrapeProtocol        `json:"scrapeProtocols,omitempty"`
-	FallbackScrapeProtocol                  *monitoringv1.ScrapeProtocol         `json:"fallbackScrapeProtocol,omitempty"`
-	LabelLimit                              *uint64                              `json:"labelLimit,omitempty"`
-	LabelNameLengthLimit                    *uint64                              `json:"labelNameLengthLimit,omitempty"`
-	LabelValueLengthLimit                   *uint64                              `json:"labelValueLengthLimit,omitempty"`
+	// jobName assigned to scraped metrics by default.
+	JobName *string `json:"jobName,omitempty"`
+	// prober defines the specification for the prober to use for probing targets.
+	// The prober.URL parameter is required. Targets cannot be probed if left empty.
+	ProberSpec *ProberSpecApplyConfiguration `json:"prober,omitempty"`
+	// module to use for probing specifying how to probe the target.
+	// Example module configuring in the blackbox exporter:
+	// https://github.com/prometheus/blackbox_exporter/blob/master/example.yml
+	Module *string `json:"module,omitempty"`
+	// targets defines a set of static or dynamically discovered targets to probe.
+	Targets *ProbeTargetsApplyConfiguration `json:"targets,omitempty"`
+	// interval at which targets are probed using the configured prober.
+	// If not specified Prometheus' global scrape interval is used.
+	Interval *monitoringv1.Duration `json:"interval,omitempty"`
+	// scrapeTimeout defines the timeout for scraping metrics from the Prometheus exporter.
+	// If not specified, the Prometheus global scrape timeout is used.
+	// The value cannot be greater than the scrape interval otherwise the operator will reject the resource.
+	ScrapeTimeout *monitoringv1.Duration `json:"scrapeTimeout,omitempty"`
+	// metricRelabelings defines the RelabelConfig to apply to samples before ingestion.
+	MetricRelabelConfigs []RelabelConfigApplyConfiguration `json:"metricRelabelings,omitempty"`
+	// authorization section for this endpoint
+	Authorization *SafeAuthorizationApplyConfiguration `json:"authorization,omitempty"`
+	// sampleLimit defines per-scrape limit on number of scraped samples that will be accepted.
+	SampleLimit *int64 `json:"sampleLimit,omitempty"`
+	// targetLimit defines a limit on the number of scraped targets that will be accepted.
+	TargetLimit *int64 `json:"targetLimit,omitempty"`
+	// scrapeProtocols defines the protocols to negotiate during a scrape. It tells clients the
+	// protocols supported by Prometheus in order of preference (from most to least preferred).
+	//
+	// If unset, Prometheus uses its default value.
+	//
+	// It requires Prometheus >= v2.49.0.
+	ScrapeProtocols []monitoringv1.ScrapeProtocol `json:"scrapeProtocols,omitempty"`
+	// fallbackScrapeProtocol defines the protocol to use if a scrape returns blank, unparseable, or otherwise invalid Content-Type.
+	//
+	// It requires Prometheus >= v3.0.0.
+	FallbackScrapeProtocol *monitoringv1.ScrapeProtocol `json:"fallbackScrapeProtocol,omitempty"`
+	// labelLimit defines the per-scrape limit on number of labels that will be accepted for a sample.
+	// Only valid in Prometheus versions 2.27.0 and newer.
+	LabelLimit *int64 `json:"labelLimit,omitempty"`
+	// labelNameLengthLimit defines the per-scrape limit on length of labels name that will be accepted for a sample.
+	// Only valid in Prometheus versions 2.27.0 and newer.
+	LabelNameLengthLimit *int64 `json:"labelNameLengthLimit,omitempty"`
+	// labelValueLengthLimit defines the per-scrape limit on length of labels value that will be accepted for a sample.
+	// Only valid in Prometheus versions 2.27.0 and newer.
+	LabelValueLengthLimit                   *int64 `json:"labelValueLengthLimit,omitempty"`
 	NativeHistogramConfigApplyConfiguration `json:",inline"`
-	KeepDroppedTargets                      *uint64                        `json:"keepDroppedTargets,omitempty"`
-	ScrapeClassName                         *string                        `json:"scrapeClass,omitempty"`
-	Params                                  []ProbeParamApplyConfiguration `json:"params,omitempty"`
+	// keepDroppedTargets defines the per-scrape limit on the number of targets dropped by relabeling
+	// that will be kept in memory. 0 means no limit.
+	//
+	// It requires Prometheus >= v2.47.0.
+	KeepDroppedTargets *int64 `json:"keepDroppedTargets,omitempty"`
+	// scrapeClass defines the scrape class to apply.
+	ScrapeClassName *string `json:"scrapeClass,omitempty"`
+	// params defines the list of HTTP query parameters for the scrape.
+	// Please note that the `.spec.module` field takes precedence over the `module` parameter from this list when both are defined.
+	// The module name must be added using Module under ProbeSpec.
+	Params                       []ProbeParamApplyConfiguration `json:"params,omitempty"`
+	HTTPConfigApplyConfiguration `json:",inline"`
 }
 
 // ProbeSpecApplyConfiguration constructs a declarative configuration of the ProbeSpec type for use with
@@ -104,38 +142,6 @@ func (b *ProbeSpecApplyConfiguration) WithScrapeTimeout(value monitoringv1.Durat
 	return b
 }
 
-// WithTLSConfig sets the TLSConfig field in the declarative configuration to the given value
-// and returns the receiver, so that objects can be built by chaining "With" function invocations.
-// If called multiple times, the TLSConfig field is set to the value of the last call.
-func (b *ProbeSpecApplyConfiguration) WithTLSConfig(value *SafeTLSConfigApplyConfiguration) *ProbeSpecApplyConfiguration {
-	b.TLSConfig = value
-	return b
-}
-
-// WithBearerTokenSecret sets the BearerTokenSecret field in the declarative configuration to the given value
-// and returns the receiver, so that objects can be built by chaining "With" function invocations.
-// If called multiple times, the BearerTokenSecret field is set to the value of the last call.
-func (b *ProbeSpecApplyConfiguration) WithBearerTokenSecret(value corev1.SecretKeySelector) *ProbeSpecApplyConfiguration {
-	b.BearerTokenSecret = &value
-	return b
-}
-
-// WithBasicAuth sets the BasicAuth field in the declarative configuration to the given value
-// and returns the receiver, so that objects can be built by chaining "With" function invocations.
-// If called multiple times, the BasicAuth field is set to the value of the last call.
-func (b *ProbeSpecApplyConfiguration) WithBasicAuth(value *BasicAuthApplyConfiguration) *ProbeSpecApplyConfiguration {
-	b.BasicAuth = value
-	return b
-}
-
-// WithOAuth2 sets the OAuth2 field in the declarative configuration to the given value
-// and returns the receiver, so that objects can be built by chaining "With" function invocations.
-// If called multiple times, the OAuth2 field is set to the value of the last call.
-func (b *ProbeSpecApplyConfiguration) WithOAuth2(value *OAuth2ApplyConfiguration) *ProbeSpecApplyConfiguration {
-	b.OAuth2 = value
-	return b
-}
-
 // WithMetricRelabelConfigs adds the given value to the MetricRelabelConfigs field in the declarative configuration
 // and returns the receiver, so that objects can be build by chaining "With" function invocations.
 // If called multiple times, values provided by each call will be appended to the MetricRelabelConfigs field.
@@ -160,7 +166,7 @@ func (b *ProbeSpecApplyConfiguration) WithAuthorization(value *SafeAuthorization
 // WithSampleLimit sets the SampleLimit field in the declarative configuration to the given value
 // and returns the receiver, so that objects can be built by chaining "With" function invocations.
 // If called multiple times, the SampleLimit field is set to the value of the last call.
-func (b *ProbeSpecApplyConfiguration) WithSampleLimit(value uint64) *ProbeSpecApplyConfiguration {
+func (b *ProbeSpecApplyConfiguration) WithSampleLimit(value int64) *ProbeSpecApplyConfiguration {
 	b.SampleLimit = &value
 	return b
 }
@@ -168,7 +174,7 @@ func (b *ProbeSpecApplyConfiguration) WithSampleLimit(value uint64) *ProbeSpecAp
 // WithTargetLimit sets the TargetLimit field in the declarative configuration to the given value
 // and returns the receiver, so that objects can be built by chaining "With" function invocations.
 // If called multiple times, the TargetLimit field is set to the value of the last call.
-func (b *ProbeSpecApplyConfiguration) WithTargetLimit(value uint64) *ProbeSpecApplyConfiguration {
+func (b *ProbeSpecApplyConfiguration) WithTargetLimit(value int64) *ProbeSpecApplyConfiguration {
 	b.TargetLimit = &value
 	return b
 }
@@ -194,7 +200,7 @@ func (b *ProbeSpecApplyConfiguration) WithFallbackScrapeProtocol(value monitorin
 // WithLabelLimit sets the LabelLimit field in the declarative configuration to the given value
 // and returns the receiver, so that objects can be built by chaining "With" function invocations.
 // If called multiple times, the LabelLimit field is set to the value of the last call.
-func (b *ProbeSpecApplyConfiguration) WithLabelLimit(value uint64) *ProbeSpecApplyConfiguration {
+func (b *ProbeSpecApplyConfiguration) WithLabelLimit(value int64) *ProbeSpecApplyConfiguration {
 	b.LabelLimit = &value
 	return b
 }
@@ -202,7 +208,7 @@ func (b *ProbeSpecApplyConfiguration) WithLabelLimit(value uint64) *ProbeSpecApp
 // WithLabelNameLengthLimit sets the LabelNameLengthLimit field in the declarative configuration to the given value
 // and returns the receiver, so that objects can be built by chaining "With" function invocations.
 // If called multiple times, the LabelNameLengthLimit field is set to the value of the last call.
-func (b *ProbeSpecApplyConfiguration) WithLabelNameLengthLimit(value uint64) *ProbeSpecApplyConfiguration {
+func (b *ProbeSpecApplyConfiguration) WithLabelNameLengthLimit(value int64) *ProbeSpecApplyConfiguration {
 	b.LabelNameLengthLimit = &value
 	return b
 }
@@ -210,8 +216,16 @@ func (b *ProbeSpecApplyConfiguration) WithLabelNameLengthLimit(value uint64) *Pr
 // WithLabelValueLengthLimit sets the LabelValueLengthLimit field in the declarative configuration to the given value
 // and returns the receiver, so that objects can be built by chaining "With" function invocations.
 // If called multiple times, the LabelValueLengthLimit field is set to the value of the last call.
-func (b *ProbeSpecApplyConfiguration) WithLabelValueLengthLimit(value uint64) *ProbeSpecApplyConfiguration {
+func (b *ProbeSpecApplyConfiguration) WithLabelValueLengthLimit(value int64) *ProbeSpecApplyConfiguration {
 	b.LabelValueLengthLimit = &value
+	return b
+}
+
+// WithScrapeNativeHistograms sets the ScrapeNativeHistograms field in the declarative configuration to the given value
+// and returns the receiver, so that objects can be built by chaining "With" function invocations.
+// If called multiple times, the ScrapeNativeHistograms field is set to the value of the last call.
+func (b *ProbeSpecApplyConfiguration) WithScrapeNativeHistograms(value bool) *ProbeSpecApplyConfiguration {
+	b.NativeHistogramConfigApplyConfiguration.ScrapeNativeHistograms = &value
 	return b
 }
 
@@ -226,7 +240,7 @@ func (b *ProbeSpecApplyConfiguration) WithScrapeClassicHistograms(value bool) *P
 // WithNativeHistogramBucketLimit sets the NativeHistogramBucketLimit field in the declarative configuration to the given value
 // and returns the receiver, so that objects can be built by chaining "With" function invocations.
 // If called multiple times, the NativeHistogramBucketLimit field is set to the value of the last call.
-func (b *ProbeSpecApplyConfiguration) WithNativeHistogramBucketLimit(value uint64) *ProbeSpecApplyConfiguration {
+func (b *ProbeSpecApplyConfiguration) WithNativeHistogramBucketLimit(value int64) *ProbeSpecApplyConfiguration {
 	b.NativeHistogramConfigApplyConfiguration.NativeHistogramBucketLimit = &value
 	return b
 }
@@ -250,7 +264,7 @@ func (b *ProbeSpecApplyConfiguration) WithConvertClassicHistogramsToNHCB(value b
 // WithKeepDroppedTargets sets the KeepDroppedTargets field in the declarative configuration to the given value
 // and returns the receiver, so that objects can be built by chaining "With" function invocations.
 // If called multiple times, the KeepDroppedTargets field is set to the value of the last call.
-func (b *ProbeSpecApplyConfiguration) WithKeepDroppedTargets(value uint64) *ProbeSpecApplyConfiguration {
+func (b *ProbeSpecApplyConfiguration) WithKeepDroppedTargets(value int64) *ProbeSpecApplyConfiguration {
 	b.KeepDroppedTargets = &value
 	return b
 }
@@ -273,5 +287,53 @@ func (b *ProbeSpecApplyConfiguration) WithParams(values ...*ProbeParamApplyConfi
 		}
 		b.Params = append(b.Params, *values[i])
 	}
+	return b
+}
+
+// WithBasicAuth sets the BasicAuth field in the declarative configuration to the given value
+// and returns the receiver, so that objects can be built by chaining "With" function invocations.
+// If called multiple times, the BasicAuth field is set to the value of the last call.
+func (b *ProbeSpecApplyConfiguration) WithBasicAuth(value *BasicAuthApplyConfiguration) *ProbeSpecApplyConfiguration {
+	b.HTTPConfigWithoutTLSApplyConfiguration.BasicAuth = value
+	return b
+}
+
+// WithOAuth2 sets the OAuth2 field in the declarative configuration to the given value
+// and returns the receiver, so that objects can be built by chaining "With" function invocations.
+// If called multiple times, the OAuth2 field is set to the value of the last call.
+func (b *ProbeSpecApplyConfiguration) WithOAuth2(value *OAuth2ApplyConfiguration) *ProbeSpecApplyConfiguration {
+	b.HTTPConfigWithoutTLSApplyConfiguration.OAuth2 = value
+	return b
+}
+
+// WithBearerTokenSecret sets the BearerTokenSecret field in the declarative configuration to the given value
+// and returns the receiver, so that objects can be built by chaining "With" function invocations.
+// If called multiple times, the BearerTokenSecret field is set to the value of the last call.
+func (b *ProbeSpecApplyConfiguration) WithBearerTokenSecret(value corev1.SecretKeySelector) *ProbeSpecApplyConfiguration {
+	b.HTTPConfigWithoutTLSApplyConfiguration.BearerTokenSecret = &value
+	return b
+}
+
+// WithFollowRedirects sets the FollowRedirects field in the declarative configuration to the given value
+// and returns the receiver, so that objects can be built by chaining "With" function invocations.
+// If called multiple times, the FollowRedirects field is set to the value of the last call.
+func (b *ProbeSpecApplyConfiguration) WithFollowRedirects(value bool) *ProbeSpecApplyConfiguration {
+	b.HTTPConfigWithoutTLSApplyConfiguration.FollowRedirects = &value
+	return b
+}
+
+// WithEnableHTTP2 sets the EnableHTTP2 field in the declarative configuration to the given value
+// and returns the receiver, so that objects can be built by chaining "With" function invocations.
+// If called multiple times, the EnableHTTP2 field is set to the value of the last call.
+func (b *ProbeSpecApplyConfiguration) WithEnableHTTP2(value bool) *ProbeSpecApplyConfiguration {
+	b.HTTPConfigWithoutTLSApplyConfiguration.EnableHTTP2 = &value
+	return b
+}
+
+// WithTLSConfig sets the TLSConfig field in the declarative configuration to the given value
+// and returns the receiver, so that objects can be built by chaining "With" function invocations.
+// If called multiple times, the TLSConfig field is set to the value of the last call.
+func (b *ProbeSpecApplyConfiguration) WithTLSConfig(value *SafeTLSConfigApplyConfiguration) *ProbeSpecApplyConfiguration {
+	b.HTTPConfigApplyConfiguration.TLSConfig = value
 	return b
 }

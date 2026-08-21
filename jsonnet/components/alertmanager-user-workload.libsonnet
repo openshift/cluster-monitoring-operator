@@ -199,6 +199,8 @@ function(params)
         // The value of alertmanagerConfigSelector is defined at runtime by the Cluster Monitoring Operator.
         alertmanagerConfigSelector: null,
         automountServiceAccountToken: true,
+        // See jsonnet/components/alertmanager.libsonnet for the explanation about minReadySeconds.
+        minReadySeconds: 90,
         securityContext: {
           fsGroup: 65534,
           runAsNonRoot: true,
@@ -428,6 +430,7 @@ function(params)
         podSelector: {
           matchLabels: {
             'app.kubernetes.io/name': 'alertmanager',
+            'app.kubernetes.io/part-of': 'openshift-monitoring',
           },
         },
         policyTypes: [
@@ -437,16 +440,46 @@ function(params)
         ingress: [
           {
             ports: [
-              // allow access to the Alertmanager endpoints restricted to a given project,
-              // port number 9092(port name: tenancy)
               {
-                port: 'tenancy',
+                // Allow users to access namespace-scoped UWM Alertmanager API endpoints.
+                port: 9092,
                 protocol: 'TCP',
               },
-              // allow prometheus to scrape user workload alertmanager 9097(port name: metrics) port
               {
-                port: 'metrics',
+                // Allow Prometheus to push alerts to UWM Alertmanager and allow users
+                // to access the UWM Alertmanager UI/API via route.
+                port: 9095,
                 protocol: 'TCP',
+              },
+              {
+                // Allow Prometheus to scrape UWM Alertmanager's own /metrics endpoint
+                port: 9097,
+                protocol: 'TCP',
+              },
+            ],
+          },
+          {
+            from: [{
+              podSelector: {
+                matchLabels: {
+                  'app.kubernetes.io/name': 'alertmanager',
+                  'app.kubernetes.io/part-of': 'openshift-monitoring',
+                  'app.kubernetes.io/instance': 'user-workload',
+                },
+              },
+            }],
+            ports: [
+              {
+                // Allow UWM Alertmanager replicas to communicate via the HA gossip mesh
+                // (injected by Prometheus Operator).
+                port: 9094,
+                protocol: 'TCP',
+              },
+              {
+                // Allow UWM Alertmanager replicas to communicate via the HA gossip mesh
+                // (injected by Prometheus Operator).
+                port: 9094,
+                protocol: 'UDP',
               },
             ],
           },

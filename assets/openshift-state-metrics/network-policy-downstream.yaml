@@ -11,13 +11,14 @@ spec:
   - {}
   ingress:
   - ports:
-    - port: https-main
+    - port: 8443
       protocol: TCP
-    - port: https-self
+    - port: 9443
       protocol: TCP
   podSelector:
     matchLabels:
       app.kubernetes.io/name: openshift-state-metrics
+      app.kubernetes.io/part-of: openshift-monitoring
   policyTypes:
   - Ingress
   - Egress

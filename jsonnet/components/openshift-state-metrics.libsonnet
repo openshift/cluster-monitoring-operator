@@ -1,4 +1,5 @@
 local generateSecret = import '../utils/generate-secret.libsonnet';
+local generateServiceMonitor = import '../utils/generate-service-monitors.libsonnet';
 local withDescription = (import '../utils/add-annotations.libsonnet').withDescription;
 
 function(params) {
@@ -96,7 +97,17 @@ function(params) {
       ),
     },
   },
-  serviceMonitor: osm.openshiftStateMetrics.serviceMonitor,
+  serviceMonitor: osm.openshiftStateMetrics.serviceMonitor {
+    metadata+: {
+      labels+: {
+        'monitoring.openshift.io/collection-profile': 'full',
+      },
+    },
+    spec+: {
+      serviceDiscoveryRole: 'EndpointSlice',
+    },
+  },
+  minimalServiceMonitor: generateServiceMonitor.serviceMonitorForMinimalProfile(self.serviceMonitor),
   networkPolicyDownstream: {
     apiVersion: 'networking.k8s.io/v1',
     kind: 'NetworkPolicy',
@@ -108,6 +119,7 @@ function(params) {
       podSelector: {
         matchLabels: {
           'app.kubernetes.io/name': 'openshift-state-metrics',
+          'app.kubernetes.io/part-of': 'openshift-monitoring',
         },
       },
       policyTypes: [
@@ -117,14 +129,16 @@ function(params) {
       ingress: [
         {
           ports: [
-            // allow prometheus to scrape openshift-state-metrics endpoints,
-            // 8443(port name: https-main)/9443(port name: https-self) ports
             {
-              port: 'https-main',
+              // Allow Prometheus to scrape openshift-state-metrics for OpenShift-specific
+              // object metrics.
+              port: 8443,
               protocol: 'TCP',
             },
             {
-              port: 'https-self',
+              // Allow Prometheus to scrape openshift-state-metrics process-level self
+              // metrics.
+              port: 9443,
               protocol: 'TCP',
             },
           ],

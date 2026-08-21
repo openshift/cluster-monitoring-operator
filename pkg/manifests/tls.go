@@ -23,6 +23,7 @@ import (
 	"time"
 
 	"github.com/openshift/library-go/pkg/crypto"
+	"github.com/openshift/library-go/pkg/pki"
 	v1 "k8s.io/api/core/v1"
 	"k8s.io/apimachinery/pkg/util/sets"
 	"k8s.io/apiserver/pkg/authentication/user"
@@ -127,6 +128,10 @@ func (f *Factory) UserWorkloadMetricsClientCACM(apiAuthConfigmap *v1.ConfigMap) 
 // If no key material is present, it creates it.
 // It "rotates" the CA and all server and client certificates and keys 1/5 before the expiry timespan.
 //
+// When pkiProvider is non-nil (ConfigurablePKI feature gate enabled),
+// the key algorithm is resolved from the cluster PKI profile. When nil,
+// legacy RSA-2048 behavior is preserved.
+//
 // The rotation scheme here assumes the following threat model:
 //
 //  1. CA certificates could be compromised as they are being mounted into multiple pods
@@ -137,7 +142,7 @@ func (f *Factory) UserWorkloadMetricsClientCACM(apiAuthConfigmap *v1.ConfigMap) 
 //     This is addressed by re-issuing them at the same time the CA expires.
 //  3. The CA's private key is left out of the thread model as it is not mounted in any pod.
 //     This implementation assumes it can stay immutable and does not need rotation.
-func RotateGRPCSecret(s *v1.Secret) error {
+func RotateGRPCSecret(s *v1.Secret, pkiProvider pki.PKIProfileProvider) error {
 	var (
 		curCA, newCA              *crypto.CA
 		curCABytes, crtPresent    = s.Data["ca.crt"]
@@ -170,9 +175,15 @@ func RotateGRPCSecret(s *v1.Secret) error {
 	}
 
 	if curCA == nil {
-		newCAConfig, err := crypto.MakeSelfSignedCAConfig(
+		caKeyGen, err := resolveKeyGenerator(pkiProvider, pki.CertificateTypeSigner, "monitoring.grpc-tls-signer")
+		if err != nil {
+			return fmt.Errorf("error resolving PKI key config for CA: %w", err)
+		}
+
+		newCAConfig, err := crypto.NewSigningCertificate(
 			fmt.Sprintf("%s@%d", "openshift-cluster-monitoring", time.Now().Unix()),
-			crypto.DefaultCertificateLifetimeDuration,
+			caKeyGen,
+			crypto.WithLifetime(crypto.DefaultCertificateLifetimeDuration),
 		)
 		if err != nil {
 			return fmt.Errorf("error generating self signed CA: %w", err)
@@ -212,11 +223,16 @@ func RotateGRPCSecret(s *v1.Secret) error {
 	s.Data["ca.key"] = newCAKeyBytes
 
 	{
-		cfg, err := newCA.MakeClientCertificateForDuration(
+		clientKeyGen, err := resolveKeyGenerator(pkiProvider, pki.CertificateTypeClient, "monitoring.grpc-tls-client")
+		if err != nil {
+			return fmt.Errorf("error resolving PKI key config for client certificate: %w", err)
+		}
+
+		cfg, err := newCA.NewClientCertificate(
 			&user.DefaultInfo{
 				Name: "thanos-querier",
 			},
-			crypto.DefaultCertificateLifetimeDuration,
+			clientKeyGen,
 		)
 		if err != nil {
 			return fmt.Errorf("error making client certificate: %w", err)
@@ -231,9 +247,14 @@ func RotateGRPCSecret(s *v1.Secret) error {
 	}
 
 	{
-		cfg, err := newCA.MakeServerCert(
+		serverKeyGen, err := resolveKeyGenerator(pkiProvider, pki.CertificateTypeServing, "monitoring.grpc-tls-serving")
+		if err != nil {
+			return fmt.Errorf("error resolving PKI key config for server certificate: %w", err)
+		}
+
+		cfg, err := newCA.NewServerCertificate(
 			sets.New("prometheus-grpc"),
-			crypto.DefaultCertificateLifetimeDuration,
+			serverKeyGen,
 		)
 		if err != nil {
 			return fmt.Errorf("error making server certificate: %w", err)
@@ -248,6 +269,30 @@ func RotateGRPCSecret(s *v1.Secret) error {
 	}
 
 	return nil
+}
+
+// resolveKeyGenerator returns a KeyPairGenerator for the given certificate
+// type and name. When the pkiProvider is non-nil, the key algorithm is
+// resolved from the cluster PKI profile. When nil, the legacy RSA-2048
+// default is used.
+func resolveKeyGenerator(pkiProvider pki.PKIProfileProvider, certType pki.CertificateType, name string) (crypto.KeyPairGenerator, error) {
+	if pkiProvider != nil {
+		certConfig, err := pki.ResolveCertificateConfig(pkiProvider, certType, name)
+		if err != nil {
+			// TODO: remove this fallback once the PKI resource is
+			// guaranteed to exist when ConfigurablePKI is enabled.
+			klog.V(4).Infof("Failed to resolve PKI profile for %s certificate %q, using default profile: %v", certType, name, err)
+			defaultProfile := pki.DefaultPKIProfile()
+			certConfig, err = pki.ResolveCertificateConfig(pki.NewStaticPKIProfileProvider(&defaultProfile), certType, name)
+			if err != nil {
+				return nil, err
+			}
+		}
+		if certConfig != nil {
+			return certConfig.Key, nil
+		}
+	}
+	return crypto.RSAKeyPairGenerator{Bits: 2048}, nil
 }
 
 // createCertificate creates a new certificate and returns it in x509.Certificate form.

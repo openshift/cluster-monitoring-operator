@@ -34,6 +34,7 @@ import (
 	policyv1 "k8s.io/api/policy/v1"
 	"k8s.io/apimachinery/pkg/api/resource"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	auditv1 "k8s.io/apiserver/pkg/apis/audit/v1"
 	"k8s.io/utils/ptr"
 )
 
@@ -247,7 +248,7 @@ func TestUnconfiguredManifests(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	_, err = f.AlertmanagerServiceMonitor()
+	_, err = f.AlertmanagerServiceMonitors()
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -267,7 +268,7 @@ func TestUnconfiguredManifests(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	_, err = f.KubeStateMetricsServiceMonitor()
+	_, err = f.KubeStateMetricsServiceMonitors()
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -297,7 +298,7 @@ func TestUnconfiguredManifests(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	_, err = f.OpenShiftStateMetricsServiceMonitor()
+	_, err = f.OpenShiftStateMetricsServiceMonitors()
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -317,7 +318,7 @@ func TestUnconfiguredManifests(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	_, err = f.NodeExporterServiceMonitor()
+	_, err = f.NodeExporterServiceMonitors()
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -387,7 +388,7 @@ func TestUnconfiguredManifests(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	_, err = f.PrometheusK8sPrometheusServiceMonitor()
+	_, err = f.PrometheusK8sPrometheusServiceMonitors()
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -559,12 +560,12 @@ func TestUnconfiguredManifests(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	_, err = f.ClusterMonitoringOperatorServiceMonitor()
+	_, err = f.ClusterMonitoringOperatorServiceMonitors()
 	if err != nil {
 		t.Fatal(err)
 	}
 
-	_, err = f.ControlPlaneKubeletServiceMonitor()
+	_, err = f.ControlPlaneKubeletServiceMonitors()
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -1237,7 +1238,7 @@ func TestPrometheusK8sRemoteWriteURLs(t *testing.T) {
 
 			var got []string
 			for _, rw := range p.Spec.RemoteWrite {
-				got = append(got, rw.URL)
+				got = append(got, string(rw.URL))
 			}
 			sort.Strings(got)
 			sort.Strings(tc.expectedRemoteWriteURLs)
@@ -1304,7 +1305,7 @@ func TestPrometheusK8sRemoteWriteOauth2(t *testing.T) {
 		nil,
 	)
 	require.NoError(t, err)
-	require.Equal(t, p.Spec.RemoteWrite[0].URL, "https://test.remotewrite.com/api/write")
+	require.Equal(t, string(p.Spec.RemoteWrite[0].URL), "https://test.remotewrite.com/api/write")
 	require.Equal(t, p.Spec.RemoteWrite[0].OAuth2, &expectedOauth2Config)
 }
 func TestRemoteWriteAuthorizationConfig(t *testing.T) {
@@ -1451,6 +1452,50 @@ func TestRemoteWriteAuthorizationConfig(t *testing.T) {
 	}
 }
 
+func TestRemoteWriteMessageVersion(t *testing.T) {
+	for _, tc := range []struct {
+		name            string
+		messageVersion  string
+		expectedVersion *monv1.RemoteWriteMessageVersion
+	}{
+		{
+			name:           "defaults to V1.0 when not set",
+			messageVersion: "",
+		},
+		{
+			name:            "V1.0 is passed through",
+			messageVersion:  "V1.0",
+			expectedVersion: new(monv1.RemoteWriteMessageVersion1_0),
+		},
+		{
+			name:            "V2.0 is passed through",
+			messageVersion:  "V2.0",
+			expectedVersion: new(monv1.RemoteWriteMessageVersion2_0),
+		},
+	} {
+		t.Run(tc.name, func(t *testing.T) {
+			c, err := NewConfigFromString("")
+			require.NoError(t, err)
+			c.ClusterMonitoringConfiguration.PrometheusK8sConfig.RemoteWrite = []RemoteWriteSpec{
+				{URL: "http://remote", MessageVersion: tc.messageVersion},
+			}
+			f := NewFactory("openshift-monitoring", "openshift-user-workload-monitoring", c, defaultInfrastructureReader(), &fakeProxyReader{}, NewAssets(assetsPath), &APIServerConfig{}, &configv1.Console{})
+			p, err := f.PrometheusK8s(
+				&v1.Secret{ObjectMeta: metav1.ObjectMeta{Name: "foo"}},
+				nil,
+			)
+			require.NoError(t, err)
+			require.Len(t, p.Spec.RemoteWrite, 1)
+			if tc.expectedVersion == nil {
+				require.Nil(t, p.Spec.RemoteWrite[0].MessageVersion)
+			} else {
+				require.NotNil(t, p.Spec.RemoteWrite[0].MessageVersion)
+				require.Equal(t, *tc.expectedVersion, *p.Spec.RemoteWrite[0].MessageVersion)
+			}
+		})
+	}
+}
+
 func TestPrometheusRemoteWriteProxy(t *testing.T) {
 	// This is not required, as the configuration is overridden below, set to maintain consistency.
 	config := func() *Config {
@@ -1561,10 +1606,8 @@ func TestPrometheusK8sConfiguration(t *testing.T) {
   - url: "https://test.remotewrite.com/api/write"
   queryLogFile: /tmp/test
 `)
+	require.NoError(t, err)
 
-	if err != nil {
-		t.Fatal(err)
-	}
 	c.SetImages(map[string]string{
 		"prometheus":       "docker.io/openshift/origin-prometheus:latest",
 		"kube-rbac-proxy":  "docker.io/openshift/origin-kube-rbac-proxy:latest",
@@ -1676,6 +1719,8 @@ func TestPrometheusK8sConfiguration(t *testing.T) {
 	}
 
 	require.Equal(t, "TLS12", string(*p.Spec.Thanos.GRPCServerTLSConfig.SafeTLSConfig.MinVersion))
+	require.Equal(t, crypto.OpenSSLToIANACipherSuites(APIServerDefaultTLSCiphers), p.Spec.Thanos.GRPCServerTLSConfig.CipherSuites)
+	require.Equal(t, []string{"X25519MLKEM768", "X25519", "CurveP256", "CurveP384"}, p.Spec.Thanos.GRPCServerTLSConfig.Curves)
 }
 
 func TestPrometheusUserWorkloadConfiguration(t *testing.T) {
@@ -1763,6 +1808,8 @@ func TestPrometheusUserWorkloadConfiguration(t *testing.T) {
 	require.Equal(t, p.Spec.ExternalLabels, map[string]string{"foo": "bar", "oof": "rab"})
 
 	require.Equal(t, "TLS12", string(*p.Spec.Thanos.GRPCServerTLSConfig.SafeTLSConfig.MinVersion))
+	require.Equal(t, crypto.OpenSSLToIANACipherSuites(APIServerDefaultTLSCiphers), p.Spec.Thanos.GRPCServerTLSConfig.CipherSuites)
+	require.Equal(t, []string{"X25519MLKEM768", "X25519", "CurveP256", "CurveP384"}, p.Spec.Thanos.GRPCServerTLSConfig.Curves)
 }
 
 func TestPrometheusQueryLogFileConfig(t *testing.T) {
@@ -1824,22 +1871,24 @@ func TestPrometheusQueryLogFileConfig(t *testing.T) {
 		},
 	} {
 		t.Run(tc.name, func(t *testing.T) {
-			c := mustDefaultConfig()
-			c.ClusterMonitoringConfiguration.PrometheusK8sConfig.QueryLogFile = tc.queryLogFilePath
+			c, err := NewConfigFromString(
+				fmt.Sprintf(`prometheusK8s:
+    queryLogFile: %s`, tc.queryLogFilePath),
+			)
+
+			if tc.errExpected {
+				require.Error(t, err)
+				require.True(t, errors.Is(err, ErrConfigValidation))
+				return
+			}
+			require.NoError(t, err)
+
 			f := NewFactory("openshift-monitoring", "openshift-user-workload-monitoring", c, defaultInfrastructureReader(), &fakeProxyReader{}, NewAssets(assetsPath), &APIServerConfig{}, &configv1.Console{})
 			p, err := f.PrometheusK8s(
 				&v1.Secret{ObjectMeta: metav1.ObjectMeta{Name: "foo"}},
 				nil,
 			)
-			if err != nil {
-				if !tc.errExpected {
-					t.Fatalf("Expecting no error but got %v", err)
-				}
-				return
-			}
-			if tc.errExpected {
-				t.Fatalf("Expected query log file %s to give an error, but err is nil", tc.queryLogFilePath)
-			}
+			require.NoError(t, err)
 
 			if p.Spec.QueryLogFile != tc.expected {
 				t.Fatal("Prometheus query log is not configured correctly")
@@ -2931,9 +2980,16 @@ metricsServer:
 	for _, test := range tt {
 		t.Run(test.scenario, func(t *testing.T) {
 			c, err := NewConfigFromString(test.config)
-			if err != nil {
-				t.Logf("%s\n\n", test.config)
-				t.Fatal(err)
+			if test.err != nil {
+				require.True(t, errors.Is(err, ErrConfigValidation))
+				return
+			}
+			// When ConfigMap does not set metricsServer, the operator sets a default before building manifests.
+			// Simulate that for tests that expect default audit (metadata profile).
+			if c.ClusterMonitoringConfiguration.MetricsServerConfig == nil && test.err == nil {
+				c.ClusterMonitoringConfiguration.MetricsServerConfig = &MetricsServerConfig{
+					Audit: &Audit{Profile: auditv1.LevelMetadata},
+				}
 			}
 
 			f := NewFactory("openshift-monitoring", "openshift-user-workload-monitoring",
@@ -2976,18 +3032,11 @@ metricsServer:
 				"requestheader-username-headers":     "",
 			}
 			d, err := f.MetricsServerDeployment("foo", kubeletCABundle, servingCASecret, metricsClientSecret, apiAuthConfigMapData)
+			require.NoError(t, err)
 
-			if test.err != nil || err != nil {
-				// fail only if the error isn't what is expected
-				if !errors.Is(err, test.err) {
-					t.Fatalf("Expected error %q but got %q", test.err, err)
-				}
-				return
-			}
-
-			adapterArgs := d.Spec.Template.Spec.Containers[0].Args
+			args := d.Spec.Template.Spec.Containers[0].Args
 			auditArgs := []string{}
-			for _, arg := range adapterArgs {
+			for _, arg := range args {
 				if strings.HasPrefix(arg, "--audit-") {
 					auditArgs = append(auditArgs, arg)
 				}
@@ -3410,6 +3459,9 @@ func TestNodeExporterCollectorSettings(t *testing.T) {
 			argsPresent: []string{"--no-collector.cpufreq",
 				"--no-collector.tcpstat",
 				"--no-collector.ethtool",
+				"--no-collector.interrupts",
+				"--no-collector.softirqs",
+				"--no-collector.zoneinfo",
 				"--collector.netdev",
 				"--collector.netclass",
 				"--collector.netclass.netlink",
@@ -3419,16 +3471,23 @@ func TestNodeExporterCollectorSettings(t *testing.T) {
 				"--collector.netdev.device-exclude=^(veth.*|[a-f0-9]{15}|enP.*|ovn-k8s-mp[0-9]*|br-ex|br-int|br-ext|br[0-9]*|tun[0-9]*|cali[a-f0-9]*|bond.*)$",
 				"--collector.netclass.ignored-devices=^(veth.*|[a-f0-9]{15}|enP.*|ovn-k8s-mp[0-9]*|br-ex|br-int|br-ext|br[0-9]*|tun[0-9]*|cali[a-f0-9]*|bond.*)$",
 				"--no-collector.systemd",
+				"--collector.dmmultipath",
+				"--collector.nvmesubsystem",
 			},
 			argsAbsent: []string{"--collector.cpufreq",
 				"--collector.tcpstat",
 				"--collector.ethtool",
+				"--collector.interrupts",
+				"--collector.softirqs",
+				"--collector.zoneinfo",
 				"--no-collector.netdev",
 				"--no-collector.netclass",
 				"--collector.buddyinfo",
 				"--collector.ksmd",
 				"--collector.processes",
 				"--collector.systemd",
+				"--no-collector.dmmultipath",
+				"--no-collector.nvmesubsystem",
 			},
 		},
 		{
@@ -3475,6 +3534,85 @@ nodeExporter:
 `,
 			argsPresent: []string{"--collector.ethtool", "--collector.ethtool.device-exclude=^(br-int|lo)$"},
 			argsAbsent:  []string{"--no-collector.ethtool"},
+		},
+		{
+			name: "enable interrupts collector with include pattern",
+			config: `
+nodeExporter:
+  collectors:
+    interrupts:
+      include: ["LOC;.*"]
+`,
+			argsPresent: []string{"--collector.interrupts",
+				"--collector.interrupts.name-include=^(LOC;.*)$"},
+			argsAbsent: []string{"--no-collector.interrupts"},
+		},
+		{
+			name: "enable interrupts collector with include patterns",
+			config: `
+nodeExporter:
+  collectors:
+    interrupts:
+      include: ["LOC;.*", "NMI;.*"]
+`,
+			argsPresent: []string{"--collector.interrupts",
+				"--collector.interrupts.name-include=^(LOC;.*|NMI;.*)$"},
+			argsAbsent: []string{"--no-collector.interrupts"},
+		},
+		{
+			name: "disable interrupts collector when include is empty",
+			config: `
+nodeExporter:
+  collectors:
+    interrupts:
+      include: []
+`,
+			argsPresent: []string{"--no-collector.interrupts"},
+			argsAbsent:  []string{"--collector.interrupts"},
+		},
+		{
+			name: "enable softirqs collector",
+			config: `
+nodeExporter:
+  collectors:
+    softirqs:
+      enabled: true
+`,
+			argsPresent: []string{"--collector.softirqs"},
+			argsAbsent:  []string{"--no-collector.softirqs"},
+		},
+		{
+			name: "enable zoneinfo collector",
+			config: `
+nodeExporter:
+  collectors:
+    zoneinfo:
+      enabled: true
+`,
+			argsPresent: []string{"--collector.zoneinfo"},
+			argsAbsent:  []string{"--no-collector.zoneinfo"},
+		},
+		{
+			name: "disable dmmultipath collector",
+			config: `
+nodeExporter:
+  collectors:
+    dmMultipath:
+      enabled: false
+`,
+			argsPresent: []string{"--no-collector.dmmultipath"},
+			argsAbsent:  []string{"--collector.dmmultipath"},
+		},
+		{
+			name: "disable nvmesubsystem collector",
+			config: `
+nodeExporter:
+  collectors:
+    nvmeSubsystem:
+      enabled: false
+`,
+			argsPresent: []string{"--no-collector.nvmesubsystem"},
+			argsAbsent:  []string{"--collector.nvmesubsystem"},
 		},
 		{
 			name: "disable netdev collector",
@@ -3652,36 +3790,6 @@ nodeExporter:
 
 }
 
-func TestNodeExporterSystemdUnits(t *testing.T) {
-
-	testName := "enable systemd collector with invalid units pattern"
-	config := `
-nodeExporter:
-  collectors:
-    systemd:
-      enabled: true
-      units:
-      - network.+
-      - /\
-`
-	t.Run(testName, func(st *testing.T) {
-		c, err := NewConfigFromString(config)
-		if err != nil {
-			t.Fatal(err)
-		}
-		c.SetImages(map[string]string{
-			"node-exporter":   "docker.io/openshift/origin-prometheus-node-exporter:latest",
-			"kube-rbac-proxy": "docker.io/openshift/origin-kube-rbac-proxy:latest",
-		})
-
-		f := NewFactory("openshift-monitoring", "openshift-user-workload-monitoring", c, defaultInfrastructureReader(), &fakeProxyReader{}, NewAssets(assetsPath), &APIServerConfig{}, &configv1.Console{})
-		_, err = f.NodeExporterDaemonSet()
-		if err == nil || !strings.Contains(err.Error(), "systemd unit pattern validation error:") {
-			t.Fatalf(`expected error "systemd unit pattern validation error:.*", got %v`, err)
-		}
-	})
-}
-
 func TestNodeExporterGeneralSettings(t *testing.T) {
 
 	tests := []struct {
@@ -3831,6 +3939,83 @@ func TestKubeStateMetrics(t *testing.T) {
 
 	if !reflect.DeepEqual(d, d2) {
 		t.Fatal("expected KubeStateMetricsDeployment to be an idempotent function")
+	}
+}
+
+func TestKubeStateMetricsAdditionalResourceLabels(t *testing.T) {
+	defaultAllowList := "--metric-labels-allowlist=pods=[*],nodes=[*],namespaces=[*],persistentvolumes=[*],persistentvolumeclaims=[*],poddisruptionbudgets=[*]"
+
+	tests := []struct {
+		name        string
+		config      string
+		expectedArg string
+	}{
+		{
+			name:        "no additional resource labels",
+			config:      "",
+			expectedArg: defaultAllowList,
+		},
+		{
+			name: "single resource with specific labels",
+			config: `kubeStateMetrics:
+  additionalResourceLabels:
+  - resource: jobs
+    labels:
+    - foo
+    - bar`,
+			expectedArg: defaultAllowList + ",jobs=[foo,bar]",
+		},
+		{
+			name: "multiple resources",
+			config: `kubeStateMetrics:
+  additionalResourceLabels:
+  - resource: jobs
+    labels:
+    - foo
+  - resource: cronjobs
+    labels:
+    - bar
+    - baz`,
+			expectedArg: defaultAllowList + ",jobs=[foo],cronjobs=[bar,baz]",
+		},
+		{
+			name: "wildcard labels",
+			config: `kubeStateMetrics:
+  additionalResourceLabels:
+  - resource: cronjobs
+    labels:
+    - "*"`,
+			expectedArg: defaultAllowList + ",cronjobs=[*]",
+		},
+	}
+
+	for _, tc := range tests {
+		t.Run(tc.name, func(t *testing.T) {
+			c, err := NewConfigFromString(tc.config)
+			require.NoError(t, err)
+			c.SetImages(map[string]string{
+				"kube-state-metrics": "docker.io/openshift/origin-kube-state-metrics:latest",
+				"kube-rbac-proxy":    "docker.io/openshift/origin-kube-rbac-proxy:latest",
+			})
+
+			f := NewFactory("openshift-monitoring", "openshift-user-workload-monitoring", c, defaultInfrastructureReader(), &fakeProxyReader{}, NewAssets(assetsPath), &APIServerConfig{}, &configv1.Console{})
+
+			d, err := f.KubeStateMetricsDeployment()
+			require.NoError(t, err)
+
+			found := false
+			for _, container := range d.Spec.Template.Spec.Containers {
+				if container.Name == "kube-state-metrics" {
+					for _, arg := range container.Args {
+						if strings.HasPrefix(arg, "--metric-labels-allowlist=") {
+							found = true
+							require.Equal(t, tc.expectedArg, arg)
+						}
+					}
+				}
+			}
+			require.True(t, found, "--metric-labels-allowlist arg not found in kube-state-metrics container")
+		})
 	}
 }
 
@@ -4342,6 +4527,11 @@ func TestThanosRulerConfiguration(t *testing.T) {
 	if tr.Spec.AlertQueryURL != expectedExternalURL {
 		t.Fatalf("Thanos Ruler alertquery URL is not configured correctly, expected %s, but got %s", expectedExternalURL, tr.Spec.AlertQueryURL)
 	}
+
+	require.Equal(t, "TLS12", string(*tr.Spec.GRPCServerTLSConfig.SafeTLSConfig.MinVersion))
+	require.Equal(t, crypto.OpenSSLToIANACipherSuites(APIServerDefaultTLSCiphers), tr.Spec.GRPCServerTLSConfig.CipherSuites)
+	require.Equal(t, []string{"X25519MLKEM768", "X25519", "CurveP256", "CurveP384"}, tr.Spec.GRPCServerTLSConfig.Curves)
+
 }
 
 func TestThanosRulerRetentionConfig(t *testing.T) {
@@ -4574,71 +4764,71 @@ func TestNonHighlyAvailableInfrastructureServiceMonitors(t *testing.T) {
 		{
 			name: "Alermanager Service Monitor",
 			getEndpoints: func(f *Factory) ([]monv1.Endpoint, error) {
-				pt, err := f.AlertmanagerServiceMonitor()
+				sms, err := f.AlertmanagerServiceMonitors()
 				if err != nil {
 					return nil, err
 				}
-				return pt.Spec.Endpoints, nil
+				return sms[0].Spec.Endpoints, nil
 			},
 		},
 		{
 			name: "CMO Service Monitor",
 			getEndpoints: func(f *Factory) ([]monv1.Endpoint, error) {
-				pt, err := f.ClusterMonitoringOperatorServiceMonitor()
+				sms, err := f.ClusterMonitoringOperatorServiceMonitors()
 				if err != nil {
 					return nil, err
 				}
-				return pt.Spec.Endpoints, nil
+				return sms[0].Spec.Endpoints, nil
 			},
 		},
 		{
 			name: "kubelet Service Monitor",
 			getEndpoints: func(f *Factory) ([]monv1.Endpoint, error) {
-				pt, err := f.ControlPlaneKubeletServiceMonitor()
+				sms, err := f.ControlPlaneKubeletServiceMonitors()
 				if err != nil {
 					return nil, err
 				}
-				return pt.Spec.Endpoints, nil
+				return sms[0].Spec.Endpoints, nil
 			},
 		},
 		{
 			name: "Kube State Metrics Service Monitor",
 			getEndpoints: func(f *Factory) ([]monv1.Endpoint, error) {
-				pt, err := f.KubeStateMetricsServiceMonitor()
+				sms, err := f.KubeStateMetricsServiceMonitors()
 				if err != nil {
 					return nil, err
 				}
-				return pt.Spec.Endpoints, nil
+				return sms[0].Spec.Endpoints, nil
 			},
 		},
 		{
 			name: "Node Exporter Service Monitor",
 			getEndpoints: func(f *Factory) ([]monv1.Endpoint, error) {
-				pt, err := f.NodeExporterServiceMonitor()
+				sms, err := f.NodeExporterServiceMonitors()
 				if err != nil {
 					return nil, err
 				}
-				return pt.Spec.Endpoints, nil
+				return sms[0].Spec.Endpoints, nil
 			},
 		},
 		{
 			name: "OpenShift State Metrics Service Monitor",
 			getEndpoints: func(f *Factory) ([]monv1.Endpoint, error) {
-				pt, err := f.OpenShiftStateMetricsServiceMonitor()
+				sms, err := f.OpenShiftStateMetricsServiceMonitors()
 				if err != nil {
 					return nil, err
 				}
-				return pt.Spec.Endpoints, nil
+				return sms[0].Spec.Endpoints, nil
 			},
 		},
 		{
 			name: "Prometheus K8s Service Monitor",
 			getEndpoints: func(f *Factory) ([]monv1.Endpoint, error) {
-				pt, err := f.PrometheusK8sPrometheusServiceMonitor()
+				sms, err := f.PrometheusK8sPrometheusServiceMonitors()
 				if err != nil {
 					return nil, err
 				}
-				return pt.Spec.Endpoints, nil
+				return sms[0].Spec.Endpoints, nil
 			},
 		},
 		{

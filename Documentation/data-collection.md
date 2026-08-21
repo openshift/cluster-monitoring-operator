@@ -533,6 +533,41 @@ data:
     # at least max of one instance with  k8s.v1.cni.cncf.io/networks annotation, labelled by networks (any or sriov).
     - '{__name__="cluster:network_attachment_definition_enabled_instance_up:max"}'
     #
+    # owners: (@openshift/networking)
+    #
+    # cluster:kubernetes_nmstate_features_applied:sum gives the total count
+    # of nmstate features applied across all nodes in the cluster, broken
+    # down by feature name.
+    - '{__name__="cluster:kubernetes_nmstate_features_applied:sum",name=~"sriov|ovs-dpdk|ovn-mapping|ovs-bond|ovs-patch|lldp|mptcp|static-route-rule|iface-name-refered-by-sriov-vf-id|mac-based-identifier"}'
+    #
+    # owners: (@openshift/networking)
+    #
+    # cluster:kubernetes_nmstate_network_interfaces:sum gives the total count
+    # of network interfaces across all nodes in the cluster, broken down by
+    # interface type.
+    - '{__name__="cluster:kubernetes_nmstate_network_interfaces:sum",type=~"ethernet|linux-bridge|bond|vlan|ovs-bridge|ovs-interface|ovs-port|mac-vlan|vxlan|infiniband"}'
+    #
+    # owners: (@openshift/networking)
+    #
+    # cluster:kubernetes_nmstate_routes:sum gives the total count of network
+    # routes across all nodes in the cluster, broken down by IP stack and
+    # route type (static/dynamic).
+    - '{__name__="cluster:kubernetes_nmstate_routes:sum"}'
+    #
+    # owners: (@openshift/networking)
+    #
+    # cluster:ovnkube_clustermanager_user_defined_networks:max gives the count of
+    # UserDefinedNetworks objects in the cluster, broken down by role and
+    # topology.
+    - '{__name__="cluster:ovnkube_clustermanager_user_defined_networks:max",role=~"Primary|Secondary",topology=~"Layer2|Layer3"}'
+    #
+    # owners: (@openshift/networking)
+    #
+    # cluster:ovnkube_clustermanager_cluster_user_defined_networks:max gives the count of
+    # ClusterUserDefinedNetworks objects in the cluster, broken down by role and
+    # topology.
+    - '{__name__="cluster:ovnkube_clustermanager_cluster_user_defined_networks:max",role=~"Primary|Secondary",topology=~"Layer2|Layer3"}'
+    #
     # owners: (@openshift/network-edge)
     #
     # cluster:ingress_controller_aws_nlb_active:sum informs how many NLBs are active in AWS.
@@ -635,7 +670,7 @@ data:
     # owners: (@openshift/openshift-team-monitoring)
     #
     # collector:node_scrape_collector_success:avg reports the average success of optional node_exporter's collectors running in the cluster.
-    - '{__name__="collector:node_scrape_collector_success:avg",collector=~"ethtool|cpufreq|tcpstat|netdev|netclass|buddyinfo|mountstats|ksmd|processes|systemd"}'
+    - '{__name__="collector:node_scrape_collector_success:avg",collector=~"ethtool|cpufreq|tcpstat|netdev|netclass|buddyinfo|mountstats|ksmd|processes|systemd|softirqs|zoneinfo|dmmultipath|nvmesubsystem|interrupts"}'
     #
     # owners: (@openshift/openshift-team-monitoring)
     #
@@ -1298,6 +1333,13 @@ data:
     #
     # cluster:k8s_mcp_http_requests:sum tracks the total HTTP requests.
     - '{__name__="cluster:k8s_mcp_http_requests:sum"}'
+    #
+    # owners: (https://github.com/opendatahub-io/ogx-k8s-operator, @openshift/openshift-team-ogx)
+    #
+    # ogx:api_info:max tracks which OGX APIs are actively used on the cluster.
+    # Expected labels:
+    # - api: "agentic", "inference", "rag", "responses" or "vector_io"
+    - '{__name__="ogx:api_info:max", api=~"agentic|inference|rag|responses|vector_io"}'
 kind: ConfigMap
 metadata:
   name: telemetry-config

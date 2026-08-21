@@ -4,6 +4,7 @@ local withDescription = (import '../utils/add-annotations.libsonnet').withDescri
 local testFilePlaceholder = (import '../utils/add-annotations.libsonnet').testFilePlaceholder;
 local requiredRoles = (import '../utils/add-annotations.libsonnet').requiredRoles;
 local requiredClusterRoles = (import '../utils/add-annotations.libsonnet').requiredClusterRoles;
+local tmpVolumeName = 'tmp';
 
 function(params)
   local cfg = params;
@@ -340,6 +341,10 @@ function(params)
                   name: 'metrics-client-ca',
                 },
               },
+              {
+                emptyDir: {},
+                name: tmpVolumeName,
+              },
             ],
             serviceAccountName: 'thanos-querier',
             priorityClassName: 'system-cluster-critical',
@@ -351,17 +356,6 @@ function(params)
             },
             containers: [
               super.containers[0] {
-                // The upstream kube-thanos jsonnet provides a hardened
-                // security context which sets "readOnlyRootFilesystem: true"
-                // for the thanos-querier container but a gathering script
-                // running running as a post-step in the CI jobs needs to write
-                // files to /tmp. As a temporary workaround, we patch the
-                // security context here.
-                // See https://issues.redhat.com/browse/OCPBUGS-24340.
-                securityContext+: {
-                  readOnlyRootFilesystem: false,
-                },
-
                 livenessProbe:: {},
                 readinessProbe:: {},
                 args: std.map(
@@ -394,6 +388,14 @@ function(params)
                   {
                     mountPath: '/etc/tls/grpc',
                     name: 'secret-grpc-tls',
+                  },
+                  // A gathering script running as a post-step in the OCP CI
+                  // jobs writes files to /tmp. Because the container must run
+                  // with `readOnlyRootFilesystem: true`, we mount an emptyDir
+                  // volume into the pod.
+                  {
+                    mountPath: '/tmp',
+                    name: tmpVolumeName,
                   },
                 ],
               },
@@ -661,6 +663,7 @@ function(params)
         podSelector: {
           matchLabels: {
             'app.kubernetes.io/name': 'thanos-query',
+            'app.kubernetes.io/part-of': 'openshift-monitoring',
           },
         },
         policyTypes: [
@@ -670,11 +673,24 @@ function(params)
         ingress: [
           {
             ports: [
-              // allow for thanos-querier tenancy endpoint, 9092 port(port name: tenancy),
-              // for example, expose tenancy-aware /api/v1/labels for thanos query,
-              // load metrics result on admin web UI
               {
-                port: 'tenancy',
+                // Allow to query the Thanos Querier API.
+                port: 9091,
+                protocol: 'TCP',
+              },
+              {
+                // Allow to access tenancy-aware query endpoints.
+                port: 9092,
+                protocol: 'TCP',
+              },
+              {
+                // Allow to access tenancy-aware rules and alerts endpoints.
+                port: 9093,
+                protocol: 'TCP',
+              },
+              {
+                // Allow Prometheus to scrape Thanos Querier's own /metrics endpoint.
+                port: 9094,
                 protocol: 'TCP',
               },
             ],

@@ -17,10 +17,12 @@ package e2e
 import (
 	"context"
 	"crypto/tls"
+	"encoding/json"
 	"errors"
 	"fmt"
 	"io"
 	"net/http"
+	"strings"
 	"testing"
 	"time"
 
@@ -34,6 +36,7 @@ import (
 	v1 "k8s.io/api/core/v1"
 	apierrors "k8s.io/apimachinery/pkg/api/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	"k8s.io/apimachinery/pkg/types"
 )
 
 func TestClusterMonitoringOperatorConfiguration(t *testing.T) {
@@ -234,7 +237,7 @@ func TestClusterMonitorPrometheusOperatorConfig(t *testing.T) {
 	}
 }
 
-func TestClusterMonitorPrometheusK8Config(t *testing.T) {
+func TestPrometheusK8sConfig(t *testing.T) {
 	const (
 		pvcClaimName    = "prometheus-k8s-db-prometheus-k8s-0"
 		statefulsetName = "prometheus-k8s"
@@ -293,8 +296,6 @@ func TestClusterMonitorPrometheusK8Config(t *testing.T) {
 					expectContainerArg("--enable-feature=delayed-compaction,use-uncached-io", containerName),
 					// Set via the config above.
 					expectContainerArg("--log.level=debug", containerName),
-					expectContainerArg("--storage.tsdb.retention.time=10h", containerName),
-					expectContainerArg("--storage.tsdb.retention.size=15GB", containerName),
 				},
 			),
 		},
@@ -313,6 +314,14 @@ func TestClusterMonitorPrometheusK8Config(t *testing.T) {
 		{
 			name:      "assert rule for Thanos sidecar exists",
 			assertion: f.AssertPrometheusRuleExistsFunc(thanosRule, f.Ns),
+		},
+		{
+			name:      "assert retention time is configured",
+			assertion: assertPrometheusRetentionTime(f.Ns, crName, "10h"),
+		},
+		{
+			name:      "assert retention size is configured",
+			assertion: assertPrometheusRetentionSize(f.Ns, crName, "15GB"),
 		},
 	} {
 		t.Run(tc.name, tc.assertion)
@@ -584,7 +593,7 @@ func TestUserWorkloadMonitorPromOperatorConfig(t *testing.T) {
 	}
 }
 
-func TestUserWorkloadMonitorPrometheusK8Config(t *testing.T) {
+func TestUserWorkloadPrometheusConfig(t *testing.T) {
 	setupUserWorkloadAssetsWithTeardownHook(t, f)
 	const (
 		pvcClaimName    = "prometheus-user-workload-db-prometheus-user-workload-0"
@@ -651,8 +660,6 @@ func TestUserWorkloadMonitorPrometheusK8Config(t *testing.T) {
 					expectContainerArg("--enable-feature=extra-scrape-metrics,delayed-compaction,use-uncached-io,exemplar-storage", containerName),
 					// Set via the config above.
 					expectContainerArg("--log.level=debug", containerName),
-					expectContainerArg("--storage.tsdb.retention.time=10h", containerName),
-					expectContainerArg("--storage.tsdb.retention.size=15GB", containerName),
 				},
 			),
 		},
@@ -695,6 +702,14 @@ func TestUserWorkloadMonitorPrometheusK8Config(t *testing.T) {
 		{
 			name:      "assert evaluation interval is configured",
 			assertion: assertPrometheusEvaluationInterval("15s"),
+		},
+		{
+			name:      "assert retention time is configured",
+			assertion: assertPrometheusRetentionTime(f.UserWorkloadMonitoringNs, crName, "10h"),
+		},
+		{
+			name:      "assert retention size is configured",
+			assertion: assertPrometheusRetentionSize(f.UserWorkloadMonitoringNs, crName, "15GB"),
 		},
 	} {
 		t.Run(tc.name, tc.assertion)
@@ -789,19 +804,27 @@ func assertThanosRulerEvaluationInterval(evaluationInterval string) func(*testin
 
 // checkMonitorConsolePluginReachable makes sure that one of the pods at least can serve /plugin-manifest.json
 func checkMonitorConsolePluginReachable(t *testing.T, pluginName string) {
+	client := &http.Client{
+		Transport: &http.Transport{
+			TLSClientConfig: &tls.Config{InsecureSkipVerify: true},
+		},
+	}
 	err := framework.Poll(time.Second, 5*time.Minute, func() error {
-		host, cleanUp, err := f.ForwardPort(t, f.Ns, pluginName, 9443)
+		host, cleanUp, err := f.ForwardServicePort(t, f.Ns, pluginName, 9443)
 		if err != nil {
-			t.Fatal(err)
+			return fmt.Errorf("port-forward failed: %w", err)
 		}
 		defer cleanUp()
 
-		client := &http.Client{
-			Transport: &http.Transport{
-				TLSClientConfig: &tls.Config{InsecureSkipVerify: true},
-			},
+		ctx, cancel := context.WithTimeout(context.Background(), 30*time.Second)
+		defer cancel()
+
+		req, err := http.NewRequestWithContext(ctx, http.MethodGet, fmt.Sprintf("https://%s/plugin-manifest.json", host), nil)
+		if err != nil {
+			return fmt.Errorf("fail to create request: %w", err)
 		}
-		resp, err := client.Get(fmt.Sprintf("https://%s/plugin-manifest.json", host))
+
+		resp, err := client.Do(req)
 		if err != nil {
 			return err
 		}
@@ -829,6 +852,60 @@ func checkMonitorConsolePluginReachable(t *testing.T, pluginName string) {
 	require.NoError(t, err)
 }
 
+// checkMonitorConsolePluginFeatures makes sure that the monitoring related features are enabled
+func checkMonitorConsolePluginFeatures(t *testing.T, pluginName string) {
+	client := &http.Client{
+		Transport: &http.Transport{
+			TLSClientConfig: &tls.Config{InsecureSkipVerify: true},
+		},
+	}
+	err := framework.Poll(time.Second, 5*time.Minute, func() error {
+		host, cleanUp, err := f.ForwardServicePort(t, f.Ns, pluginName, 9443)
+		if err != nil {
+			return fmt.Errorf("port-forward failed: %w", err)
+		}
+		defer cleanUp()
+
+		ctx, cancel := context.WithTimeout(context.Background(), 30*time.Second)
+		defer cancel()
+
+		req, err := http.NewRequestWithContext(ctx, http.MethodGet, fmt.Sprintf("https://%s/features", host), nil)
+		if err != nil {
+			return fmt.Errorf("fail to create request: %w", err)
+		}
+
+		resp, err := client.Do(req)
+		if err != nil {
+			return err
+		}
+		defer resp.Body.Close()
+
+		b, err := io.ReadAll(resp.Body)
+		if err != nil {
+			return fmt.Errorf("fail to read response body: %w", err)
+		}
+
+		if resp.StatusCode != http.StatusOK {
+			return fmt.Errorf("expected status %d, got %d (%q)", http.StatusOK, resp.StatusCode, framework.ClampMax(b))
+		}
+
+		var features map[string]bool
+		if err := json.Unmarshal(b, &features); err != nil {
+			return fmt.Errorf("fail to parse features response: %w", err)
+		}
+
+		for _, feature := range []string{"alerting", "legacy-dashboards", "targets", "metrics"} {
+			if !features[feature] {
+				return fmt.Errorf("expected feature %q to be enabled, got features: %v", feature, features)
+			}
+		}
+		return nil
+	})
+	require.NoError(t, err)
+}
+
+// TestClusterMonitorConsolePlugin exercises the monitoring-plugin configuration.
+// Don't rename the test because the monitoring-plugin CI targets it specifically.
 func TestClusterMonitorConsolePlugin(t *testing.T) {
 	const (
 		deploymentName = "monitoring-plugin"
@@ -841,6 +918,7 @@ func TestClusterMonitorConsolePlugin(t *testing.T) {
 	// ensure console-plugin is running and reachable before the change
 	f.AssertDeploymentExistsAndRolloutFunc(deploymentName, f.Ns)(t)
 	checkMonitorConsolePluginReachable(t, deploymentName)
+	checkMonitorConsolePluginFeatures(t, deploymentName)
 
 	data := fmt.Sprintf(`
 monitoringPlugin:
@@ -874,6 +952,10 @@ monitoringPlugin:
 		{
 			name:      "assert one of the pods can serve /plugin-manifest.json",
 			assertion: func(t *testing.T) { checkMonitorConsolePluginReachable(t, deploymentName) },
+		},
+		{
+			name:      "assert monitoring related features are enabled",
+			assertion: func(t *testing.T) { checkMonitorConsolePluginFeatures(t, deploymentName) },
 		},
 	} {
 		t.Run(tc.name, tc.assertion)
@@ -1072,7 +1154,7 @@ func assertRemoteWriteWasSet(namespace, crName, urlValue string) func(t *testing
 			}
 
 			for _, gotValue := range prom.Spec.RemoteWrite {
-				if gotValue.URL == urlValue {
+				if string(gotValue.URL) == urlValue {
 					return nil
 				}
 			}
@@ -1132,7 +1214,7 @@ func assertPrometheusEvaluationInterval(evaluationInterval string) func(*testing
 	}
 }
 
-func assertEnforcedTargetLimit(limit uint64) func(*testing.T) {
+func assertEnforcedTargetLimit(limit int64) func(*testing.T) {
 	ctx := context.Background()
 	return func(t *testing.T) {
 		err := framework.Poll(time.Second, 5*time.Minute, func() error {
@@ -1156,7 +1238,7 @@ func assertEnforcedTargetLimit(limit uint64) func(*testing.T) {
 	}
 }
 
-func assertEnforcedLabelLimit(limit uint64) func(*testing.T) {
+func assertEnforcedLabelLimit(limit int64) func(*testing.T) {
 	ctx := context.Background()
 	return func(t *testing.T) {
 		err := framework.Poll(time.Second, 5*time.Minute, func() error {
@@ -1180,7 +1262,7 @@ func assertEnforcedLabelLimit(limit uint64) func(*testing.T) {
 	}
 }
 
-func assertEnforcedLabelNameLengthLimit(limit uint64) func(*testing.T) {
+func assertEnforcedLabelNameLengthLimit(limit int64) func(*testing.T) {
 	ctx := context.Background()
 	return func(t *testing.T) {
 		err := framework.Poll(time.Second, 5*time.Minute, func() error {
@@ -1204,7 +1286,7 @@ func assertEnforcedLabelNameLengthLimit(limit uint64) func(*testing.T) {
 	}
 }
 
-func assertEnforcedLabelValueLengthLimit(limit uint64) func(*testing.T) {
+func assertEnforcedLabelValueLengthLimit(limit int64) func(*testing.T) {
 	ctx := context.Background()
 	return func(t *testing.T) {
 		err := framework.Poll(time.Second, 5*time.Minute, func() error {
@@ -1248,4 +1330,125 @@ func assertQueryLogValueEquals(namespace, crName, value string) func(t *testing.
 			t.Fatal(err)
 		}
 	}
+}
+
+func assertPrometheusRetentionTime(namespace, name, duration string) func(*testing.T) {
+	ctx := context.Background()
+	return func(t *testing.T) {
+		err := framework.Poll(time.Second, 5*time.Minute, func() error {
+			prom, err := f.MonitoringClient.Prometheuses(namespace).Get(ctx, name, metav1.GetOptions{})
+			if err != nil {
+				return err
+			}
+			if prom.Spec.Retention != monv1.Duration(duration) {
+				return fmt.Errorf("expected retention time %s, got %s", duration, prom.Spec.Retention)
+			}
+			return nil
+		})
+		if err != nil {
+			t.Fatalf("timed out waiting for retention time configuration: %v", err)
+		}
+	}
+}
+
+func assertPrometheusRetentionSize(namespace, name, size string) func(*testing.T) {
+	ctx := context.Background()
+	return func(t *testing.T) {
+		err := framework.Poll(time.Second, 5*time.Minute, func() error {
+			prom, err := f.MonitoringClient.Prometheuses(namespace).Get(ctx, name, metav1.GetOptions{})
+			if err != nil {
+				return err
+			}
+			if prom.Spec.RetentionSize != monv1.ByteSize(size) {
+				return fmt.Errorf("expected retention size %s, got %s", size, prom.Spec.RetentionSize)
+			}
+			return nil
+		})
+		if err != nil {
+			t.Fatalf("timed out waiting for retention size configuration: %v", err)
+		}
+	}
+}
+
+// TestProxyConfigWatch verifies that CMO watches the cluster Proxy
+// resource and triggers a reconciliation when it changes.
+// Exact injection correctness is covered by unit tests; here we only
+// check that a Proxy spec change propagates to the Prometheus CR env
+// vars. A Proxy change triggers a full CMO sync so all components are
+// reconciled, we only assert on Prometheus for simplicity.
+//
+// It is still possible that an unrelated event triggers the sync.
+func TestProxyConfigWatch(t *testing.T) {
+	ctx := context.Background()
+
+	proxies := f.OpenShiftConfigClient.ConfigV1().Proxies()
+	proxy, err := proxies.Get(ctx, "cluster", metav1.GetOptions{})
+	require.NoError(t, err)
+	originalHTTPProxy := proxy.Spec.HTTPProxy
+
+	httpProxyMarker := fmt.Sprintf("http://cmo-e2e-proxy-%d.invalid:3128", time.Now().UnixNano())
+
+	t.Cleanup(func() {
+		patch := []byte(fmt.Sprintf(`{"spec":{"httpProxy":%q}}`, originalHTTPProxy))
+		if _, err := proxies.Patch(ctx, "cluster", types.MergePatchType, patch, metav1.PatchOptions{}); err != nil {
+			t.Logf("restoring proxy: %v", err)
+		}
+
+		prom, err := f.MonitoringClient.Prometheuses(f.Ns).Get(ctx, "k8s", metav1.GetOptions{})
+		if err != nil {
+			t.Logf("getting Prometheus for rollout wait: %v", err)
+		} else {
+			// Best effort: wait for the rollout triggered by the proxy
+			// cleanup so the next test doesn't start mid-rollout.
+			if err := f.WaitForPrometheusUpdate(ctx, prom); err != nil {
+				t.Logf("waiting for Prometheus update after proxy cleanup: %v", err)
+			}
+		}
+
+		// CVO manages the MCO deployment; scaling it back up restores MCO automatically.
+		if _, err := f.KubeClient.AppsV1().Deployments("openshift-cluster-version").Patch(ctx, "cluster-version-operator", types.MergePatchType, []byte(`{"spec":{"replicas":1}}`), metav1.PatchOptions{}); err != nil {
+			t.Logf("restoring CVO: %v", err)
+		}
+	})
+
+	// Scale CVO and MCO to 0 replicas to prevent proxy changes from triggering node reboots.
+	require.NoError(t, framework.Poll(5*time.Second, 3*time.Minute, func() error {
+		for _, d := range []struct{ ns, name string }{
+			{"openshift-cluster-version", "cluster-version-operator"},
+			{"openshift-machine-config-operator", "machine-config-operator"},
+		} {
+			dep, err := f.KubeClient.AppsV1().Deployments(d.ns).Patch(ctx, d.name, types.MergePatchType, []byte(`{"spec":{"replicas":0}}`), metav1.PatchOptions{})
+			if err != nil {
+				return err
+			}
+			if dep.Status.AvailableReplicas != 0 {
+				return fmt.Errorf("waiting for %s/%s scale-down: available=%d", d.ns, d.name, dep.Status.AvailableReplicas)
+			}
+		}
+		return nil
+	}))
+
+	patch := []byte(fmt.Sprintf(`{"spec":{"httpProxy":%q}}`, httpProxyMarker))
+	_, err = proxies.Patch(ctx, "cluster", types.MergePatchType, patch, metav1.PatchOptions{})
+	require.NoError(t, err)
+
+	require.NoError(t, framework.Poll(5*time.Second, 5*time.Minute, func() error {
+		prom, err := f.MonitoringClient.Prometheuses(f.Ns).Get(ctx, "k8s", metav1.GetOptions{})
+		if err != nil {
+			return err
+		}
+		for _, c := range prom.Spec.Containers {
+			if c.Name == "prometheus" {
+				for _, e := range c.Env {
+					if e.Name == "HTTP_PROXY" {
+						if strings.Contains(e.Value, httpProxyMarker) {
+							return nil
+						}
+						return fmt.Errorf("HTTP_PROXY=%q, want it to contain %q", e.Value, httpProxyMarker)
+					}
+				}
+			}
+		}
+		return fmt.Errorf("HTTP_PROXY not set for prometheus container")
+	}))
 }

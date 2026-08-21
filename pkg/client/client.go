@@ -23,6 +23,7 @@ import (
 	"reflect"
 	"slices"
 	"strings"
+	"sync"
 	"time"
 
 	"github.com/imdario/mergo"
@@ -44,6 +45,7 @@ import (
 	monitoring "github.com/prometheus-operator/prometheus-operator/pkg/client/versioned"
 	admissionv1 "k8s.io/api/admissionregistration/v1"
 	appsv1 "k8s.io/api/apps/v1"
+	authzv1 "k8s.io/api/authorization/v1"
 	v1 "k8s.io/api/core/v1"
 	networkingv1 "k8s.io/api/networking/v1"
 	policyv1 "k8s.io/api/policy/v1"
@@ -53,6 +55,7 @@ import (
 	apierrors "k8s.io/apimachinery/pkg/api/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/fields"
+	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/apimachinery/pkg/runtime/schema"
 	"k8s.io/apimachinery/pkg/types"
 	apiutilerrors "k8s.io/apimachinery/pkg/util/errors"
@@ -96,6 +99,32 @@ type Client struct {
 
 	eventRecorder events.Recorder
 	resourceCache resourceapply.ResourceCache
+}
+
+// threadSafeResourceCache wraps library-go's resourceCache with a mutex
+// because the upstream implementation uses a plain map that is not safe
+// for concurrent use.
+// TODO: remove once library-go ships the thread-safe resourceCache
+// from https://github.com/openshift/library-go/pull/2380.
+type threadSafeResourceCache struct {
+	mu    sync.RWMutex
+	inner resourceapply.ResourceCache
+}
+
+func newThreadSafeResourceCache() *threadSafeResourceCache {
+	return &threadSafeResourceCache{inner: resourceapply.NewResourceCache()}
+}
+
+func (c *threadSafeResourceCache) UpdateCachedResourceMetadata(required, actual runtime.Object) {
+	c.mu.Lock()
+	defer c.mu.Unlock()
+	c.inner.UpdateCachedResourceMetadata(required, actual)
+}
+
+func (c *threadSafeResourceCache) SafeToSkipApply(required, existing runtime.Object) bool {
+	c.mu.RLock()
+	defer c.mu.RUnlock()
+	return c.inner.SafeToSkipApply(required, existing)
 }
 
 func NewForConfig(cfg *rest.Config, version string, namespace, userWorkloadNamespace string, options ...Option) (*Client, error) {
@@ -264,7 +293,7 @@ func New(version string, namespace, userWorkloadNamespace string, options ...Opt
 		version:               version,
 		namespace:             namespace,
 		userWorkloadNamespace: userWorkloadNamespace,
-		resourceCache:         resourceapply.NewResourceCache(),
+		resourceCache:         newThreadSafeResourceCache(),
 	}
 
 	for _, opt := range options {
@@ -355,6 +384,16 @@ func (c *Client) ConsoleListWatch() *cache.ListWatch {
 	return cache.NewListWatchFromClient(
 		c.oscclient.ConfigV1().RESTClient(),
 		"consoles",
+		"",
+		fields.OneTermEqualSelector("metadata.name", ClusterResourceName),
+	)
+}
+
+// ProxyListWatch watches for the cluster's proxy configuration resource.
+func (c *Client) ProxyListWatch() *cache.ListWatch {
+	return cache.NewListWatchFromClient(
+		c.oscclient.ConfigV1().RESTClient(),
+		"proxies",
 		"",
 		fields.OneTermEqualSelector("metadata.name", ClusterResourceName),
 	)
@@ -838,9 +877,18 @@ func (c *Client) DeleteServiceMonitorByNamespaceAndName(ctx context.Context, nam
 	err = sclient.Delete(ctx, name, metav1.DeleteOptions{})
 	// if the object does not exist then everything is good here
 	if err != nil && !apierrors.IsNotFound(err) {
-		return fmt.Errorf("deleting ServiceMonitor object failed: %w", err)
+		return fmt.Errorf("deleting ServiceMonitor object %s/%s failed: %w", namespace, name, err)
 	}
 
+	return nil
+}
+
+func (c *Client) DeleteServiceMonitors(ctx context.Context, sms []*monv1.ServiceMonitor) error {
+	for _, sm := range sms {
+		if err := c.DeleteServiceMonitor(ctx, sm); err != nil {
+			return err
+		}
+	}
 	return nil
 }
 
@@ -882,6 +930,21 @@ func (c *Client) DeleteClusterRoleBinding(ctx context.Context, crb *rbacv1.Clust
 	}
 
 	err = c.kclient.RbacV1().ClusterRoleBindings().Delete(ctx, crb.GetName(), metav1.DeleteOptions{})
+	if apierrors.IsNotFound(err) {
+		return nil
+	}
+
+	return err
+}
+
+// DeleteEndpointsByNamespaceAndName deletes the legacy Endpoints object if it exists.
+func (c *Client) DeleteEndpointsByNamespaceAndName(ctx context.Context, namespace, name string) error {
+	_, err := c.kclient.CoreV1().Endpoints(namespace).Get(ctx, name, metav1.GetOptions{})
+	if apierrors.IsNotFound(err) {
+		return nil
+	}
+
+	err = c.kclient.CoreV1().Endpoints(namespace).Delete(ctx, name, metav1.DeleteOptions{})
 	if apierrors.IsNotFound(err) {
 		return nil
 	}
@@ -1606,6 +1669,121 @@ func (c *Client) CreateOrUpdateClusterRoleBinding(ctx context.Context, crb *rbac
 	return err
 }
 
+func (c *Client) WaitForClusterRoleBindingSCCUse(ctx context.Context, cr *rbacv1.ClusterRole, crb *rbacv1.ClusterRoleBinding) error {
+	if cr == nil || crb == nil {
+		return nil
+	}
+	if crb.RoleRef.Kind != "ClusterRole" || crb.RoleRef.Name != cr.Name {
+		return nil
+	}
+
+	// account for wildcard rules
+	matches := func(values []string, target string) bool {
+		return slices.Contains(values, target) || slices.Contains(values, "*")
+	}
+
+	var sccNames []string
+	for _, rule := range cr.Rules {
+		if !matches(rule.Verbs, "use") {
+			continue
+		}
+		if !matches(rule.APIGroups, secv1.GroupName) {
+			continue
+		}
+		if !matches(rule.Resources, "securitycontextconstraints") {
+			continue
+		}
+
+		sccNames = append(sccNames, rule.ResourceNames...)
+	}
+	if len(sccNames) == 0 {
+		return nil
+	}
+
+	type sccUseCheck struct {
+		namespace string
+		name      string
+		sccName   string
+		ok        bool
+	}
+
+	// Generate bucket of SCC objects to check, skip all non ServiceAccountKind
+	var checks []sccUseCheck
+	for _, subject := range crb.Subjects {
+		if subject.Kind != rbacv1.ServiceAccountKind {
+			continue
+		}
+
+		for _, sccName := range sccNames {
+			checks = append(checks, sccUseCheck{
+				namespace: subject.Namespace,
+				name:      subject.Name,
+				sccName:   sccName,
+			})
+		}
+	}
+	if len(checks) == 0 {
+		return nil
+	}
+
+	// Helper function to execute check, currently only needed by WaitForClusterRoleBindingSCCUse
+	subjectAccessReviewSCCAllowed := func(ctx context.Context, user, sccName string) (bool, string, error) {
+		sar, err := c.kclient.AuthorizationV1().SubjectAccessReviews().Create(ctx, &authzv1.SubjectAccessReview{
+			Spec: authzv1.SubjectAccessReviewSpec{
+				User: user,
+				ResourceAttributes: &authzv1.ResourceAttributes{
+					Group:    secv1.GroupName,
+					Resource: "securitycontextconstraints",
+					Name:     sccName,
+					Verb:     "use",
+				},
+			},
+		}, metav1.CreateOptions{})
+		if err != nil {
+			return false, "", err
+		}
+
+		return sar.Status.Allowed, sar.Status.Reason, nil
+	}
+
+	pending := append([]sccUseCheck(nil), checks...)
+	var lastErr error
+	if err := Poll(ctx, func(ctx context.Context) (bool, error) {
+		successfullyCheckedAll := true
+		for i, check := range pending {
+			// skip successful runs
+			if pending[i].ok {
+				continue
+			}
+
+			user := fmt.Sprintf("system:serviceaccount:%s:%s", check.namespace, check.name)
+			allowed, reason, err := subjectAccessReviewSCCAllowed(ctx, user, check.sccName)
+			if err != nil {
+				lastErr = fmt.Errorf("failed to check access for service account %s/%s and SCC %s: %w", check.namespace, check.name, check.sccName, err)
+				klog.V(4).ErrorS(err, "WaitForClusterRoleBindingSCCUse: failed to create SubjectAccessReview")
+				successfullyCheckedAll = false
+				continue
+			}
+			if allowed {
+				pending[i].ok = true
+				continue
+			}
+
+			successfullyCheckedAll = false
+			if reason == "" {
+				reason = "no reason"
+			}
+			lastErr = fmt.Errorf("%s cannot use SCC %q: %s", user, check.sccName, reason)
+		}
+
+		return successfullyCheckedAll, nil
+	}, WithPollInterval(time.Second), WithPollTimeout(30*time.Second), WithLastError(&lastErr)); err != nil {
+		return fmt.Errorf("waiting for ClusterRoleBinding %q SCC permissions: %w", crb.Name, err)
+	}
+
+	return nil
+}
+
 func (c *Client) CreateOrUpdateServiceAccount(ctx context.Context, sa *v1.ServiceAccount) error {
 	_, _, err := resourceapply.ApplyServiceAccountImproved(
 		ctx,
@@ -1641,7 +1819,16 @@ func (c *Client) CreateOrUpdateServiceMonitor(ctx context.Context, sm *monv1.Ser
 	required.ResourceVersion = existing.ResourceVersion
 	_, err = smClient.Update(ctx, required, metav1.UpdateOptions{})
 	if err != nil {
-		return fmt.Errorf("updating ServiceMonitor object failed: %w", err)
+		return fmt.Errorf("updating ServiceMonitor object %s/%s failed: %w", sm.GetNamespace(), sm.GetName(), err)
+	}
+	return nil
+}
+
+func (c *Client) CreateOrUpdateServiceMonitors(ctx context.Context, sms []*monv1.ServiceMonitor) error {
+	for _, sm := range sms {
+		if err := c.CreateOrUpdateServiceMonitor(ctx, sm); err != nil {
+			return err
+		}
 	}
 	return nil
 }

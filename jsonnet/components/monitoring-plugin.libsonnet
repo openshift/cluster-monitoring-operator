@@ -197,11 +197,12 @@ function(params)
                   $.volumeMount(tlsVolumeName, tlsMountPath),
                 ],
                 args: [
-                  '--config-path=/opt/app-root/web/dist',
+                  '--config-path=/opt/app-root/config',
                   '--static-path=/opt/app-root/web/dist',
                   '--cert=' + tlsCertPath,
                   '--key=' + tlsKeyPath,
                   '--tls-cipher-suites=' + cfg.tlsCipherSuites,
+                  '--features=alerting,legacy-dashboards,targets,metrics',
                 ],
                 command: [
                   '/opt/app-root/plugin-backend',
@@ -236,6 +237,7 @@ function(params)
         podSelector: {
           matchLabels: {
             'app.kubernetes.io/name': 'monitoring-plugin',
+            'app.kubernetes.io/part-of': 'openshift-monitoring',
           },
         },
         policyTypes: [
@@ -246,9 +248,9 @@ function(params)
           {
             ports: [
               {
-                // expose 9443(port name: https) port for admin web console to load monitoring-plugin,
-                // then Observe menu would show
-                port: 'https',
+                // Allow the console to load the monitoring dynamic
+                // plugin (serves plugin-manifest.json and assets).
+                port: 9443,
                 protocol: 'TCP',
               },
             ],

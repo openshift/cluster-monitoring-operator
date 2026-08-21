@@ -29,6 +29,12 @@ local excludedRules = [
       { alert: 'AlertmanagerClusterCrashlooping' },
       //
       { alert: 'AlertmanagerClusterFailedToSendAlerts', severity: 'warning' },
+      // New upstream mixin alert (prometheus/alertmanager). It fires when a peer
+      // is temporarily unreachable during Alertmanager StatefulSet rollouts
+      // (DNS/no-such-host / stale peer IP), which is common in CI and creates
+      // Origin "No new alerts should be firing" failures. Sustained HA issues
+      // remain covered by AlertmanagerMembersInconsistent / AlertmanagerClusterDown.
+      { alert: 'AlertmanagerClusterFailedPeers' },
     ],
   },
   {
@@ -479,6 +485,24 @@ local patchedRules = [
         labels: {
           severity: 'warning',
         },
+      },
+    ],
+  },
+  {
+    // OCPBUGS-86352: exclude ReplicationController from the catch-all pod_owner rule
+    // to prevent duplicate namespace_workload_pod:kube_pod_owner:relabel series when
+    // a DeploymentConfig (which creates a ReplicationController) is used. Our custom
+    // deploymentconfig rule already handles this owner_kind.
+    name: 'k8s.rules.pod_owner',
+    rules: [
+      {
+        record: 'namespace_workload_pod:kube_pod_owner:relabel',
+        expr: function(expr)
+          std.strReplace(
+            expr,
+            'owner_kind!="ReplicaSet", owner_kind!="DaemonSet", owner_kind!="StatefulSet", owner_kind!="Job", owner_kind!="Node", owner_kind!=""',
+            'owner_kind!~"ReplicaSet|ReplicationController|DaemonSet|StatefulSet|Job|Node|"',
+          ),
       },
     ],
   },

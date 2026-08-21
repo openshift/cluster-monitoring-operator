@@ -1,5 +1,6 @@
 local generateCertInjection = import '../utils/generate-certificate-injection.libsonnet';
 local generateSecret = import '../utils/generate-secret.libsonnet';
+local generateServiceMonitor = import '../utils/generate-service-monitors.libsonnet';
 local withDescription = (import '../utils/add-annotations.libsonnet').withDescription;
 
 function(params) {
@@ -33,6 +34,11 @@ function(params) {
     },
   },
   serviceMonitor: tc.telemeterClient.serviceMonitor {
+    metadata+: {
+      labels+: {
+        'monitoring.openshift.io/collection-profile': 'full',
+      },
+    },
     spec+: {
       endpoints: [
         {
@@ -43,6 +49,7 @@ function(params) {
       ],
     },
   },
+  minimalServiceMonitor: generateServiceMonitor.serviceMonitorForMinimalProfile(self.serviceMonitor),
   secret: tc.telemeterClient.secret,
   servingCertsCABundle: tc.telemeterClient.servingCertsCABundle,
   kubeRbacProxySecret: generateSecret.staticAuthSecret(cfg.namespace, cfg.commonLabels, 'telemeter-client-kube-rbac-proxy-config'),
@@ -130,6 +137,7 @@ function(params) {
       podSelector: {
         matchLabels: {
           'app.kubernetes.io/name': 'telemeter-client',
+          'app.kubernetes.io/part-of': 'openshift-monitoring',
         },
       },
       policyTypes: [
@@ -140,9 +148,8 @@ function(params) {
         {
           ports: [
             {
-              // allow prometheus to scrape telemeter-client endpoint,
-              // 8443(port name: https) port
-              port: 'https',
+              // Allow Prometheus to scrape telemeter-client's /metrics endpoint.
+              port: 8443,
               protocol: 'TCP',
             },
           ],

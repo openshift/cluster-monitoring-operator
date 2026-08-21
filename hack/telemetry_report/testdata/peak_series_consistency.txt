@@ -1,0 +1,51 @@
+# Telemetry selectors report (1d)
+# args: {__name__=~"e2etelemetry:const_one:gauge|e2etelemetry:const_zero:gauge|e2etelemetry:const_multi:gauge|e2etelemetry:const_dead:sum"}
+# Results depend on the queried Prometheus instance and may differ elsewhere.
+selectors:
+  - selector: '{__name__=~"e2etelemetry:const_one:gauge|e2etelemetry:const_zero:gauge|e2etelemetry:const_multi:gauge|e2etelemetry:const_dead:sum"}'
+    metrics:
+      - name: e2etelemetry:const_dead:sum
+        peak_series: N
+        value_range: V
+        recording_rule:
+          file: RULEFILE
+          expr: sum(e2e_nonexistent_const_dead)
+          tree: |-
+            └── e2e_nonexistent_const_dead
+                  <value_range: V> <peak_series: N>
+      - name: e2etelemetry:const_multi:gauge
+        peak_series: N
+        value_range: V
+        recording_rule:
+          file: RULEFILE
+          expr: |-
+            label_replace(vector(10), "i", "a", "", "") or label_replace(vector(20), "i", "b", "", "")
+            or
+            label_replace(vector(30), "i", "c", "", "")
+        labels:
+          - name: i
+            distinct_values: 3
+            sample_values: [a, b, c]
+      - name: e2etelemetry:const_one:gauge
+        peak_series: N
+        value_range: V
+        recording_rule:
+          file: RULEFILE
+          expr: vector(1)
+      - name: e2etelemetry:const_zero:gauge
+        peak_series: N
+        value_range: V
+        recording_rule:
+          file: RULEFILE
+          expr: vector(0)
+    failing_checks:
+      count: 8
+      messages:
+        - metric "e2etelemetry:const_dead:sum" has 0 timeseries, source metrics may not exist or rule dependencies are not met
+        - recording rule "e2etelemetry:const_dead:sum" is defined in CMO, it should probably live in the owning component operator
+        - recording rule "e2etelemetry:const_multi:gauge" is defined in CMO, it should probably live in the owning component operator
+        - recording rule "e2etelemetry:const_one:gauge" is defined in CMO, it should probably live in the owning component operator
+        - recording rule "e2etelemetry:const_zero:gauge" is defined in CMO, it should probably live in the owning component operator
+        - recording rule "e2etelemetry:const_dead:sum" depends on "e2e_nonexistent_const_dead" which has 0 series, ensure it is exercised within the observation window
+        - matcher __name__=~"e2etelemetry:const_one:gauge|e2etelemetry:const_zero:gauge|e2etelemetry:const_multi:gauge|e2etelemetry:const_dead:sum" alternation is unsorted, consider using __name__=~"e2etelemetry:const_dead:sum|e2etelemetry:const_multi:gauge|e2etelemetry:const_one:gauge|e2etelemetry:const_zero:gauge"
+        - metric "e2etelemetry:const_multi:gauge" label "i" has no matcher, consider adding one to bound cardinality, e.g. i=~"val1|val2"

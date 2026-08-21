@@ -606,6 +606,7 @@ func TestScrapeIntervalUWM(t *testing.T) {
 			_, err := NewUserConfigFromString(tc.uwmconfig)
 			if tc.expectedError {
 				require.Error(t, err)
+				require.True(t, errors.Is(err, ErrConfigValidation))
 				return
 			}
 			require.NoError(t, err)
@@ -699,6 +700,7 @@ func TestEvaluationIntervalUWM(t *testing.T) {
 			_, err := NewUserConfigFromString(tc.uwmconfig)
 			if tc.expectedError {
 				require.Error(t, err)
+				require.True(t, errors.Is(err, ErrConfigValidation))
 				return
 			}
 			require.NoError(t, err)
@@ -753,6 +755,249 @@ func TestCollectionProfileValues(t *testing.T) {
 	}
 }
 
+func TestAdditionalResourceLabelsValidation(t *testing.T) {
+	for _, tc := range []struct {
+		name        string
+		config      string
+		expectError bool
+	}{
+		{
+			name:        "no additional resource labels",
+			config:      "",
+			expectError: false,
+		},
+		{
+			name: "valid jobs resource",
+			config: `kubeStateMetrics:
+  additionalResourceLabels:
+  - resource: jobs
+    labels:
+    - foo`,
+			expectError: false,
+		},
+		{
+			name: "valid cronjobs resource",
+			config: `kubeStateMetrics:
+  additionalResourceLabels:
+  - resource: cronjobs
+    labels:
+    - bar`,
+			expectError: false,
+		},
+		{
+			name: "valid multiple resources",
+			config: `kubeStateMetrics:
+  additionalResourceLabels:
+  - resource: jobs
+    labels:
+    - foo
+  - resource: cronjobs
+    labels:
+    - bar`,
+			expectError: false,
+		},
+		{
+			name: "unsupported resource",
+			config: `kubeStateMetrics:
+  additionalResourceLabels:
+  - resource: pods
+    labels:
+    - foo`,
+			expectError: true,
+		},
+		{
+			name: "empty resource name",
+			config: `kubeStateMetrics:
+  additionalResourceLabels:
+  - resource: ""
+    labels:
+    - foo`,
+			expectError: true,
+		},
+		{
+			name: "duplicate resource",
+			config: `kubeStateMetrics:
+  additionalResourceLabels:
+  - resource: jobs
+    labels:
+    - foo
+  - resource: jobs
+    labels:
+    - bar`,
+			expectError: true,
+		},
+		{
+			name: "no labels",
+			config: `kubeStateMetrics:
+  additionalResourceLabels:
+  - resource: jobs
+    labels: []`,
+			expectError: true,
+		},
+		{
+			name: "empty label value",
+			config: `kubeStateMetrics:
+  additionalResourceLabels:
+  - resource: jobs
+    labels:
+    - foo
+    - ""`,
+			expectError: true,
+		},
+		{
+			name: "duplicate label",
+			config: `kubeStateMetrics:
+  additionalResourceLabels:
+  - resource: jobs
+    labels:
+    - foo
+    - bar
+    - foo`,
+			expectError: true,
+		},
+	} {
+		t.Run(tc.name, func(t *testing.T) {
+			_, err := NewConfigFromString(tc.config)
+			if tc.expectError {
+				require.Error(t, err)
+				require.ErrorIs(t, err, ErrConfigValidation)
+			} else {
+				require.NoError(t, err)
+			}
+		})
+	}
+}
+
+func TestRemoteWriteMessageVersionValidation(t *testing.T) {
+	for _, tc := range []struct {
+		name        string
+		config      string
+		uwmconfig   string
+		expectError bool
+	}{
+		{
+			name: "cluster monitoring: omitted messageVersion is valid",
+			config: `prometheusK8s:
+  remoteWrite:
+  - url: http://example.com
+`,
+		},
+		{
+			name: "cluster monitoring: V1.0 is valid",
+			config: `prometheusK8s:
+  remoteWrite:
+  - url: http://example.com
+    messageVersion: V1.0
+`,
+		},
+		{
+			name: "cluster monitoring: V2.0 is valid",
+			config: `prometheusK8s:
+  remoteWrite:
+  - url: http://example.com
+    messageVersion: V2.0
+`,
+		},
+		{
+			name: "cluster monitoring: unknown version is invalid",
+			config: `prometheusK8s:
+  remoteWrite:
+  - url: http://example.com
+    messageVersion: V3.0
+`,
+			expectError: true,
+		},
+		{
+			name: "user workload monitoring: omitted messageVersion is valid",
+			uwmconfig: `prometheus:
+  remoteWrite:
+  - url: http://example.com
+`,
+		},
+		{
+			name: "user workload monitoring: V2.0 is valid",
+			uwmconfig: `prometheus:
+  remoteWrite:
+  - url: http://example.com
+    messageVersion: V2.0
+`,
+		},
+		{
+			name: "user workload monitoring: unknown version is invalid",
+			uwmconfig: `prometheus:
+  remoteWrite:
+  - url: http://example.com
+    messageVersion: V3.0
+`,
+			expectError: true,
+		},
+	} {
+		t.Run(tc.name, func(t *testing.T) {
+			if tc.config != "" {
+				_, err := NewConfigFromString(tc.config)
+				if tc.expectError {
+					require.Error(t, err)
+					return
+				}
+				require.NoError(t, err)
+			}
+
+			if tc.uwmconfig != "" {
+				_, err := NewUserConfigFromString(tc.uwmconfig)
+				if tc.expectError {
+					require.Error(t, err)
+					return
+				}
+				require.NoError(t, err)
+			}
+		})
+	}
+}
+
+func TestNodeExporterInterruptsIncludeValidation(t *testing.T) {
+	for _, tc := range []struct {
+		name        string
+		config      string
+		expectError bool
+	}{
+		{
+			name: "valid patterns",
+			config: `nodeExporter:
+  collectors:
+    interrupts:
+      include: ["LOC;.*", "NMI;.*"]
+`,
+		},
+		{
+			name: "empty include list is valid",
+			config: `nodeExporter:
+  collectors:
+    interrupts:
+      include: []
+`,
+		},
+		{
+			name: "invalid regexp pattern",
+			config: `nodeExporter:
+  collectors:
+    interrupts:
+      include: ["(invalid["]
+`,
+			expectError: true,
+		},
+	} {
+		t.Run(tc.name, func(t *testing.T) {
+			_, err := NewConfigFromString(tc.config)
+			if tc.expectError {
+				require.Error(t, err)
+				require.True(t, errors.Is(err, ErrConfigValidation))
+				return
+			}
+			require.NoError(t, err)
+		})
+	}
+}
+
 func TestDeprecatedConfig(t *testing.T) {
 	for _, tc := range []struct {
 		name                string
@@ -792,6 +1037,49 @@ func TestDeprecatedConfig(t *testing.T) {
 				require.Equal(t, tc.warning, warnings[0].Warning())
 			}
 			require.Equal(t, tc.expectedMetricValue, prom_testutil.ToFloat64(metrics.DeprecatedConfig))
+		})
+	}
+}
+
+func TestNodeExporterSystemdUnits(t *testing.T) {
+	for _, tc := range []struct {
+		name   string
+		config string
+		err    bool
+	}{
+		{
+			name: "valid units",
+			config: `
+nodeExporter:
+  collectors:
+    systemd:
+      enabled: true
+      units:
+      - foo
+      - bar
+`,
+		},
+		{
+			name: "invalid units",
+			config: `
+nodeExporter:
+  collectors:
+    systemd:
+      enabled: true
+      units:
+      - network
+      - /\
+`,
+			err: true,
+		},
+	} {
+		t.Run(tc.name, func(st *testing.T) {
+			_, err := NewConfigFromString(tc.config)
+			if tc.err {
+				require.ErrorIs(t, err, ErrConfigValidation)
+				return
+			}
+			require.NoError(t, err)
 		})
 	}
 }

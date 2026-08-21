@@ -1,0 +1,39 @@
+# Tests for https://issues.redhat.com/browse/OCPBUGS-86352
+# A DeploymentConfig creates a ReplicationController which owns pods.
+# Both the custom deploymentconfig rule and the upstream catch-all rule
+# produce namespace_workload_pod:kube_pod_owner:relabel for the same pod,
+# causing "many-to-many matching not allowed" errors in dashboard queries.
+
+rule_files:
+  - rules.yaml
+
+evaluation_interval: 30s
+
+tests:
+  - interval: 1m
+    input_series:
+      # Pod owned by a ReplicationController (created by a DeploymentConfig)
+      - series: 'kube_pod_owner{job="kube-state-metrics", namespace="test-httpd", pod="hello-openshift-dc-1-2hx8v", owner_kind="ReplicationController", owner_name="hello-openshift-dc-1", owner_is_controller="true"}'
+        values: '1+0x5'
+      # The ReplicationController is owned by a DeploymentConfig
+      - series: 'kube_replicationcontroller_owner{job="kube-state-metrics", namespace="test-httpd", replicationcontroller="hello-openshift-dc-1", owner_kind="DeploymentConfig", owner_name="hello-openshift-dc", owner_is_controller="true"}'
+        values: '1+0x5'
+    promql_expr_test:
+      # There must be exactly ONE series per (namespace, pod), not two.
+      # The deploymentconfig rule should produce the result, and the
+      # catch-all should NOT also produce a ReplicationController result.
+      - expr: count(namespace_workload_pod:kube_pod_owner:relabel{namespace="test-httpd", pod="hello-openshift-dc-1-2hx8v"})
+        eval_time: 5m
+        exp_samples:
+          - labels: '{}'
+            value: 1
+      # Verify the single result has workload_type=deploymentconfig
+      - expr: namespace_workload_pod:kube_pod_owner:relabel{namespace="test-httpd", pod="hello-openshift-dc-1-2hx8v", workload_type="deploymentconfig"}
+        eval_time: 5m
+        exp_samples:
+          - labels: 'namespace_workload_pod:kube_pod_owner:relabel{namespace="test-httpd", pod="hello-openshift-dc-1-2hx8v", workload="hello-openshift-dc", workload_type="deploymentconfig"}'
+            value: 1
+      # Verify no ReplicationController result exists
+      - expr: namespace_workload_pod:kube_pod_owner:relabel{namespace="test-httpd", pod="hello-openshift-dc-1-2hx8v", workload_type="ReplicationController"}
+        eval_time: 5m
+        exp_samples: []

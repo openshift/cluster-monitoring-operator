@@ -15,3 +15,4 @@ spec:
       app.kubernetes.io/component: metrics-server
       app.kubernetes.io/name: metrics-server
       app.kubernetes.io/part-of: openshift-monitoring
+  unhealthyPodEvictionPolicy: AlwaysAllow

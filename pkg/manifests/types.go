@@ -30,7 +30,7 @@ const (
 	// FullCollectionProfile collects all metrics.
 	FullCollectionProfile = "full"
 
-	// MinimalCollectionProfile collects only metrics used by recording/alerting, dashboards and Telemetry.
+	// MinimalCollectionProfile collects metrics used by recording and alerting rules, dashboards and Telemetry.
 	MinimalCollectionProfile = "minimal"
 )
 
@@ -82,7 +82,7 @@ type ClusterMonitoringConfiguration struct {
 	// `ThanosQuerierConfig` defines settings for the Thanos Querier component.
 	ThanosQuerierConfig *ThanosQuerierConfig `json:"thanosQuerier,omitempty"`
 	// `NodeExporterConfig` defines settings for the `node-exporter` agent.
-	NodeExporterConfig NodeExporterConfig `json:"nodeExporter,omitempty"`
+	NodeExporterConfig *NodeExporterConfig `json:"nodeExporter,omitempty"`
 	// `MonitoringPluginConfig` defines settings for the monitoring `console-plugin`.
 	MonitoringPluginConfig *MonitoringPluginConfig `json:"monitoringPlugin,omitempty"`
 }
@@ -182,6 +182,16 @@ type DedicatedServiceMonitors struct {
 	Enabled bool `json:"enabled,omitempty"`
 }
 
+// The `ResourceLabels` resource defines which Kubernetes labels to expose
+// as metrics for a given resource type.
+type ResourceLabels struct {
+	// Defines the Kubernetes resource name (for example, `jobs` or `cronjobs`).
+	Resource string `json:"resource"`
+	// Defines the list of Kubernetes labels to expose as metrics for this
+	// resource. Use `*` to expose all labels.
+	Labels []string `json:"labels"`
+}
+
 // The `KubeStateMetricsConfig` resource defines settings for the
 // `kube-state-metrics` agent.
 type KubeStateMetricsConfig struct {
@@ -193,6 +203,11 @@ type KubeStateMetricsConfig struct {
 	Tolerations []v1.Toleration `json:"tolerations,omitempty"`
 	// Defines a pod's topology spread constraints.
 	TopologySpreadConstraints []v1.TopologySpreadConstraint `json:"topologySpreadConstraints,omitempty"`
+	// Defines additional resource labels to expose as metrics in addition to
+	// the default labels. Currently, only `jobs` and `cronjobs` resources are
+	// supported due to cardinality concerns. Each entry specifies a resource
+	// name and a list of label names (use `*` to expose all labels).
+	AdditionalResourceLabels []ResourceLabels `json:"additionalResourceLabels,omitempty"`
 }
 
 // The `PrometheusK8sConfig` resource defines settings for the Prometheus
@@ -397,6 +412,23 @@ type NodeExporterCollectorConfig struct {
 	// Defines the configuration of the `systemd` collector, which collects statistics on the systemd daemon and its managed services.
 	// Disabled by default.
 	Systemd NodeExporterCollectorSystemdConfig `json:"systemd,omitempty"`
+	// Defines the configuration of the `interrupts` collector, which exposes interrupt counts from `/proc/interrupts`.
+	// Disabled by default.
+	Interrupts NodeExporterCollectorInterruptsConfig `json:"interrupts,omitempty"`
+	// Defines the configuration of the `softirqs` collector, which exposes detailed softirq metrics from `/proc/softirqs`.
+	// Disabled by default.
+	Softirqs NodeExporterCollectorSoftirqsConfig `json:"softirqs,omitempty"`
+	// Defines the configuration of the `zoneinfo` collector, which exposes detailed memory zone statistics from `/proc/zoneinfo`.
+	// Disabled by default.
+	Zoneinfo NodeExporterCollectorZoneinfoConfig `json:"zoneinfo,omitempty"`
+	// Defines the configuration of the `dmmultipath` collector, which exposes
+	// DM-multipath device and path metrics from `/sys/block/dm-*`.
+	// Enabled by default.
+	DmMultipath NodeExporterCollectorDmMultipathConfig `json:"dmMultipath,omitempty"`
+	// Defines the configuration of the `nvmesubsystem` collector, which exposes
+	// NVMe subsystem metrics from `/sys/class/nvme-subsystem/`.
+	// Enabled by default.
+	NvmeSubsystem NodeExporterCollectorNvmeSubsystemConfig `json:"nvmeSubsystem,omitempty"`
 }
 
 // The `NodeExporterCollectorCpufreqConfig` resource works as an on/off switch for
@@ -450,7 +482,7 @@ type NodeExporterCollectorEthtoolConfig struct {
 // `node_network_transmit_packets_total`.
 type NodeExporterCollectorNetDevConfig struct {
 	// A Boolean flag that enables or disables the `netdev` collector.
-	Enabled bool `json:"enabled,omitempty"`
+	Enabled *bool `json:"enabled,omitempty"`
 }
 
 // The `NodeExporterCollectorNetClassConfig` resource works as an on/off switch for
@@ -477,11 +509,11 @@ type NodeExporterCollectorNetDevConfig struct {
 // `node_network_protocol_type`.
 type NodeExporterCollectorNetClassConfig struct {
 	// A Boolean flag that enables or disables the `netclass` collector.
-	Enabled bool `json:"enabled,omitempty"`
+	Enabled *bool `json:"enabled,omitempty"`
 	// A Boolean flag that activates the `netlink` implementation of the `netclass` collector.
 	// Its default value is `true`: activating the netlink mode.
 	// This implementation improves the performance of the `netclass` collector.
-	UseNetlink bool `json:"useNetlink,omitempty"`
+	UseNetlink *bool `json:"useNetlink,omitempty"`
 }
 
 // The `NodeExporterCollectorBuddyInfoConfig` resource works as an on/off switch for
@@ -560,6 +592,57 @@ type NodeExporterCollectorSystemdConfig struct {
 	// A list of regular expression (regex) patterns that match systemd units to be included by the `systemd` collector.
 	// By default, the list is empty, so the collector exposes no metrics for systemd units.
 	Units []string `json:"units,omitempty"`
+}
+
+// The `NodeExporterCollectorInterruptsConfig` resource configures the `interrupts`
+// collector of the `node-exporter` agent.
+// By default, the collector is disabled.
+// A non-empty `include` list enables the collector and defines which interrupt metrics should be collected.
+type NodeExporterCollectorInterruptsConfig struct {
+	// A list of regular expression patterns. Each line in `/proc/interrupts` is matched
+	// against the same string node-exporter uses: the IRQ name, info, and devices fields
+	// joined with `;`, for example `LOC;77;IO-APIC 2-edge …`. Patterns are combined with OR
+	// into a single expression anchored on both ends, so each pattern must match the entire
+	// string (use `.*` where needed). An empty list disables the collector.
+	// Examples: `FOO;.*` matches all interrupts named FOO; `.*;some_dev` matches all interrupts
+	// on device `some_dev`; `.*;.*;(eth|eno|ens|em[0-9]|bond|team|mlx|.*TxRx.*).*` matches network
+	// interface interrupts (passed to node-exporter as
+	// `--collector.interrupts.name-include=^(.*;.*;(eth|eno|ens|em[0-9]|bond|team|mlx|.*TxRx.*).*)$`).
+	Include []string `json:"include,omitempty"`
+}
+
+// The `NodeExporterCollectorSoftirqsConfig` resource works as an on/off switch for
+// the `softirqs` collector of the `node-exporter` agent.
+// By default, the `softirqs` collector is disabled.
+type NodeExporterCollectorSoftirqsConfig struct {
+	// A Boolean flag that enables or disables the `softirqs` collector.
+	Enabled bool `json:"enabled,omitempty"`
+}
+
+// The `NodeExporterCollectorZoneinfoConfig` resource works as an on/off switch for
+// the `zoneinfo` collector of the `node-exporter` agent.
+// The `zoneinfo` collector exposes per-zone memory page counts, watermarks, and
+// protection thresholds from `/proc/zoneinfo`.
+// By default, the `zoneinfo` collector is disabled.
+type NodeExporterCollectorZoneinfoConfig struct {
+	// A Boolean flag that enables or disables the `zoneinfo` collector.
+	Enabled bool `json:"enabled,omitempty"`
+}
+
+// The `NodeExporterCollectorDmMultipathConfig` resource works as an on/off switch for
+// the `dmmultipath` collector of the `node-exporter` agent.
+// By default, the `dmmultipath` collector is enabled.
+type NodeExporterCollectorDmMultipathConfig struct {
+	// A Boolean flag that enables or disables the `dmmultipath` collector.
+	Enabled *bool `json:"enabled,omitempty"`
+}
+
+// The `NodeExporterCollectorNvmeSubsystemConfig` resource works as an on/off switch for
+// the `nvmesubsystem` collector of the `node-exporter` agent.
+// By default, the `nvmesubsystem` collector is enabled.
+type NodeExporterCollectorNvmeSubsystemConfig struct {
+	// A Boolean flag that enables or disables the `nvmesubsystem` collector.
+	Enabled *bool `json:"enabled,omitempty"`
 }
 
 // The `UserWorkloadConfiguration` resource defines the settings
@@ -835,6 +918,9 @@ type RemoteWriteSpec struct {
 	// Specifies the custom HTTP headers to be sent along with each remote write request.
 	// Headers set by Prometheus cannot be overwritten.
 	Headers map[string]string `json:"headers,omitempty"`
+	// Defines the Remote Write message version to use when writing to the remote write endpoint.
+	// Allowed values are "V1.0" and "V2.0". Defaults to "V1.0".
+	MessageVersion string `json:"messageVersion,omitempty"`
 	// Defines settings for sending series metadata to remote write storage.
 	MetadataConfig *monv1.MetadataConfig `json:"metadataConfig,omitempty"`
 	// Defines the name of the remote write queue. This name is used in

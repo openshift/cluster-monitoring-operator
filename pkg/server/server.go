@@ -95,6 +95,7 @@ func (s *Server) Prepare(ctx context.Context) error {
 		s.kubeClient,
 		nil,   // disable leader election
 		false, // disable http2
+		false, // skip in-cluster authentication
 		nil,   // version info
 	)
 	if err != nil {
@@ -125,10 +126,11 @@ func (s *Server) Prepare(ctx context.Context) error {
 	// This is a temporary measure until the CRD-based configuration is GA.
 	// Following the fail-early paradigm this makes configuration failures easily detectable by users.
 	// This will also aid in the transition to CRD by providing a preview of the future configuration process.
-	handler := configvalidate.MustNewConfigmapsValidatorHandler()
+	path := fmt.Sprintf("%s/monitoringconfigmaps", webhookPathPrefix)
+	handler := configvalidate.MustNewConfigmapsValidatorHandler(path)
 	server.Handler.NonGoRestfulMux.Handle(
-		fmt.Sprintf("%s/monitoringconfigmaps", webhookPathPrefix),
-		*handler,
+		path,
+		handler,
 	)
 
 	s.srv = server

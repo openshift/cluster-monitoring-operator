@@ -1,0 +1,40 @@
+# Telemetry selectors report (1d)
+# args: {__name__="e2etelemetry:chain_top:max"}
+# Results depend on the queried Prometheus instance and may differ elsewhere.
+selectors:
+  - selector: '{__name__="e2etelemetry:chain_top:max"}'
+    metrics:
+      - name: e2etelemetry:chain_top:max
+        peak_series: N
+        value_range: V
+        recording_rule:
+          file: RULEFILE
+          expr: max(e2etelemetry:chain_deep:sum) / e2etelemetry:etcd_has_leader:max
+          tree: |-
+            ├── e2etelemetry:chain_deep:sum
+            │     <expr: sum(e2etelemetry:chain_mid:ratio) + e2etelemetry:chain_leaf_a:max>
+            │     <value_range: V> <peak_series: N> <file: RULEFILE>
+            │   ├── e2etelemetry:chain_mid:ratio
+            │   │     <expr: e2etelemetry:chain_leaf_a:max / e2etelemetry:chain_leaf_b:sum>
+            │   │     <peak_series: N> <file: RULEFILE>
+            │   │   ├── e2etelemetry:chain_leaf_a:max
+            │   │   │     <expr: max(etcd_server_has_leader{job="etcd"})>
+            │   │   │     <peak_series: N> <file: RULEFILE>
+            │   │   │   └── etcd_server_has_leader{job="etcd"}
+            │   │   │         <job: etcd> <peak_series: N>
+            │   │   └── e2etelemetry:chain_leaf_b:sum
+            │   │         <expr: sum(etcd_disk_wal_fsync_duration_seconds_count{job="etcd"})>
+            │   │         <peak_series: N> <file: RULEFILE>
+            │   │       └── etcd_disk_wal_fsync_duration_seconds_count{job="etcd"}
+            │   │             <job: etcd> <peak_series: N>
+            │   └── e2etelemetry:chain_leaf_a:max
+            │         <expr: max(etcd_server_has_leader{job="etcd"})>
+            │         <peak_series: N> <file: RULEFILE>
+            └── e2etelemetry:etcd_has_leader:max
+                  <expr: max(etcd_server_has_leader{job="etcd"})>
+                  <value_range: V> <peak_series: N> <file: RULEFILE>
+    failing_checks:
+      count: 2
+      messages:
+        - recording rule "e2etelemetry:chain_top:max" is defined in CMO, it should probably live in the owning component operator
+        - recording rule "e2etelemetry:chain_top:max" has suffix :max, expected :ratio based on the expression

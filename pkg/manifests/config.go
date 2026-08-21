@@ -20,11 +20,14 @@ import (
 	"errors"
 	"fmt"
 	"math"
+	"path/filepath"
+	"regexp"
 	"slices"
 	"strings"
 
 	"github.com/alecthomas/units"
 	configv1 "github.com/openshift/api/config/v1"
+	configv1alpha1 "github.com/openshift/api/config/v1alpha1"
 	"github.com/prometheus/common/model"
 	v1 "k8s.io/api/core/v1"
 	jsonutil "k8s.io/apimachinery/pkg/util/json"
@@ -54,6 +57,21 @@ const (
 )
 
 var reservedPrometheusExternalLabels = []string{"prometheus", "prometheus_replica", "cluster"}
+
+var lowestIntervalLimit, highestIntervalLimit model.Duration
+
+func init() {
+	var err error
+	lowestIntervalLimit, err = model.ParseDuration("5s")
+	if err != nil {
+		panic(err)
+	}
+
+	highestIntervalLimit, err = model.ParseDuration("5m")
+	if err != nil {
+		panic(err)
+	}
+}
 
 type InvalidConfigWarning struct {
 	ConfigMap string
@@ -142,90 +160,45 @@ func (c Config) GetThanosRulerAlertmanagerConfigs() []AdditionalAlertmanagerConf
 	return alertmanagerConfigs
 }
 
-func scrapeIntervalLimits() (model.Duration, model.Duration) {
-	lowerLimit, _ := model.ParseDuration("5s")
-	upperLimit, _ := model.ParseDuration("5m")
-	return lowerLimit, upperLimit
-}
-
-func evaluationIntervalLimits() (model.Duration, model.Duration) {
-	lowerLimit, _ := model.ParseDuration("5s")
-	upperLimit, _ := model.ParseDuration("5m")
-	return lowerLimit, upperLimit
-}
-
-func (u *UserWorkloadConfiguration) checkScrapeInterval() error {
-	if u.Prometheus == nil || u.Prometheus.ScrapeInterval == "" {
+func checkIntervalValue(interval string) error {
+	if interval == "" {
 		return nil
 	}
 
-	scrapeInterval, err := model.ParseDuration(u.Prometheus.ScrapeInterval)
-
+	d, err := model.ParseDuration(interval)
 	if err != nil {
-		return fmt.Errorf("invalid scrape interval value: %w", err)
+		return fmt.Errorf("invalid interval value: %w", err)
 	}
 
-	allowedLowerLimit, allowedUpperLimit := scrapeIntervalLimits()
-
-	if (scrapeInterval < allowedLowerLimit) || (scrapeInterval > allowedUpperLimit) {
-		return fmt.Errorf("Prometheus scrape interval value %q outside of the allowed range [%q, %q]", u.Prometheus.ScrapeInterval, allowedLowerLimit, allowedUpperLimit)
+	if (d < lowestIntervalLimit) || (d > highestIntervalLimit) {
+		return fmt.Errorf("interval value %q outside of the allowed range [%q, %q]", interval, lowestIntervalLimit, highestIntervalLimit)
 	}
 	return nil
 }
 
-func (u *UserWorkloadConfiguration) checkPrometheusEvaluationInterval() error {
-	if u.Prometheus == nil || u.Prometheus.EvaluationInterval == "" {
-		return nil
-	}
-
-	evaluationInterval, err := model.ParseDuration(u.Prometheus.EvaluationInterval)
-
-	if err != nil {
-		return fmt.Errorf("invalid evaluation interval value: %w", err)
-	}
-
-	allowedLowerLimit, allowedUpperLimit := evaluationIntervalLimits()
-
-	if (evaluationInterval < allowedLowerLimit) || (evaluationInterval > allowedUpperLimit) {
-		return fmt.Errorf("Prometheus evaluation interval value %q outside of the allowed range [%q, %q]", u.Prometheus.EvaluationInterval, allowedLowerLimit, allowedUpperLimit)
-	}
-	return nil
-}
-
-func (u *UserWorkloadConfiguration) checkThanosRulerEvaluationInterval() error {
-	if u.ThanosRuler == nil || u.ThanosRuler.EvaluationInterval == "" {
-		return nil
-	}
-
-	evaluationInterval, err := model.ParseDuration(u.ThanosRuler.EvaluationInterval)
-
-	if err != nil {
-		return fmt.Errorf("invalid evaluation interval value: %w", err)
-	}
-
-	allowedLowerLimit, allowedUpperLimit := evaluationIntervalLimits()
-
-	if (evaluationInterval < allowedLowerLimit) || (evaluationInterval > allowedUpperLimit) {
-		return fmt.Errorf("Thanos Ruler evaluation interval value %q outside of the allowed range [%q, %q]", u.ThanosRuler.EvaluationInterval, allowedLowerLimit, allowedUpperLimit)
-	}
-	return nil
-}
-
-func (u *UserWorkloadConfiguration) check() error {
+func (u *UserWorkloadConfiguration) validate() error {
 	if u == nil {
 		return nil
 	}
 
-	if err := u.checkScrapeInterval(); err != nil {
-		return err
+	if err := checkIntervalValue(u.Prometheus.ScrapeInterval); err != nil {
+		return fmt.Errorf("prometheus: scrape interval: %w", err)
 	}
 
-	if err := u.checkPrometheusEvaluationInterval(); err != nil {
-		return err
+	if err := checkIntervalValue(u.Prometheus.EvaluationInterval); err != nil {
+		return fmt.Errorf("prometheus: evaluation interval: %w", err)
 	}
 
-	if err := u.checkThanosRulerEvaluationInterval(); err != nil {
-		return err
+	if err := checkIntervalValue(u.ThanosRuler.EvaluationInterval); err != nil {
+		return fmt.Errorf("thanos ruler: evaluation interval: %w", err)
+	}
+
+	if err := validateQueryLogFile(u.Prometheus.QueryLogFile); err != nil {
+		return fmt.Errorf("prometheus: %w", err)
+	}
+
+	if err := validateRemoteWriteConfigs(u.Prometheus.RemoteWrite); err != nil {
+		return fmt.Errorf("prometheus: %w", err)
 	}
 
 	return nil
@@ -261,10 +234,10 @@ func (a AlertmanagerMainConfig) IsEnabled() bool {
 
 // Audit profile configurations
 type Audit struct {
-
-	// The Profile to set for audit logs. This currently matches the various
-	// audit log levels such as: "metadata, request, requestresponse, none".
-	// The default audit log level is "metadata"
+	// The Profile to set for audit logs. Supported values are
+	// "Metadata", "Request", "RequestResponse" or "None".
+	//
+	// The default audit log level is "Metadata".
 	//
 	// see: https://kubernetes.io/docs/tasks/debug-application-cluster/audit/#audit-policy
 	// for more information about auditing and log levels.
@@ -326,72 +299,254 @@ func UnmarshalStrict(data []byte, v interface{}) error {
 	}
 }
 
+// NewConfigFromString returns the Config initialized from the provided string.
 func NewConfigFromString(content string) (*Config, error) {
-	cmc := ClusterMonitoringConfiguration{
-		NodeExporterConfig: NodeExporterConfig{
-			Collectors: NodeExporterCollectorConfig{
-				NetDev: NodeExporterCollectorNetDevConfig{
-					Enabled: true,
-				},
-				NetClass: NodeExporterCollectorNetClassConfig{
-					Enabled:    true,
-					UseNetlink: true,
-				},
-				Systemd: NodeExporterCollectorSystemdConfig{
-					Enabled: false,
-				},
+	return NewConfigFromStringAndClusterMonitoringResource(content, nil)
+}
+
+// defaultNodeExporterConfig returns the baseline node-exporter configuration.
+func defaultNodeExporterConfig() *NodeExporterConfig {
+	return &NodeExporterConfig{
+		Collectors: NodeExporterCollectorConfig{
+			NetDev: NodeExporterCollectorNetDevConfig{
+				Enabled: ptr.To(true),
+			},
+			NetClass: NodeExporterCollectorNetClassConfig{
+				Enabled:    ptr.To(true),
+				UseNetlink: ptr.To(true),
+			},
+			Systemd: NodeExporterCollectorSystemdConfig{
+				Enabled: false,
+			},
+			DmMultipath: NodeExporterCollectorDmMultipathConfig{
+				Enabled: ptr.To(true),
+			},
+			NvmeSubsystem: NodeExporterCollectorNvmeSubsystemConfig{
+				Enabled: ptr.To(true),
 			},
 		},
 	}
+}
+
+// NewConfigFromStringAndClusterMonitoringResource returns the Config
+// initialized from the provided string and merged with the ClusterMonitoring
+// resource.
+func NewConfigFromStringAndClusterMonitoringResource(content string, cmr *configv1alpha1.ClusterMonitoring) (*Config, error) {
+	cmc := ClusterMonitoringConfiguration{}
+
 	err := UnmarshalStrict([]byte(content), &cmc)
 	if err != nil {
 		return nil, err
 	}
 
-	c := Config{
+	c := &Config{
 		ClusterMonitoringConfiguration: &cmc,
 		UserWorkloadConfiguration:      NewDefaultUserWorkloadMonitoringConfig(),
 	}
+	if err := c.mergeClusterMonitoringCRD(cmr); err != nil {
+		return nil, fmt.Errorf("merging ClusterMonitoring CR: %w", err)
+	}
+
 	c.applyDefaults()
 
-	// Validate the configured collection profile.
+	if err := c.validate(); err != nil {
+		return nil, fmt.Errorf("%w: %w", ErrConfigValidation, err)
+	}
+
+	return c, nil
+}
+
+func (c *Config) validate() error {
 	if !slices.Contains(SupportedCollectionProfiles, c.ClusterMonitoringConfiguration.PrometheusK8sConfig.CollectionProfile) {
-		return nil, fmt.Errorf("%w: %q is not supported, supported collection profiles are [%s]",
-			ErrConfigValidation,
+		return fmt.Errorf("%q is not supported, supported collection profiles are [%s]",
 			c.ClusterMonitoringConfiguration.PrometheusK8sConfig.CollectionProfile,
 			strings.Join(SupportedCollectionProfiles.StringSlice(), ", "),
 		)
 	}
 
-	return &c, nil
+	// Validate additional resource labels for KSM.
+	if err := validateAdditionalResourceLabels(c.ClusterMonitoringConfiguration.KubeStateMetricsConfig); err != nil {
+		return fmt.Errorf("kube-state-metrics: %w", err)
+	}
+
+	// Refer to https://kubernetes.io/docs/tasks/debug-application-cluster/audit/#audit-policy
+	// for the valid log levels.
+	switch profile := c.ClusterMonitoringConfiguration.MetricsServerConfig.Audit.Profile; profile {
+	case auditv1.LevelNone,
+		auditv1.LevelMetadata,
+		auditv1.LevelRequest,
+		auditv1.LevelRequestResponse:
+	default:
+		return fmt.Errorf("metrics server: audit profile %q not supported", profile)
+	}
+
+	if err := validateQueryLogFile(c.ClusterMonitoringConfiguration.PrometheusK8sConfig.QueryLogFile); err != nil {
+		return fmt.Errorf("prometheus: %w", err)
+	}
+
+	if err := validateRemoteWriteConfigs(c.ClusterMonitoringConfiguration.PrometheusK8sConfig.RemoteWrite); err != nil {
+		return fmt.Errorf("prometheus: %w", err)
+	}
+
+	if err := validateNodeExporterConfig(c.ClusterMonitoringConfiguration.NodeExporterConfig); err != nil {
+		return fmt.Errorf("node-exporter: %w", err)
+	}
+
+	return nil
+}
+
+// validateQueryLogFile validates the path of the Prometheus query log file.
+//
+// If not empty, the path should meet the following criteria:
+// - the path is either an absolute path or a simple filename (in which case, the directory is ".").
+// - the directory isn't the root directory.
+// - if the directory is /dev, the path can only be /dev/stdout, /dev/stderr or /dev/null.
+func validateQueryLogFile(path string) error {
+	if path == "" {
+		return nil
+	}
+
+	dirPath := filepath.Dir(path)
+	if !filepath.IsAbs(path) && dirPath != "." {
+		return errors.New("relative paths to query log file are not supported")
+	}
+
+	if dirPath == "/" {
+		return errors.New("query log file can't be stored on the root directory")
+	}
+
+	if dirPath == "/dev" && path != "/dev/stdout" && path != "/dev/stderr" && path != "/dev/null" {
+		return errors.New("query log file can't be stored on a new file on the dev directory")
+	}
+
+	return nil
+}
+
+var supportedRemoteWriteMessageVersions = []string{"V1.0", "V2.0"}
+
+func validateRemoteWriteConfigs(rwSpecs []RemoteWriteSpec) error {
+	for i, rw := range rwSpecs {
+		if rw.MessageVersion != "" && !slices.Contains(supportedRemoteWriteMessageVersions, rw.MessageVersion) {
+			return fmt.Errorf("remoteWrite[%d]: messageVersion %q is not supported, supported values are: %v",
+				i, rw.MessageVersion, supportedRemoteWriteMessageVersions)
+		}
+	}
+	return nil
+}
+
+func validateNodeExporterConfig(config *NodeExporterConfig) error {
+	if config == nil {
+		return nil
+	}
+	if config.Collectors.Systemd.Enabled {
+		for _, unit := range config.Collectors.Systemd.Units {
+			_, err := regexp.Compile(unit)
+			if err != nil {
+				return fmt.Errorf("systemd: invalid regexp pattern: %s", unit)
+			}
+		}
+	}
+	for _, pattern := range config.Collectors.Interrupts.Include {
+		if _, err := regexp.Compile(pattern); err != nil {
+			return fmt.Errorf("interrupts: invalid regexp pattern: %s", pattern)
+		}
+	}
+	return nil
+}
+
+var supportedResourceLabelsResources = []string{"jobs", "cronjobs"}
+
+func validateAdditionalResourceLabels(ksm *KubeStateMetricsConfig) error {
+	if ksm == nil {
+		return nil
+	}
+
+	seenResources := map[string]bool{}
+	for _, rl := range ksm.AdditionalResourceLabels {
+		if rl.Resource == "" {
+			return fmt.Errorf("%w: additionalResourceLabels: resource name must not be empty", ErrConfigValidation)
+		}
+		if !slices.Contains(supportedResourceLabelsResources, rl.Resource) {
+			return fmt.Errorf("%w: additionalResourceLabels: unsupported resource %q, supported resources are: %v", ErrConfigValidation, rl.Resource, supportedResourceLabelsResources)
+		}
+		if seenResources[rl.Resource] {
+			return fmt.Errorf("%w: additionalResourceLabels: duplicate resource %q", ErrConfigValidation, rl.Resource)
+		}
+		seenResources[rl.Resource] = true
+		if len(rl.Labels) == 0 {
+			return fmt.Errorf("%w: additionalResourceLabels: resource %q must have at least one label", ErrConfigValidation, rl.Resource)
+		}
+		if slices.Contains(rl.Labels, "") {
+			return fmt.Errorf("%w: additionalResourceLabels: resource %q has an empty label value", ErrConfigValidation, rl.Resource)
+		}
+		seenLabels := map[string]bool{}
+		for _, l := range rl.Labels {
+			if seenLabels[l] {
+				return fmt.Errorf("%w: additionalResourceLabels: resource %q has duplicate label %q", ErrConfigValidation, rl.Resource, l)
+			}
+			seenLabels[l] = true
+		}
+	}
+	return nil
 }
 
 func (c *Config) applyDefaults() {
 	if c.Images == nil {
 		c.Images = &Images{}
 	}
+
 	if c.ClusterMonitoringConfiguration == nil {
 		c.ClusterMonitoringConfiguration = &ClusterMonitoringConfiguration{}
 	}
+
+	if c.ClusterMonitoringConfiguration.NodeExporterConfig == nil {
+		c.ClusterMonitoringConfiguration.NodeExporterConfig = defaultNodeExporterConfig()
+	}
+
+	collectors := &c.ClusterMonitoringConfiguration.NodeExporterConfig.Collectors
+	if collectors.NetDev.Enabled == nil {
+		collectors.NetDev.Enabled = ptr.To(true)
+	}
+	if collectors.NetClass.Enabled == nil {
+		collectors.NetClass.Enabled = ptr.To(true)
+	}
+	if collectors.NetClass.UseNetlink == nil {
+		collectors.NetClass.UseNetlink = ptr.To(true)
+	}
+	if collectors.DmMultipath.Enabled == nil {
+		collectors.DmMultipath.Enabled = ptr.To(true)
+	}
+	if collectors.NvmeSubsystem.Enabled == nil {
+		collectors.NvmeSubsystem.Enabled = ptr.To(true)
+	}
+
+	if c.ClusterMonitoringConfiguration.UserWorkloadEnabled == nil {
+		c.ClusterMonitoringConfiguration.UserWorkloadEnabled = ptr.To(false)
+	}
+
 	if c.ClusterMonitoringConfiguration.PrometheusOperatorConfig == nil {
 		c.ClusterMonitoringConfiguration.PrometheusOperatorConfig = &PrometheusOperatorConfig{}
 	}
+
 	if c.ClusterMonitoringConfiguration.PrometheusOperatorAdmissionWebhookConfig == nil {
 		c.ClusterMonitoringConfiguration.PrometheusOperatorAdmissionWebhookConfig = &PrometheusOperatorAdmissionWebhookConfig{}
 	}
+
 	if c.ClusterMonitoringConfiguration.PrometheusK8sConfig == nil {
 		c.ClusterMonitoringConfiguration.PrometheusK8sConfig = &PrometheusK8sConfig{}
 	}
+
 	if c.ClusterMonitoringConfiguration.PrometheusK8sConfig.Retention == "" && c.ClusterMonitoringConfiguration.PrometheusK8sConfig.RetentionSize == "" {
 		c.ClusterMonitoringConfiguration.PrometheusK8sConfig.Retention = DefaultRetentionValue
 	}
+
+	if c.ClusterMonitoringConfiguration.PrometheusK8sConfig.CollectionProfile == "" {
+		c.ClusterMonitoringConfiguration.PrometheusK8sConfig.CollectionProfile = FullCollectionProfile
+	}
+
 	if c.ClusterMonitoringConfiguration.AlertmanagerMainConfig == nil {
 		c.ClusterMonitoringConfiguration.AlertmanagerMainConfig = &AlertmanagerMainConfig{}
 	}
-
-	// UserWorkloadEnabled is left nil when not set by ConfigMap so the operator can
-	// apply ClusterMonitoring CRD merge (UserDefined mode) when the feature gate is on.
-	// The operator defaults it to false after merge when still nil.
 
 	if c.ClusterMonitoringConfiguration.UserWorkload == nil {
 		c.ClusterMonitoringConfiguration.UserWorkload = &UserWorkloadConfig{}
@@ -404,15 +559,19 @@ func (c *Config) applyDefaults() {
 	if c.ClusterMonitoringConfiguration.ThanosQuerierConfig == nil {
 		c.ClusterMonitoringConfiguration.ThanosQuerierConfig = &ThanosQuerierConfig{}
 	}
+
 	if c.ClusterMonitoringConfiguration.KubeStateMetricsConfig == nil {
 		c.ClusterMonitoringConfiguration.KubeStateMetricsConfig = &KubeStateMetricsConfig{}
 	}
+
 	if c.ClusterMonitoringConfiguration.OpenShiftMetricsConfig == nil {
 		c.ClusterMonitoringConfiguration.OpenShiftMetricsConfig = &OpenShiftStateMetricsConfig{}
 	}
+
 	if c.ClusterMonitoringConfiguration.HTTPConfig == nil {
 		c.ClusterMonitoringConfiguration.HTTPConfig = &HTTPConfig{}
 	}
+
 	if c.ClusterMonitoringConfiguration.TelemeterClientConfig == nil {
 		c.ClusterMonitoringConfiguration.TelemeterClientConfig = &TelemeterClientConfig{
 			TelemeterServerURL: "https://infogw.api.openshift.com/",
@@ -427,9 +586,6 @@ func (c *Config) applyDefaults() {
 	}
 	if c.ClusterMonitoringConfiguration.MetricsServerConfig.Audit.Profile == "" {
 		c.ClusterMonitoringConfiguration.MetricsServerConfig.Audit.Profile = auditv1.LevelMetadata
-	}
-	if c.ClusterMonitoringConfiguration.PrometheusK8sConfig.CollectionProfile == "" {
-		c.ClusterMonitoringConfiguration.PrometheusK8sConfig.CollectionProfile = FullCollectionProfile
 	}
 
 	if c.ClusterMonitoringConfiguration.NodeExporterConfig.IgnoredNetworkDevices == nil {
@@ -511,18 +667,13 @@ func (c *Config) LoadClusterID(load func() (*configv1.ClusterVersion, error)) er
 	return nil
 }
 
-func (c *Config) LoadToken(load func() (*v1.Secret, error)) error {
+func (c *Config) LoadToken(pullSecret *v1.Secret) error {
 	if c.ClusterMonitoringConfiguration.TelemeterClientConfig.Token != "" {
 		return nil
 	}
 
-	secret, err := load()
-	if err != nil {
-		return fmt.Errorf("error loading secret: %w", err)
-	}
-
-	if secret.Type != v1.SecretTypeDockerConfigJson {
-		return fmt.Errorf("error expecting secret type %s got %s", v1.SecretTypeDockerConfigJson, secret.Type)
+	if pullSecret.Type != v1.SecretTypeDockerConfigJson {
+		return fmt.Errorf("error expecting secret type %s got %s", v1.SecretTypeDockerConfigJson, pullSecret.Type)
 	}
 
 	ps := struct {
@@ -533,7 +684,7 @@ func (c *Config) LoadToken(load func() (*v1.Secret, error)) error {
 		} `json:"auths"`
 	}{}
 
-	if err := json.Unmarshal(secret.Data[v1.DockerConfigJsonKey], &ps); err != nil {
+	if err := json.Unmarshal(pullSecret.Data[v1.DockerConfigJsonKey], &ps); err != nil {
 		return fmt.Errorf("unmarshaling pull secret failed: %w", err)
 	}
 
@@ -610,7 +761,15 @@ func calculateBodySizeLimit(podCapacity int) string {
 	return fmt.Sprintf("%dMB", int(math.Ceil(float64(bodySize)/(1024*1024))))
 }
 
+// NewConfigFromConfigMap returns the Config initialized from the provided ConfigMap.
 func NewConfigFromConfigMap(c *v1.ConfigMap) (*Config, error) {
+	return NewConfigFromConfigMapAndClusterMonitoringResource(c, nil)
+}
+
+// NewConfigFromConfigMapAndClusterMonitoringResource returns the Config
+// initialized from the provided ConfigMap and merged with the
+// ClusterMonitoring resource.
+func NewConfigFromConfigMapAndClusterMonitoringResource(c *v1.ConfigMap, cmr *configv1alpha1.ClusterMonitoring) (*Config, error) {
 	configContent, found := c.Data[configKey]
 	if !found {
 		return nil, fmt.Errorf("%q key not found in the configmap", configKey)
@@ -621,7 +780,7 @@ func NewConfigFromConfigMap(c *v1.ConfigMap) (*Config, error) {
 		configContent = "{}"
 	}
 
-	cParsed, err := NewConfigFromString(configContent)
+	cParsed, err := NewConfigFromStringAndClusterMonitoringResource(configContent, cmr)
 	if err != nil {
 		return nil, fmt.Errorf("failed to parse data at key %q: %w", configKey, err)
 	}
@@ -632,12 +791,15 @@ func (u *UserWorkloadConfiguration) applyDefaults() {
 	if u.PrometheusOperator == nil {
 		u.PrometheusOperator = &PrometheusOperatorConfig{}
 	}
+
 	if u.Prometheus == nil {
 		u.Prometheus = &PrometheusRestrictedConfig{}
 	}
+
 	if u.ThanosRuler == nil {
 		u.ThanosRuler = &ThanosRulerConfig{}
 	}
+
 	// If the user configured a retention for user-workload Prometheus but did not
 	// explicitly set a retention for Thanos Ruler, default Thanos Ruler retention
 	// to the same value as Prometheus. This keeps the effective retention aligned
@@ -645,6 +807,7 @@ func (u *UserWorkloadConfiguration) applyDefaults() {
 	if u.ThanosRuler.Retention == "" && u.Prometheus != nil && u.Prometheus.Retention != "" {
 		u.ThanosRuler.Retention = u.Prometheus.Retention
 	}
+
 	if u.Alertmanager == nil {
 		u.Alertmanager = &AlertmanagerUserWorkloadConfig{}
 	}
@@ -652,7 +815,8 @@ func (u *UserWorkloadConfiguration) applyDefaults() {
 
 func NewUserConfigFromString(content string) (*UserWorkloadConfiguration, error) {
 	if content == "" {
-		return NewDefaultUserWorkloadMonitoringConfig(), nil
+		// Consider an empty string to be equivalent to an empty map.
+		content = "{}"
 	}
 
 	u := &UserWorkloadConfiguration{}
@@ -663,8 +827,8 @@ func NewUserConfigFromString(content string) (*UserWorkloadConfiguration, error)
 
 	u.applyDefaults()
 
-	if err := u.check(); err != nil {
-		return nil, err
+	if err := u.validate(); err != nil {
+		return nil, fmt.Errorf("%w: %w", ErrConfigValidation, err)
 	}
 
 	return u, nil
@@ -672,22 +836,25 @@ func NewUserConfigFromString(content string) (*UserWorkloadConfiguration, error)
 
 func NewUserWorkloadConfigFromConfigMap(c *v1.ConfigMap) (*UserWorkloadConfiguration, error) {
 	configContent, found := c.Data[configKey]
-
 	if !found {
 		klog.Warningf("the user workload monitoring configmap does not contain the %q key", configKey)
-		return NewDefaultUserWorkloadMonitoringConfig(), nil
 	}
 
 	uwc, err := NewUserConfigFromString(configContent)
 	if err != nil {
 		return nil, fmt.Errorf("the user workload monitoring configuration in %q could not be parsed: %w", configKey, err)
 	}
+
 	return uwc, nil
 }
 
 func NewDefaultUserWorkloadMonitoringConfig() *UserWorkloadConfiguration {
-	u := &UserWorkloadConfiguration{}
-	u.applyDefaults()
+	u, err := NewUserConfigFromString("{}")
+	if err != nil {
+		// Should never happen.
+		panic(err)
+	}
+
 	return u
 }
 

@@ -62,6 +62,9 @@ func setupEnv(t *testing.T) {
 	t.Cleanup(func() {
 		require.NoError(t, cleanupBinding())
 	})
+
+	require.NoError(t, f.WaitForNamespaceSCCAnnotation(testNamespace))
+	require.NoError(t, f.WaitForServiceAccountImagePullSecrets(testNamespace, serviceAccount))
 }
 
 func TestDocExamples(t *testing.T) {
@@ -109,7 +112,7 @@ func TestDocExamples(t *testing.T) {
 							Containers: []corev1.Container{
 								{
 									Name:            containerName,
-									Image:           "registry.redhat.io/openshift4/ose-cli:latest",
+									Image:           "image-registry.openshift-image-registry.svc:5000/openshift/cli:latest",
 									ImagePullPolicy: corev1.PullIfNotPresent,
 									Command:         []string{"bash", "-c", test.Script},
 									SecurityContext: &corev1.SecurityContext{
@@ -132,13 +135,13 @@ func TestDocExamples(t *testing.T) {
 						require.NoError(t, err)
 					})
 
-					err = framework.Poll(time.Second, time.Minute, func() error {
+					err = framework.Poll(5*time.Second, time.Minute, func() error {
 						pod, err = f.KubeClient.CoreV1().Pods(testNamespace).Get(ctx, podName, metav1.GetOptions{})
 						if err != nil {
 							return err
 						}
 						if pod.Status.Phase != corev1.PodSucceeded && pod.Status.Phase != corev1.PodFailed {
-							return fmt.Errorf("waiting for pod")
+							return fmt.Errorf("waiting for pod %s/%s: phase %q", testNamespace, podName, pod.Status.Phase)
 						}
 						return nil
 					})

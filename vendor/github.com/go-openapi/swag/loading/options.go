@@ -1,20 +1,10 @@
-// Copyright 2015 go-swagger maintainers
-//
-// Licensed under the Apache License, Version 2.0 (the "License");
-// you may not use this file except in compliance with the License.
-// You may obtain a copy of the License at
-//
-//    http://www.apache.org/licenses/LICENSE-2.0
-//
-// Unless required by applicable law or agreed to in writing, software
-// distributed under the License is distributed on an "AS IS" BASIS,
-// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-// See the License for the specific language governing permissions and
-// limitations under the License.
+// SPDX-FileCopyrightText: Copyright 2015-2025 go-swagger maintainers
+// SPDX-License-Identifier: Apache-2.0
 
 package loading
 
 import (
+	"errors"
 	"io/fs"
 	"net/http"
 	"os"
@@ -34,7 +24,8 @@ type (
 	}
 
 	fileOptions struct {
-		fs fs.ReadFileFS
+		fs   fs.ReadFileFS
+		root string // when non-empty, local reads are confined to this directory via os.Root
 	}
 
 	options struct {
@@ -44,6 +35,20 @@ type (
 )
 
 func (fo fileOptions) ReadFileFunc() func(string) ([]byte, error) {
+	if fo.root != "" {
+		root := fo.root
+
+		return func(name string) ([]byte, error) {
+			r, err := os.OpenRoot(root)
+			if err != nil {
+				return nil, errors.Join(err, ErrLoader)
+			}
+			defer func() { _ = r.Close() }()
+
+			return r.ReadFile(name)
+		}
+	}
+
 	if fo.fs == nil {
 		return os.ReadFile
 	}
@@ -81,7 +86,7 @@ func WithCustomHeaders(headers map[string]string) Option {
 	}
 }
 
-// WithHTTClient overrides the default HTTP client used to fetch a remote file.
+// WithHTTPClient overrides the default HTTP client used to fetch a remote file.
 //
 // By default, [http.DefaultClient] is used.
 func WithHTTPClient(client *http.Client) Option {
@@ -90,7 +95,7 @@ func WithHTTPClient(client *http.Client) Option {
 	}
 }
 
-// WithFileFS sets a file system for the local file loader.
+// WithFS sets a file system for the local file loader.
 //
 // If the provided file system is a [fs.ReadFileFS], the ReadFile function is used.
 // Otherwise, ReadFile is wrapped using [fs.ReadFile].
@@ -98,14 +103,43 @@ func WithHTTPClient(client *http.Client) Option {
 // By default, the file system is the one provided by the os package.
 //
 // For example, this may be set to consume from an embedded file system, or a rooted FS.
+//
+// WithFS and [WithRoot] are mutually exclusive: the last one applied wins.
+//
+// Security note: a file system built from [os.DirFS] confines paths but does NOT protect
+// against symlinks that escape the root. To load from a directory derived from untrusted
+// input, prefer [WithRoot], which is symlink-escape resistant.
 func WithFS(filesystem fs.FS) Option {
 	return func(o *options) {
+		o.root = "" // last-wins vs WithRoot
 		if rfs, ok := filesystem.(fs.ReadFileFS); ok {
 			o.fs = rfs
 
 			return
 		}
 		o.fs = readFileFS{FS: filesystem}
+	}
+}
+
+// WithRoot confines local file loading to dir.
+//
+// Every requested path is resolved relative to dir, and any path that would escape dir —
+// whether through an absolute path, ".." traversal, or a symlink pointing outside dir — is
+// rejected. This is built on [os.Root] and is therefore resistant to the symlink escapes
+// that a plain [os.DirFS] does not prevent.
+//
+// WithRoot is the recommended option when loading specs from a location derived from
+// untrusted input. It applies to local loading only and has no effect on remote
+// (http/https) loading. WithRoot and [WithFS] are mutually exclusive: the last one applied
+// wins.
+//
+// Note: [os.Root] confines path resolution but does not, by itself, protect against
+// traversal of mount/bind boundaries, /proc special files, or device files. Point WithRoot
+// at a directory that holds only the documents you intend to expose.
+func WithRoot(dir string) Option {
+	return func(o *options) {
+		o.root = dir
+		o.fs = nil // last-wins vs WithFS
 	}
 }
 

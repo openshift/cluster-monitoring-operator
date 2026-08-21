@@ -1,4 +1,4 @@
-// Copyright 2022 The prometheus-operator Authors
+// Copyright The prometheus-operator Authors
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -194,7 +194,7 @@ func convertOpsGenieConfigTo(in OpsGenieConfig) v1alpha1.OpsGenieConfig {
 	return v1alpha1.OpsGenieConfig{
 		SendResolved: in.SendResolved,
 		APIKey:       convertSecretKeySelectorTo(in.APIKey),
-		APIURL:       in.APIURL,
+		APIURL:       (*v1alpha1.URL)(in.APIURL),
 		Message:      in.Message,
 		Description:  in.Description,
 		Source:       in.Source,
@@ -241,7 +241,7 @@ func convertPagerDutyConfigTo(in PagerDutyConfig) v1alpha1.PagerDutyConfig {
 		SendResolved:          in.SendResolved,
 		RoutingKey:            convertSecretKeySelectorTo(in.RoutingKey),
 		ServiceKey:            convertSecretKeySelectorTo(in.ServiceKey),
-		URL:                   in.URL,
+		URL:                   (*v1alpha1.URL)(in.URL),
 		Client:                in.Client,
 		ClientURL:             in.ClientURL,
 		Description:           in.Description,
@@ -254,6 +254,7 @@ func convertPagerDutyConfigTo(in PagerDutyConfig) v1alpha1.PagerDutyConfig {
 		PagerDutyLinkConfigs:  convertPagerDutyLinkConfigsTo(in.PagerDutyLinkConfigs),
 		HTTPConfig:            convertHTTPConfigTo(in.HTTPConfig),
 		Source:                in.Source,
+		Timeout:               in.Timeout,
 	}
 }
 
@@ -293,7 +294,7 @@ func convertRocketChatActionConfigsTo(in []RocketChatActionConfig) []v1alpha1.Ro
 	for i, action := range in {
 		out[i] = v1alpha1.RocketChatActionConfig{
 			Text: action.Text,
-			URL:  (*v1alpha1.URL)(action.URL),
+			URL:  action.URL,
 			Msg:  action.Msg,
 		}
 	}
@@ -309,14 +310,14 @@ func convertRocketchatConfigTo(in RocketChatConfig) v1alpha1.RocketChatConfig {
 		TokenID:      in.TokenID,
 		Color:        in.Color,
 		Emoji:        in.Emoji,
-		IconURL:      (*v1alpha1.URL)(in.IconURL),
+		IconURL:      in.IconURL,
 		Text:         in.Text,
 		Title:        in.Title,
 		TitleLink:    in.TitleLink,
 		Fields:       convertRocketChatFieldConfigsTo(in.Fields),
 		ShortFields:  in.ShortFields,
-		ImageURL:     (*v1alpha1.URL)(in.ImageURL),
-		ThumbURL:     (*v1alpha1.URL)(in.ThumbURL),
+		ImageURL:     in.ImageURL,
+		ThumbURL:     in.ThumbURL,
 		LinkNames:    in.LinkNames,
 		Actions:      convertRocketChatActionConfigsTo(in.Actions),
 		HTTPConfig:   convertHTTPConfigTo(in.HTTPConfig),
@@ -364,28 +365,31 @@ func convertSlackActionsTo(in []SlackAction) []v1alpha1.SlackAction {
 
 func convertSlackConfigTo(in SlackConfig) v1alpha1.SlackConfig {
 	return v1alpha1.SlackConfig{
-		SendResolved: in.SendResolved,
-		APIURL:       convertSecretKeySelectorTo(in.APIURL),
-		Channel:      in.Channel,
-		Username:     in.Username,
-		Color:        in.Color,
-		Title:        in.Title,
-		TitleLink:    in.TitleLink,
-		Pretext:      in.Pretext,
-		Text:         in.Text,
-		Fields:       convertSlackFieldsTo(in.Fields),
-		ShortFields:  in.ShortFields,
-		Footer:       in.Footer,
-		Fallback:     in.Fallback,
-		CallbackID:   in.CallbackID,
-		IconEmoji:    in.IconEmoji,
-		IconURL:      in.IconURL,
-		ImageURL:     in.ImageURL,
-		ThumbURL:     in.ThumbURL,
-		LinkNames:    in.LinkNames,
-		MrkdwnIn:     in.MrkdwnIn,
-		Actions:      convertSlackActionsTo(in.Actions),
-		HTTPConfig:   convertHTTPConfigTo(in.HTTPConfig),
+		SendResolved:  in.SendResolved,
+		APIURL:        convertSecretKeySelectorTo(in.APIURL),
+		Channel:       in.Channel,
+		Username:      in.Username,
+		Color:         in.Color,
+		Title:         in.Title,
+		TitleLink:     in.TitleLink,
+		Pretext:       in.Pretext,
+		Text:          in.Text,
+		Fields:        convertSlackFieldsTo(in.Fields),
+		ShortFields:   in.ShortFields,
+		Footer:        in.Footer,
+		Fallback:      in.Fallback,
+		CallbackID:    in.CallbackID,
+		IconEmoji:     in.IconEmoji,
+		IconURL:       in.IconURL,
+		ImageURL:      in.ImageURL,
+		ThumbURL:      in.ThumbURL,
+		LinkNames:     in.LinkNames,
+		MrkdwnIn:      in.MrkdwnIn,
+		Actions:       convertSlackActionsTo(in.Actions),
+		HTTPConfig:    convertHTTPConfigTo(in.HTTPConfig),
+		Timeout:       in.Timeout,
+		MessageText:   in.MessageText,
+		UpdateMessage: in.UpdateMessage,
 	}
 }
 
@@ -407,6 +411,7 @@ func convertWebhookConfigTo(in WebhookConfig) v1alpha1.WebhookConfig {
 		HTTPConfig:   convertHTTPConfigTo(in.HTTPConfig),
 		MaxAlerts:    in.MaxAlerts,
 		Timeout:      in.Timeout,
+		Payload:      in.Payload,
 	}
 }
 
@@ -414,7 +419,7 @@ func convertWeChatConfigTo(in WeChatConfig) v1alpha1.WeChatConfig {
 	return v1alpha1.WeChatConfig{
 		SendResolved: in.SendResolved,
 		APISecret:    convertSecretKeySelectorTo(in.APISecret),
-		APIURL:       in.APIURL,
+		APIURL:       (*v1alpha1.URL)(in.APIURL),
 		CorpID:       in.CorpID,
 		AgentID:      in.AgentID,
 		ToUser:       in.ToUser,
@@ -428,20 +433,28 @@ func convertWeChatConfigTo(in WeChatConfig) v1alpha1.WeChatConfig {
 
 func convertEmailConfigTo(in EmailConfig) v1alpha1.EmailConfig {
 	return v1alpha1.EmailConfig{
-		SendResolved: in.SendResolved,
-		To:           in.To,
-		From:         in.From,
-		Hello:        in.Hello,
-		Smarthost:    in.Smarthost,
-		AuthUsername: in.AuthUsername,
-		AuthPassword: convertSecretKeySelectorTo(in.AuthPassword),
-		AuthSecret:   convertSecretKeySelectorTo(in.AuthSecret),
-		AuthIdentity: in.AuthIdentity,
-		Headers:      convertKeyValuesTo(in.Headers),
-		HTML:         in.HTML,
-		Text:         in.Text,
-		RequireTLS:   in.RequireTLS,
-		TLSConfig:    in.TLSConfig,
+		SendResolved:     in.SendResolved,
+		To:               in.To,
+		From:             in.From,
+		Hello:            in.Hello,
+		Smarthost:        in.Smarthost,
+		AuthUsername:     in.AuthUsername,
+		AuthPassword:     convertSecretKeySelectorTo(in.AuthPassword),
+		AuthSecret:       convertSecretKeySelectorTo(in.AuthSecret),
+		AuthIdentity:     in.AuthIdentity,
+		Headers:          convertKeyValuesTo(in.Headers),
+		HTML:             in.HTML,
+		Text:             in.Text,
+		RequireTLS:       in.RequireTLS,
+		TLSConfig:        in.TLSConfig,
+		ForceImplicitTLS: in.ForceImplicitTLS,
+		Threading:        convertEmailThreadingConfigTo(in.Threading),
+	}
+}
+
+func convertEmailThreadingConfigTo(in *EmailThreadingConfig) *v1alpha1.EmailThreadingConfig {
+	return &v1alpha1.EmailThreadingConfig{
+		ThreadByDate: v1alpha1.ThreadByDateType(in.ThreadByDate),
 	}
 }
 
@@ -449,7 +462,7 @@ func convertVictorOpsConfigTo(in VictorOpsConfig) v1alpha1.VictorOpsConfig {
 	return v1alpha1.VictorOpsConfig{
 		SendResolved:      in.SendResolved,
 		APIKey:            convertSecretKeySelectorTo(in.APIKey),
-		APIURL:            in.APIURL,
+		APIURL:            (*v1alpha1.URL)(in.APIURL),
 		RoutingKey:        in.RoutingKey,
 		MessageType:       in.MessageType,
 		EntityDisplayName: in.EntityDisplayName,
@@ -484,23 +497,24 @@ func convertPushoverConfigTo(in PushoverConfig) v1alpha1.PushoverConfig {
 
 func convertSNSConfigTo(in SNSConfig) v1alpha1.SNSConfig {
 	return v1alpha1.SNSConfig{
-		SendResolved: in.SendResolved,
-		ApiURL:       in.ApiURL,
-		Sigv4:        in.Sigv4,
-		TopicARN:     in.TopicARN,
-		Subject:      in.Subject,
-		PhoneNumber:  in.PhoneNumber,
-		TargetARN:    in.TargetARN,
-		Message:      in.Message,
-		Attributes:   in.Attributes,
-		HTTPConfig:   convertHTTPConfigTo(in.HTTPConfig),
+		SendResolved:     in.SendResolved,
+		ApiURL:           in.ApiURL,
+		Sigv4:            in.Sigv4,
+		TopicARN:         in.TopicARN,
+		Subject:          in.Subject,
+		PhoneNumber:      in.PhoneNumber,
+		TargetARN:        in.TargetARN,
+		Message:          in.Message,
+		Attributes:       in.Attributes,
+		HTTPConfig:       convertHTTPConfigTo(in.HTTPConfig),
+		UseAWSHTTPClient: in.UseAWSHTTPClient,
 	}
 }
 
 func convertTelegramConfigTo(in TelegramConfig) v1alpha1.TelegramConfig {
 	return v1alpha1.TelegramConfig{
 		SendResolved:         in.SendResolved,
-		APIURL:               in.APIURL,
+		APIURL:               (*v1alpha1.URL)(in.APIURL),
 		BotToken:             convertSecretKeySelectorTo(in.BotToken),
 		BotTokenFile:         in.BotTokenFile,
 		ChatID:               in.ChatID,
@@ -538,6 +552,7 @@ func (src *AlertmanagerConfig) ConvertTo(dstRaw conversion.Hub) error {
 	dst := dstRaw.(*v1alpha1.AlertmanagerConfig)
 
 	dst.ObjectMeta = src.ObjectMeta
+	dst.Status = src.Status
 
 	for _, in := range src.Spec.Receivers {
 		out := v1alpha1.Receiver{

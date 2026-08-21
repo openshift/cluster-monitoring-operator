@@ -2,6 +2,7 @@ local metrics = import 'github.com/openshift/telemeter/jsonnet/telemeter/metrics
 
 local generateCertInjection = import '../utils/generate-certificate-injection.libsonnet';
 local generateSecret = import '../utils/generate-secret.libsonnet';
+local generateServiceMonitor = import '../utils/generate-service-monitors.libsonnet';
 local prometheus = import 'github.com/prometheus-operator/kube-prometheus/jsonnet/kube-prometheus/components/prometheus.libsonnet';
 local withDescription = (import '../utils/add-annotations.libsonnet').withDescription;
 local requiredClusterRoles = (import '../utils/add-annotations.libsonnet').requiredClusterRoles;
@@ -285,6 +286,11 @@ function(params)
     },
 
     serviceMonitor+: {
+      metadata+: {
+        labels+: {
+          'monitoring.openshift.io/collection-profile': 'full',
+        },
+      },
       spec+: {
         serviceDiscoveryRole: 'EndpointSlice',
         endpoints: [
@@ -296,6 +302,7 @@ function(params)
         ],
       },
     },
+    minimalServiceMonitor: generateServiceMonitor.serviceMonitorForMinimalProfile(self.serviceMonitor),
 
     serviceThanosSidecar+: {
       metadata+: {
@@ -357,6 +364,15 @@ function(params)
             },
           },
         },
+        rules+: {
+          alert+: {
+            // Set the resend delay explicitly to match with the Alertmanager's
+            // min ready seconds value of 90s. It ensures that Prometheus has
+            // sent all active alerts to a newly rolled-out Alertmanager pod
+            // before Kubernetes updates the next one.
+            resendDelay: '60s',
+          },
+        },
         podMetadata+: {
           annotations+: {
             'openshift.io/required-scc': 'nonroot',
@@ -399,10 +415,8 @@ function(params)
             value: '15ms',
           },
         ],
-        // Increase the startup probe timeout to 1h from 15m to avoid restart
-        // failures when the WAL replay takes a long time.
-        // See https://issues.redhat.com/browse/OCPBUGS-4168 for details.
-        maximumStartupDurationSeconds: 3600,
+        // Explicitly set the shards value to 1 to support VPA use cases.
+        shards: 1,
         containers: [
           {
             name: 'kube-rbac-proxy-web',
@@ -617,6 +631,7 @@ function(params)
         podSelector: {
           matchLabels: {
             'app.kubernetes.io/name': 'prometheus',
+            'app.kubernetes.io/part-of': 'openshift-monitoring',
           },
         },
         policyTypes: [
@@ -627,8 +642,25 @@ function(params)
           {
             ports: [
               {
-                // allow prometheus to update endpoints(port number: 10901, port name: grpc)
-                port: 'grpc',
+                // Allow to query the Prometheus API and UI.
+                port: 9091,
+                protocol: 'TCP',
+              },
+              {
+                // Allow platform Prometheus to scrape this Prometheus instance's own
+                // /metrics endpoint.
+                port: 9092,
+                protocol: 'TCP',
+              },
+              {
+                // Allow Thanos Querier to reach the Thanos sidecar gRPC endpoint
+                // for StoreAPI queries.
+                port: 10901,
+                protocol: 'TCP',
+              },
+              {
+                // Allow Prometheus to scrape the Thanos sidecar's own metrics.
+                port: 10903,
                 protocol: 'TCP',
               },
             ],

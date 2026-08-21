@@ -9,7 +9,7 @@ metadata:
     app.kubernetes.io/managed-by: cluster-monitoring-operator
     app.kubernetes.io/name: alertmanager
     app.kubernetes.io/part-of: openshift-monitoring
-    app.kubernetes.io/version: 0.31.1
+    app.kubernetes.io/version: 0.33.1
   name: main
   namespace: openshift-monitoring
 spec:
@@ -37,6 +37,8 @@ spec:
       value: ""
     image: ""
     name: alertmanager
+    securityContext:
+      readOnlyRootFilesystem: true
     terminationMessagePolicy: FallbackToLogsOnError
   - args:
     - --secure-listen-address=0.0.0.0:9095
@@ -55,6 +57,8 @@ spec:
       requests:
         cpu: 1m
         memory: 20Mi
+    securityContext:
+      readOnlyRootFilesystem: true
     terminationMessagePolicy: FallbackToLogsOnError
     volumeMounts:
     - mountPath: /etc/kube-rbac-proxy
@@ -79,6 +83,8 @@ spec:
       requests:
         cpu: 1m
         memory: 15Mi
+    securityContext:
+      readOnlyRootFilesystem: true
     terminationMessagePolicy: FallbackToLogsOnError
     volumeMounts:
     - mountPath: /etc/kube-rbac-proxy
@@ -103,6 +109,8 @@ spec:
       requests:
         cpu: 1m
         memory: 15Mi
+    securityContext:
+      readOnlyRootFilesystem: true
     terminationMessagePolicy: FallbackToLogsOnError
     volumeMounts:
     - mountPath: /etc/kube-rbac-proxy
@@ -125,9 +133,12 @@ spec:
       requests:
         cpu: 1m
         memory: 20Mi
+    securityContext:
+      readOnlyRootFilesystem: true
     terminationMessagePolicy: FallbackToLogsOnError
   image: ""
   listenLocal: true
+  minReadySeconds: 90
   nodeSelector:
     kubernetes.io/os: linux
   podMetadata:
@@ -139,7 +150,7 @@ spec:
       app.kubernetes.io/instance: main
       app.kubernetes.io/name: alertmanager
       app.kubernetes.io/part-of: openshift-monitoring
-      app.kubernetes.io/version: 0.31.1
+      app.kubernetes.io/version: 0.33.1
   priorityClassName: system-cluster-critical
   replicas: 2
   resources:
@@ -156,7 +167,7 @@ spec:
     runAsNonRoot: true
     runAsUser: 65534
   serviceAccountName: alertmanager-main
-  version: 0.31.1
+  version: 0.33.1
   volumeMounts:
   - mountPath: /etc/pki/ca-trust/extracted/pem/
     name: alertmanager-trusted-ca-bundle

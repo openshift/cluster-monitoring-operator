@@ -46,11 +46,12 @@ spec:
       automountServiceAccountToken: true
       containers:
       - args:
-        - --config-path=/opt/app-root/web/dist
+        - --config-path=/opt/app-root/config
         - --static-path=/opt/app-root/web/dist
         - --cert=/var/cert/tls.crt
         - --key=/var/cert/tls.key
         - --tls-cipher-suites=TLS_ECDHE_RSA_WITH_AES_128_GCM_SHA256,TLS_ECDHE_ECDSA_WITH_AES_128_GCM_SHA256,TLS_ECDHE_RSA_WITH_AES_256_GCM_SHA384,TLS_ECDHE_ECDSA_WITH_AES_256_GCM_SHA384,TLS_ECDHE_RSA_WITH_CHACHA20_POLY1305,TLS_ECDHE_ECDSA_WITH_CHACHA20_POLY1305
+        - --features=alerting,legacy-dashboards,targets,metrics
         command:
         - /opt/app-root/plugin-backend
         image: ""
@@ -73,6 +74,7 @@ spec:
           capabilities:
             drop:
             - ALL
+          readOnlyRootFilesystem: true
         terminationMessagePolicy: FallbackToLogsOnError
         volumeMounts:
         - mountPath: /var/cert

@@ -168,6 +168,11 @@ func (t *AlertmanagerTask) create(ctx context.Context) error {
 		return fmt.Errorf("reconciling Alertmanager ServiceAccount failed: %w", err)
 	}
 
+	err = t.client.WaitForClusterRoleBindingSCCUse(ctx, cr, crb)
+	if err != nil {
+		return fmt.Errorf("waiting for role binding permissions failed: %w", err)
+	}
+
 	ps, err := t.factory.AlertmanagerRBACProxyWebSecret()
 	if err != nil {
 		return fmt.Errorf("initializing Alertmanager proxy web Secret failed: %w", err)
@@ -223,14 +228,14 @@ func (t *AlertmanagerTask) create(ctx context.Context) error {
 		return fmt.Errorf("reconciling alertmanager rules PrometheusRule failed: %w", err)
 	}
 
-	smam, err := t.factory.AlertmanagerServiceMonitor()
+	smams, err := t.factory.AlertmanagerServiceMonitors()
 	if err != nil {
-		return fmt.Errorf("initializing Alertmanager ServiceMonitor failed: %w", err)
+		return fmt.Errorf("initializing Alertmanager ServiceMonitors failed: %w", err)
 	}
 
-	err = t.client.CreateOrUpdateServiceMonitor(ctx, smam)
+	err = t.client.CreateOrUpdateServiceMonitors(ctx, smams)
 	if err != nil {
-		return fmt.Errorf("reconciling Alertmanager ServiceMonitor failed: %w", err)
+		return fmt.Errorf("reconciling Alertmanager ServiceMonitors failed: %w", err)
 	}
 
 	return nil
@@ -383,14 +388,14 @@ func (t *AlertmanagerTask) destroy(ctx context.Context) error {
 		}
 	}
 
-	smam, err := t.factory.AlertmanagerServiceMonitor()
+	smams, err := t.factory.AlertmanagerServiceMonitors()
 	if err != nil {
-		return fmt.Errorf("initializing Alertmanager ServiceMonitor failed: %w", err)
+		return fmt.Errorf("initializing Alertmanager ServiceMonitors failed: %w", err)
 	}
 
-	err = t.client.DeleteServiceMonitor(ctx, smam)
+	err = t.client.DeleteServiceMonitors(ctx, smams)
 	if err != nil {
-		return fmt.Errorf("deleting Alertmanager ServiceMonitor failed: %w", err)
+		return fmt.Errorf("deleting Alertmanager ServiceMonitors failed: %w", err)
 	}
 	return nil
 }

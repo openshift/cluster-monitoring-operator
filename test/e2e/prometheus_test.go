@@ -17,20 +17,25 @@ package e2e
 import (
 	"context"
 	"fmt"
+	"io"
+	"net/http"
+	"strings"
 	"testing"
 	"time"
 
+	"github.com/Jeffail/gabs/v2"
+	osConfigv1 "github.com/openshift/api/config/v1"
+	"github.com/openshift/cluster-monitoring-operator/test/e2e/framework"
 	_ "github.com/prometheus/prometheus/discovery/kubernetes" // required for promConfig.Load to parse kubernetes_sd_configs
+	"github.com/stretchr/testify/require"
 	v1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/types"
-
-	osConfigv1 "github.com/openshift/api/config/v1"
-	"github.com/openshift/cluster-monitoring-operator/test/e2e/framework"
+	"k8s.io/utils/ptr"
 )
 
 func TestPrometheusMetrics(t *testing.T) {
-	expected := map[string]int{
+	expectedHealthyTargetsByJob := map[string]int{
 		"prometheus-operator":           1,
 		"prometheus-k8s":                2,
 		"prometheus-k8s-thanos-sidecar": 2,
@@ -42,20 +47,31 @@ func TestPrometheusMetrics(t *testing.T) {
 		"telemeter-client":              1,
 	}
 
-	for service, metric := range expected {
-		t.Run(service, func(t *testing.T) {
-			f.ThanosQuerierClient.WaitForQueryReturn(
-				// To avoid making the test wait for more than lookback-delta in case Prometheus
-				// wasn't able to write stale markers (because it was down), reduce the lookup period.
-				t, time.Minute, fmt.Sprintf(`count(last_over_time(up{service="%s",namespace="openshift-monitoring"}[1m]) == 1)`, service),
-				func(v float64) error {
-					if v != float64(metric) {
-						return fmt.Errorf("expected %d targets to be up but got %v", metric, v)
-					}
+	for jobName, expectedTargets := range expectedHealthyTargetsByJob {
+		t.Run(jobName, func(t *testing.T) {
+			f.PrometheusK8sClient.WaitForTargetsReturn(t, time.Minute, func(body []byte) error {
+				j, err := gabs.ParseJSON(body)
+				if err != nil {
+					return err
+				}
 
-					return nil
-				},
-			)
+				totalTargets, healthyTargets := 0, 0
+				for _, target := range j.Path("data.activeTargets").Children() {
+					job, _ := target.Path("labels.job").Data().(string)
+					health, _ := target.Path("health").Data().(string)
+					if job == jobName {
+						totalTargets++
+						if health == "up" {
+							healthyTargets++
+						}
+					}
+				}
+
+				if healthyTargets != expectedTargets {
+					return fmt.Errorf("expected %d healthy targets, got %d (total targets: %d)", expectedTargets, healthyTargets, totalTargets)
+				}
+				return nil
+			})
 		})
 	}
 }
@@ -130,58 +146,52 @@ func TestPrometheusRemoteWrite(t *testing.T) {
 	}
 	image := k8sProm.Spec.Image
 
-	name := "rwe2e"
+	// Subtests register resource deletions here instead of calling
+	// t.Cleanup. Resources are deleted after the CM reset so the
+	// Prometheus CR never references missing resources (secrets e.g.), otherwise Prometheus Operator
+	// enters exponential backoff that compounds across subtests and
+	// can block CMO past its validation timeout.
+	var cleanups []func()
 
-	// deploy a service for our remote write target
-	svc := f.MakePrometheusService(f.Ns, name, name, v1.ServiceTypeClusterIP)
+	// Clean up after all subtests: reset the ConfigMap, wait for
+	// Prometheus Operator to remove the remote write config from the
+	// Prometheus config secret, then force-delete the Prometheus pods to
+	// skip the ~2m shutdown delay.
+	//
+	// The last subtest deletes the receiver but leaves the ConfigMap with
+	// remoteWrite. When the ConfigMap is reset, Prometheus Operator
+	// removes the TLS certs from its TLS assets secret simultaneously
+	// with the config update. Because Prometheus re-reads cert files on
+	// every send attempt, the queue_manager drain fails with "no such file"
+	// and retries until
+	// the flush-deadline expires (2x1m for samples + metadata = ~2m).
+	// Force-deleting the pods avoids this.
+	// See https://github.com/prometheus/prometheus/issues/6747
+	t.Cleanup(func() {
+		f.MustCreateOrUpdateConfigMap(t, f.BuildCMOConfigMap(t, "{}"))
 
-	if err := f.OperatorClient.CreateOrUpdateService(ctx, svc); err != nil {
-		t.Fatal(err)
-	}
-	prometheusReceiverURL := svc.Name + "." + svc.Namespace + ".svc.cluster.local"
+		require.NoError(t, framework.Poll(5*time.Second, 5*time.Minute, func() error {
+			cfg := f.PrometheusConfigFromSecret(t, f.Ns, "prometheus-k8s")
+			if len(cfg.RemoteWriteConfigs) > 0 {
+				return fmt.Errorf("prometheus config still has %d remote write configs", len(cfg.RemoteWriteConfigs))
+			}
+			return nil
+		}))
 
-	// set up a self-signed ca and store the artifacts in a secret
-	secName := fmt.Sprintf("selfsigned-%s-bundle", name)
-	tlsSecret := &v1.Secret{
-		ObjectMeta: metav1.ObjectMeta{
-			Name:      secName,
-			Namespace: f.Ns,
-			Labels: map[string]string{
-				"group":                    name,
-				framework.E2eTestLabelName: framework.E2eTestLabelValue,
-			},
-		},
-		Data: map[string][]byte{
-			"client-cert-name": []byte("remoteWrite-client"),
-			"serving-cert-url": []byte(prometheusReceiverURL),
-		},
-	}
-	if err := createSelfSignedMTLSArtifacts(tlsSecret); err != nil {
-		t.Fatal(err)
-	}
-	if err := f.OperatorClient.CreateIfNotExistSecret(ctx, tlsSecret); err != nil {
-		t.Fatal(err)
-	}
+		// Clean up after all subtests.
+		for _, fn := range cleanups {
+			fn()
+		}
 
-	route := f.MakePrometheusServiceRoute(svc)
-	if err := f.OperatorClient.CreateOrUpdateRoute(ctx, route); err != nil {
-		t.Fatal(err)
-	}
+		require.NoError(t, f.KubeClient.CoreV1().Pods(f.Ns).DeleteCollection(ctx,
+			metav1.DeleteOptions{GracePeriodSeconds: ptr.To(int64(0))},
+			metav1.ListOptions{LabelSelector: "app.kubernetes.io/name=prometheus,app.kubernetes.io/instance=k8s"},
+		))
 
-	if _, err := f.OperatorClient.WaitForRouteReady(ctx, route); err != nil {
-		t.Fatal(err)
-	}
+		f.AssertStatefulSetExistsAndRolloutFunc("prometheus-k8s", f.Ns)(t)
+	})
 
-	prometheusReceiveClient, err := framework.NewPrometheusClientFromRoute(
-		ctx,
-		f.OpenShiftRouteClient,
-		route.Namespace,
-		route.Name,
-		"")
-	if err != nil {
-		t.Fatal(err)
-	}
-	for _, tc := range []struct {
+	for i, tc := range []struct {
 		name     string
 		rwSpec   string
 		expected []remoteWriteTest
@@ -195,6 +205,29 @@ func TestPrometheusRemoteWrite(t *testing.T) {
         secret:
           name: %[2]s
           key: ca.crt`,
+			expected: []remoteWriteTest{
+				{
+					query:       `sum (prometheus_build_info{cluster_id="",prometheus_replica="prometheus-k8s-0"})`,
+					expected:    func(v float64) bool { return v == 2 },
+					description: "expected 2 prometheus_build_info metrics for prometheus-k8s-0",
+				},
+				{
+					query:       `sum (prometheus_build_info{cluster_id="",prometheus_replica="prometheus-k8s-1"})`,
+					expected:    func(v float64) bool { return v == 2 },
+					description: "expected 2 prometheus_build_info metrics for prometheus-k8s-1",
+				},
+			},
+		},
+		{
+			name: "assert remote write with message version v2.0",
+			rwSpec: `
+  - url: https://%[1]s/api/v1/write
+    tlsConfig:
+      ca:
+        secret:
+          name: %[2]s
+          key: ca.crt
+    messageVersion: V2.0`,
 			expected: []remoteWriteTest{
 				{
 					query:       `sum (prometheus_build_info{cluster_id="",prometheus_replica="prometheus-k8s-0"})`,
@@ -289,23 +322,76 @@ func TestPrometheusRemoteWrite(t *testing.T) {
 			},
 		},
 	} {
-		rw := fmt.Sprintf(tc.rwSpec, prometheusReceiverURL, tlsSecret.Name)
-
-		cmoConfigMap := fmt.Sprintf(`prometheusK8s:
-  logLevel: debug
-  remoteWrite:%s
-`, rw)
 
 		t.Run(tc.name, func(t *testing.T) {
-			// deploy remote write target
+			// Deploy the resources necessary for the Prometheus receiver. We
+			// use different resources for each sub-test to ensure that the
+			// in-cluster Prometheus fails to send metrics once the sub-test
+			// has ended.
+			name := fmt.Sprintf("rwe2e-%d", i)
+			svc := f.MakePrometheusService(f.Ns, name, v1.ServiceTypeClusterIP)
+			if err := f.OperatorClient.CreateOrUpdateService(ctx, svc); err != nil {
+				t.Fatal(err)
+			}
+			cleanups = append(cleanups, func() { f.OperatorClient.DeleteService(ctx, svc) })
+
+			prometheusReceiverURL := svc.Name + "." + svc.Namespace + ".svc.cluster.local"
+
+			// Set up a self-signed CA and store the artifacts in a secret.
+			secName := fmt.Sprintf("selfsigned-%s-bundle", name)
+			tlsSecret := &v1.Secret{
+				ObjectMeta: metav1.ObjectMeta{
+					Name:      secName,
+					Namespace: f.Ns,
+					Labels: map[string]string{
+						framework.E2eTestLabelName: framework.E2eTestLabelValue,
+					},
+				},
+				Data: map[string][]byte{
+					"client-cert-name": []byte("remoteWrite-client"),
+					"serving-cert-url": []byte(prometheusReceiverURL),
+				},
+			}
+			if err := createSelfSignedMTLSArtifacts(tlsSecret); err != nil {
+				t.Fatal(err)
+			}
+			if err := f.OperatorClient.CreateIfNotExistSecret(ctx, tlsSecret); err != nil {
+				t.Fatal(err)
+			}
+			cleanups = append(cleanups, func() { f.OperatorClient.DeleteSecret(ctx, tlsSecret) })
+
+			route := f.MakePrometheusServiceRoute(svc)
+			if err := f.OperatorClient.CreateOrUpdateRoute(ctx, route); err != nil {
+				t.Fatal(err)
+			}
+			cleanups = append(cleanups, func() { f.OperatorClient.DeleteRoute(ctx, route) })
+
+			if _, err := f.OperatorClient.WaitForRouteReady(ctx, route); err != nil {
+				t.Fatal(err)
+			}
+
+			// Deploy the Prometheus remote write receiver.
 			prometheusReceiver := f.MakePrometheusWithWebTLSRemoteReceive(name, secName, image)
 			if err := f.OperatorClient.CreateOrUpdatePrometheus(ctx, prometheusReceiver); err != nil {
 				t.Fatal(err)
 			}
+			cleanups = append(cleanups, func() { f.OperatorClient.DeletePrometheus(ctx, prometheusReceiver) })
+
 			if err := f.OperatorClient.ValidatePrometheus(ctx, types.NamespacedName{
 				Name:      prometheusReceiver.Name,
 				Namespace: prometheusReceiver.Namespace,
 			}); err != nil {
+				t.Fatal(err)
+			}
+
+			// Configure the in-cluster Prometheus to send metrics to the Prometheus receiver.
+			cmoConfigMap := fmt.Sprintf(`prometheusK8s:
+  logLevel: debug
+  remoteWrite:%s
+`, fmt.Sprintf(tc.rwSpec, prometheusReceiverURL, tlsSecret.Name))
+
+			prometheusK8s, err := f.MonitoringClient.Prometheuses(f.Ns).Get(ctx, "k8s", metav1.GetOptions{})
+			if err != nil {
 				t.Fatal(err)
 			}
 
@@ -315,11 +401,20 @@ func TestPrometheusRemoteWrite(t *testing.T) {
 			f.AssertOperatorConditionFunc(osConfigv1.OperatorProgressing, osConfigv1.ConditionFalse)(t)
 			f.AssertOperatorConditionFunc(osConfigv1.OperatorAvailable, osConfigv1.ConditionTrue)(t)
 
-			remoteWriteCheckMetrics(ctx, t, prometheusReceiveClient, tc.expected)
-
-			if err := f.OperatorClient.DeletePrometheus(ctx, prometheusReceiver); err != nil {
+			// Wait for the remote-write configuration to be propagated to the Prometheus resource.
+			if err := f.WaitForPrometheusUpdate(ctx, prometheusK8s); err != nil {
 				t.Fatal(err)
 			}
+
+			prometheusReceiveClient, err := framework.NewPrometheusClientFromRoute(
+				ctx,
+				f.OpenShiftRouteClient,
+				route.Namespace,
+				route.Name,
+				"")
+			require.NoError(t, err)
+
+			remoteWriteCheckMetrics(ctx, t, prometheusReceiveClient, tc.expected)
 		})
 	}
 }
@@ -386,4 +481,54 @@ func TestBodySizeLimit(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
+}
+
+// TestPrometheusWebUI verifies that the Prometheus Mantine web UI is reachable
+// via pod port-forwarding to port 9090. Even though it is not exposed through
+// the service, it is useful in some situations.
+func TestPrometheusWebUI(t *testing.T) {
+	t.Parallel()
+	err := framework.Poll(time.Second, 5*time.Minute, func() error {
+		host, cleanUp, err := f.ForwardPodPort(t, f.Ns, "prometheus-k8s-0", 9090)
+		if err != nil {
+			return err
+		}
+		defer cleanUp()
+
+		// /query is a client-side route only defined in the Mantine UI code.
+		resp, err := http.Get(fmt.Sprintf("http://%s/query", host))
+		if err != nil {
+			return err
+		}
+		defer resp.Body.Close()
+
+		b, err := io.ReadAll(resp.Body)
+		if err != nil {
+			return fmt.Errorf("failed to read /query response: %w", err)
+		}
+		if resp.StatusCode != http.StatusOK {
+			return fmt.Errorf("/query: expected 200, got %d (%s)", resp.StatusCode, framework.ClampMax(b))
+		}
+
+		body := string(b)
+		// GLOBAL_READY is a JS global only defined in the Mantine UI template.
+		if !strings.Contains(body, "GLOBAL_READY") {
+			return fmt.Errorf("/query: missing Mantine UI marker GLOBAL_READY, got: %s", framework.ClampMax(b))
+		}
+
+		// Sanity check: an unknown path should 404 to confirm we're
+		// getting real responses from Prometheus, not a blanket 200.
+		resp, err = http.Get(fmt.Sprintf("http://%s/doesnotexist", host))
+		if err != nil {
+			return err
+		}
+		defer resp.Body.Close()
+
+		if resp.StatusCode != http.StatusNotFound {
+			return fmt.Errorf("/doesnotexist: expected 404, got %d", resp.StatusCode)
+		}
+
+		return nil
+	})
+	require.NoError(t, err)
 }

@@ -26,6 +26,8 @@ Appears in: link:clustermonitoringconfiguration.adoc[ClusterMonitoringConfigurat
 
 |topologySpreadConstraints|[]v1.TopologySpreadConstraint|Defines a pod's topology spread constraints.
 
+|additionalResourceLabels|[]link:resourcelabels.adoc[ResourceLabels]|Defines additional resource labels to expose as metrics in addition to the default labels. Currently, only `jobs` and `cronjobs` resources are supported due to cardinality concerns. Each entry specifies a resource name and a list of label names (use `*` to expose all labels).
+
 |===
 
 link:../index.adoc[Back to TOC]
