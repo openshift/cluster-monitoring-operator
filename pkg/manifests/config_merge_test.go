@@ -162,6 +162,11 @@ func TestClusterMonitoringNodeExporterCollectorsEmpty(t *testing.T) {
 			CollectionPolicy: configv1alpha1.NodeExporterCollectorCollectionPolicyDoNotCollect,
 		},
 	}))
+	require.False(t, clusterMonitoringNodeExporterCollectorsEmpty(configv1alpha1.NodeExporterCollectorConfig{
+		Interrupts: configv1alpha1.NodeExporterCollectorInterruptsConfig{
+			CollectionPolicy: configv1alpha1.NodeExporterCollectorCollectionPolicyCollect,
+		},
+	}))
 }
 
 func TestClusterMonitoringTelemeterClientSpecEmpty(t *testing.T) {
@@ -694,6 +699,44 @@ func TestConfig_MergeClusterMonitoringCRD_NodeExporterConfigPhase1(t *testing.T)
 		require.NoError(t, err)
 		require.NotNil(t, c.ClusterMonitoringConfiguration.NodeExporterConfig.Collectors.NvmeSubsystem.Enabled)
 		require.False(t, *c.ClusterMonitoringConfiguration.NodeExporterConfig.Collectors.NvmeSubsystem.Enabled)
+	})
+	interruptsCR := func(policy configv1alpha1.NodeExporterCollectorCollectionPolicy, include ...configv1alpha1.NodeExporterInterruptsIncludePattern) *configv1alpha1.ClusterMonitoring {
+		collectors := configv1alpha1.NodeExporterCollectorConfig{
+			Interrupts: configv1alpha1.NodeExporterCollectorInterruptsConfig{
+				CollectionPolicy: policy,
+			},
+		}
+		if len(include) > 0 {
+			collectors.Interrupts.Collect = configv1alpha1.NodeExporterCollectorInterruptsCollectConfig{Include: include}
+		}
+		return &configv1alpha1.ClusterMonitoring{
+			Spec: configv1alpha1.ClusterMonitoringSpec{
+				NodeExporterConfig: configv1alpha1.NodeExporterConfig{Collectors: collectors},
+			},
+		}
+	}
+	t.Run("CR maps Interrupts Collect to the include list", func(t *testing.T) {
+		c, err := NewConfigFromStringAndClusterMonitoringResource("{}",
+			interruptsCR(configv1alpha1.NodeExporterCollectorCollectionPolicyCollect, "LOC.*", "NMI.*", "RES.*"))
+		require.NoError(t, err)
+		require.Equal(t, []string{"LOC.*", "NMI.*", "RES.*"},
+			c.ClusterMonitoringConfiguration.NodeExporterConfig.Collectors.Interrupts.Include)
+	})
+	t.Run("CR maps Interrupts DoNotCollect to an empty include list", func(t *testing.T) {
+		c, err := NewConfigFromStringAndClusterMonitoringResource("{}",
+			interruptsCR(configv1alpha1.NodeExporterCollectorCollectionPolicyDoNotCollect))
+		require.NoError(t, err)
+		require.Empty(t, c.ClusterMonitoringConfiguration.NodeExporterConfig.Collectors.Interrupts.Include)
+	})
+	t.Run("CR ignored when ConfigMap declares collectors.interrupts", func(t *testing.T) {
+		c, err := NewConfigFromStringAndClusterMonitoringResource(`nodeExporter:
+  collectors:
+    interrupts:
+      include: ["TLB.*"]
+`, interruptsCR(configv1alpha1.NodeExporterCollectorCollectionPolicyCollect, "LOC.*"))
+		require.NoError(t, err)
+		require.Equal(t, []string{"TLB.*"},
+			c.ClusterMonitoringConfiguration.NodeExporterConfig.Collectors.Interrupts.Include)
 	})
 }
 
