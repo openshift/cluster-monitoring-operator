@@ -79,6 +79,7 @@ func clusterMonitoringNodeExporterCollectorsEmpty(col configv1alpha1.NodeExporte
 		col.Softirqs.CollectionPolicy,
 		col.DeviceMapperMultipath.CollectionPolicy,
 		col.NVMExpressSubsystem.CollectionPolicy,
+		col.Interrupts.CollectionPolicy,
 	} {
 		if pol != "" {
 			return false
@@ -165,6 +166,20 @@ func mergeNodeExporterCollectorsFromCRD(dst *NodeExporterCollectorConfig, src co
 	}
 	if enabled, set := nodeExporterCollectorEnabledFromPolicy(src.NVMExpressSubsystem.CollectionPolicy); set {
 		dst.NvmeSubsystem.Enabled = ptr.To(enabled)
+	}
+	if enabled, set := nodeExporterCollectorEnabledFromPolicy(src.Interrupts.CollectionPolicy); set {
+		// The ConfigMap-derived config models the interrupts collector as an include
+		// list: a non-empty list enables the collector, an empty list disables it.
+		// Collect => copy the CR include patterns; DoNotCollect => clear the list.
+		if enabled {
+			include := make([]string, len(src.Interrupts.Collect.Include))
+			for i, p := range src.Interrupts.Collect.Include {
+				include[i] = string(p)
+			}
+			dst.Interrupts.Include = include
+		} else {
+			dst.Interrupts.Include = nil
+		}
 	}
 }
 

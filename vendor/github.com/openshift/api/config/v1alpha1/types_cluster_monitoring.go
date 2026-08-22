@@ -488,7 +488,80 @@ type NodeExporterCollectorConfig struct {
 	// which is subject to change over time. The current default is enabled.
 	// +optional
 	NVMExpressSubsystem NodeExporterCollectorNVMExpressSubsystemConfig `json:"nvmExpressSubsystem,omitzero"`
+	// interrupts configures the interrupts collector, which exposes interrupt counts
+	// from /proc/interrupts.
+	// interrupts is optional.
+	// When omitted, this means no opinion and the platform is left to choose a reasonable default,
+	// which is subject to change over time. The current default is disabled.
+	// The interrupts collector can produce a large number of metrics depending on the hardware
+	// and interrupt sources present. When enabled, the collect field with at least one include
+	// pattern is required to explicitly select which interrupt lines are collected.
+	// +optional
+	Interrupts NodeExporterCollectorInterruptsConfig `json:"interrupts,omitempty,omitzero"`
 }
+
+// NodeExporterCollectorInterruptsConfig provides configuration for the interrupts collector
+// of the node-exporter agent. The interrupts collector exposes interrupt counts
+// from /proc/interrupts.
+// It is disabled by default.
+// The interrupts collector can produce a large number of metrics depending on the hardware
+// and interrupt sources present. When enabled, the collect field with at least one include
+// pattern is required to explicitly select which interrupt lines are collected.
+// When collectionPolicy is Collect, the collect field must be set with at least one include pattern.
+// When collectionPolicy is DoNotCollect, the collect field must not be set.
+// +kubebuilder:validation:XValidation:rule="has(self.collectionPolicy) && self.collectionPolicy == 'Collect' ? has(self.collect) : !has(self.collect)",message="collect is required when collectionPolicy is Collect, and forbidden otherwise"
+// +union
+type NodeExporterCollectorInterruptsConfig struct {
+	// collectionPolicy declares whether the interrupts collector collects metrics.
+	// This field is required.
+	// Valid values are "Collect" and "DoNotCollect".
+	// When set to "Collect", the interrupts collector is active and the collect field must be set
+	// with at least one include pattern to select which interrupt lines are collected.
+	// When set to "DoNotCollect", the interrupts collector is inactive and the collect field must not be set.
+	// +unionDiscriminator
+	// +required
+	CollectionPolicy NodeExporterCollectorCollectionPolicy `json:"collectionPolicy,omitempty"`
+	// collect contains configuration options that apply only when the interrupts collector is actively collecting metrics
+	// (i.e. when collectionPolicy is Collect).
+	// collect is required when collectionPolicy is Collect and must contain at least one include pattern
+	// to explicitly select which interrupt lines are collected.
+	// collect must not be set when collectionPolicy is DoNotCollect.
+	// When set, at least one field must be specified within collect.
+	// +unionMember
+	// +optional
+	Collect NodeExporterCollectorInterruptsCollectConfig `json:"collect,omitzero,omitempty"`
+}
+
+// NodeExporterCollectorInterruptsCollectConfig holds configuration options for the interrupts collector
+// when it is actively collecting metrics. At least one field must be specified.
+// +kubebuilder:validation:MinProperties=1
+type NodeExporterCollectorInterruptsCollectConfig struct {
+	// include is a list of regular expression patterns that select which interrupt lines to collect.
+	// This field is required.
+	// Each line in /proc/interrupts is matched against the same string node-exporter uses:
+	// the IRQ name, info, and devices fields joined with ";", for example "LOC;77;IO-APIC 2-edge ...".
+	// Patterns are combined with OR into a single expression anchored on both ends,
+	// so each pattern must match the entire string (use ".*" where needed).
+	// Each entry must be at least 1 character, at most 1024 characters, and only contain printable ASCII characters.
+	// Maximum length for this list is 50.
+	// Minimum length for this list is 1.
+	// Entries in this list must be unique.
+	// +kubebuilder:validation:MaxItems=50
+	// +kubebuilder:validation:MinItems=1
+	// +listType=set
+	// +required
+	Include []NodeExporterInterruptsIncludePattern `json:"include,omitempty"`
+}
+
+// NodeExporterInterruptsIncludePattern is a string that is interpreted as a Go regular expression
+// pattern by the controller to match interrupt line names.
+// Invalid regular expressions will cause a controller-level error at runtime.
+// Must be at least 1 character and at most 1024 characters.
+// Must contain only printable ASCII characters (no control characters).
+// +kubebuilder:validation:MinLength=1
+// +kubebuilder:validation:MaxLength=1024
+// +kubebuilder:validation:XValidation:rule="self.matches('^[\\\\x20-\\\\x7E]+$')",message="must contain only printable ASCII characters (no control characters)"
+type NodeExporterInterruptsIncludePattern string
 
 // NodeExporterCollectorCpufreqConfig provides configuration for the cpufreq collector
 // of the node-exporter agent. The cpufreq collector collects CPU frequency statistics.
