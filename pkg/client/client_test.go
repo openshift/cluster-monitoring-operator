@@ -2244,10 +2244,8 @@ func TestPollUntil(t *testing.T) {
 	defer cancel()
 	err = Poll(parentCtx1, func(ctx context.Context) (bool, error) {
 		// This also ensures that when the parent context is Done, the condition context is cancelled as well.
-		select {
-		case <-ctx.Done():
-			return false, nil
-		}
+		<-ctx.Done()
+		return false, nil
 	}, WithPollInterval(10*time.Millisecond), WithPollTimeout(time.Hour))
 	require.Error(t, parentCtx1.Err())
 	require.ErrorContains(t, err, "context deadline exceeded")
@@ -2315,11 +2313,9 @@ func TestPollUntil(t *testing.T) {
 	go func() {
 		defer wg.Done()
 		pollErr = Poll(parentCtx3, func(ctx context.Context) (bool, error) {
-			select {
-			case <-ctx.Done():
-				close(waitCh3)
-				return false, nil
-			}
+			<-ctx.Done()
+			close(waitCh3)
+			return false, nil
 		}, WithPollInterval(10*time.Millisecond), WithPollTimeout(pollTimeout3))
 	}()
 

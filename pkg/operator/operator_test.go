@@ -229,17 +229,11 @@ func isNilOrAsExpected(s client.StateInfo) bool {
 }
 
 func isDegraded(r runReport) bool {
-	if isNilOrAsExpected(r.degraded) {
-		return false
-	}
-	return true
+	return !isNilOrAsExpected(r.degraded)
 }
 
 func isUnavailable(r runReport) bool {
-	if isNilOrAsExpected(r.available) {
-		return false
-	}
-	return true
+	return !isNilOrAsExpected(r.available)
 }
 
 func TestRunReport(t *testing.T) {

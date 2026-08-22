@@ -40,7 +40,6 @@ import (
 	yaml2 "gopkg.in/yaml.v2"
 	admissionv1 "k8s.io/api/admissionregistration/v1"
 	appsv1 "k8s.io/api/apps/v1"
-	corev1 "k8s.io/api/core/v1"
 	v1 "k8s.io/api/core/v1"
 	networkingv1 "k8s.io/api/networking/v1"
 	policyv1 "k8s.io/api/policy/v1"
@@ -3719,8 +3718,8 @@ func doubleServiceMonitorInterval(sm *monv1.ServiceMonitor) error {
 	return nil
 }
 
-func containerNameEquals(name string) func(corev1.Container) bool {
-	return func(c corev1.Container) bool {
+func containerNameEquals(name string) func(v1.Container) bool {
+	return func(c v1.Container) bool {
 		return c.Name == name
 	}
 }

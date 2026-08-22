@@ -1556,12 +1556,12 @@ func (c *Client) WaitForDaemonSetRollout(ctx context.Context, ds *appsv1.DaemonS
 		maxUnavailable, intstrErr := intstr.GetScaledValueFromIntOrPercent(&maxUnavailableIntStr, int(want), true)
 
 		if intstrErr != nil {
-			lastErr = fmt.Errorf("The daemonset has an invalid MaxUnavailable value: %w", intstrErr)
+			lastErr = fmt.Errorf("the daemonset has an invalid MaxUnavailable value: %w", intstrErr)
 			return false, nil
 		}
 
 		if int(numberUnavailable) > maxUnavailable {
-			lastErr = fmt.Errorf("Too many daemonset pods are unavailable (%d > %d max unavailable).", numberUnavailable, maxUnavailable)
+			lastErr = fmt.Errorf("too many daemonset pods are unavailable (%d > %d max unavailable)", numberUnavailable, maxUnavailable)
 			return false, nil
 		}
 		return true, nil
