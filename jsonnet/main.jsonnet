@@ -33,6 +33,10 @@ local telemeterClient = import './components/telemeter-client.libsonnet';
 local commonConfig = {
   namespace: 'openshift-monitoring',
   namespaceUserWorkload: 'openshift-user-workload-monitoring',
+  // Required by the upstream kube-prometheus anti-affinity addon which
+  // conditionally applies anti-affinity based on this field. Set to 'none'
+  // because CMO's metrics-server component manages its own affinity settings.
+  resourceMetricsAPI:: 'none',
   clusterMonitoringNamespaceSelector: {
     matchLabels: {
       'openshift.io/cluster-monitoring': 'true',
