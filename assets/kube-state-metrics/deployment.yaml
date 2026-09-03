@@ -63,7 +63,8 @@ spec:
           requests:
             cpu: 2m
             memory: 80Mi
-        securityContext: {}
+        securityContext:
+          readOnlyRootFilesystem: true
         terminationMessagePolicy: FallbackToLogsOnError
         volumeMounts:
         - mountPath: /tmp
@@ -89,7 +90,8 @@ spec:
           requests:
             cpu: 1m
             memory: 15Mi
-        securityContext: {}
+        securityContext:
+          readOnlyRootFilesystem: true
         terminationMessagePolicy: FallbackToLogsOnError
         volumeMounts:
         - mountPath: /etc/tls/private
@@ -118,7 +120,8 @@ spec:
           requests:
             cpu: 1m
             memory: 15Mi
-        securityContext: {}
+        securityContext:
+          readOnlyRootFilesystem: true
         terminationMessagePolicy: FallbackToLogsOnError
         volumeMounts:
         - mountPath: /etc/tls/private

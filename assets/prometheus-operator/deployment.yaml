@@ -82,7 +82,8 @@ spec:
           requests:
             cpu: 1m
             memory: 15Mi
-        securityContext: {}
+        securityContext:
+          readOnlyRootFilesystem: true
         terminationMessagePolicy: FallbackToLogsOnError
         volumeMounts:
         - mountPath: /etc/tls/private
