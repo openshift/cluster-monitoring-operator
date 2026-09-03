@@ -183,7 +183,7 @@ spec:
           and
         kube_job_status_active{namespace=~"(openshift-.*|kube-.*|default)",job="kube-state-metrics"} > 0) > 43200
           unless on(namespace, job_name, cluster)
-        max by(namespace, job_name, cluster) (kube_job_labels{namespace=~"(openshift-.*|kube-.*|default)",job="kube-state-metrics",label_excluded_from_alerts="true"} == 1)
+        max by(namespace, job_name, cluster) (kube_job_labels{namespace=~"(openshift-.*|kube-.*|default)",job="kube-state-metrics",label_alerts_k8s_io_kube_job_not_completed="disabled"} == 1)
       labels:
         severity: warning
     - alert: KubeJobFailed
