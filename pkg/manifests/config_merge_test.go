@@ -167,16 +167,6 @@ func TestClusterMonitoringNodeExporterCollectorsEmpty(t *testing.T) {
 			CollectionPolicy: configv1alpha1.NodeExporterCollectorCollectionPolicyDoNotCollect,
 		},
 	}))
-	require.False(t, clusterMonitoringNodeExporterCollectorsEmpty(configv1alpha1.NodeExporterCollectorConfig{
-		Zoneinfo: configv1alpha1.NodeExporterCollectorZoneinfoConfig{
-			CollectionPolicy: configv1alpha1.NodeExporterCollectorCollectionPolicyDoNotCollect,
-		},
-	}))
-	require.False(t, clusterMonitoringNodeExporterCollectorsEmpty(configv1alpha1.NodeExporterCollectorConfig{
-		Zoneinfo: configv1alpha1.NodeExporterCollectorZoneinfoConfig{
-			CollectionPolicy: configv1alpha1.NodeExporterCollectorCollectionPolicyDoNotCollect,
-		},
-	}))
 }
 func TestClusterMonitoringTelemeterClientSpecEmpty(t *testing.T) {
 	require.True(t, clusterMonitoringTelemeterClientSpecEmpty(configv1alpha1.TelemeterClientConfig{}))
