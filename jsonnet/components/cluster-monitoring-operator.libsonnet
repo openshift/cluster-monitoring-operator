@@ -352,6 +352,11 @@ function(params) {
         resources: ['networkpolicies'],
         verbs: ['create', 'get', 'list', 'watch', 'update', 'delete'],
       },
+      {
+        apiGroups: [''],
+        resources: ['secrets', 'configmaps'],
+        verbs: ['create', 'update', 'delete'],
+      },
     ],
   },
 
@@ -382,6 +387,35 @@ function(params) {
         apiGroups: ['monitoring.openshift.io'],
         resources: ['alertingrules/finalizers', 'alertingrules/status'],
         verbs: ['*'],
+      },
+    ],
+  },
+
+  // Defines permisssions required for resources in the openshift-config-managed namespace.
+  openshiftConfigManagedRole: {
+    apiVersion: 'rbac.authorization.k8s.io/v1',
+    kind: 'Role',
+    metadata: {
+      name: 'cluster-monitoring-operator',
+      namespace: 'openshift-config-managed',
+      annotations: {
+        'include.release.openshift.io/ibm-cloud-managed': 'true',
+        'include.release.openshift.io/hypershift': 'true',
+        'include.release.openshift.io/self-managed-high-availability': 'true',
+        'include.release.openshift.io/single-node-developer': 'true',
+      },
+    },
+    rules: [
+      {
+        apiGroups: [''],
+        resources: ['configmaps'],
+        verbs: ['create'],
+      },
+      {
+        apiGroups: [''],
+        resources: ['configmaps'],
+        resourceNames: ['monitoring-shared-config'],
+        verbs: ['update'],
       },
     ],
   },
