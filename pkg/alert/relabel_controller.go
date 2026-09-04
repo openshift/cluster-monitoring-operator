@@ -182,7 +182,7 @@ func (c *RelabelConfigController) processNextWorkItem(ctx context.Context) bool 
 	defer c.queue.Done(key)
 
 	if err := c.sync(ctx, key); err != nil {
-		utilruntime.HandleError(fmt.Errorf("Error syncing AlertRelabelConfig (%s): %w", key, err))
+		utilruntime.HandleError(fmt.Errorf("error syncing AlertRelabelConfig (%s): %w", key, err))
 
 		// Re-queue failed sync.
 		c.queue.AddRateLimited(key)

@@ -463,7 +463,7 @@ func (f *Framework) AssertOperatorConditionMessageContainsFunc(conditionType con
 			}
 			for _, c := range co.Status.Conditions {
 				if c.Type == conditionType {
-					if strings.Index(c.Message, conditionMessage) >= 0 {
+					if strings.Contains(c.Message, conditionMessage) {
 						return nil
 					}
 					return fmt.Errorf("expecting condition %q to have message %q, got %q", conditionType, conditionMessage, c.Message)

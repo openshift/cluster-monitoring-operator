@@ -162,8 +162,22 @@ func TestClusterMonitoringNodeExporterCollectorsEmpty(t *testing.T) {
 			CollectionPolicy: configv1alpha1.NodeExporterCollectorCollectionPolicyDoNotCollect,
 		},
 	}))
+	require.False(t, clusterMonitoringNodeExporterCollectorsEmpty(configv1alpha1.NodeExporterCollectorConfig{
+		Interrupts: configv1alpha1.NodeExporterCollectorInterruptsConfig{
+			CollectionPolicy: configv1alpha1.NodeExporterCollectorCollectionPolicyDoNotCollect,
+		},
+	}))
+	require.False(t, clusterMonitoringNodeExporterCollectorsEmpty(configv1alpha1.NodeExporterCollectorConfig{
+		Zoneinfo: configv1alpha1.NodeExporterCollectorZoneinfoConfig{
+			CollectionPolicy: configv1alpha1.NodeExporterCollectorCollectionPolicyDoNotCollect,
+		},
+	}))
+	require.False(t, clusterMonitoringNodeExporterCollectorsEmpty(configv1alpha1.NodeExporterCollectorConfig{
+		Zoneinfo: configv1alpha1.NodeExporterCollectorZoneinfoConfig{
+			CollectionPolicy: configv1alpha1.NodeExporterCollectorCollectionPolicyDoNotCollect,
+		},
+	}))
 }
-
 func TestClusterMonitoringTelemeterClientSpecEmpty(t *testing.T) {
 	require.True(t, clusterMonitoringTelemeterClientSpecEmpty(configv1alpha1.TelemeterClientConfig{}))
 	require.False(t, clusterMonitoringTelemeterClientSpecEmpty(configv1alpha1.TelemeterClientConfig{
@@ -661,6 +675,44 @@ func TestConfig_MergeClusterMonitoringCRD_NodeExporterConfigPhase1(t *testing.T)
 		require.NotNil(t, c.ClusterMonitoringConfiguration.NodeExporterConfig.Collectors.DmMultipath.Enabled)
 		require.False(t, *c.ClusterMonitoringConfiguration.NodeExporterConfig.Collectors.DmMultipath.Enabled)
 	})
+	t.Run("CR maps Interrupts Collect to include patterns", func(t *testing.T) {
+		cm := &configv1alpha1.ClusterMonitoring{
+			Spec: configv1alpha1.ClusterMonitoringSpec{
+				NodeExporterConfig: configv1alpha1.NodeExporterConfig{
+					Collectors: configv1alpha1.NodeExporterCollectorConfig{
+						Interrupts: configv1alpha1.NodeExporterCollectorInterruptsConfig{
+							CollectionPolicy: configv1alpha1.NodeExporterCollectorCollectionPolicyCollect,
+							Collect: configv1alpha1.NodeExporterCollectorInterruptsCollectConfig{
+								Include: []configv1alpha1.NodeExporterInterruptsIncludePattern{
+									"FOO;.*",
+									".*;some_dev",
+								},
+							},
+						},
+					},
+				},
+			},
+		}
+		c, err := NewConfigFromStringAndClusterMonitoringResource("{}", cm)
+		require.NoError(t, err)
+		require.Equal(t, []string{"FOO;.*", ".*;some_dev"}, c.ClusterMonitoringConfiguration.NodeExporterConfig.Collectors.Interrupts.Include)
+	})
+	t.Run("CR maps Interrupts DoNotCollect to empty include", func(t *testing.T) {
+		cm := &configv1alpha1.ClusterMonitoring{
+			Spec: configv1alpha1.ClusterMonitoringSpec{
+				NodeExporterConfig: configv1alpha1.NodeExporterConfig{
+					Collectors: configv1alpha1.NodeExporterCollectorConfig{
+						Interrupts: configv1alpha1.NodeExporterCollectorInterruptsConfig{
+							CollectionPolicy: configv1alpha1.NodeExporterCollectorCollectionPolicyDoNotCollect,
+						},
+					},
+				},
+			},
+		}
+		c, err := NewConfigFromStringAndClusterMonitoringResource("{}", cm)
+		require.NoError(t, err)
+		require.Empty(t, c.ClusterMonitoringConfiguration.NodeExporterConfig.Collectors.Interrupts.Include)
+	})
 	t.Run("CR maps NVMExpressSubsystem Collect to enabled", func(t *testing.T) {
 		cm := &configv1alpha1.ClusterMonitoring{
 			Spec: configv1alpha1.ClusterMonitoringSpec{
@@ -694,6 +746,38 @@ func TestConfig_MergeClusterMonitoringCRD_NodeExporterConfigPhase1(t *testing.T)
 		require.NoError(t, err)
 		require.NotNil(t, c.ClusterMonitoringConfiguration.NodeExporterConfig.Collectors.NvmeSubsystem.Enabled)
 		require.False(t, *c.ClusterMonitoringConfiguration.NodeExporterConfig.Collectors.NvmeSubsystem.Enabled)
+	})
+	zoneinfoCR := func(policy configv1alpha1.NodeExporterCollectorCollectionPolicy) *configv1alpha1.ClusterMonitoring {
+		return &configv1alpha1.ClusterMonitoring{
+			Spec: configv1alpha1.ClusterMonitoringSpec{
+				NodeExporterConfig: configv1alpha1.NodeExporterConfig{
+					Collectors: configv1alpha1.NodeExporterCollectorConfig{
+						Zoneinfo: configv1alpha1.NodeExporterCollectorZoneinfoConfig{
+							CollectionPolicy: policy,
+						},
+					},
+				},
+			},
+		}
+	}
+	t.Run("CR maps Zoneinfo Collect to enabled", func(t *testing.T) {
+		c, err := NewConfigFromStringAndClusterMonitoringResource("{}", zoneinfoCR(configv1alpha1.NodeExporterCollectorCollectionPolicyCollect))
+		require.NoError(t, err)
+		require.True(t, c.ClusterMonitoringConfiguration.NodeExporterConfig.Collectors.Zoneinfo.Enabled)
+	})
+	t.Run("CR maps Zoneinfo DoNotCollect to disabled", func(t *testing.T) {
+		c, err := NewConfigFromStringAndClusterMonitoringResource("{}", zoneinfoCR(configv1alpha1.NodeExporterCollectorCollectionPolicyDoNotCollect))
+		require.NoError(t, err)
+		require.False(t, c.ClusterMonitoringConfiguration.NodeExporterConfig.Collectors.Zoneinfo.Enabled)
+	})
+	t.Run("CR ignored when ConfigMap declares collectors.zoneinfo", func(t *testing.T) {
+		c, err := NewConfigFromStringAndClusterMonitoringResource(`nodeExporter:
+  collectors:
+    zoneinfo:
+      enabled: false
+`, zoneinfoCR(configv1alpha1.NodeExporterCollectorCollectionPolicyCollect))
+		require.NoError(t, err)
+		require.False(t, c.ClusterMonitoringConfiguration.NodeExporterConfig.Collectors.Zoneinfo.Enabled)
 	})
 }
 

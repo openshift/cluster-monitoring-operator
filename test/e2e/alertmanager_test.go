@@ -410,9 +410,9 @@ func TestAlertmanagerDataReplication(t *testing.T) {
 		containerName   = "alertmanager"
 	)
 
-	data := fmt.Sprintf(`alertmanagerMain:
+	data := `alertmanagerMain:
   logLevel: warn
-`)
+`
 	f.MustCreateOrUpdateConfigMap(t, f.BuildCMOConfigMap(t, data))
 
 	for _, test := range []scenario{
