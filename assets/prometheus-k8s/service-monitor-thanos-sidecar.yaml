@@ -26,4 +26,3 @@ spec:
   selector:
     matchLabels:
       app.kubernetes.io/component: thanos-sidecar
-  serviceDiscoveryRole: EndpointSlice
