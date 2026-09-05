@@ -18,10 +18,6 @@ spec:
     from:
       kind: DockerImage
       name: quay.io/openshift/origin-prometheus-operator-admission-webhook:latest
-  - name: configmap-reloader
-    from:
-      kind: DockerImage
-      name: quay.io/openshift/origin-configmap-reloader:latest
   - name: prometheus
     from:
       kind: DockerImage
