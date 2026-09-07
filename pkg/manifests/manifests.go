@@ -337,6 +337,7 @@ var (
 	KubeRbacProxyMinTLSVersionFlag                       = "--tls-min-version="
 	MonitoringPluginTLSCipherSuitesFlag                  = "--tls-cipher-suites="
 	MonitoringPluginTLSMinTLSVersionFlag                 = "--tls-min-version="
+	MonitoringPluginFeaturesFlag                         = "--features="
 
 	AuthProxyExternalURLFlag  = "-external-url="
 	AuthProxyCookieDomainFlag = "-cookie-domain="
@@ -2918,6 +2919,13 @@ func (f *Factory) MonitoringPluginDeployment() (*appsv1.Deployment, error) {
 		return d, nil
 	}
 
+	if len(cfg.DisabledFeatures) > 0 {
+		containers[idx].Args, err = disableMonitoringPluginFeatures(containers[idx].Args, cfg.DisabledFeatures)
+		if err != nil {
+			return nil, err
+		}
+	}
+
 	if cfg.Resources != nil {
 		containers[idx].Resources = *cfg.Resources
 	}
@@ -2935,6 +2943,27 @@ func (f *Factory) MonitoringPluginDeployment() (*appsv1.Deployment, error) {
 	}
 
 	return d, nil
+}
+
+func disableMonitoringPluginFeatures(args, disabledFeatures []string) ([]string, error) {
+	for i, arg := range args {
+		if !strings.HasPrefix(arg, MonitoringPluginFeaturesFlag) {
+			continue
+		}
+
+		features := strings.Split(strings.TrimPrefix(arg, MonitoringPluginFeaturesFlag), ",")
+		features = slices.DeleteFunc(features, func(feature string) bool {
+			return slices.Contains(disabledFeatures, feature)
+		})
+		if len(features) == 0 {
+			return nil, errors.New("monitoring plugin must have at least one feature enabled")
+		}
+
+		args[i] = MonitoringPluginFeaturesFlag + strings.Join(features, ",")
+		return args, nil
+	}
+
+	return nil, errors.New("monitoring plugin features argument not found")
 }
 
 func (f *Factory) MonitoringPluginPodDisruptionBudget() (*policyv1.PodDisruptionBudget, error) {

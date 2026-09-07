@@ -868,6 +868,10 @@ type PrometheusOperatorAdmissionWebhookConfig struct {
 // The `MonitoringPluginConfig` resource defines settings for the
 // Console Plugin component in the `openshift-monitoring` namespace.
 type MonitoringPluginConfig struct {
+	// Defines monitoring plugin features to omit from the default set enabled by
+	// the Cluster Monitoring Operator. Features that aren't enabled by default
+	// have no effect. At least one default feature must remain enabled.
+	DisabledFeatures []string `json:"disabledFeatures,omitempty"`
 	// Defines the nodes on which the Pods are scheduled.
 	NodeSelector map[string]string `json:"nodeSelector,omitempty"`
 	// Defines resource requests and limits for the console-plugin container.

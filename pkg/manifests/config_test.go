@@ -50,6 +50,15 @@ func TestNewConfigFromString(t *testing.T) {
 			},
 		},
 		{
+			name: "monitoring plugin disabled features",
+			configString: func() string {
+				return `{"monitoringPlugin": {"disabledFeatures": ["alerting"]}}`
+			},
+			configCheck: func(c *Config) {
+				require.Equal(t, []string{"alerting"}, c.ClusterMonitoringConfiguration.MonitoringPluginConfig.DisabledFeatures)
+			},
+		},
+		{
 			name: "json string with unknown root field",
 			configString: func() string {
 				return `{"prometheusK8ss": {}}`

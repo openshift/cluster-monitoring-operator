@@ -216,6 +216,7 @@ The `MonitoringPluginConfig` resource defines settings for the Console Plugin co
 
 | Property | Type | Description |
 | -------- | ---- | ----------- |
+| disabledFeatures | []string | Defines monitoring plugin features to omit from the default set enabled by the Cluster Monitoring Operator. Features that aren't enabled by default have no effect. At least one default feature must remain enabled. |
 | nodeSelector | map[string]string | Defines the nodes on which the Pods are scheduled. |
 | resources | *[v1.ResourceRequirements](https://kubernetes.io/docs/reference/generated/kubernetes-api/v1.36/#resourcerequirements-v1-core) | Defines resource requests and limits for the console-plugin container. |
 | tolerations | [][v1.Toleration](https://kubernetes.io/docs/reference/generated/kubernetes-api/v1.36/#toleration-v1-core) | Defines tolerations for the pods. |
