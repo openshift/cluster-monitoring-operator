@@ -3,6 +3,7 @@ kind: ClusterRole
 metadata:
   labels:
     app.kubernetes.io/managed-by: cluster-monitoring-operator
+    app.kubernetes.io/name: cluster-monitoring-view
     app.kubernetes.io/part-of: openshift-monitoring
   name: cluster-monitoring-view
 rules:
