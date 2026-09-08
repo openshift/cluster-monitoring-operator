@@ -1,0 +1,183 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "telemetry-spec.schema.json",
+  "title": "Telemetry Signal Spec",
+  "description": "Specification for adding new metrics to OCP Telemetry. Supports single or multiple metrics per request.",
+  "type": "object",
+  "required": [
+    "metrics",
+    "component",
+    "ownership",
+    "justification",
+    "ocp_version"
+  ],
+  "additionalProperties": false,
+  "properties": {
+    "metrics": {
+      "type": "array",
+      "description": "One or more metrics to add to Telemetry. Keep to 3 or fewer selectors; consolidate similar metrics.",
+      "minItems": 1,
+      "items": {
+        "type": "object",
+        "required": [
+          "raw_metric_name",
+          "description",
+          "labels",
+          "cardinality_estimate",
+          "recording_rule",
+          "telemetry_selector"
+        ],
+        "additionalProperties": false,
+        "properties": {
+          "raw_metric_name": {
+            "type": "string",
+            "description": "Raw Prometheus metric name (e.g. prometheus_tsdb_head_series).",
+            "pattern": "^[a-zA-Z_:][a-zA-Z0-9_:]*$"
+          },
+          "description": {
+            "type": "string",
+            "description": "What the metric represents.",
+            "minLength": 10
+          },
+          "labels": {
+            "type": "array",
+            "description": "Labels on the recording rule output with their possible values.",
+            "minItems": 0,
+            "items": {
+              "type": "object",
+              "required": ["name", "description"],
+              "additionalProperties": false,
+              "properties": {
+                "name": {
+                  "type": "string",
+                  "description": "Label name.",
+                  "pattern": "^[a-zA-Z_][a-zA-Z0-9_]*$"
+                },
+                "description": {
+                  "type": "string",
+                  "description": "What the label represents."
+                },
+                "values": {
+                  "type": "array",
+                  "description": "Exhaustive list of possible label values (preferred). Provide this OR regex_pattern, not both.",
+                  "items": {
+                    "type": "string"
+                  },
+                  "minItems": 1
+                },
+                "regex_pattern": {
+                  "type": "string",
+                  "description": "Regex pattern when exact enumeration is not feasible (e.g. \"openshift-.*\"). Must be as restrictive as possible."
+                },
+                "regex_justification": {
+                  "type": "string",
+                  "description": "Why exact value enumeration is not feasible. Required with regex_pattern.",
+                  "minLength": 10
+                }
+              },
+              "oneOf": [
+                { "required": ["values"] },
+                { "required": ["regex_pattern", "regex_justification"] }
+              ]
+            }
+          },
+          "cardinality_estimate": {
+            "type": "integer",
+            "description": "Maximum timeseries after aggregation. Recommended <=10; higher values require explicit approval from monitoring team leads.",
+            "minimum": 1
+          },
+          "recording_rule": {
+            "type": "object",
+            "description": "The recording rule that aggregates the raw metric.",
+            "required": ["name", "expr", "group"],
+            "additionalProperties": false,
+            "properties": {
+              "name": {
+                "type": "string",
+                "description": "Recording rule name (level:metric:operations, exactly 2 colons).",
+                "pattern": "^[a-z][a-z0-9_]*:[a-zA-Z_][a-zA-Z0-9_]*:[a-z][a-z0-9_]*$"
+              },
+              "expr": {
+                "type": "string",
+                "description": "PromQL expression. Must use explicit label matchers and aggregate away volatile labels.",
+                "minLength": 5
+              },
+              "group": {
+                "type": "string",
+                "description": "PrometheusRule group name (e.g. telemetry.rules).",
+                "minLength": 1
+              }
+            }
+          },
+          "telemetry_selector": {
+            "type": "string",
+            "description": "The Prometheus selector for the telemetry config (e.g. {__name__=\"openshift:my_metric:sum\"}).",
+            "pattern": "^\\{__name__="
+          }
+        }
+      }
+    },
+    "component": {
+      "type": "object",
+      "description": "The component exposing the raw metrics.",
+      "required": ["repo", "namespace", "prometheusrule_name"],
+      "additionalProperties": false,
+      "properties": {
+        "repo": {
+          "type": "string",
+          "description": "GitHub org/repo (e.g. openshift/prometheus, grafana/loki).",
+          "pattern": "^[a-zA-Z0-9_-]+/[a-zA-Z0-9_.-]+$"
+        },
+        "namespace": {
+          "type": "string",
+          "description": "Namespace where the component and PrometheusRule live.",
+          "pattern": "^[a-z0-9]([a-z0-9-]*[a-z0-9])?$"
+        },
+        "prometheusrule_name": {
+          "type": "string",
+          "description": "Name of the PrometheusRule resource containing the recording rules.",
+          "pattern": "^[a-z0-9]([a-z0-9-]*[a-z0-9])?$"
+        }
+      }
+    },
+    "ownership": {
+      "type": "object",
+      "description": "Teams owning and consuming the metrics.",
+      "required": ["owning_team"],
+      "additionalProperties": false,
+      "properties": {
+        "owning_team": {
+          "type": "string",
+          "description": "GitHub team handle (e.g. @openshift/openshift-team-monitoring).",
+          "pattern": "^@"
+        },
+        "consuming_teams": {
+          "type": "array",
+          "description": "Teams that will query these metrics in Telemetry.",
+          "items": {
+            "type": "string",
+            "pattern": "^@"
+          }
+        }
+      }
+    },
+    "justification": {
+      "type": "string",
+      "description": "Why these metrics need to be sent via Telemetry.",
+      "minLength": 20
+    },
+    "ocp_version": {
+      "type": "string",
+      "description": "Target OCP version (e.g. 4.19).",
+      "pattern": "^[0-9]+\\.[0-9]+$"
+    },
+    "jira_tickets": {
+      "type": "array",
+      "description": "JIRA ticket keys (e.g. [\"MON-1234\"]). Set after Phase 1.",
+      "items": {
+        "type": "string",
+        "pattern": "^MON-[0-9]+$"
+      }
+    }
+  }
+}

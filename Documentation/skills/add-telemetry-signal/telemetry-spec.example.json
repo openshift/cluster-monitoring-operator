@@ -1,0 +1,63 @@
+{
+  "metrics": [
+    {
+      "raw_metric_name": "prometheus_tsdb_head_series",
+      "description": "Total number of active timeseries in Prometheus TSDB head block",
+      "labels": [
+        {
+          "name": "namespace",
+          "description": "Namespace where the Prometheus instance runs",
+          "values": ["openshift-monitoring", "openshift-user-workload-monitoring"]
+        },
+        {
+          "name": "job",
+          "description": "Scrape job name",
+          "values": ["prometheus-k8s"]
+        }
+      ],
+      "cardinality_estimate": 2,
+      "recording_rule": {
+        "name": "openshift:prometheus_tsdb_head_series:sum",
+        "expr": "sum by (job,namespace) (\n  max without(instance) (\n    prometheus_tsdb_head_series{namespace=~\"openshift-monitoring|openshift-user-workload-monitoring\"}\n  )\n)",
+        "group": "openshift-monitoring.rules"
+      },
+      "telemetry_selector": "{__name__=\"openshift:prometheus_tsdb_head_series:sum\"}"
+    },
+    {
+      "raw_metric_name": "loki_distributor_bytes_received_total",
+      "description": "Total log ingestion rate across LokiStack distributors",
+      "labels": [
+        {
+          "name": "stack_namespace",
+          "description": "Namespace where the LokiStack is deployed",
+          "regex_pattern": "openshift-.*",
+          "regex_justification": "LokiStack can be deployed in any openshift-prefixed namespace chosen by the customer; exact values cannot be enumerated."
+        },
+        {
+          "name": "size",
+          "description": "T-shirt size of the LokiStack",
+          "values": ["1x.extra-small", "1x.small", "1x.medium"]
+        }
+      ],
+      "cardinality_estimate": 3,
+      "recording_rule": {
+        "name": "openshift_logging:lokistack_ingestion_received_bytes_per_second:sum",
+        "expr": "sum by (stack_namespace, size) (\n  rate(\n    loki_distributor_bytes_received_total{namespace=~\"openshift-.*\"}[5m]\n  )\n)",
+        "group": "telemetry.rules"
+      },
+      "telemetry_selector": "{__name__=\"openshift_logging:lokistack_ingestion_received_bytes_per_second:sum\"}"
+    }
+  ],
+  "component": {
+    "repo": "openshift/prometheus",
+    "namespace": "openshift-monitoring",
+    "prometheusrule_name": "cluster-monitoring-operator-prometheus-rules"
+  },
+  "ownership": {
+    "owning_team": "@openshift/openshift-team-monitoring",
+    "consuming_teams": ["@openshift/openshift-team-monitoring"]
+  },
+  "justification": "Track the total number of active timeseries and log ingestion rates across the fleet to monitor resource usage trends and detect anomalies.",
+  "ocp_version": "4.19",
+  "jira_tickets": ["MON-12345"]
+}
