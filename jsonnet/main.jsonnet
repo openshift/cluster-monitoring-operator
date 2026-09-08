@@ -363,10 +363,15 @@ local inCluster =
             kubeSchedulerSelector: 'job="scheduler"',
             namespaceSelector: $.values.common.mixinNamespaceSelector,
             cpuThrottlingSelector: $.values.common.mixinNamespaceSelector,
-            kubeletPodLimit: 250,
-            pvExcludedSelector: 'label_alerts_k8s_io_kube_persistent_volume_filling_up="disabled"',
             containerfsSelector: 'id!=""',
             showMultiCluster: false,  // Opt-out of multi-cluster rules (opted-in by midstream kube-prometheus)
+            // Users can set the "alerts.k8s.io/KubeJobNotCompleted=disabled"
+            // label on jobs to disable the KubeJobNotCompleted alert for a
+            // particular job.
+            // A similar functionality exists for the
+            // KubePersistentVolumeFillingUp alerting rule now owned by
+            // github.com/openshift/cluster-storage-operator.
+            kubeJobExcludedSelector: 'label_alerts_k8s_io_kube_job_not_completed="disabled"',
           },
         },
       },
