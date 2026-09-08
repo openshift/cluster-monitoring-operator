@@ -295,9 +295,11 @@ endif
 test-e2e:
 ifdef ARTIFACT_DIR
 	mkdir -p $(dir $(E2E_JUNIT))
-	$(GOTESTSUM_BIN) --format=standard-verbose --junitfile=$(E2E_JUNIT) -- -v -timeout=150m $(E2E_TEST_ARGS) ./test/e2e/ --kubeconfig $(KUBECONFIG)
-	# Add some metadata.
-	sed -i 's/ name="Test/ name="$(TEST_NAME_PREFIX) Test/g' $(E2E_JUNIT)
+	# Run tests then add metadata prefix to JUnit test names, even on failure.
+	$(GOTESTSUM_BIN) --format=standard-verbose --junitfile=$(E2E_JUNIT) -- -v -timeout=150m $(E2E_TEST_ARGS) ./test/e2e/ --kubeconfig $(KUBECONFIG); \
+	rc=$$?; \
+	sed -i 's/ name="Test/ name="$(TEST_NAME_PREFIX) Test/g' $(E2E_JUNIT); \
+	exit $$rc
 else
 	go test -v -timeout=150m $(E2E_TEST_ARGS) ./test/e2e/ --kubeconfig $(KUBECONFIG)
 endif
