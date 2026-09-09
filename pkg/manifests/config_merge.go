@@ -80,6 +80,7 @@ func clusterMonitoringNodeExporterCollectorsEmpty(col configv1alpha1.NodeExporte
 		col.Interrupts.CollectionPolicy,
 		col.DeviceMapperMultipath.CollectionPolicy,
 		col.NVMExpressSubsystem.CollectionPolicy,
+		col.Zoneinfo.CollectionPolicy,
 	} {
 		if pol != "" {
 			return false
@@ -175,6 +176,9 @@ func mergeNodeExporterCollectorsFromCRD(dst *NodeExporterCollectorConfig, src co
 	}
 	if enabled, set := nodeExporterCollectorEnabledFromPolicy(src.NVMExpressSubsystem.CollectionPolicy); set {
 		dst.NvmeSubsystem.Enabled = ptr.To(enabled)
+	}
+	if enabled, set := nodeExporterCollectorEnabledFromPolicy(src.Zoneinfo.CollectionPolicy); set {
+		dst.Zoneinfo.Enabled = enabled
 	}
 }
 
