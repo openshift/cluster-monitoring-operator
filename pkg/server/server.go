@@ -107,14 +107,29 @@ func (s *Server) Prepare(ctx context.Context) error {
 	// downgrading to HTTP/1.1 doesn't bring any performance penalty.
 	serverConfig.SecureServing.DisableHTTP2 = true
 
-	serverConfig.Authorization.Authorizer = union.New(
-		// prefix the authorizer with the permissions for metrics scraping which are well known.
-		// openshift RBAC policy will always allow this user to read metrics.
-		hardcodedauthorizer.NewHardCodedMetricsAuthorizer(),
-		// disable auth on the validate webhook paths.
-		&validateWebhookAuthorizer{},
-		serverConfig.Authorization.Authorizer,
+	metricsAuthorizer := hardcodedauthorizer.NewHardCodedMetricsAuthorizer()
+	validateAuthorizer := &validateWebhookAuthorizer{}
+	unionAuthorizer, err := union.New(
+		union.NamedAuthorizer{
+			AuthorizerName: "openshift.io/metrics",
+			// prefix the authorizer with the permissions for metrics scraping which are well known.
+			// openshift RBAC policy will always allow this user to read metrics.
+			Authorizer: authorizer.AuthorizerFunc(metricsAuthorizer.Authorize),
+		},
+		union.NamedAuthorizer{
+			AuthorizerName: "openshift.io/validate-webhook",
+			// disable auth on the validate webhook paths.
+			Authorizer: authorizer.AuthorizerFunc(validateAuthorizer.Authorize),
+		},
+		union.NamedAuthorizer{
+			AuthorizerName: "kubernetes.io/webhook",
+			Authorizer:     serverConfig.Authorization.Authorizer,
+		},
 	)
+	if err != nil {
+		return err
+	}
+	serverConfig.Authorization.Authorizer = unionAuthorizer
 
 	serverConfig.EffectiveVersion = compatibility.DefaultBuildEffectiveVersion()
 
