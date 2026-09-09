@@ -162,6 +162,22 @@ nodeExporter:
 			},
 		},
 		{
+			nameCollector: "dmmultipath",
+			config: `
+nodeExporter:
+  collectors:
+    dmMultipath:
+      enabled: false`,
+		},
+		{
+			nameCollector: "nvmesubsystem",
+			config: `
+nodeExporter:
+  collectors:
+    nvmeSubsystem:
+      enabled: false`,
+		},
+		{
 			nameCollector: "netclass",
 			config: `
 nodeExporter:
@@ -247,6 +263,8 @@ func TestNodeExporterGenericOptions(t *testing.T) {
 		"time",
 		"uname",
 		"vmstat",
+		"dmmultipath",
+		"nvmesubsystem",
 	}
 
 	tests := []struct {
@@ -284,7 +302,6 @@ nodeExporter:
 			}
 		})
 	}
-
 }
 
 func TestNodeExporterNetworkDevicesExclusion(t *testing.T) {
@@ -425,7 +442,5 @@ nodeExporter:
 				return nil
 			},
 		)
-
 	})
-
 }
