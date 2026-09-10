@@ -37,12 +37,12 @@ JB_BIN=$(BIN_DIR)/jb
 GOJSONTOYAML_BIN=$(BIN_DIR)/gojsontoyaml
 JSONNET_BIN=$(BIN_DIR)/jsonnet
 JSONNETFMT_BIN=$(BIN_DIR)/jsonnetfmt
-GOLANGCI_LINT_BIN=$(BIN_DIR)/golangci-lint
 GOLANGCI_LINT_VERSION=v1.64.8
+GOLANGCI_LINT_BIN=$(BIN_DIR)/golangci-lint-$(GOLANGCI_LINT_VERSION)
 PROMTOOL_BIN=$(BIN_DIR)/promtool
 DOCGEN_BIN=$(BIN_DIR)/docgen
 MISSPELL_BIN=$(BIN_DIR)/misspell
-TOOLING=$(EMBEDMD_BIN) $(JB_BIN) $(GOJSONTOYAML_BIN) $(JSONNET_BIN) $(JSONNETFMT_BIN) $(PROMTOOL_BIN) $(DOCGEN_BIN) $(GOLANGCI_LINT_BIN)
+TOOLING=$(EMBEDMD_BIN) $(JB_BIN) $(GOJSONTOYAML_BIN) $(JSONNET_BIN) $(JSONNETFMT_BIN) $(PROMTOOL_BIN) $(DOCGEN_BIN)
 
 MANIFESTS_DIR ?= $(shell pwd)/manifests
 JSON_MANIFESTS_DIR ?= $(shell pwd)/tmp/json-manifests/manifests
@@ -226,6 +226,12 @@ golangci-lint: $(GOLANGCI_LINT_BIN)
 golangci-lint-fix: $(GOLANGCI_LINT_BIN)
 	$(GOLANGCI_LINT_BIN) run --verbose --print-resources-usage --fix
 
+# Version-stamped target ensures the correct golangci-lint is used across checkouts.
+# (|) avoids timestamp skew caused by the mv.
+$(GOLANGCI_LINT_BIN): | $(BIN_DIR)
+	curl -sfL https://raw.githubusercontent.com/golangci/golangci-lint/master/install.sh| sh -s -- -b $(BIN_DIR) $(GOLANGCI_LINT_VERSION)
+	mv $(BIN_DIR)/golangci-lint $(GOLANGCI_LINT_BIN)
+
 .PHONY:
 misspell:
 	$(MISSPELL_BIN) -error $(MARKDOWN_DOCS)
@@ -291,4 +297,3 @@ $(TOOLING): $(BIN_DIR)
 	@echo Installing tools from hack/tools/tools.go
 	@cd hack/tools && go list -mod=mod -tags tools -e -f '{{ range .Imports }}{{ printf "%s\n" .}}{{end}}' ./ | xargs -tI % go build -mod=mod -o $(BIN_DIR) %
 	@GOBIN=$(BIN_DIR) go install $(GO_PKG)/hack/docgen
-	curl -sfL https://raw.githubusercontent.com/golangci/golangci-lint/master/install.sh| sh -s -- -b $(BIN_DIR) $(GOLANGCI_LINT_VERSION)
