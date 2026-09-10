@@ -1111,7 +1111,7 @@ data:
     # owners: (@openshift/team-logging)
     #
     # openshift_logging:lokistack_component_replicas:sum total replica count per LokiStack component and size
-    - '{__name__="openshift_logging:lokistack_component_replicas:sum"}'
+    - '{__name__="openshift_logging:lokistack_component_replicas:sum",component=~"compactor|distributor|gateway|index-gateway|ingester|querier|query-frontend|ruler"}'
     #
     # owners: (@openshift/team-logging)
     #
@@ -1130,13 +1130,23 @@ data:
     #
     # owners: (@openshift/team-logging)
     #
+    # openshift_logging:lokistack_cpu_utilization:ratio CPU utilization ratio (usage/request) per LokiStack component and size
+    - '{__name__="openshift_logging:lokistack_cpu_utilization:ratio",component=~"compactor|distributor|gateway|index-gateway|ingester|querier|query-frontend|ruler"}'
+    #
+    # owners: (@openshift/team-logging)
+    #
+    # openshift_logging:lokistack_memory_utilization:ratio memory utilization ratio (usage/request) per LokiStack component and size
+    - '{__name__="openshift_logging:lokistack_memory_utilization:ratio",component=~"compactor|distributor|gateway|index-gateway|ingester|querier|query-frontend|ruler"}'
+    #
+    # owners: (@openshift/team-logging)
+    #
     # openshift_logging:lokistack_ingestion_received_bytes_per_second:sum total bytes received by distributors per second
     - '{__name__="openshift_logging:lokistack_ingestion_received_bytes_per_second:sum"}'
     #
     # owners: (@openshift/team-logging)
     #
     # openshift_logging:lokistack_ingestion_discarded_bytes_per_second:sum total bytes discarded by reason per second
-    - '{__name__="openshift_logging:lokistack_ingestion_discarded_bytes_per_second:sum"}'
+    - '{__name__="openshift_logging:lokistack_ingestion_discarded_bytes_per_second:sum",reason=~"rate_limited|per_stream_rate_limit|stream_limit|line_too_long|too_far_behind|greater_than_max_sample_age|too_far_in_future|max_label_names_per_series|label_name_too_long|label_value_too_long|duplicate_label_names|invalid_labels|missing_labels|request_body_too_large|disallowed_structured_metadata|structured_metadata_too_large|structured_metadata_too_many"}'
     #
     # owners: (@openshift/sandboxed-containers-operator)
     #
