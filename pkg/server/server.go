@@ -122,7 +122,7 @@ func (s *Server) Prepare(ctx context.Context) error {
 			Authorizer: authorizer.AuthorizerFunc(validateAuthorizer.Authorize),
 		},
 		union.NamedAuthorizer{
-			AuthorizerName: "kubernetes.io/webhook",
+			AuthorizerName: "kubernetes.io/api",
 			Authorizer:     serverConfig.Authorization.Authorizer,
 		},
 	)
