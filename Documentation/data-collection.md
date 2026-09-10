@@ -1111,7 +1111,7 @@ data:
     # owners: (@openshift/team-logging)
     #
     # openshift_logging:lokistack_component_replicas:sum total replica count per LokiStack component and size
-    - '{__name__="openshift_logging:lokistack_component_replicas:sum",component=~"compactor|distributor|gateway|index-gateway|ingester|querier|query-frontend|ruler"}'
+    - '{__name__="openshift_logging:lokistack_component_replicas:sum",component=~"compactor|distributor|gateway|index-gateway|ingester|querier|query-frontend|ruler",size=~"1x.demo|1x.pico|1x.extra-small|1x.small|1x.medium"}'
     #
     # owners: (@openshift/team-logging)
     #
@@ -1131,12 +1131,12 @@ data:
     # owners: (@openshift/team-logging)
     #
     # openshift_logging:lokistack_cpu_utilization:ratio CPU utilization ratio (usage/request) per LokiStack component and size
-    - '{__name__="openshift_logging:lokistack_cpu_utilization:ratio",component=~"compactor|distributor|gateway|index-gateway|ingester|querier|query-frontend|ruler"}'
+    - '{__name__="openshift_logging:lokistack_cpu_utilization:ratio",component=~"compactor|distributor|gateway|index-gateway|ingester|querier|query-frontend|ruler",size=~"1x.demo|1x.pico|1x.extra-small|1x.small|1x.medium"}'
     #
     # owners: (@openshift/team-logging)
     #
     # openshift_logging:lokistack_memory_utilization:ratio memory utilization ratio (usage/request) per LokiStack component and size
-    - '{__name__="openshift_logging:lokistack_memory_utilization:ratio",component=~"compactor|distributor|gateway|index-gateway|ingester|querier|query-frontend|ruler"}'
+    - '{__name__="openshift_logging:lokistack_memory_utilization:ratio",component=~"compactor|distributor|gateway|index-gateway|ingester|querier|query-frontend|ruler",size=~"1x.demo|1x.pico|1x.extra-small|1x.small|1x.medium"}'
     #
     # owners: (@openshift/team-logging)
     #
