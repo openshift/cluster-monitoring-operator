@@ -205,6 +205,18 @@ rules:
   - get
   - delete
 - apiGroups:
+  - monitoring.coreos.com
+  resources:
+  - alertmanagers
+  - prometheuses
+  - prometheusrules
+  - servicemonitors
+  - thanosrulers
+  verbs:
+  - create
+  - update
+  - delete
+- apiGroups:
   - authentication.k8s.io
   resources:
   - tokenreviews
