@@ -407,7 +407,6 @@ function(params) {
               ||| % [cfg.namespace, cfg.namespace],
               'for': '15m',
               labels: {
-                namespace: cfg.namespace,
                 severity: 'warning',
               },
             },
