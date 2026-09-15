@@ -304,8 +304,14 @@ function(params) {
       // CMO reconciles these resources directly and must hold the write verbs.
       {
         apiGroups: ['monitoring.coreos.com'],
-        resources: ['alertmanagers', 'prometheuses', 'prometheusrules', 'servicemonitors', 'thanosrulers'],
+        resources: ['alertmanagers', 'prometheuses', 'thanosrulers'],
         verbs: ['create', 'update', 'delete'],
+      },
+      // CMO must hold verbs it grants via delegated ClusterRoles (RBAC escalation).
+      {
+        apiGroups: ['monitoring.coreos.com'],
+        resources: ['alertmanagerconfigs', 'podmonitors', 'prometheusrules', 'servicemonitors'],
+        verbs: ['*'],
       },
     ],
   },

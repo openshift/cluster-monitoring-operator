@@ -209,13 +209,20 @@ rules:
   resources:
   - alertmanagers
   - prometheuses
-  - prometheusrules
-  - servicemonitors
   - thanosrulers
   verbs:
   - create
   - update
   - delete
+- apiGroups:
+  - monitoring.coreos.com
+  resources:
+  - alertmanagerconfigs
+  - podmonitors
+  - prometheusrules
+  - servicemonitors
+  verbs:
+  - '*'
 - apiGroups:
   - authentication.k8s.io
   resources:
