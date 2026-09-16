@@ -32,8 +32,10 @@ function(params)
       'monitoring.coreos.com',
       'scrapeconfigs',
     ) + {
-      // PO 0.94 grants only patch on */finalizers but blockOwnerDeletion owner
-      // references require update on the owner's finalizers subresource.
+      // OCP enables the OwnerReferencesPermissionEnforcement admission controller
+      // by default. PO 0.94 grants only patch on */finalizers but blockOwnerDeletion
+      // owner references require update on the owner's finalizers subresource.
+      // See https://kubernetes.io/docs/reference/access-authn-authz/admission-controllers/#ownerreferencespermissionenforcement
       rules+: [{
         apiGroups: ['monitoring.coreos.com'],
         resources: [

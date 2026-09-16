@@ -36,6 +36,7 @@ function(params)
       metadata+: {
         name: 'prometheus-user-workload-operator',
       },
+      // See jsonnet/components/prometheus-operator.libsonnet.
       rules+: [{
         apiGroups: ['monitoring.coreos.com'],
         resources: [

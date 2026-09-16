@@ -301,7 +301,6 @@ function(params) {
         resourceNames: ['kubelet'],
         verbs: ['get', 'delete'],
       },
-      // Prometheus Operator 0.94+ grants read-only access to monitoring CRs.
       // CMO reconciles these resources directly and must hold the write verbs.
       {
         apiGroups: ['monitoring.coreos.com'],
