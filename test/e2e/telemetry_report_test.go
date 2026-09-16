@@ -36,6 +36,7 @@ import (
 var testdataDir = filepath.Join("..", "..", "hack", "telemetry_report", "testdata")
 
 func TestTelemetryReport(t *testing.T) {
+	t.Skip("Skipping due to flakiness, see https://redhat.atlassian.net/browse/OCPBUGS-123794")
 	ctx := context.Background()
 
 	data, err := os.ReadFile(filepath.Join(testdataDir, "prometheusrule.yaml"))
