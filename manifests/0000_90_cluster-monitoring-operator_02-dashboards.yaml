@@ -8459,6 +8459,12 @@ data:
                                 "format": "time_series",
                                 "legendFormat": "limits",
                                 "legendLink": null
+                            },
+                            {
+                                "expr": "max_over_time(sum by (container)(node_namespace_pod_container:container_cpu_usage_seconds_total:sum_irate{namespace=\"$namespace\", pod=\"$pod\", container!=\"\"})[5m:])",
+                                "format": "time_series",
+                                "legendFormat": "{{container}} (max)",
+                                "legendLink": null
                             }
                         ],
                         "thresholds": [
