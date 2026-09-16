@@ -284,8 +284,8 @@ function(params)
             initContainers+: [
               {
                 name: 'init-textfile',
-                command: ['/bin/sh', '-c', '[[ ! -d /node_exporter/collectors/init ]] || find /node_exporter/collectors/init -perm /111 -type f -exec {} \\;'],
-                env: [{ name: 'TMPDIR', value: '/tmp' }],
+                command: ['/bin/sh', '-c', '[[ ! -d /node_exporter/collectors/init ]] || find /node_exporter/collectors/init -perm /111 -type f -exec sh -c \'for script; do "$script" || exit $?; done\' sh {} +'],
+                env: [{ name: 'TMPDIR', value: textfileDir }],
                 image: cfg.image,
                 resources: {
                   requests: {

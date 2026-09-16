@@ -20,6 +20,24 @@ import (
 	"time"
 )
 
+func TestNodeExporterTextfileMetrics(t *testing.T) {
+	metrics := []string{
+		"virt_platform",
+		"node_boots_total",
+		"cluster:virt_platform_nodes:sum",
+	}
+
+	for _, metric := range metrics {
+		t.Run(metric, func(t *testing.T) {
+			f.PrometheusK8sClient.WaitForQueryReturnGreaterEqualOne(
+				t,
+				5*time.Minute,
+				fmt.Sprintf("count(%s)", metric),
+			)
+		})
+	}
+}
+
 func TestNodeExporterCollectorEnablement(t *testing.T) {
 	t.Cleanup(func() {
 		f.MustDeleteConfigMap(t, f.BuildCMOConfigMap(t, ""))
