@@ -2142,7 +2142,7 @@ func TestPrometheusK8sAdditionalAlertManagerConfigsSecret(t *testing.T) {
   authorization:
     credentials_file: /etc/prometheus/secrets/alertmanager1-bearer-token/token
   tls_config:
-    min_version: VersionTLS12
+    min_version: TLS12
     cipher_suites:
     - TLS_AES_128_GCM_SHA256
     - TLS_AES_256_GCM_SHA384
@@ -2450,7 +2450,7 @@ func TestThanosRulerAdditionalAlertManagerConfigsSecret(t *testing.T) {
   api_version: v2
   http_config:
     tls_config:
-      min_version: VersionTLS12
+      min_version: TLS12
       cipher_suites:
       - TLS_AES_128_GCM_SHA256
       - TLS_AES_256_GCM_SHA384
