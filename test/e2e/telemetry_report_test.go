@@ -174,6 +174,12 @@ func matchGolden(t *testing.T, got, golden string) {
 		s = regexp.MustCompile(`peak_series: \d+`).ReplaceAllString(s, "peak_series: N")
 		s = regexp.MustCompile(`value_range: [^\n>]+`).ReplaceAllString(s, "value_range: V")
 		s = regexp.MustCompile(`(?m)^# NOTE: TSDB.*\n`).ReplaceAllString(s, "")
+		// Remove timing-dependent "0 timeseries" messages: short rate() windows
+		// sometimes lack enough samples, producing transient diagnostics.
+		s = regexp.MustCompile(`(?m)^\s+- metric "[^"]+" has 0 timeseries[^\n]*\n`).ReplaceAllString(s, "")
+		// Normalize the failing_checks count so that the removal of
+		// timing-dependent messages above does not cause a mismatch.
+		s = regexp.MustCompile(`(failing_checks:\n\s+count: )\d+`).ReplaceAllString(s, "${1}N")
 		return s
 	}
 	if n := normalize(got); n != normalize(golden) {
