@@ -15,7 +15,17 @@ Monitoring a platform such as OpenShift requires a coordination of multiple comp
 However, users should be able to customize the monitoring stack in such a way that they end up with a resilient and highly available monitoring solution.
 Despite this, to avoid users from misconfiguring the monitoring stack of their clusters not all configuration parameters are exposed.
 
-Configuring Cluster Monitoring is optional. If the config does not exist or is empty or malformed, then defaults will be used.
+Configuring Cluster Monitoring is optional. If the config does not exist or is empty, defaults will be used. If the configuration is invalid YAML data, the operator stops reconciling and reports `Degraded=True`.
+
+## ClusterMonitoring Custom Resource (TechPreview)
+
+**This feature is gated behind the `ClusterMonitoringConfig` feature gate and is only available in TechPreview/DevPreview clusters.**
+
+In addition to ConfigMaps, platform monitoring components can be configured through a cluster-scoped `ClusterMonitoring` custom resource named `cluster` in the `config.openshift.io/v1alpha1` API group. The CRD is defined in [openshift/api](https://github.com/openshift/api/blob/master/config/v1alpha1/types_cluster_monitoring.go).
+
+During Phase 1 (pre-GA), the ConfigMap takes precedence: for each top-level component, if the ConfigMap sets a value, the corresponding CRD field is ignored. CRD values are only applied when the ConfigMap does not configure that component.
+
+Detailed user workload monitoring configuration (`user-workload-monitoring-config`) is not yet configurable through a CRD and remains ConfigMap-only, though enablement (`enableUserWorkload`) can be set via the CRD's `userDefined.mode` field.
 
 ## Table of Contents
 * [AdditionalAlertmanagerConfig](#additionalalertmanagerconfig)
