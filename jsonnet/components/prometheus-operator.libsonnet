@@ -31,7 +31,19 @@ function(params)
       ),
       'monitoring.coreos.com',
       'scrapeconfigs',
-    ),
+    ) + {
+      // PO 0.94 grants only patch on */finalizers but blockOwnerDeletion owner
+      // references require update on the owner's finalizers subresource.
+      rules+: [{
+        apiGroups: ['monitoring.coreos.com'],
+        resources: [
+          'alertmanagers/finalizers',
+          'prometheuses/finalizers',
+          'thanosrulers/finalizers',
+        ],
+        verbs: ['update'],
+      }],
+    },
 
     kubeRbacProxySecret: generateSecret.staticAuthSecret(params.namespace, params.commonLabels, 'prometheus-operator-kube-rbac-proxy-config'),
     deployment+: {

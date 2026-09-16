@@ -222,7 +222,13 @@ rules:
   - prometheusrules
   - servicemonitors
   verbs:
-  - '*'
+  - get
+  - list
+  - watch
+  - create
+  - update
+  - patch
+  - delete
 - apiGroups:
   - authentication.k8s.io
   resources:
@@ -887,6 +893,14 @@ rules:
   - subjectaccessreviews
   verbs:
   - create
+- apiGroups:
+  - monitoring.coreos.com
+  resources:
+  - alertmanagers/finalizers
+  - prometheuses/finalizers
+  - thanosrulers/finalizers
+  verbs:
+  - update
 - apiGroups:
   - authentication.k8s.io
   resources:
