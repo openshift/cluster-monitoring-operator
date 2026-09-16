@@ -124,17 +124,30 @@ function(params)
       },
     },
 
+    local telemetryMetrics = [
+      'apiserver_current_inflight_requests',
+      'apiserver_request_total',
+      'apiserver_storage_objects',
+      'container_cpu_usage_seconds_total',
+      'container_memory_working_set_bytes',
+      'kubelet_containers_per_pod_count_sum',
+      'kubelet_volume_stats_used_bytes',
+      'pv_collector_total_pv_count',
+      'selinux_warning_controller_selinux_volume_conflict',
+      'volume_manager_selinux_pod_context_mismatch_errors_total',
+      'volume_manager_selinux_pod_context_mismatch_warnings_total',
+      'volume_manager_selinux_volume_context_mismatch_errors_total',
+      'volume_manager_selinux_volume_context_mismatch_warnings_total',
+      'volume_manager_selinux_volumes_admitted_total',
+    ],
+
     minimalServiceMonitorKubelet: generateServiceMonitor.serviceMonitorForMinimalProfile(
       generateServiceMonitor.keepOnlyMetrics(
         self.serviceMonitorKubelet,
-        [
+        telemetryMetrics + [
           'apiserver_audit_event_total',
-          'apiserver_current_inflight_requests',
-          'apiserver_request_total',
-          'apiserver_storage_objects',
           'container_cpu_cfs_periods_total',
           'container_cpu_cfs_throttled_periods_total',
-          'container_cpu_usage_seconds_total',
           'container_fs_reads_bytes_total',
           'container_fs_reads_total',
           'container_fs_usage_bytes',
@@ -144,7 +157,6 @@ function(params)
           'container_memory_rss',
           'container_memory_swap',
           'container_memory_usage_bytes',
-          'container_memory_working_set_bytes',
           'container_network_receive_bytes_total',
           'container_network_receive_packets_dropped_total',
           'container_network_receive_packets_total',
@@ -153,7 +165,6 @@ function(params)
           'container_network_transmit_packets_total',
           'container_spec_cpu_shares',
           'kubelet_certificate_manager_client_expiration_renew_errors',
-          'kubelet_containers_per_pod_count_sum',
           'kubelet_node_name',
           'kubelet_pleg_relist_duration_seconds_bucket',
           'kubelet_pod_worker_duration_seconds_bucket',
@@ -163,20 +174,19 @@ function(params)
           'kubelet_volume_stats_inodes',
           'kubelet_volume_stats_inodes_free',
           'kubelet_volume_stats_inodes_used',
-          'kubelet_volume_stats_used_bytes',
           'machine_cpu_cores',
           'machine_memory_bytes',
           'process_start_time_seconds',
-          'pv_collector_total_pv_count',
           'rest_client_requests_total',
-          'selinux_warning_controller_selinux_volume_conflict',
           'storage_operation_duration_seconds_count',
-          'volume_manager_selinux_pod_context_mismatch_errors_total',
-          'volume_manager_selinux_pod_context_mismatch_warnings_total',
-          'volume_manager_selinux_volume_context_mismatch_errors_total',
-          'volume_manager_selinux_volume_context_mismatch_warnings_total',
-          'volume_manager_selinux_volumes_admitted_total',
         ]
+      )
+    ),
+
+    telemetryServiceMonitorKubelet: generateServiceMonitor.serviceMonitorForTelemetryProfile(
+      generateServiceMonitor.keepOnlyMetrics(
+        self.serviceMonitorKubelet,
+        telemetryMetrics,
       )
     ),
 

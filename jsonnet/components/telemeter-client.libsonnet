@@ -50,6 +50,15 @@ function(params) {
     },
   },
   minimalServiceMonitor: generateServiceMonitor.serviceMonitorForMinimalProfile(self.serviceMonitor),
+  telemetryServiceMonitor: generateServiceMonitor.serviceMonitorForTelemetryProfile(
+    generateServiceMonitor.keepOnlyMetrics(
+      self.serviceMonitor,
+      [
+        'federate_filtered_samples',
+        'federate_samples',
+      ]
+    )
+  ),
   secret: tc.telemeterClient.secret,
   servingCertsCABundle: tc.telemeterClient.servingCertsCABundle,
   kubeRbacProxySecret: generateSecret.staticAuthSecret(cfg.namespace, cfg.commonLabels, 'telemeter-client-kube-rbac-proxy-config'),
