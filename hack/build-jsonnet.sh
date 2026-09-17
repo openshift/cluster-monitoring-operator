@@ -61,6 +61,8 @@ mv "${prefix}/cluster-monitoring-operator/namespaced-cluster-role.yaml" \
    "${prefix}/manifests/0000_50_cluster-monitoring-operator_02-namespaced-cluster-role.yaml"
 mv "${prefix}/cluster-monitoring-operator/alert-customization-role.yaml" \
    "${prefix}/manifests/0000_50_cluster-monitoring-operator_02-alert-customization-role.yaml"
+mv "${prefix}/cluster-monitoring-operator/openshift-config-managed-role.yaml" \
+   "${prefix}/manifests/0000_50_cluster-monitoring-operator_02-openshift-config-managed-role.yaml"
 
 # Move resulting manifests to the manifests directory
 for f in "${prefix}/manifests/"*; do
