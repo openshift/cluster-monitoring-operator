@@ -604,6 +604,57 @@ func TestUnconfiguredManifests(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
+
+	_, err = f.MonitoringPluginServiceMonitor()
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	_, err = f.MonitoringPluginPrometheusRule()
+	if err != nil {
+		t.Fatal(err)
+	}
+}
+
+func TestMonitoringPluginServiceMonitor(t *testing.T) {
+	f := NewFactory("openshift-monitoring", "openshift-user-workload-monitoring", mustDefaultConfig(), defaultInfrastructureReader(), &fakeProxyReader{}, NewAssets(assetsPath), &APIServerConfig{}, &configv1.Console{})
+	sm, err := f.MonitoringPluginServiceMonitor()
+	require.NoError(t, err)
+	require.Equal(t, "monitoring-plugin", sm.Name)
+	require.Equal(t, "openshift-monitoring", sm.Namespace)
+	require.Len(t, sm.Spec.Endpoints, 1)
+	require.True(t, sm.Spec.Endpoints[0].HonorLabels, "honorLabels must keep plugin metric labels")
+	require.Equal(t, "/metrics", sm.Spec.Endpoints[0].Path)
+	require.Equal(t, "https", sm.Spec.Endpoints[0].Port)
+	require.NotNil(t, sm.Spec.Endpoints[0].Scheme)
+	require.Equal(t, "https", string(*sm.Spec.Endpoints[0].Scheme))
+}
+
+func TestMonitoringPluginPrometheusRule(t *testing.T) {
+	f := NewFactory("openshift-monitoring", "openshift-user-workload-monitoring", mustDefaultConfig(), defaultInfrastructureReader(), &fakeProxyReader{}, NewAssets(assetsPath), &APIServerConfig{}, &configv1.Console{})
+	pr, err := f.MonitoringPluginPrometheusRule()
+	require.NoError(t, err)
+	require.Equal(t, "monitoring-plugin", pr.Name)
+	require.Equal(t, "openshift-monitoring", pr.Namespace)
+	require.Equal(t, "k8s", pr.Labels["prometheus"])
+	require.Equal(t, "alert-rules", pr.Labels["role"])
+	require.Len(t, pr.Spec.Groups, 1)
+	require.Equal(t, "monitoring-plugin.rules", pr.Spec.Groups[0].Name)
+
+	got := map[string]string{}
+	for _, rule := range pr.Spec.Groups[0].Rules {
+		require.NotEmpty(t, rule.Alert)
+		require.Equal(t, "warning", rule.Labels["severity"])
+		require.Equal(t, "openshift-monitoring", rule.Labels["namespace"])
+		require.NotNil(t, rule.For)
+		require.Equal(t, monv1.Duration("15m"), *rule.For)
+		got[rule.Alert] = rule.Expr.String()
+	}
+
+	require.Contains(t, got["MonitoringPluginAlertRelabelConfigGCListFailed"], "monitoring_plugin_alert_relabel_config_gc_list_errors_total")
+	require.Contains(t, got["MonitoringPluginAlertRelabelConfigGCDeleteFailed"], "monitoring_plugin_alert_relabel_config_gc_delete_errors_total")
+	require.Contains(t, got["MonitoringPluginAlertRelabelConfigGitOpsOrphan"], "monitoring_plugin_alert_relabel_config_gitops_orphans")
+	require.Len(t, got, 3)
 }
 
 func TestSharingConfig(t *testing.T) {
@@ -4835,6 +4886,16 @@ func TestNonHighlyAvailableInfrastructureServiceMonitors(t *testing.T) {
 			name: "Thanos Sidecar Service Monitor",
 			getEndpoints: func(f *Factory) ([]monv1.Endpoint, error) {
 				pt, err := f.PrometheusK8sThanosSidecarServiceMonitor()
+				if err != nil {
+					return nil, err
+				}
+				return pt.Spec.Endpoints, nil
+			},
+		},
+		{
+			name: "Monitoring Plugin Service Monitor",
+			getEndpoints: func(f *Factory) ([]monv1.Endpoint, error) {
+				pt, err := f.MonitoringPluginServiceMonitor()
 				if err != nil {
 					return nil, err
 				}

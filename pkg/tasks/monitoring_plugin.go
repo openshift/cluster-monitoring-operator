@@ -114,6 +114,28 @@ func (t *MonitoringPluginTask) Run(ctx context.Context) error {
 		}
 	}
 
+	{ // service monitor
+		sm, err := t.factory.MonitoringPluginServiceMonitor()
+		if err != nil {
+			return fmt.Errorf("initializing Console Plugin ServiceMonitor failed: %w", err)
+		}
+
+		if err = t.client.CreateOrUpdateServiceMonitor(ctx, sm); err != nil {
+			return fmt.Errorf("reconciling Console Plugin ServiceMonitor failed: %w", err)
+		}
+	}
+
+	{ // prometheus rule
+		pr, err := t.factory.MonitoringPluginPrometheusRule()
+		if err != nil {
+			return fmt.Errorf("initializing Console Plugin PrometheusRule failed: %w", err)
+		}
+
+		if err = t.client.CreateOrUpdatePrometheusRule(ctx, pr); err != nil {
+			return fmt.Errorf("reconciling Console Plugin PrometheusRule failed: %w", err)
+		}
+	}
+
 	{ // pod disruption budget
 		pdb, err := t.factory.MonitoringPluginPodDisruptionBudget()
 		if err != nil {

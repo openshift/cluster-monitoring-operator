@@ -1,0 +1,43 @@
+apiVersion: monitoring.coreos.com/v1
+kind: PrometheusRule
+metadata:
+  labels:
+    app.kubernetes.io/component: monitoring-plugin
+    app.kubernetes.io/managed-by: cluster-monitoring-operator
+    app.kubernetes.io/name: monitoring-plugin
+    app.kubernetes.io/part-of: openshift-monitoring
+    prometheus: k8s
+    role: alert-rules
+  name: monitoring-plugin
+  namespace: openshift-monitoring
+spec:
+  groups:
+  - name: monitoring-plugin.rules
+    rules:
+    - alert: MonitoringPluginAlertRelabelConfigGCListFailed
+      annotations:
+        description: The monitoring plugin failed to list AlertRelabelConfigs while removing orphans. Stale relabel configs may remain. Check the monitoring-plugin logs and Kubernetes API access.
+        summary: AlertRelabelConfig orphan cleanup failed to list configs
+      expr: sum(increase(monitoring_plugin_alert_relabel_config_gc_list_errors_total{job="monitoring-plugin"}[30m])) > 0
+      for: 15m
+      labels:
+        namespace: openshift-monitoring
+        severity: warning
+    - alert: MonitoringPluginAlertRelabelConfigGCDeleteFailed
+      annotations:
+        description: The monitoring plugin failed to delete an orphaned AlertRelabelConfig. Stale relabel configs may remain. Check the monitoring-plugin logs and Kubernetes API access.
+        summary: AlertRelabelConfig orphan cleanup failed to delete a config
+      expr: sum(increase(monitoring_plugin_alert_relabel_config_gc_delete_errors_total{job="monitoring-plugin"}[30m])) > 0
+      for: 15m
+      labels:
+        namespace: openshift-monitoring
+        severity: warning
+    - alert: MonitoringPluginAlertRelabelConfigGitOpsOrphan
+      annotations:
+        description: The monitoring plugin found GitOps-managed AlertRelabelConfigs whose alert rules no longer exist. These are not deleted automatically. Remove or update them in GitOps.
+        summary: GitOps-managed orphaned AlertRelabelConfig was not deleted
+      expr: sum(monitoring_plugin_alert_relabel_config_gitops_orphans{job="monitoring-plugin"}) > 0
+      for: 15m
+      labels:
+        namespace: openshift-monitoring
+        severity: warning
