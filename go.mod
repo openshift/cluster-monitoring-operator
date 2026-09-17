@@ -1,6 +1,6 @@
 module github.com/openshift/cluster-monitoring-operator
 
-go 1.19
+go 1.21
 
 require (
 	github.com/Jeffail/gabs v1.4.0
@@ -21,9 +21,9 @@ require (
 	github.com/prometheus/prometheus v0.48.0
 	github.com/stretchr/testify v1.8.4
 	golang.org/x/exp v0.0.0-20231127185646-65229373498e
-	golang.org/x/net v0.19.0
-	golang.org/x/sync v0.5.0
-	golang.org/x/text v0.14.0
+	golang.org/x/net v0.25.0
+	golang.org/x/sync v0.11.0
+	golang.org/x/text v0.22.0
 	gopkg.in/yaml.v2 v2.4.0
 	gopkg.in/yaml.v3 v3.0.1
 	k8s.io/api v0.28.4
@@ -134,10 +134,10 @@ require (
 	go.uber.org/goleak v1.2.1 // indirect
 	go.uber.org/multierr v1.11.0 // indirect
 	go.uber.org/zap v1.25.0 // indirect
-	golang.org/x/crypto v0.16.0 // indirect
+	golang.org/x/crypto v0.33.0 // indirect
 	golang.org/x/oauth2 v0.15.0 // indirect
-	golang.org/x/sys v0.15.0 // indirect
-	golang.org/x/term v0.15.0 // indirect
+	golang.org/x/sys v0.30.0 // indirect
+	golang.org/x/term v0.29.0 // indirect
 	golang.org/x/time v0.5.0 // indirect
 	google.golang.org/appengine v1.6.8 // indirect
 	google.golang.org/genproto v0.0.0-20231002182017-d307bd883b97 // indirect
@@ -160,3 +160,5 @@ require (
 replace k8s.io/kube-openapi => k8s.io/kube-openapi v0.0.0-20230928195430-ce36a0c3bb67
 
 replace github.com/prometheus-operator/prometheus-operator v0.70.0 => github.com/openshift/prometheus-operator v0.20.1-0.20231201170443-b558bb393c78
+
+replace golang.org/x/net => github.com/openshift-sustaining/net v0.35.0-sec.4
