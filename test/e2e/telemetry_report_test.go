@@ -76,6 +76,9 @@ func TestTelemetryReport(t *testing.T) {
 
 	for name, selector := range tests {
 		t.Run(name, func(t *testing.T) {
+			if name == "rate_issues" {
+				t.Skip("Skipping due to flakiness, see https://redhat.atlassian.net/browse/OCPBUGS-123794")
+			}
 			t.Parallel()
 			out, err := exec.Command(binary, promURL, selector).CombinedOutput()
 			require.Error(t, err, string(out))
