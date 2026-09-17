@@ -22,7 +22,9 @@ import (
 
 func TestNodeExporterTextfileMetrics(t *testing.T) {
 	metrics := []string{
+		"virt_platform",
 		"node_boots_total",
+		"cluster:virt_platform_nodes:sum",
 	}
 
 	for _, metric := range metrics {
