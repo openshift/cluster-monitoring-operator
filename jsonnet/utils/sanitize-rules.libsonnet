@@ -479,6 +479,20 @@ local patchedRules = [
   {
     name: 'thanos-query',
     rules: [
+      // MON-4638: OpenShift sets for=1h for thanos-query alerts, but the upstream
+      // ThanosQueryOverload description still says "15 minutes". Override the
+      // description to match the OpenShift for duration. Named patch must come
+      // before the wildcard (alert: '') patch because matching stops at first hit.
+      {
+        alert: 'ThanosQueryOverload',
+        'for': '1h',
+        labels: {
+          severity: 'warning',
+        },
+        annotations: {
+          description: 'Thanos Query {{$labels.job}} in {{$labels.namespace}} has been overloaded for more than 1 hour. This may be a symptom of excessive simultaneous complex requests, low performance of the Prometheus API, or failures within these components. Assess the health of the Thanos query instances, the connected Prometheus instances, look for potential senders of these requests and then contact support.',
+        },
+      },
       {
         alert: '',
         'for': '1h',
