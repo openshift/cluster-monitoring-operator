@@ -20,6 +20,7 @@ local defaults = {
 function(params) {
   local cmo = self,
   local cfg = defaults + params,
+  local monitoringEditVerbs = ['get', 'list', 'watch', 'create', 'update', 'patch', 'delete'],
 
   '0alertingrulesCustomResourceDefinition': import './../crds/alertingrules-custom-resource-definition.json',
   '0alertrelabelconfigsCustomResourceDefinition': import './../crds/alertrelabelconfigs-custom-resource-definition.json',
@@ -300,6 +301,18 @@ function(params) {
         resourceNames: ['kubelet'],
         verbs: ['get', 'delete'],
       },
+      // CMO reconciles these resources directly and must hold the write verbs.
+      {
+        apiGroups: ['monitoring.coreos.com'],
+        resources: ['alertmanagers', 'prometheuses', 'thanosrulers'],
+        verbs: ['create', 'update', 'delete'],
+      },
+      // CMO must hold verbs it grants via delegated ClusterRoles (RBAC escalation).
+      {
+        apiGroups: ['monitoring.coreos.com'],
+        resources: ['alertmanagerconfigs', 'podmonitors', 'prometheusrules', 'servicemonitors'],
+        verbs: monitoringEditVerbs,
+      },
     ],
   },
 
@@ -535,7 +548,7 @@ function(params) {
     rules: [{
       apiGroups: ['monitoring.coreos.com'],
       resources: ['servicemonitors', 'podmonitors', 'prometheusrules'],
-      verbs: ['*'],
+      verbs: monitoringEditVerbs,
     }],
   },
 
@@ -563,7 +576,7 @@ function(params) {
     rules: [{
       apiGroups: ['monitoring.coreos.com'],
       resources: ['prometheusrules'],
-      verbs: ['*'],
+      verbs: monitoringEditVerbs,
     }],
   },
 
@@ -593,7 +606,7 @@ function(params) {
     rules: [{
       apiGroups: ['monitoring.coreos.com'],
       resources: ['alertmanagerconfigs'],
-      verbs: ['*'],
+      verbs: monitoringEditVerbs,
     }],
   },
 
