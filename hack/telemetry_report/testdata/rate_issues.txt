@@ -33,7 +33,7 @@ selectors:
         value_range: V
         recording_rule:
           file: RULEFILE
-          expr: sum(rate(etcd_disk_wal_fsync_duration_seconds_count{job="etcd"}[50s]))
+          expr: sum(rate(etcd_disk_wal_fsync_duration_seconds_count{job="etcd"}[50s])) or vector(0)
           tree: |-
             └── etcd_disk_wal_fsync_duration_seconds_count{job="etcd"}
                   <job: etcd> <value_range: V> <peak_series: N>
