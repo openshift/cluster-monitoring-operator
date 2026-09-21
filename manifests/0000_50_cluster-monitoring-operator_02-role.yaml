@@ -205,6 +205,31 @@ rules:
   - get
   - delete
 - apiGroups:
+  - monitoring.coreos.com
+  resources:
+  - alertmanagers
+  - prometheuses
+  - thanosrulers
+  verbs:
+  - create
+  - update
+  - delete
+- apiGroups:
+  - monitoring.coreos.com
+  resources:
+  - alertmanagerconfigs
+  - podmonitors
+  - prometheusrules
+  - servicemonitors
+  verbs:
+  - get
+  - list
+  - watch
+  - create
+  - update
+  - patch
+  - delete
+- apiGroups:
   - authentication.k8s.io
   resources:
   - tokenreviews
@@ -727,37 +752,66 @@ rules:
   resources:
   - alertmanagers
   - alertmanagers/finalizers
-  - alertmanagers/status
-  - alertmanagerconfigs
   - prometheuses
   - prometheuses/finalizers
-  - prometheuses/status
   - thanosrulers
   - thanosrulers/finalizers
-  - thanosrulers/status
-  - servicemonitors
-  - servicemonitors/status
-  - podmonitors
-  - podmonitors/status
-  - probes
-  - probes/status
-  - prometheusrules
-  - prometheusrules/status
   verbs:
-  - '*'
+  - patch
+- apiGroups:
+  - monitoring.coreos.com
+  resources:
+  - alertmanagers/status
+  - podmonitors/status
+  - probes/status
+  - prometheuses/status
+  - prometheusrules/status
+  - servicemonitors/status
+  - thanosrulers/status
+  verbs:
+  - create
+  - update
+  - patch
+  - delete
+- apiGroups:
+  - monitoring.coreos.com
+  resources:
+  - alertmanagers
+  - alertmanagerconfigs
+  - podmonitors
+  - probes
+  - prometheuses
+  - prometheusrules
+  - servicemonitors
+  - thanosrulers
+  verbs:
+  - get
+  - list
+  - watch
 - apiGroups:
   - apps
   resources:
   - statefulsets
   verbs:
-  - '*'
+  - get
+  - list
+  - watch
+  - create
+  - update
+  - patch
+  - delete
 - apiGroups:
   - ""
   resources:
   - configmaps
   - secrets
   verbs:
-  - '*'
+  - get
+  - list
+  - watch
+  - create
+  - update
+  - delete
 - apiGroups:
   - ""
   resources:
@@ -839,6 +893,14 @@ rules:
   - subjectaccessreviews
   verbs:
   - create
+- apiGroups:
+  - monitoring.coreos.com
+  resources:
+  - alertmanagers/finalizers
+  - prometheuses/finalizers
+  - thanosrulers/finalizers
+  verbs:
+  - update
 - apiGroups:
   - authentication.k8s.io
   resources:
