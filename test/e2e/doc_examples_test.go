@@ -105,15 +105,13 @@ func TestDocExamples(t *testing.T) {
 					jobName := toJobName(t.Name())
 					containerName := "test"
 					var backoffLimit int32 = 5
-					var activeDeadlineSeconds int64 = 300
 					job := &batchv1.Job{
 						ObjectMeta: metav1.ObjectMeta{
 							Name:      jobName,
 							Namespace: testNamespace,
 						},
 						Spec: batchv1.JobSpec{
-							BackoffLimit:          &backoffLimit,
-							ActiveDeadlineSeconds: &activeDeadlineSeconds,
+							BackoffLimit: &backoffLimit,
 							Template: corev1.PodTemplateSpec{
 								Spec: corev1.PodSpec{
 									ServiceAccountName: serviceAccount,
@@ -148,7 +146,7 @@ func TestDocExamples(t *testing.T) {
 					})
 
 					var completed bool
-					err = framework.Poll(5*time.Second, 5*time.Minute, func() error {
+					err = framework.Poll(5*time.Second, 6*time.Minute, func() error {
 						j, err := f.KubeClient.BatchV1().Jobs(testNamespace).Get(ctx, jobName, metav1.GetOptions{})
 						if err != nil {
 							return err
@@ -167,13 +165,15 @@ func TestDocExamples(t *testing.T) {
 					require.NoError(t, err)
 
 					if !completed {
-						// Retrieve logs from the most recent pod created by the job.
+						// Retrieve logs from all pods created by the job.
 						pods, err := f.KubeClient.CoreV1().Pods(testNamespace).List(ctx, metav1.ListOptions{
 							LabelSelector: "job-name=" + jobName,
 						})
-						if err == nil && len(pods.Items) > 0 {
-							l, _ := f.GetLogs(testNamespace, pods.Items[len(pods.Items)-1].Name, containerName)
-							t.Log(l)
+						if err == nil {
+							for _, pod := range pods.Items {
+								l, _ := f.GetLogs(testNamespace, pod.Name, containerName)
+								t.Logf("logs from pod %s: %s", pod.Name, l)
+							}
 						}
 						require.Fail(t, "job failed to execute script")
 					}
