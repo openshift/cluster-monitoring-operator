@@ -902,14 +902,6 @@ rules:
   verbs:
   - create
 - apiGroups:
-  - monitoring.coreos.com
-  resources:
-  - alertmanagers/finalizers
-  - prometheuses/finalizers
-  - thanosrulers/finalizers
-  verbs:
-  - update
-- apiGroups:
   - authentication.k8s.io
   resources:
   - tokenreviews

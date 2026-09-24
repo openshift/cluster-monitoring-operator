@@ -163,11 +163,3 @@ rules:
   - subjectaccessreviews
   verbs:
   - create
-- apiGroups:
-  - monitoring.coreos.com
-  resources:
-  - alertmanagers/finalizers
-  - prometheuses/finalizers
-  - thanosrulers/finalizers
-  verbs:
-  - update
