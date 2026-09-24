@@ -112,7 +112,7 @@ spec:
 
         # Anti-pattern: rate() with range too short for scrape interval.
         - record: e2etelemetry:etcd_wal_fsync:rate_short
-          expr: sum(rate(etcd_disk_wal_fsync_duration_seconds_count{job="etcd"}[50s]))
+          expr: sum(rate(etcd_disk_wal_fsync_duration_seconds_count{job="etcd"}[50s])) or vector(0)
 
         # Intermediate: sum of a counter without rate() first (for chain test).
         - record: e2etelemetry:etcd_wal_fsync:sum
