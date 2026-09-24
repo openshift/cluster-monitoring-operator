@@ -36,16 +36,6 @@ function(params)
       metadata+: {
         name: 'prometheus-user-workload-operator',
       },
-      // See jsonnet/components/prometheus-operator.libsonnet.
-      rules+: [{
-        apiGroups: ['monitoring.coreos.com'],
-        resources: [
-          'alertmanagers/finalizers',
-          'prometheuses/finalizers',
-          'thanosrulers/finalizers',
-        ],
-        verbs: ['update'],
-      }],
     },
 
     clusterRoleBinding+: {
