@@ -8,7 +8,6 @@ data:
     prometheusOperator:
       baseImage: quay.io/coreos/prometheus-operator
       prometheusConfigReloaderBaseImage: quay.io/coreos/prometheus-config-reloader
-      configReloaderBaseImage: quay.io/coreos/configmap-reload
     prometheusK8s:
       retention: 24h
       baseImage: quay.io/prometheus/prometheus
