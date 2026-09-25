@@ -6,7 +6,6 @@ reviewers:
 - slashpai
 - danielmellado
 - marioferh
-- rexagod
 - machine424
 
 approvers:
@@ -15,7 +14,6 @@ approvers:
 - slashpai
 - danielmellado
 - marioferh
-- rexagod
 - machine424
 
 emeritus_approvers:
@@ -36,3 +34,4 @@ emeritus_approvers:
 - JoaoBraveCoding
 - sthaha
 - raptorsun
+- rexagod
