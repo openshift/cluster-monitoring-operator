@@ -410,6 +410,9 @@ function(params) {
     kind: 'ClusterRole',
     metadata: {
       name: 'cluster-monitoring-view',
+      labels: {
+        'app.kubernetes.io/name': 'cluster-monitoring-view',
+      },
     },
     rules: [
       {

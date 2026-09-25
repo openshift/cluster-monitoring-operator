@@ -5560,6 +5560,13 @@ func TestPromConfigurationExternalLabels(t *testing.T) {
 	}
 }
 
+func TestClusterMonitoringClusterRoleViewNameLabel(t *testing.T) {
+	f := NewFactory("openshift-monitoring", "openshift-user-workload-monitoring", mustDefaultConfig(), defaultInfrastructureReader(), &fakeProxyReader{}, NewAssets(assetsPath), &APIServerConfig{}, &configv1.Console{})
+	cr, err := f.ClusterMonitoringClusterRoleView()
+	require.NoError(t, err)
+	require.Equal(t, "cluster-monitoring-view", cr.Labels["app.kubernetes.io/name"])
+}
+
 func mustDefaultConfig() *Config {
 	cfg, err := NewConfigFromString("{}")
 	if err != nil {
