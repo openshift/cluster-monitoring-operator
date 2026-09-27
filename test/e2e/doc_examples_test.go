@@ -28,6 +28,7 @@ import (
 	"github.com/openshift/cluster-monitoring-operator/test/e2e/test_command"
 	"github.com/stretchr/testify/require"
 	"gopkg.in/yaml.v3"
+	batchv1 "k8s.io/api/batch/v1"
 	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
@@ -38,7 +39,7 @@ const (
 	clusterRoleBinding = "tester"
 )
 
-func toPodName(testName string) string {
+func toJobName(testName string) string {
 	h := fnv.New64()
 	h.Write([]byte(testName))
 	return "test-" + strconv.FormatUint(h.Sum64(), 32)
@@ -91,7 +92,9 @@ func TestDocExamples(t *testing.T) {
 			require.NoError(t, decoder.Decode(&suite))
 
 			for i, test := range suite.Tests {
-				// Run the script inside a Pod as some of the endpoints are not exposed by default.
+				// Run the script inside a Job so that transient errors
+				// (e.g. connection refused during pod restarts) are
+				// retried automatically via backoffLimit.
 				t.Run(fmt.Sprintf("test-%d", i), func(t *testing.T) {
 					t.Parallel()
 					t.Cleanup(func() {
@@ -99,28 +102,34 @@ func TestDocExamples(t *testing.T) {
 					})
 
 					ctx := context.Background()
-					podName := toPodName(t.Name())
+					jobName := toJobName(t.Name())
 					containerName := "test"
-					pod := &corev1.Pod{
+					var backoffLimit int32 = 5
+					job := &batchv1.Job{
 						ObjectMeta: metav1.ObjectMeta{
-							Name:      podName,
+							Name:      jobName,
 							Namespace: testNamespace,
 						},
-						Spec: corev1.PodSpec{
-							ServiceAccountName: serviceAccount,
-							RestartPolicy:      corev1.RestartPolicyNever,
-							Containers: []corev1.Container{
-								{
-									Name:            containerName,
-									Image:           "image-registry.openshift-image-registry.svc:5000/openshift/cli:latest",
-									ImagePullPolicy: corev1.PullIfNotPresent,
-									Command:         []string{"bash", "-c", test.Script},
-									SecurityContext: &corev1.SecurityContext{
-										Capabilities: &corev1.Capabilities{
-											Drop: []corev1.Capability{"ALL"},
-										},
-										SeccompProfile: &corev1.SeccompProfile{
-											Type: corev1.SeccompProfileTypeRuntimeDefault,
+						Spec: batchv1.JobSpec{
+							BackoffLimit: &backoffLimit,
+							Template: corev1.PodTemplateSpec{
+								Spec: corev1.PodSpec{
+									ServiceAccountName: serviceAccount,
+									RestartPolicy:      corev1.RestartPolicyOnFailure,
+									Containers: []corev1.Container{
+										{
+											Name:            containerName,
+											Image:           "image-registry.openshift-image-registry.svc:5000/openshift/cli:latest",
+											ImagePullPolicy: corev1.PullIfNotPresent,
+											Command:         []string{"bash", "-c", test.Script},
+											SecurityContext: &corev1.SecurityContext{
+												Capabilities: &corev1.Capabilities{
+													Drop: []corev1.Capability{"ALL"},
+												},
+												SeccompProfile: &corev1.SeccompProfile{
+													Type: corev1.SeccompProfileTypeRuntimeDefault,
+												},
+											},
 										},
 									},
 								},
@@ -128,30 +137,45 @@ func TestDocExamples(t *testing.T) {
 						},
 					}
 
-					pod, err := f.KubeClient.CoreV1().Pods(testNamespace).Create(ctx, pod, metav1.CreateOptions{})
+					_, err := f.KubeClient.BatchV1().Jobs(testNamespace).Create(ctx, job, metav1.CreateOptions{})
 					require.NoError(t, err)
 					t.Cleanup(func() {
-						err := f.KubeClient.CoreV1().Pods(testNamespace).Delete(context.Background(), podName, metav1.DeleteOptions{})
-						require.NoError(t, err)
+						if err := f.KubeClient.BatchV1().Jobs(testNamespace).Delete(context.Background(), jobName, metav1.DeleteOptions{}); err != nil {
+							t.Logf("failed to delete job %s: %v", jobName, err)
+						}
 					})
 
-					err = framework.Poll(5*time.Second, time.Minute, func() error {
-						pod, err = f.KubeClient.CoreV1().Pods(testNamespace).Get(ctx, podName, metav1.GetOptions{})
+					var completed bool
+					err = framework.Poll(5*time.Second, 6*time.Minute, func() error {
+						j, err := f.KubeClient.BatchV1().Jobs(testNamespace).Get(ctx, jobName, metav1.GetOptions{})
 						if err != nil {
 							return err
 						}
-						if pod.Status.Phase != corev1.PodSucceeded && pod.Status.Phase != corev1.PodFailed {
-							return fmt.Errorf("waiting for pod %s/%s: phase %q", testNamespace, podName, pod.Status.Phase)
+						for _, c := range j.Status.Conditions {
+							if c.Type == batchv1.JobComplete && c.Status == corev1.ConditionTrue {
+								completed = true
+								return nil
+							}
+							if c.Type == batchv1.JobFailed && c.Status == corev1.ConditionTrue {
+								return nil
+							}
 						}
-						return nil
+						return fmt.Errorf("waiting for job %s/%s to finish", testNamespace, jobName)
 					})
 					require.NoError(t, err)
 
-					if pod.Status.Phase != corev1.PodSucceeded {
-						l, err := f.GetLogs(testNamespace, podName, containerName)
-						require.NoError(t, err)
-						t.Log(l)
-						require.Fail(t, "pod failed to execute script")
+					if !completed {
+						// Retrieve logs from all pods created by the job.
+						pods, err := f.KubeClient.CoreV1().Pods(testNamespace).List(ctx, metav1.ListOptions{
+							LabelSelector: "job-name=" + jobName,
+						})
+						if err == nil {
+							for _, pod := range pods.Items {
+								l, _ := f.GetLogs(testNamespace, pod.Name, containerName)
+								t.Logf("logs from pod %s: %s", pod.Name, l)
+							}
+						}
+						require.Fail(t, "job failed to execute script")
 					}
 				})
 			}
