@@ -3,21 +3,17 @@ component: "Monitoring"
 reviewers:
 - simonpasquier
 - jan--f
-- raptorsun
 - slashpai
 - danielmellado
 - marioferh
-- rexagod
 - machine424
 
 approvers:
 - simonpasquier
 - jan--f
-- raptorsun
 - slashpai
 - danielmellado
 - marioferh
-- rexagod
 - machine424
 
 emeritus_approvers:
@@ -37,3 +33,5 @@ emeritus_approvers:
 - juanrh
 - JoaoBraveCoding
 - sthaha
+- raptorsun
+- rexagod
