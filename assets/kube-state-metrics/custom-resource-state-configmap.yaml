@@ -52,6 +52,7 @@ data:
               "labelsFromPath":
                 "container":
                 - "containerName"
+              "nilIsZero": true
               "path":
               - "status"
               - "recommendation"
@@ -89,6 +90,7 @@ data:
               "labelsFromPath":
                 "container":
                 - "containerName"
+              "nilIsZero": true
               "path":
               - "status"
               - "recommendation"
@@ -126,6 +128,7 @@ data:
               "labelsFromPath":
                 "container":
                 - "containerName"
+              "nilIsZero": true
               "path":
               - "status"
               - "recommendation"
@@ -163,6 +166,7 @@ data:
               "labelsFromPath":
                 "container":
                 - "containerName"
+              "nilIsZero": true
               "path":
               - "status"
               - "recommendation"
@@ -200,6 +204,7 @@ data:
               "labelsFromPath":
                 "container":
                 - "containerName"
+              "nilIsZero": true
               "path":
               - "status"
               - "recommendation"
@@ -237,6 +242,7 @@ data:
               "labelsFromPath":
                 "container":
                 - "containerName"
+              "nilIsZero": true
               "path":
               - "status"
               - "recommendation"
@@ -274,6 +280,7 @@ data:
               "labelsFromPath":
                 "container":
                 - "containerName"
+              "nilIsZero": true
               "path":
               - "status"
               - "recommendation"
@@ -311,6 +318,7 @@ data:
               "labelsFromPath":
                 "container":
                 - "containerName"
+              "nilIsZero": true
               "path":
               - "status"
               - "recommendation"
@@ -348,6 +356,7 @@ data:
               "labelsFromPath":
                 "container":
                 - "containerName"
+              "nilIsZero": true
               "path":
               - "spec"
               - "resourcePolicy"
@@ -385,6 +394,7 @@ data:
               "labelsFromPath":
                 "container":
                 - "containerName"
+              "nilIsZero": true
               "path":
               - "spec"
               - "resourcePolicy"
@@ -422,6 +432,7 @@ data:
               "labelsFromPath":
                 "container":
                 - "containerName"
+              "nilIsZero": true
               "path":
               - "spec"
               - "resourcePolicy"
@@ -459,6 +470,7 @@ data:
               "labelsFromPath":
                 "container":
                 - "containerName"
+              "nilIsZero": true
               "path":
               - "spec"
               - "resourcePolicy"
