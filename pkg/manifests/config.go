@@ -589,14 +589,14 @@ func (c *Config) applyDefaults() {
 	}
 
 	if c.ClusterMonitoringConfiguration.NodeExporterConfig.IgnoredNetworkDevices == nil {
-		// `IgnoredNetworkDevices` is the default for two arguments:
-		// `collector.netclass.ignored-devices` and
-		// `--collector.netdev.device-exclude`.
+		// `IgnoredNetworkDevices` is the default for the netclass, netdev and
+		// (when enabled) ethtool collectors.
 		//
 		// The following virtual NICs are ignored by default:
 		// * `veth` network interface associated with containers.
-		// * OVN renames `veth.*` to `<rand-hex>@if<X>` where `X` is `/sys/class/net/<if>/ifindex`
-		// thus `[a-f0-9]{15}`
+		// * OVN names the host end of a pod's veth using the first 15 hex digits
+		//   of its container ID. For secondary interfaces, it appends `_<ifindex>`
+		//   and shortens the hex prefix to keep the name within 15 characters.
 		// * `enP.*` virtual NICs on Azure cluster
 		// * OVN virtual interfaces `ovn-k8s-mp[0-9]*`
 		// * virtual tunnels and bridges: `tun[0-9]*|br[0-9]*|br-ex|br-int|br-ext`
@@ -608,9 +608,11 @@ func (c *Config) applyDefaults() {
 		// https://issues.redhat.com/browse/OCPBUGS-2729
 		// https://issues.redhat.com/browse/OCPBUGS-7282
 		// https://issues.redhat.com/browse/OCPBUGS-74347
+		// https://redhat.atlassian.net/browse/OCPBUGS-123708
 		c.ClusterMonitoringConfiguration.NodeExporterConfig.IgnoredNetworkDevices = ptr.To([]string{
 			"veth.*",
 			"[a-f0-9]{15}",
+			"[a-f0-9]{1,13}_[0-9]+",
 			"enP.*",
 			"ovn-k8s-mp[0-9]*",
 			"br-ex",
