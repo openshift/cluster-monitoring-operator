@@ -459,12 +459,15 @@ function(params)
             ],
           },
           {
+            // Restrict the gossip mesh to Alertmanager pods in this namespace.
+            // No namespaceSelector means the from selector is implicitly scoped
+            // to the NetworkPolicy's own namespace, so only the name+part-of
+            // labels are needed to match the replicas.
             from: [{
               podSelector: {
                 matchLabels: {
                   'app.kubernetes.io/name': 'alertmanager',
                   'app.kubernetes.io/part-of': 'openshift-monitoring',
-                  'app.kubernetes.io/instance': 'user-workload',
                 },
               },
             }],
