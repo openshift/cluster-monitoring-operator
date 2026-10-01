@@ -9,3 +9,5 @@ require (
 	github.com/jsonnet-bundler/jsonnet-bundler v0.4.0
 	github.com/prometheus/prometheus v1.8.2-0.20210701133801-b0944590a1c9
 )
+
+replace golang.org/x/net => github.com/openshift-sustaining/net v0.35.0-sec.4
