@@ -88,6 +88,26 @@ func (t *PrometheusOperatorUserWorkloadTask) create(ctx context.Context) error {
 		return fmt.Errorf("reconciling UserWorkload Prometheus Operator ClusterRoleBinding failed: %w", err)
 	}
 
+	r, err := t.factory.PrometheusOperatorUserWorkloadRole()
+	if err != nil {
+		return fmt.Errorf("initializing UserWorkload Prometheus Operator Role failed: %w", err)
+	}
+
+	err = t.client.CreateOrUpdateRole(ctx, r)
+	if err != nil {
+		return fmt.Errorf("reconciling UserWorkload Prometheus Operator Role failed: %w", err)
+	}
+
+	rb, err := t.factory.PrometheusOperatorUserWorkloadRoleBinding()
+	if err != nil {
+		return fmt.Errorf("initializing UserWorkload Prometheus Operator RoleBinding failed: %w", err)
+	}
+
+	err = t.client.CreateOrUpdateRoleBinding(ctx, rb)
+	if err != nil {
+		return fmt.Errorf("reconciling UserWorkload Prometheus Operator RoleBinding failed: %w", err)
+	}
+
 	svc, err := t.factory.PrometheusOperatorUserWorkloadService()
 	if err != nil {
 		return fmt.Errorf("initializing UserWorkload Prometheus Operator Service failed: %w", err)
@@ -211,6 +231,26 @@ func (t *PrometheusOperatorUserWorkloadTask) destroy(ctx context.Context) error 
 	err = t.client.DeleteRoleBinding(ctx, arb)
 	if err != nil {
 		return fmt.Errorf("deleting UserWorkload Alertmanager Role Binding failed: %w", err)
+	}
+
+	rb, err := t.factory.PrometheusOperatorUserWorkloadRoleBinding()
+	if err != nil {
+		return fmt.Errorf("initializing UserWorkload Prometheus Operator RoleBinding failed: %w", err)
+	}
+
+	err = t.client.DeleteRoleBinding(ctx, rb)
+	if err != nil {
+		return fmt.Errorf("deleting UserWorkload Prometheus Operator RoleBinding failed: %w", err)
+	}
+
+	r, err := t.factory.PrometheusOperatorUserWorkloadRole()
+	if err != nil {
+		return fmt.Errorf("initializing UserWorkload Prometheus Operator Role failed: %w", err)
+	}
+
+	err = t.client.DeleteRole(ctx, r)
+	if err != nil {
+		return fmt.Errorf("deleting UserWorkload Prometheus Operator Role failed: %w", err)
 	}
 
 	rpc, err := t.factory.PrometheusOperatorUserWorkloadCRBACProxySecret()
