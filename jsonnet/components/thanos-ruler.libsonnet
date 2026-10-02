@@ -605,6 +605,24 @@ function(params)
                 port: 9092,
                 protocol: 'TCP',
               },
+            ],
+          },
+          {
+            from: [{
+              namespaceSelector: {
+                matchLabels: {
+                  'kubernetes.io/metadata.name': 'openshift-monitoring',
+                },
+              },
+              podSelector: {
+                matchLabels: {
+                  'app.kubernetes.io/name': 'thanos-query',
+                  'app.kubernetes.io/instance': 'thanos-querier',
+                  'app.kubernetes.io/part-of': 'openshift-monitoring',
+                },
+              },
+            }],
+            ports: [
               {
                 // Allow Thanos Querier to reach Thanos Ruler's gRPC store API
                 // endpoint for rule evaluation results.
