@@ -1568,7 +1568,10 @@ func (f *Factory) PrometheusK8s(grpcTLS *v1.Secret, telemetrySecret *v1.Secret) 
 		return nil, err
 	}
 	p.Spec.Thanos.GRPCServerTLSConfig.SafeTLSConfig.MinVersion = grpcTLSVersion
-	p.Spec.Thanos.GRPCServerTLSConfig.CipherSuites = crypto.OpenSSLToIANACipherSuites(f.APIServerConfig.TLSCiphers())
+	p.Spec.Thanos.GRPCServerTLSConfig.CipherSuites, err = f.thanosSidecarGRPCCipherSuites()
+	if err != nil {
+		return nil, err
+	}
 	if curves := f.APIServerConfig.TLSCurves(); len(curves) > 0 {
 		p.Spec.Thanos.GRPCServerTLSConfig.Curves = curves
 	}
@@ -1597,6 +1600,31 @@ func (f *Factory) PrometheusK8s(grpcTLS *v1.Secret, telemetrySecret *v1.Secret) 
 	}
 
 	return p, nil
+}
+
+// thanosSidecarGRPCCipherSuites filters out ciphers that Go considers insecure
+// so Thanos can start when the Old TLS profile is enabled.
+// See https://redhat.atlassian.net/browse/OCPBUGS-128640
+func (f *Factory) thanosSidecarGRPCCipherSuites() ([]string, error) {
+	thanosCiphers := map[string]struct{}{}
+	for _, c := range tls.CipherSuites() {
+		thanosCiphers[c.Name] = struct{}{}
+	}
+
+	configuredCiphers := crypto.OpenSSLToIANACipherSuites(f.APIServerConfig.TLSCiphers())
+	var cipherSuites []string
+	for _, c := range configuredCiphers {
+		if _, found := thanosCiphers[c]; !found {
+			continue
+		}
+		cipherSuites = append(cipherSuites, c)
+	}
+
+	if len(configuredCiphers) > 0 && len(cipherSuites) == 0 {
+		return nil, fmt.Errorf("none of the configured TLS cipher suites are supported by the Thanos sidecar gRPC server")
+	}
+
+	return cipherSuites, nil
 }
 
 func (f *Factory) adjustGoGCRelatedConfig(p *monv1.Prometheus) {
@@ -1880,7 +1908,10 @@ func (f *Factory) PrometheusUserWorkload(grpcTLS *v1.Secret) (*monv1.Prometheus,
 		return nil, err
 	}
 	p.Spec.Thanos.GRPCServerTLSConfig.SafeTLSConfig.MinVersion = grpcTLSVersion
-	p.Spec.Thanos.GRPCServerTLSConfig.CipherSuites = crypto.OpenSSLToIANACipherSuites(f.APIServerConfig.TLSCiphers())
+	p.Spec.Thanos.GRPCServerTLSConfig.CipherSuites, err = f.thanosSidecarGRPCCipherSuites()
+	if err != nil {
+		return nil, err
+	}
 	if curves := f.APIServerConfig.TLSCurves(); len(curves) > 0 {
 		p.Spec.Thanos.GRPCServerTLSConfig.Curves = curves
 	}
@@ -3358,7 +3389,10 @@ func (f *Factory) ThanosRulerCustomResource(
 		return nil, err
 	}
 	t.Spec.GRPCServerTLSConfig.SafeTLSConfig.MinVersion = grpcTLSVersion
-	t.Spec.GRPCServerTLSConfig.CipherSuites = crypto.OpenSSLToIANACipherSuites(f.APIServerConfig.TLSCiphers())
+	t.Spec.GRPCServerTLSConfig.CipherSuites, err = f.thanosSidecarGRPCCipherSuites()
+	if err != nil {
+		return nil, err
+	}
 	if curves := f.APIServerConfig.TLSCurves(); len(curves) > 0 {
 		t.Spec.GRPCServerTLSConfig.Curves = curves
 	}
