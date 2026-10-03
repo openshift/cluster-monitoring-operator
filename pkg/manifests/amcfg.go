@@ -43,9 +43,15 @@ func (a PrometheusAdditionalAlertmanagerConfigs) MarshalYAMLWithTLSConfig(cipher
 func (f *Factory) MarshalPrometheusAdditionalAlertmanagerConfigs(amConfigs []AdditionalAlertmanagerConfig) ([]byte, error) {
 	prometheusAmConfigs := PrometheusAdditionalAlertmanagerConfigs(amConfigs)
 	cipherSuites := f.APIServerConfig.TLSCiphers()
-	minTLSVersion := f.APIServerConfig.MinTLSVersion()
 
-	result, err := prometheusAmConfigs.MarshalYAMLWithTLSConfig(cipherSuites, minTLSVersion)
+	// Convert the OpenShift TLS version format (e.g. "VersionTLS12") to the
+	// Prometheus-compatible format (e.g. "TLS12").
+	promTLSVersion, err := convertTLSVersionToMonitoringV1(f.APIServerConfig.MinTLSVersion())
+	if err != nil {
+		return nil, fmt.Errorf("converting TLS version for additional alertmanager config: %w", err)
+	}
+
+	result, err := prometheusAmConfigs.MarshalYAMLWithTLSConfig(cipherSuites, string(*promTLSVersion))
 	if err != nil {
 		return nil, err
 	}
@@ -183,7 +189,13 @@ func (f *Factory) ConvertToThanosAlertmanagerConfiguration(ta []AdditionalAlertm
 	result := make([]thanosAlertmanagerConfiguration, len(ta))
 
 	cipherSuites := f.APIServerConfig.TLSCiphers()
-	minTLSVersion := f.APIServerConfig.MinTLSVersion()
+
+	// Convert the OpenShift TLS version format (e.g. "VersionTLS12") to the
+	// Prometheus-compatible format (e.g. "TLS12").
+	promTLSVersion, err := convertTLSVersionToMonitoringV1(f.APIServerConfig.MinTLSVersion())
+	if err != nil {
+		return nil, fmt.Errorf("converting TLS version for Thanos alertmanager config: %w", err)
+	}
 
 	for i, a := range ta {
 		cfg := thanosAlertmanagerConfiguration{
@@ -213,7 +225,7 @@ func (f *Factory) ConvertToThanosAlertmanagerConfiguration(ta []AdditionalAlertm
 
 		// Apply TLS security settings only for HTTPS connections without explicit TLS config
 		if needsTLSSecuritySettings {
-			cfg.HTTPConfig.TLSConfig.MinVersion = minTLSVersion
+			cfg.HTTPConfig.TLSConfig.MinVersion = string(*promTLSVersion)
 			cfg.HTTPConfig.TLSConfig.CipherSuites = cipherSuites
 		}
 
