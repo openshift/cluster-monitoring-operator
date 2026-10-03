@@ -31,6 +31,26 @@ Two ConfigMaps control the configuration of the monitoring components:
 The ConfigMaps are merged into the Config struct in `pkg/manifests/config.go`. All struct fields and CEL
 validations and thus possible configuration values are defined in `pkg/manifests/types.go`.
 
+#### ClusterMonitoring CRD (TechPreview)
+
+Behind the `ClusterMonitoringConfig` feature gate (TechPreview/DevPreview), platform monitoring can also be
+configured through a `ClusterMonitoring` custom resource (`config.openshift.io/v1alpha1`, singleton named `cluster`).
+The CRD types are defined in `openshift/api` and vendored at
+`vendor/github.com/openshift/api/config/v1alpha1/types_cluster_monitoring.go`.
+
+Phase 1 (pre-GA) merge semantics: for each top-level component, if the ConfigMap sets a value, the CRD is
+ignored for that component. CRD values apply only when the ConfigMap does not configure the component.
+The merge runs **before** `applyDefaults()` in `config.go`.
+
+Key files:
+- `pkg/manifests/config_merge.go` - Main CRD-to-ConfigMap merge logic
+- `pkg/manifests/config_merge_prometheus.go` - Prometheus-specific merge
+- `pkg/manifests/config_merge_test.go` - Phase 1 precedence tests
+
+Detailed user workload monitoring configuration has no CRD equivalent yet and remains ConfigMap-only,
+though enablement (`enableUserWorkload`) can be set via the CRD's `userDefined.mode` field.
+See `Documentation/crd-migration.md` for the full migration design.
+
 ### Reconciliation Task Ordering
 
 The operator's `sync()` in `pkg/operator/operator.go` runs reconciliation tasks in three ordered groups:
