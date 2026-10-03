@@ -14,21 +14,10 @@ type PrometheusAdditionalAlertmanagerConfigs []AdditionalAlertmanagerConfig
 
 // MarshalYAML implements the yaml.Marshaler interface.
 func (a PrometheusAdditionalAlertmanagerConfigs) MarshalYAML() (interface{}, error) {
-	return a.MarshalYAMLWithTLSConfig(nil, "")
-}
-
-// MarshalYAMLWithTLSConfig marshals the configs with the provided TLS configuration
-func (a PrometheusAdditionalAlertmanagerConfigs) MarshalYAMLWithTLSConfig(cipherSuites []string, minTLSVersion string) (interface{}, error) {
 	result := make([]interface{}, len(a))
 
 	for i, item := range a {
-		promAmCfg := prometheusAdditionalAlertmanagerConfigWithTLS{
-			AdditionalAlertmanagerConfig: item,
-			CipherSuites:                 cipherSuites,
-			MinTLSVersion:                minTLSVersion,
-		}
-
-		y, err := promAmCfg.MarshalYAML()
+		y, err := marshalPrometheusAlertmanagerConfig(item)
 		if err != nil {
 			return nil, fmt.Errorf("additional Alertmanager configuration[%d]: %w", i, err)
 		}
@@ -39,13 +28,11 @@ func (a PrometheusAdditionalAlertmanagerConfigs) MarshalYAMLWithTLSConfig(cipher
 	return result, nil
 }
 
-// MarshalPrometheusAdditionalAlertmanagerConfigs marshals the configs with secure TLS settings
+// MarshalPrometheusAdditionalAlertmanagerConfigs marshals the alertmanager configs to YAML.
 func (f *Factory) MarshalPrometheusAdditionalAlertmanagerConfigs(amConfigs []AdditionalAlertmanagerConfig) ([]byte, error) {
 	prometheusAmConfigs := PrometheusAdditionalAlertmanagerConfigs(amConfigs)
-	cipherSuites := f.APIServerConfig.TLSCiphers()
-	minTLSVersion := f.APIServerConfig.MinTLSVersion()
 
-	result, err := prometheusAmConfigs.MarshalYAMLWithTLSConfig(cipherSuites, minTLSVersion)
+	result, err := prometheusAmConfigs.MarshalYAML()
 	if err != nil {
 		return nil, err
 	}
@@ -70,29 +57,18 @@ type amConfigAuthorization struct {
 }
 
 type amConfigTLS struct {
-	CA                 string   `yaml:"ca_file,omitempty"`
-	Cert               string   `yaml:"cert_file,omitempty"`
-	Key                string   `yaml:"key_file,omitempty"`
-	ServerName         string   `yaml:"server_name,omitempty"`
-	InsecureSkipVerify bool     `yaml:"insecure_skip_verify,omitempty"`
-	MinVersion         string   `yaml:"min_version,omitempty"`
-	CipherSuites       []string `yaml:"cipher_suites,omitempty"`
+	CA                 string `yaml:"ca_file,omitempty"`
+	Cert               string `yaml:"cert_file,omitempty"`
+	Key                string `yaml:"key_file,omitempty"`
+	ServerName         string `yaml:"server_name,omitempty"`
+	InsecureSkipVerify bool   `yaml:"insecure_skip_verify,omitempty"`
 }
 
 type amConfigStaticConfigs struct {
 	Targets []string `yaml:"targets"`
 }
 
-// prometheusAdditionalAlertmanagerConfigWithTLS is an AdditionalAlertmanagerConfig
-// with TLS configuration that can be marshaled with secure cipher suites and min TLS version
-type prometheusAdditionalAlertmanagerConfigWithTLS struct {
-	AdditionalAlertmanagerConfig
-	CipherSuites  []string
-	MinTLSVersion string
-}
-
-// MarshalYAML implements the yaml.Marshaler interface.
-func (a prometheusAdditionalAlertmanagerConfigWithTLS) MarshalYAML() (interface{}, error) {
+func marshalPrometheusAlertmanagerConfig(a AdditionalAlertmanagerConfig) (amConfigPrometheus, error) {
 	cfg := amConfigPrometheus{
 		Scheme:               a.Scheme,
 		PathPrefix:           a.PathPrefix,
@@ -100,52 +76,32 @@ func (a prometheusAdditionalAlertmanagerConfigWithTLS) MarshalYAML() (interface{
 		APIVersion:           a.APIVersion,
 		ProxyFromEnvironment: true,
 		TLSConfig: amConfigTLS{
-			CA:                 "",
-			Cert:               "",
-			Key:                "",
 			ServerName:         a.TLSConfig.ServerName,
 			InsecureSkipVerify: a.TLSConfig.InsecureSkipVerify,
 		},
-		Authorization: amConfigAuthorization{
-			CredentialsFile: "",
-		},
-	}
-
-	// Check if this configuration needs TLS security settings
-	// Apply strict TLS only for HTTPS connections WITHOUT explicit TLS config
-	// If explicit TLS config is provided, respect user's choices
-	hasExplicitTLSConfig := a.TLSConfig.CA != nil || a.TLSConfig.Cert != nil || a.TLSConfig.Key != nil ||
-		a.TLSConfig.ServerName != "" || a.TLSConfig.InsecureSkipVerify
-
-	needsTLSSecuritySettings := a.Scheme == "https" && !hasExplicitTLSConfig
-
-	// Apply TLS security settings only for HTTPS connections without explicit TLS config
-	if needsTLSSecuritySettings {
-		cfg.TLSConfig.MinVersion = a.MinTLSVersion
-		cfg.TLSConfig.CipherSuites = a.CipherSuites
 	}
 
 	caPath, err := secretPath(a.TLSConfig.CA)
 	if err != nil {
-		return nil, err
+		return amConfigPrometheus{}, err
 	}
 	cfg.TLSConfig.CA = caPath
 
 	keyPath, err := secretPath(a.TLSConfig.Key)
 	if err != nil {
-		return nil, err
+		return amConfigPrometheus{}, err
 	}
 	cfg.TLSConfig.Key = keyPath
 
 	certPath, err := secretPath(a.TLSConfig.Cert)
 	if err != nil {
-		return nil, err
+		return amConfigPrometheus{}, err
 	}
 	cfg.TLSConfig.Cert = certPath
 
 	bearerTokenPath, err := secretPath(a.BearerToken)
 	if err != nil {
-		return nil, err
+		return amConfigPrometheus{}, err
 	}
 	cfg.Authorization.CredentialsFile = bearerTokenPath
 
@@ -182,9 +138,6 @@ type amHTTPConfig struct {
 func (f *Factory) ConvertToThanosAlertmanagerConfiguration(ta []AdditionalAlertmanagerConfig) ([]thanosAlertmanagerConfiguration, error) {
 	result := make([]thanosAlertmanagerConfiguration, len(ta))
 
-	cipherSuites := f.APIServerConfig.TLSCiphers()
-	minTLSVersion := f.APIServerConfig.MinTLSVersion()
-
 	for i, a := range ta {
 		cfg := thanosAlertmanagerConfiguration{
 			Scheme:     a.Scheme,
@@ -192,29 +145,11 @@ func (f *Factory) ConvertToThanosAlertmanagerConfiguration(ta []AdditionalAlertm
 			Timeout:    a.Timeout,
 			APIVersion: a.APIVersion,
 			HTTPConfig: amHTTPConfig{
-				BearerTokenFile: "",
 				TLSConfig: amConfigTLS{
-					CA:                 "",
-					Cert:               "",
-					Key:                "",
 					ServerName:         a.TLSConfig.ServerName,
 					InsecureSkipVerify: a.TLSConfig.InsecureSkipVerify,
 				},
 			},
-		}
-
-		// Check if this configuration needs TLS security settings
-		// Apply strict TLS only for HTTPS connections WITHOUT explicit TLS config
-		// If explicit TLS config is provided, respect user's choices
-		hasExplicitTLSConfig := a.TLSConfig.CA != nil || a.TLSConfig.Cert != nil || a.TLSConfig.Key != nil ||
-			a.TLSConfig.ServerName != "" || a.TLSConfig.InsecureSkipVerify
-
-		needsTLSSecuritySettings := a.Scheme == "https" && !hasExplicitTLSConfig
-
-		// Apply TLS security settings only for HTTPS connections without explicit TLS config
-		if needsTLSSecuritySettings {
-			cfg.HTTPConfig.TLSConfig.MinVersion = minTLSVersion
-			cfg.HTTPConfig.TLSConfig.CipherSuites = cipherSuites
 		}
 
 		caPath, err := secretPath(a.TLSConfig.CA)
