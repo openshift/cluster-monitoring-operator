@@ -13,9 +13,9 @@ items:
     namespace: default
   rules:
   - apiGroups:
-    - ""
+    - discovery.k8s.io
     resources:
-    - endpoints
+    - endpointslices
     verbs:
     - get
     - list
@@ -66,9 +66,9 @@ items:
     namespace: kube-system
   rules:
   - apiGroups:
-    - ""
+    - discovery.k8s.io
     resources:
-    - endpoints
+    - endpointslices
     verbs:
     - get
     - list
@@ -119,9 +119,9 @@ items:
     namespace: openshift-monitoring
   rules:
   - apiGroups:
-    - ""
+    - discovery.k8s.io
     resources:
-    - endpoints
+    - endpointslices
     verbs:
     - get
     - list
@@ -172,9 +172,9 @@ items:
     namespace: openshift-user-workload-monitoring
   rules:
   - apiGroups:
-    - ""
+    - discovery.k8s.io
     resources:
-    - endpoints
+    - endpointslices
     verbs:
     - get
     - list
