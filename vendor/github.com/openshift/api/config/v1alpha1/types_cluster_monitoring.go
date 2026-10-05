@@ -1408,6 +1408,8 @@ type PrometheusConfig struct {
 	// +listType=map
 	// +listMapKey=name
 	AdditionalAlertmanagerConfigs []AdditionalAlertmanagerConfig `json:"additionalAlertmanagerConfigs,omitempty"`
+	// TOMBSTONE: This field has been tombstoned in favor of the `enforcedBodySizeLimit` field. This tombstone will be dropped when promoting this API to v1.
+	// ---
 	// enforcedBodySizeLimitBytes enforces a body size limit (in bytes) for Prometheus scraped metrics.
 	// If a scraped target's body response is larger than the limit, the scrape will fail.
 	// This helps protect Prometheus from targets that return excessively large responses.
@@ -1416,10 +1418,26 @@ type PrometheusConfig struct {
 	// limit based on cluster capacity. Set an explicit value to override the automatic calculation.
 	// Minimum value is 10240 (10kB).
 	// Maximum value is 1073741824 (1GB).
-	// +kubebuilder:validation:Minimum=10240
-	// +kubebuilder:validation:Maximum=1073741824
+	// Former marker: kubebuilder:validation:Minimum=10240
+	// Former marker: kubebuilder:validation:Maximum=1073741824
+	// Former marker: optional
+	// EnforcedBodySizeLimitBytes int64 `json:"enforcedBodySizeLimitBytes,omitempty"`
+
+	// enforcedBodySizeLimit enforces a body size limit for Prometheus scraped metrics.
+	// If a scraped target's body response is larger than the limit, the scrape will fail.
+	// This helps protect Prometheus from targets that return excessively large responses.
+	// Valid values match the ConfigMap prometheusK8s.enforcedBodySizeLimit and Prometheus Operator
+	// ByteSize formats: "0" to disable the limit, or a positive byte-size string with unit suffix
+	// B, KB, MB, GB, TB, EB, PB, or their binary equivalents KiB, MiB, GiB, TiB, EiB, PiB
+	// (for example, "40MB", "512MiB").
+	// Must be at least 1 character and at most 32 characters.
+	// When omitted, the Cluster Monitoring Operator automatically calculates an appropriate
+	// limit based on cluster capacity.
+	// +kubebuilder:validation:MinLength=1
+	// +kubebuilder:validation:MaxLength=32
+	// +kubebuilder:validation:XValidation:rule=`self == "0" || self.matches('^([1-9][0-9]*([.][0-9]+)?|[0-9]*[.][1-9][0-9]*)((K|M|G|T|E|P)i?)?B$')`,message=`must be "0" to disable the body size limit, or a positive byte-size string`
 	// +optional
-	EnforcedBodySizeLimitBytes int64 `json:"enforcedBodySizeLimitBytes,omitempty"`
+	EnforcedBodySizeLimit string `json:"enforcedBodySizeLimit,omitempty"`
 	// externalLabels defines labels to be attached to time series and alerts
 	// when communicating with external systems such as federation, remote storage,
 	// and Alertmanager. These labels are not stored with metrics on disk; they are

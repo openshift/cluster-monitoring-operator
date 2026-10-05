@@ -24,15 +24,16 @@ type PrometheusConfigApplyConfiguration struct {
 	// When provided, at least one configuration must be specified (minimum 1, maximum 10 items).
 	// Entries must have unique names (name is the list key).
 	AdditionalAlertmanagerConfigs []AdditionalAlertmanagerConfigApplyConfiguration `json:"additionalAlertmanagerConfigs,omitempty"`
-	// enforcedBodySizeLimitBytes enforces a body size limit (in bytes) for Prometheus scraped metrics.
+	// enforcedBodySizeLimit enforces a body size limit for Prometheus scraped metrics.
 	// If a scraped target's body response is larger than the limit, the scrape will fail.
 	// This helps protect Prometheus from targets that return excessively large responses.
-	// The value is specified in bytes (e.g., 4194304 for 4MB, 1073741824 for 1GB).
+	// Valid values match the ConfigMap prometheusK8s.enforcedBodySizeLimit and Prometheus Operator
+	// ByteSize formats: "0" to disable the limit, or a positive byte-size string with unit suffix
+	// B, KB, MB, GB, TB, EB, PB, or their binary equivalents KiB, MiB, GiB, TiB, EiB, PiB
+	// (for example, "40MB", "512MiB").
 	// When omitted, the Cluster Monitoring Operator automatically calculates an appropriate
-	// limit based on cluster capacity. Set an explicit value to override the automatic calculation.
-	// Minimum value is 10240 (10kB).
-	// Maximum value is 1073741824 (1GB).
-	EnforcedBodySizeLimitBytes *int64 `json:"enforcedBodySizeLimitBytes,omitempty"`
+	// limit based on cluster capacity.
+	EnforcedBodySizeLimit *string `json:"enforcedBodySizeLimit,omitempty"`
 	// externalLabels defines labels to be attached to time series and alerts
 	// when communicating with external systems such as federation, remote storage,
 	// and Alertmanager. These labels are not stored with metrics on disk; they are
@@ -160,11 +161,11 @@ func (b *PrometheusConfigApplyConfiguration) WithAdditionalAlertmanagerConfigs(v
 	return b
 }
 
-// WithEnforcedBodySizeLimitBytes sets the EnforcedBodySizeLimitBytes field in the declarative configuration to the given value
+// WithEnforcedBodySizeLimit sets the EnforcedBodySizeLimit field in the declarative configuration to the given value
 // and returns the receiver, so that objects can be built by chaining "With" function invocations.
-// If called multiple times, the EnforcedBodySizeLimitBytes field is set to the value of the last call.
-func (b *PrometheusConfigApplyConfiguration) WithEnforcedBodySizeLimitBytes(value int64) *PrometheusConfigApplyConfiguration {
-	b.EnforcedBodySizeLimitBytes = &value
+// If called multiple times, the EnforcedBodySizeLimit field is set to the value of the last call.
+func (b *PrometheusConfigApplyConfiguration) WithEnforcedBodySizeLimit(value string) *PrometheusConfigApplyConfiguration {
+	b.EnforcedBodySizeLimit = &value
 	return b
 }
 

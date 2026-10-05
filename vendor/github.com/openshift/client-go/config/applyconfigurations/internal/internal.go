@@ -5292,9 +5292,9 @@ var schemaYAML = typed.YAMLObject(`types:
     - name: collectionProfile
       type:
         scalar: string
-    - name: enforcedBodySizeLimitBytes
+    - name: enforcedBodySizeLimit
       type:
-        scalar: numeric
+        scalar: string
     - name: externalLabels
       type:
         list:
