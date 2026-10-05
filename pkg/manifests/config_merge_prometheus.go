@@ -16,7 +16,6 @@ package manifests
 
 import (
 	"fmt"
-	"strconv"
 
 	configv1alpha1 "github.com/openshift/api/config/v1alpha1"
 	monv1 "github.com/prometheus-operator/prometheus-operator/pkg/apis/monitoring/v1"
@@ -34,7 +33,7 @@ func clusterMonitoringPrometheusSpecEmpty(pc configv1alpha1.PrometheusConfig) bo
 	if len(pc.AdditionalAlertmanagerConfigs) > 0 {
 		return false
 	}
-	if pc.EnforcedBodySizeLimitBytes != 0 {
+	if pc.EnforcedBodySizeLimit != "" {
 		return false
 	}
 	if len(pc.ExternalLabels) > 0 {
@@ -537,9 +536,7 @@ func (c *Config) mergePrometheusK8sConfiguration(pc configv1alpha1.PrometheusCon
 	}
 	cfg.RemoteWrite = remoteWrite
 
-	if pc.EnforcedBodySizeLimitBytes > 0 {
-		cfg.EnforcedBodySizeLimit = strconv.FormatInt(pc.EnforcedBodySizeLimitBytes, 10)
-	}
+	cfg.EnforcedBodySizeLimit = pc.EnforcedBodySizeLimit
 	if pc.CollectionProfile != "" {
 		cp, err := collectionProfileCRDToManifest(pc.CollectionProfile)
 		if err != nil {
