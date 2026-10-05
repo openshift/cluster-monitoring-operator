@@ -202,8 +202,8 @@ func additionalAlertmanagerConfigsFromCRD(configs []configv1alpha1.AdditionalAle
 		if ac.Authorization.Type == configv1alpha1.AuthorizationTypeBearerToken {
 			cfg.BearerToken = secretKeySelectorFromCRD(ac.Authorization.BearerToken)
 		}
-		if ac.TimeoutSeconds > 0 {
-			timeout := fmt.Sprintf("%ds", ac.TimeoutSeconds)
+		if ac.Timeout != "" {
+			timeout := ac.Timeout
 			cfg.Timeout = &timeout
 		}
 		if ac.TLSConfig.CA.Name != "" || ac.TLSConfig.Cert.Name != "" || ac.TLSConfig.Key.Name != "" ||
@@ -243,8 +243,8 @@ func metadataConfigFromCRD(mc configv1alpha1.MetadataConfig) (*monv1.MetadataCon
 		return &monv1.MetadataConfig{Send: true}, nil
 	case configv1alpha1.MetadataConfigSendPolicyCustom:
 		out := &monv1.MetadataConfig{Send: true}
-		if mc.Custom.SendIntervalSeconds > 0 {
-			out.SendInterval = monv1.Duration(fmt.Sprintf("%ds", mc.Custom.SendIntervalSeconds))
+		if mc.Custom.SendInterval != "" {
+			out.SendInterval = monv1.Duration(mc.Custom.SendInterval)
 		}
 		return out, nil
 	default:
@@ -254,7 +254,7 @@ func metadataConfigFromCRD(mc configv1alpha1.MetadataConfig) (*monv1.MetadataCon
 
 func queueConfigFromCRD(qc configv1alpha1.QueueConfig) (*monv1.QueueConfig, error) {
 	if qc.Capacity == 0 && qc.MaxShards == 0 && qc.MinShards == 0 && qc.MaxSamplesPerSend == 0 &&
-		qc.BatchSendDeadlineSeconds == 0 && qc.MinBackoffMilliseconds == 0 && qc.MaxBackoffMilliseconds == 0 &&
+		qc.BatchSendDeadline == "" && qc.MinBackoff == "" && qc.MaxBackoff == "" &&
 		qc.RateLimitedAction == "" {
 		return nil, nil
 	}
@@ -271,14 +271,14 @@ func queueConfigFromCRD(qc configv1alpha1.QueueConfig) (*monv1.QueueConfig, erro
 	if qc.MaxSamplesPerSend > 0 {
 		out.MaxSamplesPerSend = int(qc.MaxSamplesPerSend)
 	}
-	if qc.BatchSendDeadlineSeconds > 0 {
-		out.BatchSendDeadline = ptr.To(monv1.Duration(fmt.Sprintf("%ds", qc.BatchSendDeadlineSeconds)))
+	if qc.BatchSendDeadline != "" {
+		out.BatchSendDeadline = ptr.To(monv1.Duration(qc.BatchSendDeadline))
 	}
-	if qc.MinBackoffMilliseconds > 0 {
-		out.MinBackoff = ptr.To(monv1.Duration(fmt.Sprintf("%dms", qc.MinBackoffMilliseconds)))
+	if qc.MinBackoff != "" {
+		out.MinBackoff = ptr.To(monv1.Duration(qc.MinBackoff))
 	}
-	if qc.MaxBackoffMilliseconds > 0 {
-		out.MaxBackoff = ptr.To(monv1.Duration(fmt.Sprintf("%dms", qc.MaxBackoffMilliseconds)))
+	if qc.MaxBackoff != "" {
+		out.MaxBackoff = ptr.To(monv1.Duration(qc.MaxBackoff))
 	}
 	if qc.RateLimitedAction != "" {
 		switch qc.RateLimitedAction {
@@ -453,8 +453,8 @@ func remoteWriteSpecsFromCRD(configs []configv1alpha1.RemoteWriteSpec) ([]Remote
 			ProxyURL: rw.ProxyURL,
 			Headers:  remoteWriteHeadersFromCRD(rw.Headers),
 		}
-		if rw.RemoteTimeoutSeconds > 0 {
-			cfg.RemoteTimeout = fmt.Sprintf("%ds", rw.RemoteTimeoutSeconds)
+		if rw.RemoteTimeout != "" {
+			cfg.RemoteTimeout = rw.RemoteTimeout
 		}
 		if rw.ExemplarsMode != "" {
 			switch rw.ExemplarsMode {

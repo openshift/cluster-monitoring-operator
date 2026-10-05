@@ -1630,15 +1630,32 @@ type AdditionalAlertmanagerConfig struct {
 	// +listType=set
 	// +required
 	StaticConfigs []string `json:"staticConfigs,omitempty"`
+	// TOMBSTONE: This field has been tombstoned in favor of the `timeout` field. This tombstone will be dropped when promoting this API to v1.
+	// ---
 	// timeoutSeconds defines the timeout in seconds for requests to Alertmanager.
 	// When omitted, this means no opinion and the platform is left to choose a reasonable default, which is subject to change over time.
 	// Currently the default is 10 seconds.
 	// Minimum value is 1 second.
 	// Maximum value is 600 seconds (10 minutes).
-	// +kubebuilder:validation:Minimum=1
-	// +kubebuilder:validation:Maximum=600
+	// Former marker: kubebuilder:validation:Minimum=1
+	// Former marker: kubebuilder:validation:Maximum=600
+	// Former marker: optional
+	// TimeoutSeconds int32 `json:"timeoutSeconds,omitempty"`
+
+	// timeout defines the timeout for requests to Alertmanager.
+	// Valid values are Prometheus-style duration strings with unit suffixes y, w, d, h, m, s, or ms
+	// (for example, "30s", "500ms", or "1m"). Each unit value must be a positive integer.
+	// Composite durations must follow the fixed unit order y, w, d, h, m, s, ms.
+	// Must be at least 1 character and at most 64 characters.
+	// When set to "0", the timeout is disabled. This is the only supported form for a zero duration;
+	// other zero-duration representations such as "0s" or "0ms" are rejected.
+	// When omitted, this means no opinion and the platform is left to choose a reasonable default, which is subject to change over time.
+	// The current default value is `10s`.
+	// +kubebuilder:validation:MinLength=1
+	// +kubebuilder:validation:MaxLength=64
+	// +kubebuilder:validation:XValidation:rule=`self == "0" || self.matches('^([1-9][0-9]*y)?([1-9][0-9]*w)?([1-9][0-9]*d)?([1-9][0-9]*h)?([1-9][0-9]*m)?([1-9][0-9]*s)?([1-9][0-9]*ms)?$')`,message=`must be "0" or a Prometheus duration string with only positive unit values`
 	// +optional
-	TimeoutSeconds int32 `json:"timeoutSeconds,omitempty"`
+	Timeout string `json:"timeout,omitempty"`
 	// tlsConfig defines the TLS settings to use for Alertmanager connections.
 	// When omitted, this means no opinion and the platform is left to choose a reasonable default, which is subject to change over time.
 	// +optional
@@ -1655,9 +1672,9 @@ type Label struct {
 	// +kubebuilder:validation:MinLength=1
 	Key string `json:"key,omitempty"`
 	// value is the value of the label.
-	// Must be between 1 and 128 characters in length.
+	// Must be between 1 and 1024 characters in length.
 	// +required
-	// +kubebuilder:validation:MaxLength=128
+	// +kubebuilder:validation:MaxLength=1024
 	// +kubebuilder:validation:MinLength=1
 	Value string `json:"value,omitempty"`
 }
@@ -1736,14 +1753,30 @@ type RemoteWriteSpec struct {
 	// When omitted, default queue configuration is used.
 	// +optional
 	QueueConfig QueueConfig `json:"queueConfig,omitempty,omitzero"`
+	// TOMBSTONE: This field has been tombstoned in favor of the `remoteTimeout` field. This tombstone will be dropped when promoting this API to v1.
+	// ---
 	// remoteTimeoutSeconds defines the timeout in seconds for requests to the remote write endpoint.
 	// When omitted, this means no opinion and the platform is left to choose a reasonable default, which is subject to change over time.
 	// Minimum value is 1 second.
 	// Maximum value is 600 seconds (10 minutes).
+	// Former marker: optional
+	// Former marker: kubebuilder:validation:Minimum=1
+	// Former marker: kubebuilder:validation:Maximum=600
+	// RemoteTimeoutSeconds int32 `json:"remoteTimeoutSeconds,omitempty"`
+
+	// remoteTimeout defines the timeout for requests to the remote write endpoint.
+	// Valid values are Prometheus-style duration strings with unit suffixes y, w, d, h, m, s, or ms
+	// (for example, "30s", "500ms", or "1m"). Each unit value must be a positive integer.
+	// Composite durations must follow the fixed unit order y, w, d, h, m, s, ms.
+	// Must be at least 1 character and at most 64 characters.
+	// When set to "0", the timeout is disabled. This is the only supported form for a zero duration;
+	// other zero-duration representations such as "0s" or "0ms" are rejected.
+	// When omitted, this means no opinion and the platform is left to choose a reasonable default, which is subject to change over time.
+	// +kubebuilder:validation:MinLength=1
+	// +kubebuilder:validation:MaxLength=64
+	// +kubebuilder:validation:XValidation:rule=`self == "0" || self.matches('^([1-9][0-9]*y)?([1-9][0-9]*w)?([1-9][0-9]*d)?([1-9][0-9]*h)?([1-9][0-9]*m)?([1-9][0-9]*s)?([1-9][0-9]*ms)?$')`,message=`must be "0" or a Prometheus duration string with only positive unit values`
 	// +optional
-	// +kubebuilder:validation:Minimum=1
-	// +kubebuilder:validation:Maximum=600
-	RemoteTimeoutSeconds int32 `json:"remoteTimeoutSeconds,omitempty"`
+	RemoteTimeout string `json:"remoteTimeout,omitempty"`
 	// exemplarsMode controls whether exemplars are sent via remote write.
 	// Valid values are "Send", "DoNotSend" and omitted.
 	// When set to "Send", Prometheus is configured to store a maximum of 100,000 exemplars in memory and send them with remote write.
@@ -1914,7 +1947,7 @@ const (
 )
 
 // MetadataConfig defines whether and how to send series metadata to remote write storage.
-// +kubebuilder:validation:XValidation:rule="self.sendPolicy == 'Default' ? self.custom.sendIntervalSeconds == 0 : true",message="custom is forbidden when sendPolicy is Default"
+// +kubebuilder:validation:XValidation:rule="self.sendPolicy == 'Default' ? !has(self.custom) || !has(self.custom.sendInterval) || self.custom.sendInterval == '' : true",message="custom is forbidden when sendPolicy is Default"
 type MetadataConfig struct {
 	// sendPolicy specifies whether to send metadata and how it is configured.
 	// Default: send metadata using platform-chosen defaults (e.g. send interval 30 seconds).
@@ -1927,16 +1960,32 @@ type MetadataConfig struct {
 }
 
 // MetadataConfigCustom defines custom settings for sending series metadata when sendPolicy is Custom.
-// At least one property must be set when sendPolicy is Custom (e.g. sendIntervalSeconds).
+// At least one property must be set when sendPolicy is Custom (e.g. sendInterval).
 // +kubebuilder:validation:MinProperties=1
 type MetadataConfigCustom struct {
+	// TOMBSTONE: This field has been tombstoned in favor of the `sendInterval` field. This tombstone will be dropped when promoting this API to v1.
+	// ---
 	// sendIntervalSeconds is the interval in seconds at which metadata is sent.
 	// When omitted, the platform chooses a reasonable default (e.g. 30 seconds).
 	// Minimum value is 1 second. Maximum value is 86400 seconds (24 hours).
+	// Former marker: optional
+	// Former marker: kubebuilder:validation:Minimum=1
+	// Former marker: kubebuilder:validation:Maximum=86400
+	// SendIntervalSeconds int32 `json:"sendIntervalSeconds,omitempty"`
+
+	// sendInterval is the interval at which metadata is sent.
+	// Valid values are Prometheus-style duration strings with unit suffixes y, w, d, h, m, s, or ms
+	// (for example, "30s" or "1m"). Each unit value must be a positive integer.
+	// Composite durations must follow the fixed unit order y, w, d, h, m, s, ms.
+	// Must be at least 1 character and at most 64 characters.
+	// When set to "0", metadata is not sent on an interval. This is the only supported form for a zero duration;
+	// other zero-duration representations such as "0s" or "0ms" are rejected.
+	// When omitted, the platform chooses a reasonable default (e.g. `30s`).
+	// +kubebuilder:validation:MinLength=1
+	// +kubebuilder:validation:MaxLength=64
+	// +kubebuilder:validation:XValidation:rule=`self == "0" || self.matches('^([1-9][0-9]*y)?([1-9][0-9]*w)?([1-9][0-9]*d)?([1-9][0-9]*h)?([1-9][0-9]*m)?([1-9][0-9]*s)?([1-9][0-9]*ms)?$')`,message=`must be "0" or a Prometheus duration string with only positive unit values`
 	// +optional
-	// +kubebuilder:validation:Minimum=1
-	// +kubebuilder:validation:Maximum=86400
-	SendIntervalSeconds int32 `json:"sendIntervalSeconds,omitempty"`
+	SendInterval string `json:"sendInterval,omitempty"`
 }
 
 // OAuth2 defines OAuth2 authentication settings for the remote write endpoint.
@@ -1998,7 +2047,7 @@ type OAuth2EndpointParam struct {
 }
 
 // QueueConfig allows tuning configuration for remote write queue parameters.
-// Configure this when you need to control throughput, backpressure, or retry behavior—for example to avoid overloading the remote endpoint, to reduce memory usage, or to tune for high-cardinality workloads. Consider capacity, maxShards, and batchSendDeadlineSeconds for throughput; minBackoffMilliseconds and maxBackoffMilliseconds for retries; and rateLimitedAction when the remote returns HTTP 429.
+// Configure this when you need to control throughput, backpressure, or retry behavior—for example to avoid overloading the remote endpoint, to reduce memory usage, or to tune for high-cardinality workloads. Consider capacity, maxShards, and batchSendDeadline for throughput; minBackoff and maxBackoff for retries; and rateLimitedAction when the remote returns HTTP 429.
 // +kubebuilder:validation:MinProperties=1
 type QueueConfig struct {
 	// capacity is the number of samples to buffer per shard before we start dropping them.
@@ -2037,30 +2086,80 @@ type QueueConfig struct {
 	// +kubebuilder:validation:Minimum=1
 	// +kubebuilder:validation:Maximum=100000
 	MaxSamplesPerSend int32 `json:"maxSamplesPerSend,omitempty"`
+	// TOMBSTONE: This field has been tombstoned in favor of the `batchSendDeadline` field. This tombstone will be dropped when promoting this API to v1.
+	// ---
 	// batchSendDeadlineSeconds is the maximum time in seconds a sample will wait in buffer before being sent.
 	// When omitted, this means no opinion and the platform is left to choose a reasonable default, which is subject to change over time.
 	// Minimum value is 1 second.
 	// Maximum value is 3600 seconds (1 hour).
+	// Former marker: optional
+	// Former marker: kubebuilder:validation:Minimum=1
+	// Former marker: kubebuilder:validation:Maximum=3600
+	// BatchSendDeadlineSeconds int32 `json:"batchSendDeadlineSeconds,omitempty"`
+
+	// batchSendDeadline is the maximum time a sample will wait in buffer before being sent.
+	// Valid values are Prometheus-style duration strings with unit suffixes y, w, d, h, m, s, or ms
+	// (for example, "5s" or "1m"). Each unit value must be a positive integer.
+	// Composite durations must follow the fixed unit order y, w, d, h, m, s, ms.
+	// Must be at least 1 character and at most 64 characters.
+	// When set to "0", samples are not held for a deadline. This is the only supported form for a zero duration;
+	// other zero-duration representations such as "0s" or "0ms" are rejected.
+	// When omitted, this means no opinion and the platform is left to choose a reasonable default, which is subject to change over time.
+	// +kubebuilder:validation:MinLength=1
+	// +kubebuilder:validation:MaxLength=64
+	// +kubebuilder:validation:XValidation:rule=`self == "0" || self.matches('^([1-9][0-9]*y)?([1-9][0-9]*w)?([1-9][0-9]*d)?([1-9][0-9]*h)?([1-9][0-9]*m)?([1-9][0-9]*s)?([1-9][0-9]*ms)?$')`,message=`must be "0" or a Prometheus duration string with only positive unit values`
 	// +optional
-	// +kubebuilder:validation:Minimum=1
-	// +kubebuilder:validation:Maximum=3600
-	BatchSendDeadlineSeconds int32 `json:"batchSendDeadlineSeconds,omitempty"`
+	BatchSendDeadline string `json:"batchSendDeadline,omitempty"`
+
+	// TOMBSTONE: This field has been tombstoned in favor of the `minBackoff` field. This tombstone will be dropped when promoting this API to v1.
+	// ---
 	// minBackoffMilliseconds is the minimum retry delay in milliseconds.
 	// When omitted, this means no opinion and the platform is left to choose a reasonable default, which is subject to change over time.
 	// Minimum value is 1 millisecond.
 	// Maximum value is 3600000 milliseconds (1 hour).
+	// Former marker: optional
+	// Former marker: kubebuilder:validation:Minimum=1
+	// Former marker: kubebuilder:validation:Maximum=3600000
+	// MinBackoffMilliseconds int32 `json:"minBackoffMilliseconds,omitempty"`
+
+	// minBackoff is the minimum retry delay.
+	// Valid values are Prometheus-style duration strings with unit suffixes y, w, d, h, m, s, or ms
+	// (for example, "30ms", "1s", or "5s"). Each unit value must be a positive integer.
+	// Composite durations must follow the fixed unit order y, w, d, h, m, s, ms.
+	// Must be at least 1 character and at most 64 characters.
+	// When set to "0", there is no minimum backoff. This is the only supported form for a zero duration;
+	// other zero-duration representations such as "0s" or "0ms" are rejected.
+	// When omitted, this means no opinion and the platform is left to choose a reasonable default, which is subject to change over time.
+	// +kubebuilder:validation:MinLength=1
+	// +kubebuilder:validation:MaxLength=64
+	// +kubebuilder:validation:XValidation:rule=`self == "0" || self.matches('^([1-9][0-9]*y)?([1-9][0-9]*w)?([1-9][0-9]*d)?([1-9][0-9]*h)?([1-9][0-9]*m)?([1-9][0-9]*s)?([1-9][0-9]*ms)?$')`,message=`must be "0" or a Prometheus duration string with only positive unit values`
 	// +optional
-	// +kubebuilder:validation:Minimum=1
-	// +kubebuilder:validation:Maximum=3600000
-	MinBackoffMilliseconds int32 `json:"minBackoffMilliseconds,omitempty"`
+	MinBackoff string `json:"minBackoff,omitempty"`
+
+	// TOMBSTONE: This field has been tombstoned in favor of the `maxBackoff` field. This tombstone will be dropped when promoting this API to v1.
+	// ---
 	// maxBackoffMilliseconds is the maximum retry delay in milliseconds.
 	// When omitted, this means no opinion and the platform is left to choose a reasonable default, which is subject to change over time.
 	// Minimum value is 1 millisecond.
 	// Maximum value is 3600000 milliseconds (1 hour).
+	// Former marker: optional
+	// Former marker: kubebuilder:validation:Minimum=1
+	// Former marker: kubebuilder:validation:Maximum=3600000
+	// MaxBackoffMilliseconds int32 `json:"maxBackoffMilliseconds,omitempty"`
+
+	// maxBackoff is the maximum retry delay.
+	// Valid values are Prometheus-style duration strings with unit suffixes y, w, d, h, m, s, or ms
+	// (for example, "5s" or "1m"). Each unit value must be a positive integer.
+	// Composite durations must follow the fixed unit order y, w, d, h, m, s, ms.
+	// Must be at least 1 character and at most 64 characters.
+	// When set to "0", there is no maximum backoff. This is the only supported form for a zero duration;
+	// other zero-duration representations such as "0s" or "0ms" are rejected.
+	// When omitted, this means no opinion and the platform is left to choose a reasonable default, which is subject to change over time.
+	// +kubebuilder:validation:MinLength=1
+	// +kubebuilder:validation:MaxLength=64
+	// +kubebuilder:validation:XValidation:rule=`self == "0" || self.matches('^([1-9][0-9]*y)?([1-9][0-9]*w)?([1-9][0-9]*d)?([1-9][0-9]*h)?([1-9][0-9]*m)?([1-9][0-9]*s)?([1-9][0-9]*ms)?$')`,message=`must be "0" or a Prometheus duration string with only positive unit values`
 	// +optional
-	// +kubebuilder:validation:Minimum=1
-	// +kubebuilder:validation:Maximum=3600000
-	MaxBackoffMilliseconds int32 `json:"maxBackoffMilliseconds,omitempty"`
+	MaxBackoff string `json:"maxBackoff,omitempty"`
 	// rateLimitedAction controls what to do when the remote write endpoint returns HTTP 429 (Too Many Requests).
 	// When omitted, no retries are performed on rate limit responses.
 	// When set to "Retry", Prometheus will retry such requests using the backoff settings above.
@@ -2151,11 +2250,11 @@ type RelabelConfig struct {
 
 	// regex is the regular expression to match against the concatenated source label values.
 	// Must be a valid RE2 regular expression (https://github.com/google/re2/wiki/Syntax).
+	// An empty string is allowed and means match the empty string (same as ConfigMap / Prometheus Operator).
 	// When omitted, this means no opinion and the platform is left to choose a reasonable default, which is subject to change over time.
 	// The default value is "(.*)" to match everything.
-	// Must be between 1 and 1000 characters in length when specified.
+	// Must be at most 1000 characters in length when specified.
 	// +optional
-	// +kubebuilder:validation:MinLength=1
 	// +kubebuilder:validation:MaxLength=1000
 	Regex string `json:"regex,omitempty"`
 
