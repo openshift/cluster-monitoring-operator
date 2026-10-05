@@ -18,6 +18,7 @@ import (
 	"testing"
 
 	configv1alpha1 "github.com/openshift/api/config/v1alpha1"
+	monv1 "github.com/prometheus-operator/prometheus-operator/pkg/apis/monitoring/v1"
 	"github.com/stretchr/testify/require"
 	v1 "k8s.io/api/core/v1"
 	"k8s.io/apimachinery/pkg/api/resource"
@@ -1099,6 +1100,69 @@ func TestConfig_MergeClusterMonitoringCRD_PrometheusK8sConfigPhase1(t *testing.T
 		require.NoError(t, err)
 		require.Equal(t, "15h", c.ClusterMonitoringConfiguration.PrometheusK8sConfig.Retention)
 		require.Equal(t, "500MiB", c.ClusterMonitoringConfiguration.PrometheusK8sConfig.RetentionSize)
+	})
+	t.Run("CR maps duration strings through without conversion", func(t *testing.T) {
+		cm := &configv1alpha1.ClusterMonitoring{
+			Spec: configv1alpha1.ClusterMonitoringSpec{
+				PrometheusConfig: configv1alpha1.PrometheusConfig{
+					AdditionalAlertmanagerConfigs: []configv1alpha1.AdditionalAlertmanagerConfig{
+						{
+							Name:          "am",
+							Timeout:       "30s",
+							StaticConfigs: []string{"alertmanager.example.com:9093"},
+						},
+					},
+					RemoteWrite: []configv1alpha1.RemoteWriteSpec{
+						{
+							Name:          "rw",
+							URL:           "https://remote.example.com/write",
+							RemoteTimeout: "30s",
+							MetadataConfig: configv1alpha1.MetadataConfig{
+								SendPolicy: configv1alpha1.MetadataConfigSendPolicyCustom,
+								Custom: configv1alpha1.MetadataConfigCustom{
+									SendInterval: "30s",
+								},
+							},
+							QueueConfig: configv1alpha1.QueueConfig{
+								BatchSendDeadline: "5s",
+								MinBackoff:        "30ms",
+								MaxBackoff:        "5s",
+							},
+							WriteRelabelConfigs: []configv1alpha1.RelabelConfig{
+								{
+									Name:  "empty-regex",
+									Regex: "",
+									Action: configv1alpha1.RelabelActionConfig{
+										Type: configv1alpha1.RelabelActionKeep,
+									},
+								},
+							},
+						},
+					},
+					ExternalLabels: []configv1alpha1.Label{
+						{Key: "description", Value: "OpenShift Cluster https://console.example.com and a long runbook URL https://confluence.example.com/wiki/spaces/OP/pages/12345/Runbooks"},
+					},
+				},
+			},
+		}
+		c, err := NewConfigFromStringAndClusterMonitoringResource("{}", cm)
+		require.NoError(t, err)
+		pk := c.ClusterMonitoringConfiguration.PrometheusK8sConfig
+		require.NotNil(t, pk)
+		require.Len(t, pk.AlertmanagerConfigs, 1)
+		require.NotNil(t, pk.AlertmanagerConfigs[0].Timeout)
+		require.Equal(t, "30s", *pk.AlertmanagerConfigs[0].Timeout)
+		require.Len(t, pk.RemoteWrite, 1)
+		require.Equal(t, "30s", pk.RemoteWrite[0].RemoteTimeout)
+		require.NotNil(t, pk.RemoteWrite[0].MetadataConfig)
+		require.Equal(t, monv1.Duration("30s"), pk.RemoteWrite[0].MetadataConfig.SendInterval)
+		require.NotNil(t, pk.RemoteWrite[0].QueueConfig)
+		require.Equal(t, monv1.Duration("5s"), *pk.RemoteWrite[0].QueueConfig.BatchSendDeadline)
+		require.Equal(t, monv1.Duration("30ms"), *pk.RemoteWrite[0].QueueConfig.MinBackoff)
+		require.Equal(t, monv1.Duration("5s"), *pk.RemoteWrite[0].QueueConfig.MaxBackoff)
+		require.Len(t, pk.RemoteWrite[0].WriteRelabelConfigs, 1)
+		require.Equal(t, "", pk.RemoteWrite[0].WriteRelabelConfigs[0].Regex)
+		require.Contains(t, pk.ExternalLabels["description"], "Runbooks")
 	})
 	t.Run("CR returns error for unsupported collection profile", func(t *testing.T) {
 		cm := &configv1alpha1.ClusterMonitoring{
