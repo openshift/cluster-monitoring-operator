@@ -326,6 +326,8 @@ var (
 	MonitoringPluginService             = "monitoring-plugin/service.yaml"
 	MonitoringPluginPodDisruptionBudget = "monitoring-plugin/pod-disruption-budget.yaml"
 	MonitoringPluginNetworkPolicy       = "monitoring-plugin/network-policy-downstream.yaml"
+	MonitoringPluginServiceMonitor      = "monitoring-plugin/service-monitor.yaml"
+	MonitoringPluginPrometheusRule      = "monitoring-plugin/prometheus-rule.yaml"
 
 	UserWorkloadMonitoringDenyAllTraffic = "cluster-monitoring-operator/network-policy-default-deny-user-workload.yaml"
 )
@@ -3007,6 +3009,14 @@ func (f *Factory) MonitoringPluginServiceAccount() (*v1.ServiceAccount, error) {
 
 func (f *Factory) MonitoringPluginService() (*v1.Service, error) {
 	return f.NewService(f.assets.MustNewAssetSlice(MonitoringPluginService))
+}
+
+func (f *Factory) MonitoringPluginServiceMonitor() (*monv1.ServiceMonitor, error) {
+	return f.NewServiceMonitor(f.assets.MustNewAssetSlice(MonitoringPluginServiceMonitor))
+}
+
+func (f *Factory) MonitoringPluginPrometheusRule() (*monv1.PrometheusRule, error) {
+	return f.NewPrometheusRule(f.assets.MustNewAssetSlice(MonitoringPluginPrometheusRule))
 }
 
 func (f *Factory) ThanosQuerierPodDisruptionBudget() (*policyv1.PodDisruptionBudget, error) {
