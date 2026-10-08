@@ -1723,6 +1723,97 @@ func TestPrometheusK8sConfiguration(t *testing.T) {
 	require.Equal(t, []string{"X25519MLKEM768", "X25519", "CurveP256", "CurveP384"}, p.Spec.Thanos.GRPCServerTLSConfig.Curves)
 }
 
+func TestPrometheusThanosSidecarGRPCCipherSuites(t *testing.T) {
+	for _, tc := range []struct {
+		name        string
+		profile     *configv1.TLSSecurityProfile
+		expected    []string
+		expectedErr bool
+	}{
+		{
+			name:    "old profile excludes insecure ciphers",
+			profile: &configv1.TLSSecurityProfile{Type: configv1.TLSProfileOldType},
+			expected: []string{
+				"TLS_AES_128_GCM_SHA256",
+				"TLS_AES_256_GCM_SHA384",
+				"TLS_CHACHA20_POLY1305_SHA256",
+				"TLS_ECDHE_ECDSA_WITH_AES_128_GCM_SHA256",
+				"TLS_ECDHE_RSA_WITH_AES_128_GCM_SHA256",
+				"TLS_ECDHE_ECDSA_WITH_AES_256_GCM_SHA384",
+				"TLS_ECDHE_RSA_WITH_AES_256_GCM_SHA384",
+				"TLS_ECDHE_ECDSA_WITH_CHACHA20_POLY1305_SHA256",
+				"TLS_ECDHE_RSA_WITH_CHACHA20_POLY1305_SHA256",
+				"TLS_ECDHE_ECDSA_WITH_AES_128_CBC_SHA",
+				"TLS_ECDHE_RSA_WITH_AES_128_CBC_SHA",
+				"TLS_ECDHE_ECDSA_WITH_AES_256_CBC_SHA",
+				"TLS_ECDHE_RSA_WITH_AES_256_CBC_SHA",
+			},
+		},
+		{
+			name: "custom profile preserves supported cipher order",
+			profile: &configv1.TLSSecurityProfile{
+				Type: configv1.TLSProfileCustomType,
+				Custom: &configv1.CustomTLSProfile{TLSProfileSpec: configv1.TLSProfileSpec{
+					Ciphers: []string{
+						"ECDHE-RSA-AES128-SHA",
+						"ECDHE-RSA-AES256-GCM-SHA384",
+						"AES128-SHA",
+						"ECDHE-RSA-AES128-GCM-SHA256",
+					},
+					MinTLSVersion: configv1.VersionTLS12,
+				}},
+			},
+			expected: []string{
+				"TLS_ECDHE_RSA_WITH_AES_128_CBC_SHA",
+				"TLS_ECDHE_RSA_WITH_AES_256_GCM_SHA384",
+				"TLS_ECDHE_RSA_WITH_AES_128_GCM_SHA256",
+			},
+		},
+		{
+			name: "custom profile with no supported ciphers",
+			profile: &configv1.TLSSecurityProfile{
+				Type: configv1.TLSProfileCustomType,
+				Custom: &configv1.CustomTLSProfile{TLSProfileSpec: configv1.TLSProfileSpec{
+					Ciphers:       []string{"AES128-SHA"},
+					MinTLSVersion: configv1.VersionTLS12,
+				}},
+			},
+			expectedErr: true,
+		},
+	} {
+		t.Run(tc.name, func(t *testing.T) {
+			for _, prom := range []struct {
+				name string
+				get  func(*Factory) (*monv1.Prometheus, error)
+			}{
+				{
+					name: "platform monitoring",
+					get: func(f *Factory) (*monv1.Prometheus, error) {
+						return f.PrometheusK8s(&v1.Secret{ObjectMeta: metav1.ObjectMeta{Name: "grpc-tls"}}, nil)
+					},
+				},
+				{
+					name: "user workload monitoring",
+					get: func(f *Factory) (*monv1.Prometheus, error) {
+						return f.PrometheusUserWorkload(&v1.Secret{ObjectMeta: metav1.ObjectMeta{Name: "grpc-tls"}})
+					},
+				},
+			} {
+				t.Run(prom.name, func(t *testing.T) {
+					f := NewFactory("openshift-monitoring", "openshift-user-workload-monitoring", mustDefaultConfig(), defaultInfrastructureReader(), &fakeProxyReader{}, NewAssets(assetsPath), newApiserverConfig(tc.profile), &configv1.Console{})
+					p, err := prom.get(f)
+					if tc.expectedErr {
+						require.Error(t, err)
+						return
+					}
+					require.NoError(t, err)
+					require.Equal(t, tc.expected, p.Spec.Thanos.GRPCServerTLSConfig.CipherSuites)
+				})
+			}
+		})
+	}
+}
+
 func TestPrometheusUserWorkloadConfiguration(t *testing.T) {
 	c := mustDefaultConfig()
 
@@ -4532,6 +4623,44 @@ func TestThanosRulerConfiguration(t *testing.T) {
 	require.Equal(t, crypto.OpenSSLToIANACipherSuites(APIServerDefaultTLSCiphers), tr.Spec.GRPCServerTLSConfig.CipherSuites)
 	require.Equal(t, []string{"X25519MLKEM768", "X25519", "CurveP256", "CurveP384"}, tr.Spec.GRPCServerTLSConfig.Curves)
 
+}
+
+func TestThanosRulerGRPCCipherSuites(t *testing.T) {
+	for _, tc := range []struct {
+		name        string
+		ciphers     []string
+		expected    []string
+		expectedErr bool
+	}{
+		{
+			name:     "unsupported ciphers are filtered",
+			ciphers:  []string{"AES128-SHA", "ECDHE-RSA-AES256-GCM-SHA384"},
+			expected: []string{"TLS_ECDHE_RSA_WITH_AES_256_GCM_SHA384"},
+		},
+		{
+			name:        "all ciphers are unsupported",
+			ciphers:     []string{"AES128-SHA"},
+			expectedErr: true,
+		},
+	} {
+		t.Run(tc.name, func(t *testing.T) {
+			profile := &configv1.TLSSecurityProfile{
+				Type: configv1.TLSProfileCustomType,
+				Custom: &configv1.CustomTLSProfile{TLSProfileSpec: configv1.TLSProfileSpec{
+					Ciphers:       tc.ciphers,
+					MinTLSVersion: configv1.VersionTLS12,
+				}},
+			}
+			f := NewFactory("openshift-monitoring", "openshift-user-workload-monitoring", mustDefaultConfig(), defaultInfrastructureReader(), &fakeProxyReader{}, NewAssets(assetsPath), newApiserverConfig(profile), &configv1.Console{})
+			tr, err := f.ThanosRulerCustomResource(&v1.Secret{ObjectMeta: metav1.ObjectMeta{Name: "grpc-tls"}}, nil)
+			if tc.expectedErr {
+				require.Error(t, err)
+				return
+			}
+			require.NoError(t, err)
+			require.Equal(t, tc.expected, tr.Spec.GRPCServerTLSConfig.CipherSuites)
+		})
+	}
 }
 
 func TestThanosRulerRetentionConfig(t *testing.T) {
