@@ -754,6 +754,52 @@ func TestPrometheusOperatorConfiguration(t *testing.T) {
 	}
 }
 
+func TestMonitoringPluginDeploymentFeatures(t *testing.T) {
+	defaultFeatures := "alerting,legacy-dashboards,targets,metrics"
+
+	for _, tc := range []struct {
+		name     string
+		config   string
+		expected string
+	}{
+		{
+			name:     "no config keeps the default features",
+			config:   "",
+			expected: defaultFeatures,
+		},
+		{
+			name: "custom features are appended to the defaults",
+			config: `monitoringPlugin:
+  unsupportedFeatures:
+    - alert-management-api
+`,
+			expected: defaultFeatures + ",alert-management-api",
+		},
+		{
+			name: "duplicated features are de-duplicated",
+			config: `monitoringPlugin:
+  unsupportedFeatures:
+    - alert-management-api
+    - alert-management-api
+    - alerting
+`,
+			expected: defaultFeatures + ",alert-management-api",
+		},
+	} {
+		t.Run(tc.name, func(t *testing.T) {
+			c, err := NewConfigFromString(tc.config)
+			require.NoError(t, err)
+
+			f := NewFactory("openshift-monitoring", "openshift-user-workload-monitoring", c, defaultInfrastructureReader(), &fakeProxyReader{}, NewAssets(assetsPath), &APIServerConfig{}, &configv1.Console{})
+			d, err := f.MonitoringPluginDeployment()
+			require.NoError(t, err)
+
+			got := getContainerArgValue(d.Spec.Template.Spec.Containers, MonitoringPluginFeaturesFlag, MonitoringPluginDeploymentContainer)
+			require.Equal(t, MonitoringPluginFeaturesFlag+tc.expected, got)
+		})
+	}
+}
+
 func TestPrometheusOperatorAdmissionWebhookConfiguration(t *testing.T) {
 	c, err := NewConfigFromString(`prometheusOperator:
   nodeSelector:
