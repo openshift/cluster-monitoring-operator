@@ -82,8 +82,8 @@ local vpaMetrics = [
   vpaMetric('verticalpodautoscaler_status_recommendation_containerrecommendations_uncappedtarget_memory', 'Target memory resources the VerticalPodAutoscaler recommends for the container ignoring bounds.', 'gauge', '', true),
   vpaMetric('verticalpodautoscaler_spec_resourcepolicy_container_policies_minallowed_cpu', 'Minimum cpu resources the VerticalPodAutoscaler can set for containers matching the name.', 'gauge', '', true),
   vpaMetric('verticalpodautoscaler_spec_resourcepolicy_container_policies_minallowed_memory', 'Minimum memory resources the VerticalPodAutoscaler can set for containers matching the name.', 'gauge', '', true),
-  vpaMetric('verticalpodautoscaler_spec_resourcepolicy_container_policies_maxallowed_cpu', 'Minimum cpu resources the VerticalPodAutoscaler can set for containers matching the name.', 'gauge', '', true),
-  vpaMetric('verticalpodautoscaler_spec_resourcepolicy_container_policies_maxallowed_memory', 'Minimum memory resources the VerticalPodAutoscaler can set for containers matching the name.', 'gauge', '', true),
+  vpaMetric('verticalpodautoscaler_spec_resourcepolicy_container_policies_maxallowed_cpu', 'Maximum cpu resources the VerticalPodAutoscaler can set for containers matching the name.', 'gauge', '', true),
+  vpaMetric('verticalpodautoscaler_spec_resourcepolicy_container_policies_maxallowed_memory', 'Maximum memory resources the VerticalPodAutoscaler can set for containers matching the name.', 'gauge', '', true),
 ];
 
 local gatewayClassMetrics = [

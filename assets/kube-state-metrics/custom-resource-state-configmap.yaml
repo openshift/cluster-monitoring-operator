@@ -441,7 +441,7 @@ data:
               - "maxAllowed"
               - "cpu"
             "type": "Gauge"
-          "help": "Minimum cpu resources the VerticalPodAutoscaler can set for containers matching the name."
+          "help": "Maximum cpu resources the VerticalPodAutoscaler can set for containers matching the name."
           "labelsFromPath":
             "namespace":
             - "metadata"
@@ -479,7 +479,7 @@ data:
               - "maxAllowed"
               - "memory"
             "type": "Gauge"
-          "help": "Minimum memory resources the VerticalPodAutoscaler can set for containers matching the name."
+          "help": "Maximum memory resources the VerticalPodAutoscaler can set for containers matching the name."
           "labelsFromPath":
             "namespace":
             - "metadata"
