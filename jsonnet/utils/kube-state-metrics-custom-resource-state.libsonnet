@@ -6,7 +6,7 @@ local getCommonLabels(resourceType) =
       if resourceType == 'memory' then 'bytes',
   };
 
-local vpaMetric(name, help, type, statesetScope='') = if name == '' || help == '' || type == '' then null else {
+local vpaMetric(name, help, type, statesetScope='', nilIsZero=false) = if name == '' || help == '' || type == '' then null else {
   local nameParts = std.split(name, '_'),
   local le = std.length(nameParts),
   local resourceType = if nameParts[le - 1] == 'cpu' then 'cpu' else if nameParts[le - 1] == 'memory' then 'memory' else '',
@@ -62,6 +62,7 @@ local vpaMetric(name, help, type, statesetScope='') = if name == '' || help == '
       [if type == 'stateSet' && statesetScope != null then 'list']: statesetScope,
       // valueFrom is only used by non-StateSets.
       [if type != 'stateSet' then 'valueFrom']: resolvedValueFrom,
+      [if nilIsZero then 'nilIsZero']: true,
     },
   },
   labelsFromPath: commonLabelsFromPath,
@@ -71,18 +72,18 @@ local vpaMetrics = [
   //  vpaMetric('verticalpodautoscaler_annotations_info', 'Kubernetes annotations converted to Prometheus labels.', 'info'),
   //  vpaMetric('verticalpodautoscaler_labels_info', 'Kubernetes labels converted to Prometheus labels.', 'info'),
   vpaMetric('verticalpodautoscaler_spec_updatepolicy_updatemode', 'Update mode of the VerticalPodAutoscaler.', 'stateSet', ['Off', 'Initial', 'Recreate', 'Auto']),
-  vpaMetric('verticalpodautoscaler_status_recommendation_containerrecommendations_lowerbound_cpu', 'Minimum cpu resources the container can use before the VerticalPodAutoscaler updater evicts it.', 'gauge'),
-  vpaMetric('verticalpodautoscaler_status_recommendation_containerrecommendations_lowerbound_memory', 'Minimum memory resources the container can use before the VerticalPodAutoscaler updater evicts it.', 'gauge'),
-  vpaMetric('verticalpodautoscaler_status_recommendation_containerrecommendations_upperbound_cpu', 'Maximum cpu resources the container can use before the VerticalPodAutoscaler updater evicts it.', 'gauge'),
-  vpaMetric('verticalpodautoscaler_status_recommendation_containerrecommendations_upperbound_memory', 'Maximum memory resources the container can use before the VerticalPodAutoscaler updater evicts it.', 'gauge'),
-  vpaMetric('verticalpodautoscaler_status_recommendation_containerrecommendations_target_cpu', 'Target cpu resources the VerticalPodAutoscaler recommends for the container.', 'gauge'),
-  vpaMetric('verticalpodautoscaler_status_recommendation_containerrecommendations_target_memory', 'Target memory resources the VerticalPodAutoscaler recommends for the container.', 'gauge'),
-  vpaMetric('verticalpodautoscaler_status_recommendation_containerrecommendations_uncappedtarget_cpu', 'Target cpu resources the VerticalPodAutoscaler recommends for the container ignoring bounds.', 'gauge'),
-  vpaMetric('verticalpodautoscaler_status_recommendation_containerrecommendations_uncappedtarget_memory', 'Target memory resources the VerticalPodAutoscaler recommends for the container ignoring bounds.', 'gauge'),
-  vpaMetric('verticalpodautoscaler_spec_resourcepolicy_container_policies_minallowed_cpu', 'Minimum cpu resources the VerticalPodAutoscaler can set for containers matching the name.', 'gauge'),
-  vpaMetric('verticalpodautoscaler_spec_resourcepolicy_container_policies_minallowed_memory', 'Minimum memory resources the VerticalPodAutoscaler can set for containers matching the name.', 'gauge'),
-  vpaMetric('verticalpodautoscaler_spec_resourcepolicy_container_policies_maxallowed_cpu', 'Minimum cpu resources the VerticalPodAutoscaler can set for containers matching the name.', 'gauge'),
-  vpaMetric('verticalpodautoscaler_spec_resourcepolicy_container_policies_maxallowed_memory', 'Minimum memory resources the VerticalPodAutoscaler can set for containers matching the name.', 'gauge'),
+  vpaMetric('verticalpodautoscaler_status_recommendation_containerrecommendations_lowerbound_cpu', 'Minimum cpu resources the container can use before the VerticalPodAutoscaler updater evicts it.', 'gauge', '', true),
+  vpaMetric('verticalpodautoscaler_status_recommendation_containerrecommendations_lowerbound_memory', 'Minimum memory resources the container can use before the VerticalPodAutoscaler updater evicts it.', 'gauge', '', true),
+  vpaMetric('verticalpodautoscaler_status_recommendation_containerrecommendations_upperbound_cpu', 'Maximum cpu resources the container can use before the VerticalPodAutoscaler updater evicts it.', 'gauge', '', true),
+  vpaMetric('verticalpodautoscaler_status_recommendation_containerrecommendations_upperbound_memory', 'Maximum memory resources the container can use before the VerticalPodAutoscaler updater evicts it.', 'gauge', '', true),
+  vpaMetric('verticalpodautoscaler_status_recommendation_containerrecommendations_target_cpu', 'Target cpu resources the VerticalPodAutoscaler recommends for the container.', 'gauge', '', true),
+  vpaMetric('verticalpodautoscaler_status_recommendation_containerrecommendations_target_memory', 'Target memory resources the VerticalPodAutoscaler recommends for the container.', 'gauge', '', true),
+  vpaMetric('verticalpodautoscaler_status_recommendation_containerrecommendations_uncappedtarget_cpu', 'Target cpu resources the VerticalPodAutoscaler recommends for the container ignoring bounds.', 'gauge', '', true),
+  vpaMetric('verticalpodautoscaler_status_recommendation_containerrecommendations_uncappedtarget_memory', 'Target memory resources the VerticalPodAutoscaler recommends for the container ignoring bounds.', 'gauge', '', true),
+  vpaMetric('verticalpodautoscaler_spec_resourcepolicy_container_policies_minallowed_cpu', 'Minimum cpu resources the VerticalPodAutoscaler can set for containers matching the name.', 'gauge', '', true),
+  vpaMetric('verticalpodautoscaler_spec_resourcepolicy_container_policies_minallowed_memory', 'Minimum memory resources the VerticalPodAutoscaler can set for containers matching the name.', 'gauge', '', true),
+  vpaMetric('verticalpodautoscaler_spec_resourcepolicy_container_policies_maxallowed_cpu', 'Minimum cpu resources the VerticalPodAutoscaler can set for containers matching the name.', 'gauge', '', true),
+  vpaMetric('verticalpodautoscaler_spec_resourcepolicy_container_policies_maxallowed_memory', 'Minimum memory resources the VerticalPodAutoscaler can set for containers matching the name.', 'gauge', '', true),
 ];
 
 local gatewayClassMetrics = [

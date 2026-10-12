@@ -80,6 +80,8 @@ func TestKSMCRSMetrics(t *testing.T) {
 	updateMode := vpav1.UpdateModeOff
 	queryAbsenceCheck := fmt.Sprintf("absent(%s_verticalpodautoscaler_spec_updatepolicy_updatemode)", ksmCRSMetricPrefix)
 	queryPresenceCheck := fmt.Sprintf("group(%s_verticalpodautoscaler_spec_updatepolicy_updatemode{updatemode=\"%s\"} == 1)", ksmCRSMetricPrefix, updateMode)
+	optionalVPAMetrics := fmt.Sprintf("%s_verticalpodautoscaler_(status_recommendation_containerrecommendations_(lowerbound|upperbound|target|uncappedtarget)_(cpu|memory)|spec_resourcepolicy_container_policies_(minallowed|maxallowed)_(cpu|memory))", ksmCRSMetricPrefix)
+	queryMissingOptionalFieldsCheck := fmt.Sprintf("group(count({__name__=~\"%s\",verticalpodautoscaler=\"test-vpa\"} == 0) == 12)", optionalVPAMetrics)
 
 	// Fetch KSM CRS metrics, but expect absence.
 	f.ThanosQuerierClient.WaitForQueryReturnOne(t, timeout, queryAbsenceCheck)
@@ -116,6 +118,7 @@ func TestKSMCRSMetrics(t *testing.T) {
 
 	// Fetch KSM CRS metrics.
 	f.ThanosQuerierClient.WaitForQueryReturnOne(t, timeout, queryPresenceCheck)
+	f.ThanosQuerierClient.WaitForQueryReturnOne(t, timeout, queryMissingOptionalFieldsCheck)
 
 	// Cleanup.
 	deleteVPACRD(t, vpaCRD)
