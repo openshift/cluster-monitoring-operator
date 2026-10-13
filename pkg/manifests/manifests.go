@@ -342,6 +342,7 @@ var (
 	KubeRbacProxyMinTLSVersionFlag                       = "--tls-min-version="
 	MonitoringPluginTLSCipherSuitesFlag                  = "--tls-cipher-suites="
 	MonitoringPluginTLSMinTLSVersionFlag                 = "--tls-min-version="
+	MonitoringPluginFeaturesFlag                         = "--features="
 
 	AuthProxyExternalURLFlag  = "-external-url="
 	AuthProxyCookieDomainFlag = "-cookie-domain="
@@ -2990,7 +2991,43 @@ func (f *Factory) MonitoringPluginDeployment() (*appsv1.Deployment, error) {
 		podSpec.TopologySpreadConstraints = cfg.TopologySpreadConstraints
 	}
 
+	if len(cfg.Features) > 0 {
+		containers[idx].Args = setMonitoringPluginFeatures(containers[idx].Args, cfg.Features)
+	}
+
 	return d, nil
+}
+
+// setMonitoringPluginFeatures merges the user-configured features into the
+// --features flag of the monitoring-plugin container. The features enabled by
+// default in the manifest are preserved and the resulting list is
+// de-duplicated while keeping the original ordering.
+func setMonitoringPluginFeatures(args []string, features []string) []string {
+	var current []string
+	for _, arg := range args {
+		if value, ok := strings.CutPrefix(arg, MonitoringPluginFeaturesFlag); ok {
+			if value != "" {
+				current = strings.Split(value, ",")
+			}
+			break
+		}
+	}
+
+	seen := make(map[string]struct{}, len(current)+len(features))
+	merged := make([]string, 0, len(current)+len(features))
+	for _, feature := range append(current, features...) {
+		feature = strings.TrimSpace(feature)
+		if feature == "" {
+			continue
+		}
+		if _, ok := seen[feature]; ok {
+			continue
+		}
+		seen[feature] = struct{}{}
+		merged = append(merged, feature)
+	}
+
+	return setArg(args, MonitoringPluginFeaturesFlag, strings.Join(merged, ","))
 }
 
 func (f *Factory) MonitoringPluginPodDisruptionBudget() (*policyv1.PodDisruptionBudget, error) {

@@ -876,6 +876,11 @@ type MonitoringPluginConfig struct {
 	Tolerations []v1.Toleration `json:"tolerations,omitempty"`
 	// Defines a pod's topology spread constraints.
 	TopologySpreadConstraints []v1.TopologySpreadConstraint `json:"topologySpreadConstraints,omitempty"`
+	// OmitFromDoc: Defines a list of custom features to enable in the
+	// monitoring plugin, in addition to the features that are enabled by
+	// default. Each entry is appended to the `--features` flag of the
+	// console-plugin container.
+	Features []string `json:"unsupportedFeatures,omitempty"`
 }
 
 // ----- Common Types -----
