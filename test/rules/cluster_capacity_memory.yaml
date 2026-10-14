@@ -1,0 +1,62 @@
+# Tests for cluster:capacity_memory_bytes:sum and its master > infra > worker role precedence.
+
+rule_files:
+  - rules.yaml
+
+evaluation_interval: 30s
+
+tests:
+  # An infra node with the worker role must not be added to the unlabeled workers.
+  - interval: 1m
+    input_series:
+      - series: 'kube_node_status_capacity{node="worker-1",resource="memory",unit="byte"}'
+        values: "4"
+      - series: 'kube_node_labels{node="worker-1",label_beta_kubernetes_io_instance_type="e2-standard-4"}'
+        values: "1"
+      - series: 'kube_node_role{node="worker-1",role="worker"}'
+        values: "1"
+      - series: 'kube_node_status_capacity{node="infra-1",resource="memory",unit="byte"}'
+        values: "2"
+      - series: 'kube_node_labels{node="infra-1",label_beta_kubernetes_io_instance_type="e2-standard-4"}'
+        values: "1"
+      - series: 'kube_node_role{node="infra-1",role="worker"}'
+        values: "1"
+      - series: 'kube_node_role{node="infra-1",role="infra"}'
+        values: "1"
+      - series: 'kube_node_status_capacity{node="infra-2",resource="memory",unit="byte"}'
+        values: "3"
+      - series: 'kube_node_labels{node="infra-2",label_beta_kubernetes_io_instance_type="e2-standard-4"}'
+        values: "1"
+      - series: 'kube_node_role{node="infra-2",role="infra"}'
+        values: "1"
+    promql_expr_test:
+      - expr: cluster:capacity_memory_bytes:sum
+        eval_time: 1m
+        exp_samples:
+          - labels: 'cluster:capacity_memory_bytes:sum{label_beta_kubernetes_io_instance_type="e2-standard-4"}'
+            value: 4
+          - labels: 'cluster:capacity_memory_bytes:sum{label_beta_kubernetes_io_instance_type="e2-standard-4",label_node_role_kubernetes_io="infra"}'
+            value: 5
+  # Master capacity takes precedence even if the node also has an infra role.
+  - interval: 1m
+    input_series:
+      - series: 'kube_node_status_capacity{node="master-infra-1",resource="memory",unit="byte"}'
+        values: "8"
+      - series: 'kube_node_labels{node="master-infra-1",label_beta_kubernetes_io_instance_type="e2-standard-4"}'
+        values: "1"
+      - series: 'kube_node_role{node="master-infra-1",role="master"}'
+        values: "1"
+      - series: 'kube_node_role{node="master-infra-1",role="infra"}'
+        values: "1"
+      - series: 'kube_node_status_capacity{node="worker-1",resource="memory",unit="byte"}'
+        values: "4"
+      - series: 'kube_node_labels{node="worker-1",label_beta_kubernetes_io_instance_type="e2-standard-4"}'
+        values: "1"
+    promql_expr_test:
+      - expr: cluster:capacity_memory_bytes:sum
+        eval_time: 1m
+        exp_samples:
+          - labels: 'cluster:capacity_memory_bytes:sum{label_beta_kubernetes_io_instance_type="e2-standard-4",label_node_role_kubernetes_io="master"}'
+            value: 8
+          - labels: 'cluster:capacity_memory_bytes:sum{label_beta_kubernetes_io_instance_type="e2-standard-4"}'
+            value: 4
