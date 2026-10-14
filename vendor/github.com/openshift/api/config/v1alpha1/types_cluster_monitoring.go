@@ -1718,7 +1718,7 @@ type RemoteWriteSpec struct {
 	// metadataConfig configures the sending of series metadata to remote storage.
 	// When omitted, no metadata is sent.
 	// When set to sendPolicy: Default, metadata is sent using platform-chosen defaults (e.g. send interval 30 seconds).
-	// When set to sendPolicy: Custom, metadata is sent using the settings in the custom field (e.g. custom.sendIntervalSeconds).
+	// When set to sendPolicy: Custom, metadata is sent using the settings in the custom field (e.g. custom.sendInterval).
 	// +optional
 	MetadataConfig MetadataConfig `json:"metadataConfig,omitempty,omitzero"`
 	// proxyUrl defines an optional proxy URL.
@@ -1907,17 +1907,17 @@ const (
 type MetadataConfigSendPolicy string
 
 const (
-	// MetadataConfigSendPolicyDefault indicates metadata is sent using platform-chosen defaults (e.g. send interval 30 seconds).
+	// MetadataConfigSendPolicyDefault indicates metadata is sent using Prometheus Operator / Prometheus defaults when the interval is unset.
 	MetadataConfigSendPolicyDefault MetadataConfigSendPolicy = "Default"
 	// MetadataConfigSendPolicyCustom indicates metadata is sent using the settings in the custom field.
 	MetadataConfigSendPolicyCustom MetadataConfigSendPolicy = "Custom"
 )
 
 // MetadataConfig defines whether and how to send series metadata to remote write storage.
-// +kubebuilder:validation:XValidation:rule="self.sendPolicy == 'Default' ? self.custom.sendIntervalSeconds == 0 : true",message="custom is forbidden when sendPolicy is Default"
+// +kubebuilder:validation:XValidation:rule="self.sendPolicy == 'Custom' ? has(self.custom) : !has(self.custom)",message="custom is required when sendPolicy is Custom, and forbidden otherwise"
 type MetadataConfig struct {
 	// sendPolicy specifies whether to send metadata and how it is configured.
-	// Default: send metadata using platform-chosen defaults (e.g. send interval 30 seconds).
+	// Default: send metadata using Prometheus Operator / Prometheus defaults when the interval is unset.
 	// Custom: send metadata using the settings in the custom field.
 	// +required
 	SendPolicy MetadataConfigSendPolicy `json:"sendPolicy,omitempty"`
@@ -1927,17 +1927,35 @@ type MetadataConfig struct {
 }
 
 // MetadataConfigCustom defines custom settings for sending series metadata when sendPolicy is Custom.
-// At least one property must be set when sendPolicy is Custom (e.g. sendIntervalSeconds).
+// At least one property must be set when sendPolicy is Custom (e.g. sendInterval).
 // +kubebuilder:validation:MinProperties=1
 type MetadataConfigCustom struct {
+	// TOMBSTONE: This field has been tombstoned in favor of the `sendInterval` field. This tombstone will be dropped when promoting this API to v1.
+	// ---
 	// sendIntervalSeconds is the interval in seconds at which metadata is sent.
 	// When omitted, the platform chooses a reasonable default (e.g. 30 seconds).
 	// Minimum value is 1 second. Maximum value is 86400 seconds (24 hours).
+	// Former marker: optional
+	// Former marker: kubebuilder:validation:Minimum=1
+	// Former marker: kubebuilder:validation:Maximum=86400
+	// SendIntervalSeconds int32 `json:"sendIntervalSeconds,omitempty"`
+
+	// sendInterval is the interval at which metadata is sent.
+	// Valid values are Prometheus-style duration strings with unit suffixes h, m, s, or ms
+	// (for example, "30s", "1m", or "500ms"). Each unit value must be a positive integer.
+	// Composite durations must follow the fixed unit order h, m, s, ms.
+	// Must be at least 1 character and at most 64 characters.
+	// The value must be greater than 0 and at most 24h (86400s).
+	// Zero durations such as "0", "0s", or "0ms" are rejected: a zero interval panics
+	// Prometheus metadata watchers (time.NewTicker(0)).
+	// +kubebuilder:validation:MinLength=1
+	// +kubebuilder:validation:MaxLength=64
+	// +kubebuilder:validation:XValidation:rule=`self.matches('^([1-9][0-9]*h)?([1-9][0-9]*m)?([1-9][0-9]*s)?([1-9][0-9]*ms)?$') && self.matches('.*[0-9].*')`,message=`must be a Prometheus duration string with only positive unit values in h, m, s, or ms`
+	// +kubebuilder:validation:XValidation:rule=`duration(self) <= duration("24h")`,message=`sendInterval must be at most 24h`
 	// +optional
-	// +kubebuilder:validation:Minimum=1
-	// +kubebuilder:validation:Maximum=86400
-	SendIntervalSeconds int32 `json:"sendIntervalSeconds,omitempty"`
+	SendInterval string `json:"sendInterval,omitempty"`
 }
+
 
 // OAuth2 defines OAuth2 authentication settings for the remote write endpoint.
 type OAuth2 struct {

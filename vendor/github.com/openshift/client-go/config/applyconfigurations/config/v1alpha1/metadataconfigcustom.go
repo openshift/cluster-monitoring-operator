@@ -6,12 +6,10 @@ package v1alpha1
 // with apply.
 //
 // MetadataConfigCustom defines custom settings for sending series metadata when sendPolicy is Custom.
-// At least one property must be set when sendPolicy is Custom (e.g. sendIntervalSeconds).
+// At least one property must be set when sendPolicy is Custom (e.g. sendInterval).
 type MetadataConfigCustomApplyConfiguration struct {
-	// sendIntervalSeconds is the interval in seconds at which metadata is sent.
-	// When omitted, the platform chooses a reasonable default (e.g. 30 seconds).
-	// Minimum value is 1 second. Maximum value is 86400 seconds (24 hours).
-	SendIntervalSeconds *int32 `json:"sendIntervalSeconds,omitempty"`
+	// sendInterval is the interval at which metadata is sent.
+	SendInterval *string `json:"sendInterval,omitempty"`
 }
 
 // MetadataConfigCustomApplyConfiguration constructs a declarative configuration of the MetadataConfigCustom type for use with
@@ -20,10 +18,10 @@ func MetadataConfigCustom() *MetadataConfigCustomApplyConfiguration {
 	return &MetadataConfigCustomApplyConfiguration{}
 }
 
-// WithSendIntervalSeconds sets the SendIntervalSeconds field in the declarative configuration to the given value
+// WithSendInterval sets the SendInterval field in the declarative configuration to the given value
 // and returns the receiver, so that objects can be built by chaining "With" function invocations.
-// If called multiple times, the SendIntervalSeconds field is set to the value of the last call.
-func (b *MetadataConfigCustomApplyConfiguration) WithSendIntervalSeconds(value int32) *MetadataConfigCustomApplyConfiguration {
-	b.SendIntervalSeconds = &value
+// If called multiple times, the SendInterval field is set to the value of the last call.
+func (b *MetadataConfigCustomApplyConfiguration) WithSendInterval(value string) *MetadataConfigCustomApplyConfiguration {
+	b.SendInterval = &value
 	return b
 }

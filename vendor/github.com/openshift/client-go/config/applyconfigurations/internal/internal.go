@@ -4912,9 +4912,9 @@ var schemaYAML = typed.YAMLObject(`types:
 - name: com.github.openshift.api.config.v1alpha1.MetadataConfigCustom
   map:
     fields:
-    - name: sendIntervalSeconds
+    - name: sendInterval
       type:
-        scalar: numeric
+        scalar: string
 - name: com.github.openshift.api.config.v1alpha1.MetricsServerConfig
   map:
     fields:
