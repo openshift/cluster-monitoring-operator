@@ -43,12 +43,9 @@ type AdditionalAlertmanagerConfigApplyConfiguration struct {
 	// At least one endpoint must be specified (minimum 1, maximum 10 endpoints).
 	// Each entry must be unique and non-empty (empty string is invalid).
 	StaticConfigs []string `json:"staticConfigs,omitempty"`
-	// timeoutSeconds defines the timeout in seconds for requests to Alertmanager.
-	// When omitted, this means no opinion and the platform is left to choose a reasonable default, which is subject to change over time.
-	// Currently the default is 10 seconds.
-	// Minimum value is 1 second.
-	// Maximum value is 600 seconds (10 minutes).
-	TimeoutSeconds *int32 `json:"timeoutSeconds,omitempty"`
+	// timeout defines the timeout for requests to Alertmanager.
+	// Valid values are Prometheus-style duration strings with unit suffixes h, m, s, or ms.
+	Timeout *string `json:"timeout,omitempty"`
 	// tlsConfig defines the TLS settings to use for Alertmanager connections.
 	// When omitted, this means no opinion and the platform is left to choose a reasonable default, which is subject to change over time.
 	TLSConfig *TLSConfigApplyConfiguration `json:"tlsConfig,omitempty"`
@@ -102,11 +99,11 @@ func (b *AdditionalAlertmanagerConfigApplyConfiguration) WithStaticConfigs(value
 	return b
 }
 
-// WithTimeoutSeconds sets the TimeoutSeconds field in the declarative configuration to the given value
+// WithTimeout sets the Timeout field in the declarative configuration to the given value
 // and returns the receiver, so that objects can be built by chaining "With" function invocations.
-// If called multiple times, the TimeoutSeconds field is set to the value of the last call.
-func (b *AdditionalAlertmanagerConfigApplyConfiguration) WithTimeoutSeconds(value int32) *AdditionalAlertmanagerConfigApplyConfiguration {
-	b.TimeoutSeconds = &value
+// If called multiple times, the Timeout field is set to the value of the last call.
+func (b *AdditionalAlertmanagerConfigApplyConfiguration) WithTimeout(value string) *AdditionalAlertmanagerConfigApplyConfiguration {
+	b.Timeout = &value
 	return b
 }
 
