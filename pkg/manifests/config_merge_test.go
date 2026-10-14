@@ -1100,6 +1100,28 @@ func TestConfig_MergeClusterMonitoringCRD_PrometheusK8sConfigPhase1(t *testing.T
 		require.Equal(t, "15h", c.ClusterMonitoringConfiguration.PrometheusK8sConfig.Retention)
 		require.Equal(t, "500MiB", c.ClusterMonitoringConfiguration.PrometheusK8sConfig.RetentionSize)
 	})
+	t.Run("CR maps additionalAlertmanagerConfigs timeout string through without conversion", func(t *testing.T) {
+		cm := &configv1alpha1.ClusterMonitoring{
+			Spec: configv1alpha1.ClusterMonitoringSpec{
+				PrometheusConfig: configv1alpha1.PrometheusConfig{
+					AdditionalAlertmanagerConfigs: []configv1alpha1.AdditionalAlertmanagerConfig{
+						{
+							Name:          "am",
+							Timeout:       "30s",
+							StaticConfigs: []string{"alertmanager.example.com:9093"},
+						},
+					},
+				},
+			},
+		}
+		c, err := NewConfigFromStringAndClusterMonitoringResource("{}", cm)
+		require.NoError(t, err)
+		pk := c.ClusterMonitoringConfiguration.PrometheusK8sConfig
+		require.NotNil(t, pk)
+		require.Len(t, pk.AlertmanagerConfigs, 1)
+		require.NotNil(t, pk.AlertmanagerConfigs[0].Timeout)
+		require.Equal(t, "30s", *pk.AlertmanagerConfigs[0].Timeout)
+	})
 	t.Run("CR returns error for unsupported collection profile", func(t *testing.T) {
 		cm := &configv1alpha1.ClusterMonitoring{
 			Spec: configv1alpha1.ClusterMonitoringSpec{

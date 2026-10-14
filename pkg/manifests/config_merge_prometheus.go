@@ -202,8 +202,8 @@ func additionalAlertmanagerConfigsFromCRD(configs []configv1alpha1.AdditionalAle
 		if ac.Authorization.Type == configv1alpha1.AuthorizationTypeBearerToken {
 			cfg.BearerToken = secretKeySelectorFromCRD(ac.Authorization.BearerToken)
 		}
-		if ac.TimeoutSeconds > 0 {
-			timeout := fmt.Sprintf("%ds", ac.TimeoutSeconds)
+		if ac.Timeout != "" {
+			timeout := ac.Timeout
 			cfg.Timeout = &timeout
 		}
 		if ac.TLSConfig.CA.Name != "" || ac.TLSConfig.Cert.Name != "" || ac.TLSConfig.Key.Name != "" ||
