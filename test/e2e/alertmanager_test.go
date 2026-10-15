@@ -685,7 +685,7 @@ func TestAlertmanagerDisabling(t *testing.T) {
 	}{
 		{name: "assert alertmanager does not exist", assertion: f.AssertStatefulsetDoesNotExistFunc("alertmanager-main", f.Ns)},
 		{name: "assert route does not exist", assertion: f.AssertRouteDoesNotExistFunc("alertmanager-main", f.Ns)},
-		{name: "assert alertmanager main config does not exist", assertion: f.AssertSecretDoesNotExistFunc("alertmanager-main", f.Ns)},
+		{name: "assert alertmanager main config still exists", assertion: f.AssertSecretExistsFunc("alertmanager-main", f.Ns)},
 		{name: "assert kube-rbac-proxy secret does not exist", assertion: f.AssertSecretDoesNotExistFunc("alertmanager-kube-rbac-proxy", f.Ns)},
 		{name: "assert service alertmanager-main does not exist", assertion: f.AssertServiceDoesNotExistFunc("alertmanager-main", f.Ns)},
 		{name: "assert service alertmanager-operated does not exist", assertion: f.AssertServiceDoesNotExistFunc("alertmanager-operated", f.Ns)},
