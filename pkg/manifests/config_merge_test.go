@@ -15,6 +15,7 @@
 package manifests
 
 import (
+	"context"
 	"testing"
 
 	configv1alpha1 "github.com/openshift/api/config/v1alpha1"
@@ -1081,7 +1082,8 @@ func TestConfig_MergeClusterMonitoringCRD_PrometheusK8sConfigPhase1(t *testing.T
 		}
 		c, err := NewConfigFromStringAndClusterMonitoringResource("{}", cm)
 		require.NoError(t, err)
-		require.Equal(t, "4194304", c.ClusterMonitoringConfiguration.PrometheusK8sConfig.EnforcedBodySizeLimit)
+		require.Equal(t, "4194304B", c.ClusterMonitoringConfiguration.PrometheusK8sConfig.EnforcedBodySizeLimit)
+		require.NoError(t, c.LoadEnforcedBodySizeLimit(nil, context.Background()))
 		require.Equal(t, ExternalLabels{"region": "us-east"}, c.ClusterMonitoringConfiguration.PrometheusK8sConfig.ExternalLabels)
 	})
 	t.Run("CR maps Prometheus retention strings through without conversion", func(t *testing.T) {
