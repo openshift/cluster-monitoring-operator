@@ -83,9 +83,9 @@ func (t *ThanosQuerierTask) Run(ctx context.Context) error {
 		return fmt.Errorf("initializing Thanos Querier RBAC proxy Secret failed: %w", err)
 	}
 
-	err = t.client.CreateIfNotExistSecret(ctx, rs)
+	err = t.client.CreateOrUpdateSecret(ctx, rs)
 	if err != nil {
-		return fmt.Errorf("creating Thanos Querier RBAC proxy Secret failed: %w", err)
+		return fmt.Errorf("reconciling Thanos Querier RBAC proxy Secret failed: %w", err)
 	}
 
 	rs, err = t.factory.ThanosQuerierRBACProxyRulesSecret()
@@ -93,9 +93,9 @@ func (t *ThanosQuerierTask) Run(ctx context.Context) error {
 		return fmt.Errorf("initializing Thanos Querier RBAC proxy rules Secret failed: %w", err)
 	}
 
-	err = t.client.CreateIfNotExistSecret(ctx, rs)
+	err = t.client.CreateOrUpdateSecret(ctx, rs)
 	if err != nil {
-		return fmt.Errorf("creating Thanos Querier RBAC proxy rules Secret failed: %w", err)
+		return fmt.Errorf("reconciling Thanos Querier RBAC proxy rules Secret failed: %w", err)
 	}
 
 	rs, err = t.factory.ThanosQuerierRBACProxyMetricsSecret()
@@ -103,9 +103,9 @@ func (t *ThanosQuerierTask) Run(ctx context.Context) error {
 		return fmt.Errorf("initializing Thanos Querier RBAC proxy metrics Secret failed: %w", err)
 	}
 
-	err = t.client.CreateIfNotExistSecret(ctx, rs)
+	err = t.client.CreateOrUpdateSecret(ctx, rs)
 	if err != nil {
-		return fmt.Errorf("creating Thanos Querier RBAC proxy metrics Secret failed: %w", err)
+		return fmt.Errorf("reconciling Thanos Querier RBAC proxy metrics Secret failed: %w", err)
 	}
 
 	rs, err = t.factory.ThanosQuerierRBACProxyWebSecret()
