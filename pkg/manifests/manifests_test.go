@@ -20,6 +20,7 @@ import (
 	"fmt"
 	"net/url"
 	"reflect"
+	"regexp"
 	"slices"
 	"sort"
 	"strings"
@@ -3557,6 +3558,7 @@ func TestNodeExporter(t *testing.T) {
 }
 
 func TestNodeExporterCollectorSettings(t *testing.T) {
+	const defaultIgnoredNetworkDevices = "^(veth.*|[a-f0-9]{15}|[a-f0-9]{4,13}_[1-9][0-9]*|enP.*|ovn-k8s-mp[0-9]*|br-ex|br-int|br-ext|br[0-9]*|tun[0-9]*|cali[a-f0-9]*|bond.*)$"
 
 	tests := []struct {
 		name        string
@@ -3579,8 +3581,8 @@ func TestNodeExporterCollectorSettings(t *testing.T) {
 				"--no-collector.buddyinfo",
 				"--no-collector.ksmd",
 				"--no-collector.processes",
-				"--collector.netdev.device-exclude=^(veth.*|[a-f0-9]{15}|enP.*|ovn-k8s-mp[0-9]*|br-ex|br-int|br-ext|br[0-9]*|tun[0-9]*|cali[a-f0-9]*|bond.*)$",
-				"--collector.netclass.ignored-devices=^(veth.*|[a-f0-9]{15}|enP.*|ovn-k8s-mp[0-9]*|br-ex|br-int|br-ext|br[0-9]*|tun[0-9]*|cali[a-f0-9]*|bond.*)$",
+				"--collector.netdev.device-exclude=" + defaultIgnoredNetworkDevices,
+				"--collector.netclass.ignored-devices=" + defaultIgnoredNetworkDevices,
 				"--no-collector.systemd",
 				"--collector.dmmultipath",
 				"--collector.nvmesubsystem",
@@ -3631,8 +3633,11 @@ nodeExporter:
     ethtool:
       enabled: true
 `,
-			argsPresent: []string{"--collector.ethtool"},
-			argsAbsent:  []string{"--no-collector.ethtool"},
+			argsPresent: []string{
+				"--collector.ethtool",
+				"--collector.ethtool.device-exclude=" + defaultIgnoredNetworkDevices,
+			},
+			argsAbsent: []string{"--no-collector.ethtool"},
 		},
 		{
 			name: "enable ethtool collector with custom ignored devices",
@@ -3899,6 +3904,56 @@ nodeExporter:
 
 	}
 
+}
+
+func TestNodeExporterDefaultIgnoredNetworkDevices(t *testing.T) {
+	c, err := NewConfigFromString(`
+nodeExporter:
+  collectors:
+    ethtool:
+      enabled: true
+`)
+	require.NoError(t, err)
+	f := NewFactory("openshift-monitoring", "openshift-user-workload-monitoring", c, defaultInfrastructureReader(), &fakeProxyReader{}, NewAssets(assetsPath), &APIServerConfig{}, &configv1.Console{})
+	args, err := f.updateNodeExporterArgs(nil)
+	require.NoError(t, err)
+
+	for _, flag := range []string{
+		"--collector.netdev.device-exclude=",
+		"--collector.netclass.ignored-devices=",
+		"--collector.ethtool.device-exclude=",
+	} {
+		t.Run(flag, func(t *testing.T) {
+			var pattern string
+			for _, arg := range args {
+				if value, ok := strings.CutPrefix(arg, flag); ok {
+					pattern = value
+					break
+				}
+			}
+			require.NotEmpty(t, pattern, "missing %s", flag)
+			excluded := regexp.MustCompile(pattern)
+			for _, device := range []string{
+				"5ed58438ea69a60", // primary pod interface
+				"5ed58438ea69a_3", // secondary pod interface
+				"5ed58438ea69_12", // two-digit interface index
+				"5ed58438ea6_123", // three-digit interface index
+				"5ed58438ea_1234", // four-digit interface index
+				"5ed5_2147483647", // maximum Linux interface index
+				"veth1234",        // existing default exclusion
+			} {
+				require.True(t, excluded.MatchString(device), "%s should exclude %s", flag, device)
+			}
+			for _, device := range []string{
+				"ens1f0", "eth0_5", "a0_5", // valid devices, not OVN names
+				"5ed58438ea69a_0", // not a valid interface index
+				"5ed58438ea69_03", // interface indexes have no leading zeros
+				"5ed58438ea69a_", "5ed58438ea69a_3extra",
+			} {
+				require.False(t, excluded.MatchString(device), "%s should not exclude %s", flag, device)
+			}
+		})
+	}
 }
 
 func TestNodeExporterGeneralSettings(t *testing.T) {
