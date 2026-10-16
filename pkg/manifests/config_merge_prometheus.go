@@ -243,8 +243,8 @@ func metadataConfigFromCRD(mc configv1alpha1.MetadataConfig) (*monv1.MetadataCon
 		return &monv1.MetadataConfig{Send: true}, nil
 	case configv1alpha1.MetadataConfigSendPolicyCustom:
 		out := &monv1.MetadataConfig{Send: true}
-		if mc.Custom.SendIntervalSeconds > 0 {
-			out.SendInterval = monv1.Duration(fmt.Sprintf("%ds", mc.Custom.SendIntervalSeconds))
+		if mc.Custom.SendInterval != "" {
+			out.SendInterval = monv1.Duration(mc.Custom.SendInterval)
 		}
 		return out, nil
 	default:

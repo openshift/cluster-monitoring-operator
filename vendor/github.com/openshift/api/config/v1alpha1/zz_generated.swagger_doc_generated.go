@@ -291,7 +291,7 @@ func (LowercaseActionConfig) SwaggerDoc() map[string]string {
 
 var map_MetadataConfig = map[string]string{
 	"":           "MetadataConfig defines whether and how to send series metadata to remote write storage.",
-	"sendPolicy": "sendPolicy specifies whether to send metadata and how it is configured. Default: send metadata using platform-chosen defaults (e.g. send interval 30 seconds). Custom: send metadata using the settings in the custom field.",
+	"sendPolicy": "sendPolicy specifies whether to send metadata and how it is configured. Default: send metadata using Prometheus Operator / Prometheus defaults when the interval is unset. Custom: send metadata using the settings in the custom field.",
 	"custom":     "custom defines custom metadata send settings. Required when sendPolicy is Custom (must have at least one property), and forbidden when sendPolicy is Default.",
 }
 
@@ -300,8 +300,8 @@ func (MetadataConfig) SwaggerDoc() map[string]string {
 }
 
 var map_MetadataConfigCustom = map[string]string{
-	"":                    "MetadataConfigCustom defines custom settings for sending series metadata when sendPolicy is Custom. At least one property must be set when sendPolicy is Custom (e.g. sendIntervalSeconds).",
-	"sendIntervalSeconds": "sendIntervalSeconds is the interval in seconds at which metadata is sent. When omitted, the platform chooses a reasonable default (e.g. 30 seconds). Minimum value is 1 second. Maximum value is 86400 seconds (24 hours).",
+	"":             "MetadataConfigCustom defines custom settings for sending series metadata when sendPolicy is Custom. At least one property must be set when sendPolicy is Custom (e.g. sendInterval).",
+	"sendInterval": "sendInterval is the interval at which metadata is sent. Valid values are Prometheus-style duration strings with unit suffixes h, m, s, or ms (for example, \"30s\", \"1m\", or \"500ms\"). Each unit value must be a positive integer. Composite durations must follow the fixed unit order h, m, s, ms. Must be at least 1 character and at most 64 characters. The value must be greater than 0 and at most 24h (86400s). Zero durations such as \"0\", \"0s\", or \"0ms\" are rejected: a zero interval panics Prometheus metadata watchers (time.NewTicker(0)).",
 }
 
 func (MetadataConfigCustom) SwaggerDoc() map[string]string {
@@ -688,7 +688,7 @@ var map_RemoteWriteSpec = map[string]string{
 	"messageVersion":       "messageVersion defines the Remote Write message's version to use when writing to the endpoint. When omitted, this means no opinion and the platform is left to choose a reasonable default, which is subject to change over time. The default value is \"V1.0\". When set to \"V1.0\", Prometheus uses the `prometheus.WriteRequest` protobuf message introduced in Remote Write 1.0. When set to \"V2.0\", Prometheus uses the `io.prometheus.write.v2.Request` protobuf message introduced in Remote Write 2.0.",
 	"authorization":        "authorization defines the authorization method for the remote write endpoint. When omitted, no authorization is performed. When set, type must be one of Authorization, BasicAuth, OAuth2, SigV4, or ServiceAccount; the corresponding nested config must be set (ServiceAccount has no config).",
 	"headers":              "headers specifies the custom HTTP headers to be sent along with each remote write request. Sending custom headers makes the configuration of a proxy in between optional and helps the receiver recognize the given source better. Clients MAY allow users to send custom HTTP headers; they MUST NOT allow users to configure them in such a way as to send reserved headers. Headers set by Prometheus cannot be overwritten. When omitted, no custom headers are sent. Maximum of 50 headers can be specified. Each header name must be unique. Each header name must contain only alphanumeric characters, hyphens, and underscores, and must not be a reserved Prometheus header (Host, Authorization, Content-Encoding, Content-Type, X-Prometheus-Remote-Write-Version, User-Agent, Connection, Keep-Alive, Proxy-Authenticate, Proxy-Authorization, WWW-Authenticate).",
-	"metadataConfig":       "metadataConfig configures the sending of series metadata to remote storage. When omitted, no metadata is sent. When set to sendPolicy: Default, metadata is sent using platform-chosen defaults (e.g. send interval 30 seconds). When set to sendPolicy: Custom, metadata is sent using the settings in the custom field (e.g. custom.sendIntervalSeconds).",
+	"metadataConfig":       "metadataConfig configures the sending of series metadata to remote storage. When omitted, no metadata is sent. When set to sendPolicy: Default, metadata is sent using platform-chosen defaults (e.g. send interval 30 seconds). When set to sendPolicy: Custom, metadata is sent using the settings in the custom field (e.g. custom.sendInterval).",
 	"proxyUrl":             "proxyUrl defines an optional proxy URL. If the cluster-wide proxy is enabled, it replaces the proxyUrl setting. The cluster-wide proxy supports both HTTP and HTTPS proxies, with HTTPS taking precedence. When omitted, no proxy is used. Must be a valid URL with http or https scheme. Must be between 1 and 2048 characters in length.",
 	"queueConfig":          "queueConfig allows tuning configuration for remote write queue parameters. When omitted, default queue configuration is used.",
 	"remoteTimeoutSeconds": "remoteTimeoutSeconds defines the timeout in seconds for requests to the remote write endpoint. When omitted, this means no opinion and the platform is left to choose a reasonable default, which is subject to change over time. Minimum value is 1 second. Maximum value is 600 seconds (10 minutes).",
