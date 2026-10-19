@@ -43,9 +43,12 @@ type AdditionalAlertmanagerConfigApplyConfiguration struct {
 	// At least one endpoint must be specified (minimum 1, maximum 10 endpoints).
 	// Each entry must be unique and non-empty (empty string is invalid).
 	StaticConfigs []string `json:"staticConfigs,omitempty"`
-	// timeout defines the timeout for requests to Alertmanager.
-	// Valid values are Prometheus-style duration strings with unit suffixes h, m, s, or ms.
-	Timeout *string `json:"timeout,omitempty"`
+	// timeoutMilliseconds defines the timeout in milliseconds for requests to Alertmanager.
+	// When omitted, this means no opinion and the platform is left to choose a reasonable default, which is subject to change over time.
+	// Currently the default is 10000 milliseconds (10 seconds).
+	// Minimum value is 1 millisecond.
+	// Maximum value is 600000 milliseconds (10 minutes).
+	TimeoutMilliseconds *int32 `json:"timeoutMilliseconds,omitempty"`
 	// tlsConfig defines the TLS settings to use for Alertmanager connections.
 	// When omitted, this means no opinion and the platform is left to choose a reasonable default, which is subject to change over time.
 	TLSConfig *TLSConfigApplyConfiguration `json:"tlsConfig,omitempty"`
@@ -99,11 +102,11 @@ func (b *AdditionalAlertmanagerConfigApplyConfiguration) WithStaticConfigs(value
 	return b
 }
 
-// WithTimeout sets the Timeout field in the declarative configuration to the given value
+// WithTimeoutMilliseconds sets the TimeoutMilliseconds field in the declarative configuration to the given value
 // and returns the receiver, so that objects can be built by chaining "With" function invocations.
-// If called multiple times, the Timeout field is set to the value of the last call.
-func (b *AdditionalAlertmanagerConfigApplyConfiguration) WithTimeout(value string) *AdditionalAlertmanagerConfigApplyConfiguration {
-	b.Timeout = &value
+// If called multiple times, the TimeoutMilliseconds field is set to the value of the last call.
+func (b *AdditionalAlertmanagerConfigApplyConfiguration) WithTimeoutMilliseconds(value int32) *AdditionalAlertmanagerConfigApplyConfiguration {
+	b.TimeoutMilliseconds = &value
 	return b
 }
 

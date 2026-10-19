@@ -1630,7 +1630,7 @@ type AdditionalAlertmanagerConfig struct {
 	// +listType=set
 	// +required
 	StaticConfigs []string `json:"staticConfigs,omitempty"`
-	// TOMBSTONE: This field has been tombstoned in favor of the `timeout` field. This tombstone will be dropped when promoting this API to v1.
+	// TOMBSTONE: This field has been tombstoned in favor of the `timeoutMilliseconds` field. This tombstone will be dropped when promoting this API to v1.
 	// ---
 	// timeoutSeconds defines the timeout in seconds for requests to Alertmanager.
 	// When omitted, this means no opinion and the platform is left to choose a reasonable default, which is subject to change over time.
@@ -1642,22 +1642,15 @@ type AdditionalAlertmanagerConfig struct {
 	// Former marker: optional
 	// TimeoutSeconds int32 `json:"timeoutSeconds,omitempty"`
 
-	// timeout defines the timeout for requests to Alertmanager.
-	// Valid values are Prometheus-style duration strings with unit suffixes h, m, s, or ms
-	// (for example, "30s", "500ms", or "1m"). Each unit value must be a positive integer.
-	// Composite durations must follow the fixed unit order h, m, s, ms.
-	// Must be at least 1 character and at most 64 characters.
-	// The value must be greater than 0 and at most 600s (10 minutes).
-	// Zero durations such as "0", "0s", or "0ms" are rejected: a zero timeout makes every
-	// notification to this Alertmanager fail immediately.
+	// timeoutMilliseconds defines the timeout in milliseconds for requests to Alertmanager.
 	// When omitted, this means no opinion and the platform is left to choose a reasonable default, which is subject to change over time.
-	// The current default value is `10s`.
-	// +kubebuilder:validation:MinLength=1
-	// +kubebuilder:validation:MaxLength=64
-	// +kubebuilder:validation:XValidation:rule=`self.matches('^([1-9][0-9]*h)?([1-9][0-9]*m)?([1-9][0-9]*s)?([1-9][0-9]*ms)?$') && self.matches('.*[0-9].*')`,message=`must be a Prometheus duration string with only positive unit values in h, m, s, or ms`
-	// +kubebuilder:validation:XValidation:rule=`duration(self) <= duration("600s")`,message=`timeout must be at most 600s`
+	// Currently the default is 10000 milliseconds (10 seconds).
+	// Minimum value is 1 millisecond.
+	// Maximum value is 600000 milliseconds (10 minutes).
+	// +kubebuilder:validation:Minimum=1
+	// +kubebuilder:validation:Maximum=600000
 	// +optional
-	Timeout string `json:"timeout,omitempty"`
+	TimeoutMilliseconds int32 `json:"timeoutMilliseconds,omitempty"`
 	// tlsConfig defines the TLS settings to use for Alertmanager connections.
 	// When omitted, this means no opinion and the platform is left to choose a reasonable default, which is subject to change over time.
 	// +optional
