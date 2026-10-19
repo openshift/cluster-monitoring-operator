@@ -1146,7 +1146,7 @@ data:
     # owners: (@openshift/team-logging)
     #
     # openshift_logging:lokistack_ingestion_discarded_bytes_per_second:sum total bytes discarded by reason per second
-    - '{__name__="openshift_logging:lokistack_ingestion_discarded_bytes_per_second:sum",reason=~"rate_limited|per_stream_rate_limit|stream_limit|line_too_long|too_far_behind|greater_than_max_sample_age|too_far_in_future|max_label_names_per_series|label_name_too_long|label_value_too_long|duplicate_label_names|invalid_labels|missing_labels|request_body_too_large|disallowed_structured_metadata|structured_metadata_too_large|structured_metadata_too_many"}'
+    - '{__name__="openshift_logging:lokistack_ingestion_discarded_bytes_per_second:sum",reason=~"disallowed_structured_metadata|duplicate_label_names|greater_than_max_sample_age|invalid_labels|label_name_too_long|label_value_too_long|line_too_long|max_label_names_per_series|missing_labels|per_stream_rate_limit|rate_limited|request_body_too_large|stream_limit|structured_metadata_too_large|structured_metadata_too_many|too_far_behind|too_far_in_future"}'
     #
     # owners: (@openshift/sandboxed-containers-operator)
     #
