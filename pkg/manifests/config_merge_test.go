@@ -1101,32 +1101,47 @@ func TestConfig_MergeClusterMonitoringCRD_PrometheusK8sConfigPhase1(t *testing.T
 		require.Equal(t, "15h", c.ClusterMonitoringConfiguration.PrometheusK8sConfig.Retention)
 		require.Equal(t, "500MiB", c.ClusterMonitoringConfiguration.PrometheusK8sConfig.RetentionSize)
 	})
-	t.Run("CR maps metadataConfig custom sendInterval string through without conversion", func(t *testing.T) {
-		cm := &configv1alpha1.ClusterMonitoring{
-			Spec: configv1alpha1.ClusterMonitoringSpec{
-				PrometheusConfig: configv1alpha1.PrometheusConfig{
-					RemoteWrite: []configv1alpha1.RemoteWriteSpec{
-						{
-							Name: "rw",
-							URL:  "https://remote.example.com/write",
-							MetadataConfig: configv1alpha1.MetadataConfig{
-								SendPolicy: configv1alpha1.MetadataConfigSendPolicyCustom,
-								Custom: configv1alpha1.MetadataConfigCustom{
-									SendInterval: "30s",
+	t.Run("CR maps metadataConfig send interval seconds to Prometheus duration", func(t *testing.T) {
+		for _, tc := range []struct {
+			name     string
+			policy   configv1alpha1.MetadataConfigSendPolicy
+			seconds  int32
+			expected *monv1.MetadataConfig
+		}{
+			{name: "metadata omitted"},
+			{name: "default policy", policy: configv1alpha1.MetadataConfigSendPolicyDefault, expected: &monv1.MetadataConfig{Send: true}},
+			{name: "custom interval omitted", policy: configv1alpha1.MetadataConfigSendPolicyCustom, expected: &monv1.MetadataConfig{Send: true}},
+			{name: "minimum interval", policy: configv1alpha1.MetadataConfigSendPolicyCustom, seconds: 1, expected: &monv1.MetadataConfig{Send: true, SendInterval: "1s"}},
+			{name: "thirty seconds", policy: configv1alpha1.MetadataConfigSendPolicyCustom, seconds: 30, expected: &monv1.MetadataConfig{Send: true, SendInterval: "30s"}},
+			{name: "maximum interval", policy: configv1alpha1.MetadataConfigSendPolicyCustom, seconds: 86400, expected: &monv1.MetadataConfig{Send: true, SendInterval: "86400s"}},
+		} {
+			t.Run(tc.name, func(t *testing.T) {
+				cm := &configv1alpha1.ClusterMonitoring{
+					Spec: configv1alpha1.ClusterMonitoringSpec{
+						PrometheusConfig: configv1alpha1.PrometheusConfig{
+							RemoteWrite: []configv1alpha1.RemoteWriteSpec{
+								{
+									Name: "rw",
+									URL:  "https://remote.example.com/write",
+									MetadataConfig: configv1alpha1.MetadataConfig{
+										SendPolicy: tc.policy,
+										Custom: configv1alpha1.MetadataConfigCustom{
+											SendIntervalSeconds: tc.seconds,
+										},
+									},
 								},
 							},
 						},
 					},
-				},
-			},
+				}
+				c, err := NewConfigFromStringAndClusterMonitoringResource("{}", cm)
+				require.NoError(t, err)
+				pk := c.ClusterMonitoringConfiguration.PrometheusK8sConfig
+				require.NotNil(t, pk)
+				require.Len(t, pk.RemoteWrite, 1)
+				require.Equal(t, tc.expected, pk.RemoteWrite[0].MetadataConfig)
+			})
 		}
-		c, err := NewConfigFromStringAndClusterMonitoringResource("{}", cm)
-		require.NoError(t, err)
-		pk := c.ClusterMonitoringConfiguration.PrometheusK8sConfig
-		require.NotNil(t, pk)
-		require.Len(t, pk.RemoteWrite, 1)
-		require.NotNil(t, pk.RemoteWrite[0].MetadataConfig)
-		require.Equal(t, monv1.Duration("30s"), pk.RemoteWrite[0].MetadataConfig.SendInterval)
 	})
 	t.Run("CR returns error for unsupported collection profile", func(t *testing.T) {
 		cm := &configv1alpha1.ClusterMonitoring{
