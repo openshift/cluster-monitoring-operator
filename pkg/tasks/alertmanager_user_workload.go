@@ -197,17 +197,11 @@ func (t *AlertmanagerUserWorkloadTask) create(ctx context.Context) error {
 }
 
 func (t *AlertmanagerUserWorkloadTask) destroy(ctx context.Context) error {
-	s, err := t.factory.AlertmanagerUserWorkloadSecret()
-	if err != nil {
-		return fmt.Errorf("initializing Alertmanager User Workload configuration Secret failed: %w", err)
-	}
+	// Note: the Alertmanager configuration Secret (alertmanager-user-workload)
+	// is intentionally not deleted here because it is owned by the cluster
+	// admin per the supported configuration workflow.
 
-	err = t.client.DeleteSecret(ctx, s)
-	if err != nil {
-		return fmt.Errorf("deleting Alertmanager User Workload configuration Secret failed: %w", err)
-	}
-
-	s, err = t.factory.AlertmanagerUserWorkloadRBACProxySecret()
+	s, err := t.factory.AlertmanagerUserWorkloadRBACProxySecret()
 	if err != nil {
 		return fmt.Errorf("initializing Alertmanager User Workload RBAC proxy  Secret failed: %w", err)
 	}
