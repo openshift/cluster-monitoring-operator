@@ -1082,6 +1082,7 @@ func TestConfig_MergeClusterMonitoringCRD_PrometheusK8sConfigPhase1(t *testing.T
 		}
 		c, err := NewConfigFromStringAndClusterMonitoringResource("{}", cm)
 		require.NoError(t, err)
+		// Prometheus Operator requires a byte-size unit suffix, even for values expressed in bytes.
 		require.Equal(t, "4194304B", c.ClusterMonitoringConfiguration.PrometheusK8sConfig.EnforcedBodySizeLimit)
 		require.NoError(t, c.LoadEnforcedBodySizeLimit(nil, context.Background()))
 		require.Equal(t, ExternalLabels{"region": "us-east"}, c.ClusterMonitoringConfiguration.PrometheusK8sConfig.ExternalLabels)
