@@ -205,6 +205,9 @@ func additionalAlertmanagerConfigsFromCRD(configs []configv1alpha1.AdditionalAle
 		if ac.TimeoutMilliseconds > 0 {
 			timeout := fmt.Sprintf("%dms", ac.TimeoutMilliseconds)
 			cfg.Timeout = &timeout
+		} else if seconds := ac.TimeoutSeconds; seconds > 0 { //nolint:staticcheck // Preserve configurations using the deprecated seconds field.
+			timeout := fmt.Sprintf("%ds", seconds)
+			cfg.Timeout = &timeout
 		}
 		if ac.TLSConfig.CA.Name != "" || ac.TLSConfig.Cert.Name != "" || ac.TLSConfig.Key.Name != "" ||
 			ac.TLSConfig.ServerName != "" || ac.TLSConfig.CertificateVerification != "" {

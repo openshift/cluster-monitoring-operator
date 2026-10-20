@@ -1103,10 +1103,15 @@ func TestConfig_MergeClusterMonitoringCRD_PrometheusK8sConfigPhase1(t *testing.T
 	t.Run("CR maps additionalAlertmanagerConfigs timeout milliseconds", func(t *testing.T) {
 		for _, tc := range []struct {
 			name         string
+			seconds      int32
 			milliseconds int32
 			expected     string
 		}{
 			{name: "omitted"},
+			{name: "legacy minimum", seconds: 1, expected: "1s"},
+			{name: "legacy seconds", seconds: 30, expected: "30s"},
+			{name: "legacy maximum", seconds: 600, expected: "600s"},
+			{name: "milliseconds take precedence", seconds: 30, milliseconds: 500, expected: "500ms"},
 			{name: "minimum", milliseconds: 1, expected: "1ms"},
 			{name: "sub-second", milliseconds: 500, expected: "500ms"},
 			{name: "whole seconds", milliseconds: 30000, expected: "30000ms"},
@@ -1120,6 +1125,7 @@ func TestConfig_MergeClusterMonitoringCRD_PrometheusK8sConfigPhase1(t *testing.T
 								{
 									Name:                "am",
 									TimeoutMilliseconds: tc.milliseconds,
+									TimeoutSeconds:      tc.seconds,
 									StaticConfigs:       []string{"alertmanager.example.com:9093"},
 								},
 							},
