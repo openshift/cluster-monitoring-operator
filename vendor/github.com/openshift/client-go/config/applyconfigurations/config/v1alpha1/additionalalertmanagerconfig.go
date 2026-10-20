@@ -43,6 +43,12 @@ type AdditionalAlertmanagerConfigApplyConfiguration struct {
 	// At least one endpoint must be specified (minimum 1, maximum 10 endpoints).
 	// Each entry must be unique and non-empty (empty string is invalid).
 	StaticConfigs []string `json:"staticConfigs,omitempty"`
+	// timeoutSeconds defines the timeout in seconds for requests to Alertmanager.
+	// When omitted, this means no opinion and the platform is left to choose a reasonable default, which is subject to change over time.
+	// Currently the default is 10 seconds.
+	// Minimum value is 1 second.
+	// Maximum value is 600 seconds (10 minutes).
+	TimeoutSeconds *int32 `json:"timeoutSeconds,omitempty"`
 	// timeoutMilliseconds defines the timeout in milliseconds for requests to Alertmanager.
 	// When omitted, this means no opinion and the platform is left to choose a reasonable default, which is subject to change over time.
 	// Currently the default is 10000 milliseconds (10 seconds).
@@ -99,6 +105,14 @@ func (b *AdditionalAlertmanagerConfigApplyConfiguration) WithStaticConfigs(value
 	for i := range values {
 		b.StaticConfigs = append(b.StaticConfigs, values[i])
 	}
+	return b
+}
+
+// WithTimeoutSeconds sets the TimeoutSeconds field in the declarative configuration to the given value
+// and returns the receiver, so that objects can be built by chaining "With" function invocations.
+// If called multiple times, the TimeoutSeconds field is set to the value of the last call.
+func (b *AdditionalAlertmanagerConfigApplyConfiguration) WithTimeoutSeconds(value int32) *AdditionalAlertmanagerConfigApplyConfiguration {
+	b.TimeoutSeconds = &value
 	return b
 }
 
