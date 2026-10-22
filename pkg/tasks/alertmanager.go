@@ -111,9 +111,9 @@ func (t *AlertmanagerTask) create(ctx context.Context) error {
 		return fmt.Errorf("initializing Alertmanager RBAC proxy Secret failed: %w", err)
 	}
 
-	err = t.client.CreateIfNotExistSecret(ctx, rs)
+	err = t.client.CreateOrUpdateSecret(ctx, rs)
 	if err != nil {
-		return fmt.Errorf("creating Alertmanager RBAC proxy Secret failed: %w", err)
+		return fmt.Errorf("reconciling Alertmanager RBAC proxy Secret failed: %w", err)
 	}
 
 	rsm, err := t.factory.AlertmanagerRBACProxyMetricSecret()
@@ -121,9 +121,9 @@ func (t *AlertmanagerTask) create(ctx context.Context) error {
 		return fmt.Errorf("initializing Alertmanager RBAC proxy metric Secret failed: %w", err)
 	}
 
-	err = t.client.CreateIfNotExistSecret(ctx, rsm)
+	err = t.client.CreateOrUpdateSecret(ctx, rsm)
 	if err != nil {
-		return fmt.Errorf("creating Alertmanager RBAC proxy metric Secret failed: %w", err)
+		return fmt.Errorf("reconciling Alertmanager RBAC proxy metric Secret failed: %w", err)
 	}
 
 	if t.config.ClusterMonitoringConfiguration.AlertmanagerMainConfig.Secrets != nil {
@@ -178,9 +178,9 @@ func (t *AlertmanagerTask) create(ctx context.Context) error {
 		return fmt.Errorf("initializing Alertmanager proxy web Secret failed: %w", err)
 	}
 
-	err = t.client.CreateIfNotExistSecret(ctx, ps)
+	err = t.client.CreateOrUpdateSecret(ctx, ps)
 	if err != nil {
-		return fmt.Errorf("creating Alertmanager proxy web Secret failed: %w", err)
+		return fmt.Errorf("reconciling Alertmanager proxy web Secret failed: %w", err)
 	}
 
 	svc, err := t.factory.AlertmanagerService()
