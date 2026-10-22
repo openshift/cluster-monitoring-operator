@@ -16,7 +16,6 @@ package manifests
 
 import (
 	"fmt"
-	"strconv"
 
 	configv1alpha1 "github.com/openshift/api/config/v1alpha1"
 	monv1 "github.com/prometheus-operator/prometheus-operator/pkg/apis/monitoring/v1"
@@ -538,7 +537,7 @@ func (c *Config) mergePrometheusK8sConfiguration(pc configv1alpha1.PrometheusCon
 	cfg.RemoteWrite = remoteWrite
 
 	if pc.EnforcedBodySizeLimitBytes > 0 {
-		cfg.EnforcedBodySizeLimit = strconv.FormatInt(pc.EnforcedBodySizeLimitBytes, 10)
+		cfg.EnforcedBodySizeLimit = fmt.Sprintf("%dB", pc.EnforcedBodySizeLimitBytes)
 	}
 	if pc.CollectionProfile != "" {
 		cp, err := collectionProfileCRDToManifest(pc.CollectionProfile)
