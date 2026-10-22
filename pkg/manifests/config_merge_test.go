@@ -18,7 +18,6 @@ import (
 	"testing"
 
 	configv1alpha1 "github.com/openshift/api/config/v1alpha1"
-	monv1 "github.com/prometheus-operator/prometheus-operator/pkg/apis/monitoring/v1"
 	"github.com/stretchr/testify/require"
 	v1 "k8s.io/api/core/v1"
 	"k8s.io/apimachinery/pkg/api/resource"
@@ -1101,7 +1100,7 @@ func TestConfig_MergeClusterMonitoringCRD_PrometheusK8sConfigPhase1(t *testing.T
 		require.Equal(t, "15h", c.ClusterMonitoringConfiguration.PrometheusK8sConfig.Retention)
 		require.Equal(t, "500MiB", c.ClusterMonitoringConfiguration.PrometheusK8sConfig.RetentionSize)
 	})
-	t.Run("CR accepts empty writeRelabelConfigs regex for ConfigMap migration", func(t *testing.T) {
+	t.Run("CR preserves empty writeRelabelConfigs regex during merge", func(t *testing.T) {
 		cm := &configv1alpha1.ClusterMonitoring{
 			Spec: configv1alpha1.ClusterMonitoringSpec{
 				PrometheusConfig: configv1alpha1.PrometheusConfig{
@@ -1111,9 +1110,9 @@ func TestConfig_MergeClusterMonitoringCRD_PrometheusK8sConfigPhase1(t *testing.T
 							URL:  "https://remote.example.com/write",
 							WriteRelabelConfigs: []configv1alpha1.RelabelConfig{
 								{
-									Name:          "empty-regex",
-									SourceLabels:  []string{"__name__"},
-									Regex:         "",
+									Name:         "empty-regex",
+									SourceLabels: []string{"job"},
+									Regex:        "",
 									Action: configv1alpha1.RelabelActionConfig{
 										Type: configv1alpha1.RelabelActionKeep,
 									},
