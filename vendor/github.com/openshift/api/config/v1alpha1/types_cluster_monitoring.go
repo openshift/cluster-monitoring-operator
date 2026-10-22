@@ -1635,10 +1635,22 @@ type AdditionalAlertmanagerConfig struct {
 	// Currently the default is 10 seconds.
 	// Minimum value is 1 second.
 	// Maximum value is 600 seconds (10 minutes).
+	// Deprecated: use timeoutMilliseconds instead. When both fields are set, timeoutMilliseconds takes precedence.
 	// +kubebuilder:validation:Minimum=1
 	// +kubebuilder:validation:Maximum=600
 	// +optional
 	TimeoutSeconds int32 `json:"timeoutSeconds,omitempty"`
+
+	// timeoutMilliseconds defines the timeout in milliseconds for requests to Alertmanager.
+	// When both timeout fields are set, timeoutMilliseconds takes precedence over timeoutSeconds.
+	// When omitted, this means no opinion and the platform is left to choose a reasonable default, which is subject to change over time.
+	// Currently the default is 10000 milliseconds (10 seconds).
+	// Minimum value is 1 millisecond.
+	// Maximum value is 600000 milliseconds (10 minutes).
+	// +kubebuilder:validation:Minimum=1
+	// +kubebuilder:validation:Maximum=600000
+	// +optional
+	TimeoutMilliseconds int32 `json:"timeoutMilliseconds,omitempty"`
 	// tlsConfig defines the TLS settings to use for Alertmanager connections.
 	// When omitted, this means no opinion and the platform is left to choose a reasonable default, which is subject to change over time.
 	// +optional

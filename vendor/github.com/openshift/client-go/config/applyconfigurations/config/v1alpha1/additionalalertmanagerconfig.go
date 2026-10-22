@@ -49,6 +49,12 @@ type AdditionalAlertmanagerConfigApplyConfiguration struct {
 	// Minimum value is 1 second.
 	// Maximum value is 600 seconds (10 minutes).
 	TimeoutSeconds *int32 `json:"timeoutSeconds,omitempty"`
+	// timeoutMilliseconds defines the timeout in milliseconds for requests to Alertmanager.
+	// When omitted, this means no opinion and the platform is left to choose a reasonable default, which is subject to change over time.
+	// Currently the default is 10000 milliseconds (10 seconds).
+	// Minimum value is 1 millisecond.
+	// Maximum value is 600000 milliseconds (10 minutes).
+	TimeoutMilliseconds *int32 `json:"timeoutMilliseconds,omitempty"`
 	// tlsConfig defines the TLS settings to use for Alertmanager connections.
 	// When omitted, this means no opinion and the platform is left to choose a reasonable default, which is subject to change over time.
 	TLSConfig *TLSConfigApplyConfiguration `json:"tlsConfig,omitempty"`
@@ -107,6 +113,14 @@ func (b *AdditionalAlertmanagerConfigApplyConfiguration) WithStaticConfigs(value
 // If called multiple times, the TimeoutSeconds field is set to the value of the last call.
 func (b *AdditionalAlertmanagerConfigApplyConfiguration) WithTimeoutSeconds(value int32) *AdditionalAlertmanagerConfigApplyConfiguration {
 	b.TimeoutSeconds = &value
+	return b
+}
+
+// WithTimeoutMilliseconds sets the TimeoutMilliseconds field in the declarative configuration to the given value
+// and returns the receiver, so that objects can be built by chaining "With" function invocations.
+// If called multiple times, the TimeoutMilliseconds field is set to the value of the last call.
+func (b *AdditionalAlertmanagerConfigApplyConfiguration) WithTimeoutMilliseconds(value int32) *AdditionalAlertmanagerConfigApplyConfiguration {
+	b.TimeoutMilliseconds = &value
 	return b
 }
 

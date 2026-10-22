@@ -4404,6 +4404,9 @@ var schemaYAML = typed.YAMLObject(`types:
     - name: timeoutSeconds
       type:
         scalar: numeric
+    - name: timeoutMilliseconds
+      type:
+        scalar: numeric
     - name: tlsConfig
       type:
         namedType: com.github.openshift.api.config.v1alpha1.TLSConfig
