@@ -20,6 +20,10 @@ function(params)
   local tlsCertPath = tlsMountPath + '/tls.crt';
   local tlsKeyPath = tlsMountPath + '/tls.key';
 
+  local gcAlertFor = '15m';
+  local gcAlertIncrease = '30m';
+  local gcAlertSeverity = 'warning';
+
   {
     _config+:: {
       name: pluginName,
@@ -109,6 +113,91 @@ function(params)
       apiVersion: 'v1',
       kind: 'ServiceAccount',
       metadata: $.metadata(),
+    },
+
+    // honorLabels preserves labels from the plugin /metrics series
+    // instead of replacing them with the scrape target's namespace.
+    serviceMonitor: {
+      apiVersion: 'monitoring.coreos.com/v1',
+      kind: 'ServiceMonitor',
+      metadata: $.metadata(),
+      spec: {
+        endpoints: [
+          {
+            honorLabels: true,
+            interval: '30s',
+            path: '/metrics',
+            port: 'https',
+            scheme: 'https',
+          },
+        ],
+        selector: {
+          matchLabels: {
+            'app.kubernetes.io/name': pluginName,
+            'app.kubernetes.io/component': pluginName,
+          } + cfg.commonLabels,
+        },
+      },
+    },
+
+    // CMO owns platform alerting for monitoring-plugin /metrics.
+    prometheusRule: {
+      apiVersion: 'monitoring.coreos.com/v1',
+      kind: 'PrometheusRule',
+      metadata: $.metadata() {
+        labels+: {
+          prometheus: 'k8s',
+          role: 'alert-rules',
+        },
+      },
+      spec: {
+        groups: [
+          {
+            name: 'monitoring-plugin.rules',
+            rules: [
+              {
+                alert: 'MonitoringPluginAlertRelabelConfigGCListFailed',
+                annotations: {
+                  description: 'The monitoring plugin failed to list AlertRelabelConfigs while removing orphans. Stale relabel configs may remain. Check the monitoring-plugin logs and Kubernetes API access.',
+                  summary: 'AlertRelabelConfig orphan cleanup failed to list configs',
+                },
+                expr: 'sum(increase(monitoring_plugin_alert_relabel_config_gc_list_errors_total{job="monitoring-plugin"}[%s])) > 0' % gcAlertIncrease,
+                'for': gcAlertFor,
+                labels: {
+                  namespace: cfg.namespace,
+                  severity: gcAlertSeverity,
+                },
+              },
+              {
+                alert: 'MonitoringPluginAlertRelabelConfigGCDeleteFailed',
+                annotations: {
+                  description: 'The monitoring plugin failed to delete an orphaned AlertRelabelConfig. Stale relabel configs may remain. Check the monitoring-plugin logs and Kubernetes API access.',
+                  summary: 'AlertRelabelConfig orphan cleanup failed to delete a config',
+                },
+                expr: 'sum(increase(monitoring_plugin_alert_relabel_config_gc_delete_errors_total{job="monitoring-plugin"}[%s])) > 0' % gcAlertIncrease,
+                'for': gcAlertFor,
+                labels: {
+                  namespace: cfg.namespace,
+                  severity: gcAlertSeverity,
+                },
+              },
+              {
+                alert: 'MonitoringPluginAlertRelabelConfigGitOpsOrphan',
+                annotations: {
+                  description: 'The monitoring plugin found GitOps-managed AlertRelabelConfigs whose alert rules no longer exist. These are not deleted automatically. Remove or update them in GitOps.',
+                  summary: 'GitOps-managed orphaned AlertRelabelConfig was not deleted',
+                },
+                expr: 'sum(monitoring_plugin_alert_relabel_config_gitops_orphans{job="monitoring-plugin"}) > 0',
+                'for': gcAlertFor,
+                labels: {
+                  namespace: cfg.namespace,
+                  severity: gcAlertSeverity,
+                },
+              },
+            ],
+          },
+        ],
+      },
     },
 
     servicePort(name, port, targetPort):: {
