@@ -1100,6 +1100,37 @@ func TestConfig_MergeClusterMonitoringCRD_PrometheusK8sConfigPhase1(t *testing.T
 		require.Equal(t, "15h", c.ClusterMonitoringConfiguration.PrometheusK8sConfig.Retention)
 		require.Equal(t, "500MiB", c.ClusterMonitoringConfiguration.PrometheusK8sConfig.RetentionSize)
 	})
+	t.Run("CR preserves empty writeRelabelConfigs regex during merge", func(t *testing.T) {
+		cm := &configv1alpha1.ClusterMonitoring{
+			Spec: configv1alpha1.ClusterMonitoringSpec{
+				PrometheusConfig: configv1alpha1.PrometheusConfig{
+					RemoteWrite: []configv1alpha1.RemoteWriteSpec{
+						{
+							Name: "rw",
+							URL:  "https://remote.example.com/write",
+							WriteRelabelConfigs: []configv1alpha1.RelabelConfig{
+								{
+									Name:         "empty-regex",
+									SourceLabels: []string{"job"},
+									Regex:        "",
+									Action: configv1alpha1.RelabelActionConfig{
+										Type: configv1alpha1.RelabelActionKeep,
+									},
+								},
+							},
+						},
+					},
+				},
+			},
+		}
+		c, err := NewConfigFromStringAndClusterMonitoringResource("{}", cm)
+		require.NoError(t, err)
+		pk := c.ClusterMonitoringConfiguration.PrometheusK8sConfig
+		require.NotNil(t, pk)
+		require.Len(t, pk.RemoteWrite, 1)
+		require.Len(t, pk.RemoteWrite[0].WriteRelabelConfigs, 1)
+		require.Equal(t, "", pk.RemoteWrite[0].WriteRelabelConfigs[0].Regex)
+	})
 	t.Run("CR returns error for unsupported collection profile", func(t *testing.T) {
 		cm := &configv1alpha1.ClusterMonitoring{
 			Spec: configv1alpha1.ClusterMonitoringSpec{
