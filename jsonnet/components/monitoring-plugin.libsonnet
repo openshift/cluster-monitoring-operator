@@ -88,6 +88,20 @@ function(params)
         i18n: {
           loadType: 'Preload',
         },
+        proxy: [{
+          // Creates a proxy which allows for non-GET requests to the backend. The `.spec.backend` created proxy was designed for serving
+          // the plugins static webpages and so only allows GET requests through
+          alias: 'backend',
+          authorization: 'UserToken',
+          endpoint: {
+            type: 'Service',
+            service: {
+              name: $._config.name,
+              namespace: $._config.namespace,
+              port: monitoringPluginPort,
+            },
+          },
+        }],
       },
     },
 
