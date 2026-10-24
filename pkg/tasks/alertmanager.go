@@ -235,15 +235,9 @@ func (t *AlertmanagerTask) destroy(ctx context.Context) error {
 		return fmt.Errorf("deleting Alertmanager Route failed: %w", err)
 	}
 
-	s, err := t.factory.AlertmanagerConfig()
-	if err != nil {
-		return fmt.Errorf("initializing Alertmanager configuration Secret failed: %w", err)
-	}
-
-	err = t.client.DeleteSecret(ctx, s)
-	if err != nil {
-		return fmt.Errorf("deleting Alertmanager configuration Secret failed: %w", err)
-	}
+	// Note: the Alertmanager configuration Secret (alertmanager-main) is
+	// intentionally not deleted here because it is owned by the cluster
+	// admin per the supported configuration workflow.
 
 	rs, err := t.factory.AlertmanagerRBACProxySecret()
 	if err != nil {
