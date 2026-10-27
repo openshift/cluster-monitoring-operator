@@ -18,6 +18,8 @@ local excludedRuleGroups = [
   'kubernetes-system-kube-proxy',
   // cluster-storage-operator now owns these rules, see https://github.com/openshift/cluster-storage-operator/pull/477
   'kubernetes-storage',
+  // rules depends on the Prometeus config reloader's metrics which aren't scraped for now.
+  'config-reloaders',
 ];
 
 // List of rules which are dropped from the final manifests.
