@@ -1129,7 +1129,11 @@ func TestConfig_MergeClusterMonitoringCRD_PrometheusK8sConfigPhase1(t *testing.T
 		require.NotNil(t, pk)
 		require.Len(t, pk.RemoteWrite, 1)
 		require.Len(t, pk.RemoteWrite[0].WriteRelabelConfigs, 1)
-		require.Equal(t, "", pk.RemoteWrite[0].WriteRelabelConfigs[0].Regex)
+		rule := pk.RemoteWrite[0].WriteRelabelConfigs[0]
+		require.Empty(t, rule.Regex)
+		require.Equal(t, string(configv1alpha1.RelabelActionKeep), rule.Action)
+		require.Len(t, rule.SourceLabels, 1)
+		require.EqualValues(t, "job", rule.SourceLabels[0])
 	})
 	t.Run("CR returns error for unsupported collection profile", func(t *testing.T) {
 		cm := &configv1alpha1.ClusterMonitoring{
