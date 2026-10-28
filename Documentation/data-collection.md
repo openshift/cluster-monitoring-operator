@@ -1129,6 +1129,18 @@ data:
     # cluster_name:hypershift_nodepools_available_replicas:sum is the actual number of available nodepool replicas managed by the hypershift operator per HostedCluster identified by `the cluster_name` and `exported_namespace` labels.
     - '{__name__="cluster_name:hypershift_nodepools_available_replicas:sum"}'
     #
+    # owners: (@openshift/team-hypershift-maintainers)
+    #
+    # platform:hypershift_capi_migration_total_crds:max is the total number of CAPI CRDs configured
+    # for storage version migration from v1beta1 to v1beta2 on the management cluster.
+    - '{__name__="platform:hypershift_capi_migration_total_crds:max"}'
+    #
+    # owners: (@openshift/team-hypershift-maintainers)
+    #
+    # platform:hypershift_capi_migration_migrated_crds:max is the number of CAPI CRDs that have
+    # completed storage version migration to v1beta2 on the management cluster.
+    - '{__name__="platform:hypershift_capi_migration_migrated_crds:max"}'
+    #
     # owners: (https://github.com/red-hat-storage/mcg-osd-deployer, Data Federation team)
     #
     # Number of unhealthy Object Bucket Claims in addon's namespace.
