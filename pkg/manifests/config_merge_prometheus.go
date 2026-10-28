@@ -33,7 +33,7 @@ func clusterMonitoringPrometheusSpecEmpty(pc configv1alpha1.PrometheusConfig) bo
 	if len(pc.AdditionalAlertmanagerConfigs) > 0 {
 		return false
 	}
-	if pc.EnforcedBodySizeLimitBytes != 0 {
+	if pc.EnforcedBodySizeLimitBytes != 0 || pc.EnforcedBodySizeLimitMode != "" {
 		return false
 	}
 	if len(pc.ExternalLabels) > 0 {
@@ -536,8 +536,17 @@ func (c *Config) mergePrometheusK8sConfiguration(pc configv1alpha1.PrometheusCon
 	}
 	cfg.RemoteWrite = remoteWrite
 
-	if pc.EnforcedBodySizeLimitBytes > 0 {
-		cfg.EnforcedBodySizeLimit = fmt.Sprintf("%dB", pc.EnforcedBodySizeLimitBytes)
+	switch pc.EnforcedBodySizeLimitMode {
+	case configv1alpha1.EnforcedBodySizeLimitModeAutomatic:
+		cfg.EnforcedBodySizeLimit = automaticBodySizeLimit
+	case configv1alpha1.EnforcedBodySizeLimitModeDisabled:
+		cfg.EnforcedBodySizeLimit = ""
+	case "", configv1alpha1.EnforcedBodySizeLimitModeExplicit:
+		if pc.EnforcedBodySizeLimitBytes > 0 {
+			cfg.EnforcedBodySizeLimit = fmt.Sprintf("%dB", pc.EnforcedBodySizeLimitBytes)
+		}
+	default:
+		return fmt.Errorf("unsupported enforcedBodySizeLimitMode %q", pc.EnforcedBodySizeLimitMode)
 	}
 	if pc.CollectionProfile != "" {
 		cp, err := collectionProfileCRDToManifest(pc.CollectionProfile)
