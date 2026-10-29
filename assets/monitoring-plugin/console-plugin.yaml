@@ -18,3 +18,12 @@ spec:
   displayName: monitoring-plugin
   i18n:
     loadType: Preload
+  proxy:
+  - alias: backend
+    authorization: UserToken
+    endpoint:
+      service:
+        name: monitoring-plugin
+        namespace: openshift-monitoring
+        port: 9443
+      type: Service
