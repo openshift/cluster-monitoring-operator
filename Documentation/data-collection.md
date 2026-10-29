@@ -860,6 +860,21 @@ data:
     # The total number of users of RHODS using each component.
     - '{__name__="rhods_total_users"}'
     #
+    # owners: (https://github.com/opendatahub-io/trainer)
+    #
+    # Number of TrainJobs observed during the last 24 hours.
+    - '{__name__="cluster:rhoai_kubeflow_trainer_trainjob_created:increase24hr"}'
+    #
+    # owners: (https://github.com/opendatahub-io/trainer)
+    #
+    # Number of TrainJobs observed during the last 24 hours by runtime and requested training-node bucket.
+    - '{__name__="runtime:rhoai_kubeflow_trainer_trainjob_requested_training_nodes:increase24hr",runtime_ref=~"torch-distributed|training-hub|openmpi",le=~"4[.]0|[+]Inf"}'
+    #
+    # owners: (https://github.com/opendatahub-io/trainer)
+    #
+    # Terminal TrainJobs observed during the last 24 hours by cumulative lifetime bucket.
+    - '{__name__="cluster:rhoai_kubeflow_trainer_trainjob_lifetime_seconds:increase24hr",le=~"43200[.]0|345600[.]0|[+]Inf"}'
+    #
     # owners: (@openshift/team-etcd)
     #
     # 99th percentile of etcd WAL fsync duration.
