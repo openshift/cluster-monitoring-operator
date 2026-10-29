@@ -64,9 +64,9 @@ func (t *PrometheusUserWorkloadTask) create(ctx context.Context) error {
 		return fmt.Errorf("initializing UserWorkload serving certs CA Bundle ConfigMap failed: %w", err)
 	}
 
-	_, err = t.client.CreateIfNotExistConfigMap(ctx, cacm)
+	err = t.client.CreateOrUpdateConfigMap(ctx, cacm)
 	if err != nil {
-		return fmt.Errorf("creating UserWorkload serving certs CA Bundle ConfigMap failed: %w", err)
+		return fmt.Errorf("reconciling UserWorkload serving certs CA Bundle ConfigMap failed: %w", err)
 	}
 
 	sa, err := t.factory.PrometheusUserWorkloadServiceAccount()
