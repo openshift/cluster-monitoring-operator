@@ -756,7 +756,7 @@ func TestPrometheusOperatorConfiguration(t *testing.T) {
 }
 
 func TestMonitoringPluginDeploymentFeatures(t *testing.T) {
-	defaultFeatures := "alerting,legacy-dashboards,targets,metrics"
+	defaultFeatures := "alerting,legacy-dashboards,targets,metrics,overview"
 
 	for _, tc := range []struct {
 		name     string
