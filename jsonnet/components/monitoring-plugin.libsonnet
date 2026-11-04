@@ -125,6 +125,22 @@ function(params)
       metadata: $.metadata(),
     },
 
+    serviceMonitor: {
+      apiVersion: 'monitoring.coreos.com/v1',
+      kind: 'ServiceMonitor',
+      metadata: $.metadata(),
+      spec: {
+        selector: { matchLabels: $._config.labels },
+        serviceDiscoveryRole: 'EndpointSlice',
+        endpoints: [{
+          port: monitoringPluginPortName,
+          scheme: 'https',
+          path: '/metrics',
+          interval: '30s',
+        }],
+      },
+    },
+
     servicePort(name, port, targetPort):: {
       name: name,
       port: port,
@@ -209,12 +225,14 @@ function(params)
                 },
                 volumeMounts: [
                   $.volumeMount(tlsVolumeName, tlsMountPath),
+                  $.volumeMount('metrics-client-ca', '/etc/tls/client'),
                 ],
                 args: [
                   '--config-path=/opt/app-root/config',
                   '--static-path=/opt/app-root/web/dist',
                   '--cert=' + tlsCertPath,
                   '--key=' + tlsKeyPath,
+                  '--client-ca-file=/etc/tls/client/client-ca.crt',
                   '--tls-cipher-suites=' + cfg.tlsCipherSuites,
                   '--features=alerting,legacy-dashboards,targets,metrics',
                 ],
@@ -235,6 +253,7 @@ function(params)
             },
             volumes: [
               $.secretVolume(tlsVolumeName, tlsSecret),
+              $.configMapVolume('metrics-client-ca', 'metrics-client-ca'),
             ],
           },  // spec
         },  // template
