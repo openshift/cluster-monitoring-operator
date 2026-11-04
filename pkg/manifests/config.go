@@ -340,6 +340,12 @@ func NewConfigFromString(content string) (*Config, error) {
 				Systemd: NodeExporterCollectorSystemdConfig{
 					Enabled: false,
 				},
+				DmMultipath: NodeExporterCollectorDmMultipathConfig{
+					Enabled: ptr.To(true),
+				},
+				NvmeSubsystem: NodeExporterCollectorNvmeSubsystemConfig{
+					Enabled: ptr.To(true),
+				},
 			},
 		},
 	}
