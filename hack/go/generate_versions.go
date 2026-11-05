@@ -130,16 +130,40 @@ func updateDepsVersionsFile(fileP string, components Components) error {
 	table.SetBorders(tablewriter.Border{Left: true, Top: false, Right: true, Bottom: false})
 	table.SetCenterSeparator("|")
 
-	releaseVersion, err := semver.Make("4.10.0")
-	if err != nil {
-		return fmt.Errorf("error parsing the OCP version: %v", err)
-	}
 	var rows [][]string
+	// Collect 4.x and 5.x versions.
+	for _, v := range []string{"4.12.0", "5.0.0"} {
+		tmpRows, err := collectMinorVersionsFrom(v, header, components)
+		if err != nil {
+			return err
+		}
+		rows = append(rows, tmpRows...)
+	}
+
+	// List the most recent versions first.
+	slices.Reverse(rows)
+	table.AppendBulk(rows)
+	table.Render()
+	return nil
+}
+
+func collectMinorVersionsFrom(startVersion string, header []string, components Components) ([][]string, error) {
+	releaseVersion, err := semver.Make(startVersion)
+	if err != nil {
+		return nil, fmt.Errorf("failed to parse OCP version: %v", err)
+	}
+
+	var (
+		rows           [][]string
+		initialVersion = releaseVersion
+	)
 	for {
 		// We'll only/always consider components known in mainBranch.
 		versions := getVersions(releaseBranch(releaseVersion), components)
 		if len(versions) == 0 {
-			// TODO: increment major when needed.
+			if releaseVersion.Equals(initialVersion) {
+				return nil, fmt.Errorf("found no release branch for %s version", startVersion)
+			}
 			break
 		}
 		versions[OCPVersionHeader] = releaseBranch(releaseVersion)
@@ -154,14 +178,10 @@ func updateDepsVersionsFile(fileP string, components Components) error {
 		rows = append(rows, row)
 		err = releaseVersion.IncrementMinor()
 		if err != nil {
-			return err
+			return nil, err
 		}
 	}
-	// Latest version at the beginning.
-	slices.Reverse(rows)
-	table.AppendBulk(rows)
-	table.Render()
-	return nil
+	return rows, nil
 }
 
 func versionWithLink(version, repo, ref string) string {
