@@ -392,7 +392,7 @@ The `NodeExporterCollectorNetDevConfig` resource works as an on/off switch for t
 
 #### Description
 
-The `NodeExporterCollectorNvmeSubsystemConfig` resource works as an on/off switch for the `nvmesubsystem` collector of the `node-exporter` agent. By default, the `nvmesubsystem` collector is enabled.
+The `NodeExporterCollectorNvmeSubsystemConfig` resource works as an on/off switch for the `nvmesubsystem` collector of the `node-exporter` agent. By default, the `nvmesubsystem` collector is enabled. When enabled, if `/sys/class/nvme-subsystem/` is missing or inaccessible, `node-exporter` reports a `node_scrape_collector_success` value of `0` for the `nvmesubsystem` collector. This is intentional and helps detect missing drivers or configuration problems. If no nodes in the cluster require NVMe subsystem monitoring, set `nodeExporter.collectors.nvmeSubsystem.enabled` to `false` in the `cluster-monitoring-config` config map to disable this collector cluster-wide. This setting does not support per-node configuration.
 
 
 <em>appears in: [NodeExporterCollectorConfig](#nodeexportercollectorconfig)</em>
