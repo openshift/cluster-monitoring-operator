@@ -46,7 +46,7 @@ type AdditionalAlertmanagerConfigApplyConfiguration struct {
 	// timeoutMilliseconds defines the timeout in milliseconds for requests to Alertmanager.
 	// When omitted, this means no opinion and the platform is left to choose a reasonable default, which is subject to change over time.
 	// Currently the default is 10000 milliseconds (10 seconds).
-	// Minimum value is 1000 milliseconds (1 second).
+	// Minimum value is 100 milliseconds.
 	// Maximum value is 600000 milliseconds (10 minutes).
 	TimeoutMilliseconds *int32 `json:"timeoutMilliseconds,omitempty"`
 	// tlsConfig defines the TLS settings to use for Alertmanager connections.

@@ -1153,7 +1153,8 @@ func TestConfig_MergeClusterMonitoringCRD_PrometheusK8sConfigPhase1(t *testing.T
 			expected     string
 		}{
 			{name: "omitted"},
-			{name: "minimum", milliseconds: 1000, expected: "1000ms"},
+			{name: "minimum", milliseconds: 100, expected: "100ms"},
+			{name: "sub-second", milliseconds: 500, expected: "500ms"},
 			{name: "whole seconds", milliseconds: 30000, expected: "30000ms"},
 			{name: "maximum", milliseconds: 600000, expected: "600000ms"},
 		} {
