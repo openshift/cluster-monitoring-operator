@@ -114,6 +114,16 @@ func (t *MonitoringPluginTask) Run(ctx context.Context) error {
 		}
 	}
 
+	{
+		sm, err := t.factory.MonitoringPluginServiceMonitor()
+		if err != nil {
+			return fmt.Errorf("initializing Console Plugin ServiceMonitor failed: %w", err)
+		}
+		if err := t.client.CreateOrUpdateServiceMonitor(ctx, sm); err != nil {
+			return fmt.Errorf("reconciling Console Plugin ServiceMonitor failed: %w", err)
+		}
+	}
+
 	{ // pod disruption budget
 		pdb, err := t.factory.MonitoringPluginPodDisruptionBudget()
 		if err != nil {

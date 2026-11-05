@@ -326,6 +326,7 @@ var (
 	MonitoringPluginService             = "monitoring-plugin/service.yaml"
 	MonitoringPluginPodDisruptionBudget = "monitoring-plugin/pod-disruption-budget.yaml"
 	MonitoringPluginNetworkPolicy       = "monitoring-plugin/network-policy-downstream.yaml"
+	MonitoringPluginServiceMonitor      = "monitoring-plugin/service-monitor.yaml"
 
 	UserWorkloadMonitoringDenyAllTraffic = "cluster-monitoring-operator/network-policy-default-deny-user-workload.yaml"
 )
@@ -3040,6 +3041,10 @@ func (f *Factory) MonitoringPluginNetworkPolicy() (*networkingv1.NetworkPolicy, 
 
 func (f *Factory) MonitoringPluginServiceAccount() (*v1.ServiceAccount, error) {
 	return f.NewServiceAccount(f.assets.MustNewAssetSlice(MonitoringPluginServiceAccount))
+}
+
+func (f *Factory) MonitoringPluginServiceMonitor() (*monv1.ServiceMonitor, error) {
+	return f.NewServiceMonitor(f.assets.MustNewAssetSlice(MonitoringPluginServiceMonitor))
 }
 
 func (f *Factory) MonitoringPluginService() (*v1.Service, error) {
