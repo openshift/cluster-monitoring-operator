@@ -1,0 +1,579 @@
+# DM-multipath alert behavior, including exact labels and annotations.
+rule_files:
+- rules.yaml
+evaluation_interval: 30s
+tests:
+- name: healthy devices never alert
+  interval: 30s
+  input_series:
+  - series: node_dmmultipath_device_paths_failed{device="mpatha",sysfs_name="dm-0",instance="node1:9100",job="node-exporter",namespace="openshift-monitoring"}
+    values: '0x20'
+  - series: node_dmmultipath_device_paths{device="mpatha",sysfs_name="dm-0",instance="node1:9100",job="node-exporter",namespace="openshift-monitoring"}
+    values: 4x20
+  - series: node_dmmultipath_device_active{device="mpatha",sysfs_name="dm-0",instance="node1:9100",job="node-exporter",namespace="openshift-monitoring"}
+    values: 1x20
+  alert_rule_test:
+  - eval_time: 10m
+    alertname: MultipathPathDegraded
+    exp_alerts: []
+  - eval_time: 10m
+    alertname: MultipathPathCritical
+    exp_alerts: []
+  - eval_time: 10m
+    alertname: MultipathDeviceSuspended
+    exp_alerts: []
+- name: missing collector metrics never alert
+  interval: 30s
+  input_series: []
+  alert_rule_test:
+  - eval_time: 10m
+    alertname: MultipathPathDegraded
+    exp_alerts: []
+  - eval_time: 10m
+    alertname: MultipathPathCritical
+    exp_alerts: []
+  - eval_time: 10m
+    alertname: MultipathDeviceSuspended
+    exp_alerts: []
+- name: zero paths with no failures never alert
+  interval: 30s
+  input_series:
+  - series: node_dmmultipath_device_paths_failed{device="mpatha",sysfs_name="dm-0",instance="node1:9100",job="node-exporter",namespace="openshift-monitoring"}
+    values: '0x20'
+  - series: node_dmmultipath_device_paths{device="mpatha",sysfs_name="dm-0",instance="node1:9100",job="node-exporter",namespace="openshift-monitoring"}
+    values: '0x20'
+  - series: node_dmmultipath_device_active{device="mpatha",sysfs_name="dm-0",instance="node1:9100",job="node-exporter",namespace="openshift-monitoring"}
+    values: 1x20
+  alert_rule_test:
+  - eval_time: 10m
+    alertname: MultipathPathDegraded
+    exp_alerts: []
+  - eval_time: 10m
+    alertname: MultipathPathCritical
+    exp_alerts: []
+  - eval_time: 10m
+    alertname: MultipathDeviceSuspended
+    exp_alerts: []
+- name: one of four failed paths warns only after five minutes
+  interval: 30s
+  input_series:
+  - series: node_dmmultipath_device_paths_failed{device="mpatha",sysfs_name="dm-0",instance="node1:9100",job="node-exporter",namespace="openshift-monitoring"}
+    values: 1x20
+  - series: node_dmmultipath_device_paths{device="mpatha",sysfs_name="dm-0",instance="node1:9100",job="node-exporter",namespace="openshift-monitoring"}
+    values: 4x20
+  - series: node_dmmultipath_device_active{device="mpatha",sysfs_name="dm-0",instance="node1:9100",job="node-exporter",namespace="openshift-monitoring"}
+    values: 1x20
+  alert_rule_test:
+  - eval_time: 4m30s
+    alertname: MultipathPathDegraded
+    exp_alerts: []
+  - eval_time: 4m30s
+    alertname: MultipathPathCritical
+    exp_alerts: []
+  - eval_time: 4m30s
+    alertname: MultipathDeviceSuspended
+    exp_alerts: []
+  - eval_time: 5m
+    alertname: MultipathPathDegraded
+    exp_alerts:
+    - &id002
+      exp_labels:
+        device: mpatha
+        sysfs_name: dm-0
+        instance: node1:9100
+        job: node-exporter
+        namespace: openshift-monitoring
+        severity: warning
+      exp_annotations:
+        summary: Multipath device mpatha (dm-0) on node1:9100 has 1 failed path(s).
+        description: One or more paths for DM-multipath device mpatha (dm-0) on node1:9100 have been outside
+          the active state (SCSI running or NVMe live) for 5 minutes. Path redundancy is degraded, and
+          I/O may be disrupted if no usable paths remain. Investigate cable connectivity, HBA health,
+          and storage array port status.
+  - eval_time: 5m
+    alertname: MultipathPathCritical
+    exp_alerts: []
+  - eval_time: 5m
+    alertname: MultipathDeviceSuspended
+    exp_alerts: []
+- name: exactly half the paths triggers critical after two minutes
+  interval: 30s
+  input_series:
+  - series: node_dmmultipath_device_paths_failed{device="mpatha",sysfs_name="dm-0",instance="node1:9100",job="node-exporter",namespace="openshift-monitoring"}
+    values: 2x20
+  - series: node_dmmultipath_device_paths{device="mpatha",sysfs_name="dm-0",instance="node1:9100",job="node-exporter",namespace="openshift-monitoring"}
+    values: 4x20
+  - series: node_dmmultipath_device_active{device="mpatha",sysfs_name="dm-0",instance="node1:9100",job="node-exporter",namespace="openshift-monitoring"}
+    values: 1x20
+  alert_rule_test:
+  - eval_time: 1m30s
+    alertname: MultipathPathDegraded
+    exp_alerts: []
+  - eval_time: 1m30s
+    alertname: MultipathPathCritical
+    exp_alerts: []
+  - eval_time: 1m30s
+    alertname: MultipathDeviceSuspended
+    exp_alerts: []
+  - eval_time: 2m
+    alertname: MultipathPathDegraded
+    exp_alerts: []
+  - eval_time: 2m
+    alertname: MultipathPathCritical
+    exp_alerts:
+    - &id001
+      exp_labels:
+        device: mpatha
+        sysfs_name: dm-0
+        instance: node1:9100
+        job: node-exporter
+        namespace: openshift-monitoring
+        severity: critical
+      exp_annotations:
+        summary: Multipath device mpatha (dm-0) on node1:9100 has at least half its paths failed.
+        description: Half or more of the paths for DM-multipath device mpatha (dm-0) on node1:9100 have
+          been outside the active state for 2 minutes. There are 2 failed path(s). The device is at risk
+          of, or already experiencing, total path loss. Immediately check storage fabric, HBA ports, and
+          array controller connectivity.
+  - eval_time: 2m
+    alertname: MultipathDeviceSuspended
+    exp_alerts: []
+  - eval_time: 5m
+    alertname: MultipathPathDegraded
+    exp_alerts:
+    - &id003
+      exp_labels:
+        device: mpatha
+        sysfs_name: dm-0
+        instance: node1:9100
+        job: node-exporter
+        namespace: openshift-monitoring
+        severity: warning
+      exp_annotations:
+        summary: Multipath device mpatha (dm-0) on node1:9100 has 2 failed path(s).
+        description: One or more paths for DM-multipath device mpatha (dm-0) on node1:9100 have been outside
+          the active state (SCSI running or NVMe live) for 5 minutes. Path redundancy is degraded, and
+          I/O may be disrupted if no usable paths remain. Investigate cable connectivity, HBA health,
+          and storage array port status.
+  - eval_time: 5m
+    alertname: MultipathPathCritical
+    exp_alerts:
+    - *id001
+  - eval_time: 5m
+    alertname: MultipathDeviceSuspended
+    exp_alerts: []
+- name: one of three paths is below the critical threshold
+  interval: 30s
+  input_series:
+  - series: node_dmmultipath_device_paths_failed{device="mpatha",sysfs_name="dm-0",instance="node1:9100",job="node-exporter",namespace="openshift-monitoring"}
+    values: 1x20
+  - series: node_dmmultipath_device_paths{device="mpatha",sysfs_name="dm-0",instance="node1:9100",job="node-exporter",namespace="openshift-monitoring"}
+    values: 3x20
+  - series: node_dmmultipath_device_active{device="mpatha",sysfs_name="dm-0",instance="node1:9100",job="node-exporter",namespace="openshift-monitoring"}
+    values: 1x20
+  alert_rule_test:
+  - eval_time: 5m
+    alertname: MultipathPathDegraded
+    exp_alerts:
+    - *id002
+  - eval_time: 5m
+    alertname: MultipathPathCritical
+    exp_alerts: []
+  - eval_time: 5m
+    alertname: MultipathDeviceSuspended
+    exp_alerts: []
+- name: two of three paths exceeds the critical threshold
+  interval: 30s
+  input_series:
+  - series: node_dmmultipath_device_paths_failed{device="mpatha",sysfs_name="dm-0",instance="node1:9100",job="node-exporter",namespace="openshift-monitoring"}
+    values: 2x20
+  - series: node_dmmultipath_device_paths{device="mpatha",sysfs_name="dm-0",instance="node1:9100",job="node-exporter",namespace="openshift-monitoring"}
+    values: 3x20
+  - series: node_dmmultipath_device_active{device="mpatha",sysfs_name="dm-0",instance="node1:9100",job="node-exporter",namespace="openshift-monitoring"}
+    values: 1x20
+  alert_rule_test:
+  - eval_time: 2m
+    alertname: MultipathPathDegraded
+    exp_alerts: []
+  - eval_time: 2m
+    alertname: MultipathPathCritical
+    exp_alerts:
+    - *id001
+  - eval_time: 2m
+    alertname: MultipathDeviceSuspended
+    exp_alerts: []
+- name: total path loss triggers critical and warning
+  interval: 30s
+  input_series:
+  - series: node_dmmultipath_device_paths_failed{device="mpatha",sysfs_name="dm-0",instance="node1:9100",job="node-exporter",namespace="openshift-monitoring"}
+    values: 4x20
+  - series: node_dmmultipath_device_paths{device="mpatha",sysfs_name="dm-0",instance="node1:9100",job="node-exporter",namespace="openshift-monitoring"}
+    values: 4x20
+  - series: node_dmmultipath_device_active{device="mpatha",sysfs_name="dm-0",instance="node1:9100",job="node-exporter",namespace="openshift-monitoring"}
+    values: 1x20
+  alert_rule_test:
+  - eval_time: 5m
+    alertname: MultipathPathDegraded
+    exp_alerts:
+    - exp_labels:
+        device: mpatha
+        sysfs_name: dm-0
+        instance: node1:9100
+        job: node-exporter
+        namespace: openshift-monitoring
+        severity: warning
+      exp_annotations:
+        summary: Multipath device mpatha (dm-0) on node1:9100 has 4 failed path(s).
+        description: One or more paths for DM-multipath device mpatha (dm-0) on node1:9100 have been outside
+          the active state (SCSI running or NVMe live) for 5 minutes. Path redundancy is degraded, and
+          I/O may be disrupted if no usable paths remain. Investigate cable connectivity, HBA health,
+          and storage array port status.
+  - eval_time: 5m
+    alertname: MultipathPathCritical
+    exp_alerts:
+    - exp_labels:
+        device: mpatha
+        sysfs_name: dm-0
+        instance: node1:9100
+        job: node-exporter
+        namespace: openshift-monitoring
+        severity: critical
+      exp_annotations:
+        summary: Multipath device mpatha (dm-0) on node1:9100 has at least half its paths failed.
+        description: Half or more of the paths for DM-multipath device mpatha (dm-0) on node1:9100 have
+          been outside the active state for 2 minutes. There are 4 failed path(s). The device is at risk
+          of, or already experiencing, total path loss. Immediately check storage fabric, HBA ports, and
+          array controller connectivity.
+  - eval_time: 5m
+    alertname: MultipathDeviceSuspended
+    exp_alerts: []
+- name: single path failure triggers critical
+  interval: 30s
+  input_series:
+  - series: node_dmmultipath_device_paths_failed{device="mpatha",sysfs_name="dm-0",instance="node1:9100",job="node-exporter",namespace="openshift-monitoring"}
+    values: 1x20
+  - series: node_dmmultipath_device_paths{device="mpatha",sysfs_name="dm-0",instance="node1:9100",job="node-exporter",namespace="openshift-monitoring"}
+    values: 1x20
+  - series: node_dmmultipath_device_active{device="mpatha",sysfs_name="dm-0",instance="node1:9100",job="node-exporter",namespace="openshift-monitoring"}
+    values: 1x20
+  alert_rule_test:
+  - eval_time: 2m
+    alertname: MultipathPathDegraded
+    exp_alerts: []
+  - eval_time: 2m
+    alertname: MultipathPathCritical
+    exp_alerts:
+    - exp_labels:
+        device: mpatha
+        sysfs_name: dm-0
+        instance: node1:9100
+        job: node-exporter
+        namespace: openshift-monitoring
+        severity: critical
+      exp_annotations:
+        summary: Multipath device mpatha (dm-0) on node1:9100 has at least half its paths failed.
+        description: Half or more of the paths for DM-multipath device mpatha (dm-0) on node1:9100 have
+          been outside the active state for 2 minutes. There are 1 failed path(s). The device is at risk
+          of, or already experiencing, total path loss. Immediately check storage fabric, HBA ports, and
+          array controller connectivity.
+  - eval_time: 2m
+    alertname: MultipathDeviceSuspended
+    exp_alerts: []
+- name: transient path failures reset the hold duration
+  interval: 30s
+  input_series:
+  - series: node_dmmultipath_device_paths_failed{device="mpatha",sysfs_name="dm-0",instance="node1:9100",job="node-exporter",namespace="openshift-monitoring"}
+    values: 2x2 0x2 2x2 0x12
+  - series: node_dmmultipath_device_paths{device="mpatha",sysfs_name="dm-0",instance="node1:9100",job="node-exporter",namespace="openshift-monitoring"}
+    values: 4x20
+  - series: node_dmmultipath_device_active{device="mpatha",sysfs_name="dm-0",instance="node1:9100",job="node-exporter",namespace="openshift-monitoring"}
+    values: 1x20
+  alert_rule_test:
+  - eval_time: 2m
+    alertname: MultipathPathDegraded
+    exp_alerts: []
+  - eval_time: 2m
+    alertname: MultipathPathCritical
+    exp_alerts: []
+  - eval_time: 2m
+    alertname: MultipathDeviceSuspended
+    exp_alerts: []
+  - eval_time: 4m
+    alertname: MultipathPathDegraded
+    exp_alerts: []
+  - eval_time: 4m
+    alertname: MultipathPathCritical
+    exp_alerts: []
+  - eval_time: 4m
+    alertname: MultipathDeviceSuspended
+    exp_alerts: []
+  - eval_time: 10m
+    alertname: MultipathPathDegraded
+    exp_alerts: []
+  - eval_time: 10m
+    alertname: MultipathPathCritical
+    exp_alerts: []
+  - eval_time: 10m
+    alertname: MultipathDeviceSuspended
+    exp_alerts: []
+- name: path alerts resolve after recovery
+  interval: 30s
+  input_series:
+  - series: node_dmmultipath_device_paths_failed{device="mpatha",sysfs_name="dm-0",instance="node1:9100",job="node-exporter",namespace="openshift-monitoring"}
+    values: 2x10 0x10
+  - series: node_dmmultipath_device_paths{device="mpatha",sysfs_name="dm-0",instance="node1:9100",job="node-exporter",namespace="openshift-monitoring"}
+    values: 4x20
+  - series: node_dmmultipath_device_active{device="mpatha",sysfs_name="dm-0",instance="node1:9100",job="node-exporter",namespace="openshift-monitoring"}
+    values: 1x20
+  alert_rule_test:
+  - eval_time: 5m
+    alertname: MultipathPathDegraded
+    exp_alerts:
+    - *id003
+  - eval_time: 5m
+    alertname: MultipathPathCritical
+    exp_alerts:
+    - *id001
+  - eval_time: 5m
+    alertname: MultipathDeviceSuspended
+    exp_alerts: []
+  - eval_time: 5m30s
+    alertname: MultipathPathDegraded
+    exp_alerts: []
+  - eval_time: 5m30s
+    alertname: MultipathPathCritical
+    exp_alerts: []
+  - eval_time: 5m30s
+    alertname: MultipathDeviceSuspended
+    exp_alerts: []
+- name: suspension triggers only after one minute then resolves
+  interval: 30s
+  input_series:
+  - series: node_dmmultipath_device_paths_failed{device="mpatha",sysfs_name="dm-0",instance="node1:9100",job="node-exporter",namespace="openshift-monitoring"}
+    values: '0x20'
+  - series: node_dmmultipath_device_paths{device="mpatha",sysfs_name="dm-0",instance="node1:9100",job="node-exporter",namespace="openshift-monitoring"}
+    values: 4x20
+  - series: node_dmmultipath_device_active{device="mpatha",sysfs_name="dm-0",instance="node1:9100",job="node-exporter",namespace="openshift-monitoring"}
+    values: 0x4 1x16
+  alert_rule_test:
+  - eval_time: 30s
+    alertname: MultipathPathDegraded
+    exp_alerts: []
+  - eval_time: 30s
+    alertname: MultipathPathCritical
+    exp_alerts: []
+  - eval_time: 30s
+    alertname: MultipathDeviceSuspended
+    exp_alerts: []
+  - eval_time: 1m
+    alertname: MultipathPathDegraded
+    exp_alerts: []
+  - eval_time: 1m
+    alertname: MultipathPathCritical
+    exp_alerts: []
+  - eval_time: 1m
+    alertname: MultipathDeviceSuspended
+    exp_alerts:
+    - exp_labels:
+        device: mpatha
+        sysfs_name: dm-0
+        instance: node1:9100
+        job: node-exporter
+        namespace: openshift-monitoring
+        severity: critical
+      exp_annotations:
+        summary: Multipath device mpatha (dm-0) on node1:9100 is suspended.
+        description: DM-multipath device mpatha (dm-0) on node1:9100 has been suspended for 1 minute.
+          I/O through this device is blocked, and workloads using it may hang. Check dmsetup info and
+          dmsetup status, investigate why the device was suspended, and restore it after resolving the
+          underlying issue.
+  - eval_time: 2m30s
+    alertname: MultipathPathDegraded
+    exp_alerts: []
+  - eval_time: 2m30s
+    alertname: MultipathPathCritical
+    exp_alerts: []
+  - eval_time: 2m30s
+    alertname: MultipathDeviceSuspended
+    exp_alerts: []
+- name: transient suspension never fires
+  interval: 30s
+  input_series:
+  - series: node_dmmultipath_device_paths_failed{device="mpatha",sysfs_name="dm-0",instance="node1:9100",job="node-exporter",namespace="openshift-monitoring"}
+    values: '0x20'
+  - series: node_dmmultipath_device_paths{device="mpatha",sysfs_name="dm-0",instance="node1:9100",job="node-exporter",namespace="openshift-monitoring"}
+    values: 4x20
+  - series: node_dmmultipath_device_active{device="mpatha",sysfs_name="dm-0",instance="node1:9100",job="node-exporter",namespace="openshift-monitoring"}
+    values: 0 1x20
+  alert_rule_test:
+  - eval_time: 1m
+    alertname: MultipathPathDegraded
+    exp_alerts: []
+  - eval_time: 1m
+    alertname: MultipathPathCritical
+    exp_alerts: []
+  - eval_time: 1m
+    alertname: MultipathDeviceSuspended
+    exp_alerts: []
+  - eval_time: 5m
+    alertname: MultipathPathDegraded
+    exp_alerts: []
+  - eval_time: 5m
+    alertname: MultipathPathCritical
+    exp_alerts: []
+  - eval_time: 5m
+    alertname: MultipathDeviceSuspended
+    exp_alerts: []
+- name: missing total count does not fabricate a critical path alert
+  interval: 30s
+  input_series:
+  - series: node_dmmultipath_device_paths_failed{device="mpatha",sysfs_name="dm-0",instance="node1:9100",job="node-exporter",namespace="openshift-monitoring"}
+    values: 1x20
+  - series: node_dmmultipath_device_active{device="mpatha",sysfs_name="dm-0",instance="node1:9100",job="node-exporter",namespace="openshift-monitoring"}
+    values: 1x20
+  alert_rule_test:
+  - eval_time: 5m
+    alertname: MultipathPathDegraded
+    exp_alerts:
+    - *id002
+  - eval_time: 5m
+    alertname: MultipathPathCritical
+    exp_alerts: []
+  - eval_time: 5m
+    alertname: MultipathDeviceSuspended
+    exp_alerts: []
+- name: path joins preserve node and device identity
+  interval: 30s
+  input_series:
+  - series: node_dmmultipath_device_paths_failed{device="mpatha",sysfs_name="dm-0",instance="node1:9100",job="node-exporter",namespace="openshift-monitoring"}
+    values: 1x20
+  - series: node_dmmultipath_device_paths{device="mpatha",sysfs_name="dm-0",instance="node1:9100",job="node-exporter",namespace="openshift-monitoring"}
+    values: 4x20
+  - series: node_dmmultipath_device_active{device="mpatha",sysfs_name="dm-0",instance="node1:9100",job="node-exporter",namespace="openshift-monitoring"}
+    values: 1x20
+  - series: node_dmmultipath_device_paths_failed{device="mpatha",sysfs_name="dm-0",instance="node2:9100",job="node-exporter",namespace="openshift-monitoring"}
+    values: '0x20'
+  - series: node_dmmultipath_device_paths{device="mpatha",sysfs_name="dm-0",instance="node2:9100",job="node-exporter",namespace="openshift-monitoring"}
+    values: 1x20
+  - series: node_dmmultipath_device_active{device="mpatha",sysfs_name="dm-0",instance="node2:9100",job="node-exporter",namespace="openshift-monitoring"}
+    values: 1x20
+  - series: node_dmmultipath_device_paths_failed{device="mpathb",sysfs_name="dm-1",instance="node1:9100",job="node-exporter",namespace="openshift-monitoring"}
+    values: 3x20
+  - series: node_dmmultipath_device_paths{device="mpathb",sysfs_name="dm-1",instance="node1:9100",job="node-exporter",namespace="openshift-monitoring"}
+    values: 4x20
+  - series: node_dmmultipath_device_active{device="mpathb",sysfs_name="dm-1",instance="node1:9100",job="node-exporter",namespace="openshift-monitoring"}
+    values: 1x20
+  alert_rule_test:
+  - eval_time: 5m
+    alertname: MultipathPathDegraded
+    exp_alerts:
+    - *id002
+    - exp_labels:
+        device: mpathb
+        sysfs_name: dm-1
+        instance: node1:9100
+        job: node-exporter
+        namespace: openshift-monitoring
+        severity: warning
+      exp_annotations:
+        summary: Multipath device mpathb (dm-1) on node1:9100 has 3 failed path(s).
+        description: One or more paths for DM-multipath device mpathb (dm-1) on node1:9100 have been outside
+          the active state (SCSI running or NVMe live) for 5 minutes. Path redundancy is degraded, and
+          I/O may be disrupted if no usable paths remain. Investigate cable connectivity, HBA health,
+          and storage array port status.
+  - eval_time: 5m
+    alertname: MultipathPathCritical
+    exp_alerts:
+    - exp_labels:
+        device: mpathb
+        sysfs_name: dm-1
+        instance: node1:9100
+        job: node-exporter
+        namespace: openshift-monitoring
+        severity: critical
+      exp_annotations:
+        summary: Multipath device mpathb (dm-1) on node1:9100 has at least half its paths failed.
+        description: Half or more of the paths for DM-multipath device mpathb (dm-1) on node1:9100 have
+          been outside the active state for 2 minutes. There are 3 failed path(s). The device is at risk
+          of, or already experiencing, total path loss. Immediately check storage fabric, HBA ports, and
+          array controller connectivity.
+  - eval_time: 5m
+    alertname: MultipathDeviceSuspended
+    exp_alerts: []
+- name: metrics from other jobs never alert
+  interval: 30s
+  input_series:
+  - series: node_dmmultipath_device_paths_failed{device="mpatha",sysfs_name="dm-0",instance="node1:9100",job="other-exporter",namespace="openshift-monitoring"}
+    values: 4x20
+  - series: node_dmmultipath_device_paths{device="mpatha",sysfs_name="dm-0",instance="node1:9100",job="other-exporter",namespace="openshift-monitoring"}
+    values: 4x20
+  - series: node_dmmultipath_device_active{device="mpatha",sysfs_name="dm-0",instance="node1:9100",job="other-exporter",namespace="openshift-monitoring"}
+    values: '0x20'
+  alert_rule_test:
+  - eval_time: 10m
+    alertname: MultipathPathDegraded
+    exp_alerts: []
+  - eval_time: 10m
+    alertname: MultipathPathCritical
+    exp_alerts: []
+  - eval_time: 10m
+    alertname: MultipathDeviceSuspended
+    exp_alerts: []
+- name: rules supply namespace labels when input metrics have none
+  interval: 30s
+  input_series:
+  - series: node_dmmultipath_device_paths_failed{device="mpatha",sysfs_name="dm-0",instance="node1:9100",job="node-exporter"}
+    values: 2x20
+  - series: node_dmmultipath_device_paths{device="mpatha",sysfs_name="dm-0",instance="node1:9100",job="node-exporter"}
+    values: 4x20
+  - series: node_dmmultipath_device_active{device="mpatha",sysfs_name="dm-0",instance="node1:9100",job="node-exporter"}
+    values: '0x20'
+  alert_rule_test:
+  - eval_time: 5m
+    alertname: MultipathPathDegraded
+    exp_alerts:
+    - exp_labels:
+        device: mpatha
+        sysfs_name: dm-0
+        instance: node1:9100
+        job: node-exporter
+        namespace: openshift-monitoring
+        severity: warning
+      exp_annotations:
+        summary: Multipath device mpatha (dm-0) on node1:9100 has 2 failed path(s).
+        description: One or more paths for DM-multipath device mpatha (dm-0) on node1:9100 have been outside
+          the active state (SCSI running or NVMe live) for 5 minutes. Path redundancy is degraded, and
+          I/O may be disrupted if no usable paths remain. Investigate cable connectivity, HBA health,
+          and storage array port status.
+  - eval_time: 5m
+    alertname: MultipathPathCritical
+    exp_alerts:
+    - exp_labels:
+        device: mpatha
+        sysfs_name: dm-0
+        instance: node1:9100
+        job: node-exporter
+        namespace: openshift-monitoring
+        severity: critical
+      exp_annotations:
+        summary: Multipath device mpatha (dm-0) on node1:9100 has at least half its paths failed.
+        description: Half or more of the paths for DM-multipath device mpatha (dm-0) on node1:9100 have
+          been outside the active state for 2 minutes. There are 2 failed path(s). The device is at risk
+          of, or already experiencing, total path loss. Immediately check storage fabric, HBA ports, and
+          array controller connectivity.
+  - eval_time: 5m
+    alertname: MultipathDeviceSuspended
+    exp_alerts:
+    - exp_labels:
+        device: mpatha
+        sysfs_name: dm-0
+        instance: node1:9100
+        job: node-exporter
+        namespace: openshift-monitoring
+        severity: critical
+      exp_annotations:
+        summary: Multipath device mpatha (dm-0) on node1:9100 is suspended.
+        description: DM-multipath device mpatha (dm-0) on node1:9100 has been suspended for 1 minute.
+          I/O through this device is blocked, and workloads using it may hang. Check dmsetup info and
+          dmsetup status, investigate why the device was suspended, and restore it after resolving the
+          underlying issue.

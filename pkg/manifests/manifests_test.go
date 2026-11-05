@@ -20,6 +20,7 @@ import (
 	"fmt"
 	"net/url"
 	"reflect"
+	"regexp"
 	"slices"
 	"sort"
 	"strings"
@@ -4902,6 +4903,47 @@ func TestNonHighlyAvailableInfrastructure(t *testing.T) {
 		if spec.affinity != nil {
 			t.Errorf("expected no affinity constraints with 1 replica, got %v", spec.affinity)
 		}
+	}
+}
+
+// TestNodeExporterMinimalProfileKeepsDMMultipathAlertMetrics guards against the
+// minimal profile silently disabling DM-multipath alerts by dropping their input
+// metrics, while ensuring unrelated per-path metrics remain excluded.
+func TestNodeExporterMinimalProfileKeepsDMMultipathAlertMetrics(t *testing.T) {
+	f := NewFactory("openshift-monitoring", "openshift-user-workload-monitoring", mustDefaultConfig(), defaultInfrastructureReader(), &fakeProxyReader{}, NewAssets(assetsPath), &APIServerConfig{}, &configv1.Console{})
+	monitors, err := f.NodeExporterServiceMonitors()
+	require.NoError(t, err)
+
+	var minimal *monv1.ServiceMonitor
+	for _, monitor := range monitors {
+		if monitor.Labels[collectionProfileLabel] == MinimalCollectionProfile {
+			minimal = monitor
+			break
+		}
+	}
+	require.NotNil(t, minimal)
+	require.NotEmpty(t, minimal.Spec.Endpoints)
+
+	for _, endpoint := range minimal.Spec.Endpoints {
+		var keep *monv1.RelabelConfig
+		for _, config := range endpoint.MetricRelabelConfigs {
+			if config.Action == "keep" && slices.Equal(config.SourceLabels, []monv1.LabelName{"__name__"}) {
+				keep = &config
+				break
+			}
+		}
+		require.NotNil(t, keep)
+		// Prometheus anchors relabeling regexes to the complete input value.
+		filter, err := regexp.Compile("^(?:" + keep.Regex + ")$")
+		require.NoError(t, err)
+		for _, metric := range []string{
+			"node_dmmultipath_device_active",
+			"node_dmmultipath_device_paths",
+			"node_dmmultipath_device_paths_failed",
+		} {
+			require.True(t, filter.MatchString(metric), "minimal profile drops alert metric %s", metric)
+		}
+		require.False(t, filter.MatchString("node_dmmultipath_path_state"), "minimal profile should not retain unrelated per-path metrics")
 	}
 }
 
