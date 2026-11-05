@@ -188,6 +188,9 @@ function(params)
           'node_disk_reads_completed_total',
           'node_disk_write_time_seconds_total',
           'node_disk_writes_completed_total',
+          'node_dmmultipath_device_active',
+          'node_dmmultipath_device_paths',
+          'node_dmmultipath_device_paths_failed',
           'node_filefd_allocated',
           'node_filefd_maximum',
           'node_filesystem_avail_bytes',
@@ -469,6 +472,63 @@ function(params)
     prometheusRule+: {
       spec+: {
         groups+: [
+          {
+            name: 'node-exporter-dmmultipath',
+            // Based on the DM-multipath alerts in:
+            // https://github.com/raffaelespazzoli/openshift-monitoring-addson/blob/ac4eedcf0454121af010d8954cf85bd8a975c929/storage/alerts.yaml
+            // Missing collector metrics or absent multipath devices produce no alerts.
+            rules: [
+              {
+                alert: 'MultipathPathDegraded',
+                expr: |||
+                  node_dmmultipath_device_paths_failed{job="node-exporter"} > 0
+                |||,
+                'for': '5m',
+                labels: {
+                  severity: 'warning',
+                  namespace: cfg.namespace,
+                },
+                annotations: {
+                  summary: 'Multipath device {{ $labels.device }} ({{ $labels.sysfs_name }}) on {{ $labels.instance }} has {{ $value }} failed path(s).',
+                  description: 'One or more paths for DM-multipath device {{ $labels.device }} ({{ $labels.sysfs_name }}) on {{ $labels.instance }} have been outside the active state (SCSI running or NVMe live) for 5 minutes. Path redundancy is degraded, and I/O may be disrupted if no usable paths remain. Investigate cable connectivity, HBA health, and storage array port status.',
+                },
+              },
+              {
+                alert: 'MultipathPathCritical',
+                expr: |||
+                  (
+                    node_dmmultipath_device_paths_failed{job="node-exporter"}
+                    >= node_dmmultipath_device_paths{job="node-exporter"} / 2
+                  )
+                  and node_dmmultipath_device_paths_failed{job="node-exporter"} > 0
+                |||,
+                'for': '2m',
+                labels: {
+                  severity: 'critical',
+                  namespace: cfg.namespace,
+                },
+                annotations: {
+                  summary: 'Multipath device {{ $labels.device }} ({{ $labels.sysfs_name }}) on {{ $labels.instance }} has at least half its paths failed.',
+                  description: 'Half or more of the paths for DM-multipath device {{ $labels.device }} ({{ $labels.sysfs_name }}) on {{ $labels.instance }} have been outside the active state for 2 minutes. There are {{ $value }} failed path(s). The device is at risk of, or already experiencing, total path loss. Immediately check storage fabric, HBA ports, and array controller connectivity.',
+                },
+              },
+              {
+                alert: 'MultipathDeviceSuspended',
+                expr: |||
+                  node_dmmultipath_device_active{job="node-exporter"} == 0
+                |||,
+                'for': '1m',
+                labels: {
+                  severity: 'critical',
+                  namespace: cfg.namespace,
+                },
+                annotations: {
+                  summary: 'Multipath device {{ $labels.device }} ({{ $labels.sysfs_name }}) on {{ $labels.instance }} is suspended.',
+                  description: 'DM-multipath device {{ $labels.device }} ({{ $labels.sysfs_name }}) on {{ $labels.instance }} has been suspended for 1 minute. I/O through this device is blocked, and workloads using it may hang. Check dmsetup info and dmsetup status, investigate why the device was suspended, and restore it after resolving the underlying issue.',
+                },
+              },
+            ],
+          },
           {
             name: 'telemetry',
             rules: [
