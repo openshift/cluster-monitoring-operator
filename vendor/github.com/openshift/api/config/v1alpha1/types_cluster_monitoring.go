@@ -1630,15 +1630,29 @@ type AdditionalAlertmanagerConfig struct {
 	// +listType=set
 	// +required
 	StaticConfigs []string `json:"staticConfigs,omitempty"`
+
+	// TOMBSTONE: This field has been tombstoned in favor of the `timeoutMilliseconds` field. This tombstone will be dropped when promoting this API to v1.
+	// ---
 	// timeoutSeconds defines the timeout in seconds for requests to Alertmanager.
 	// When omitted, this means no opinion and the platform is left to choose a reasonable default, which is subject to change over time.
 	// Currently the default is 10 seconds.
 	// Minimum value is 1 second.
 	// Maximum value is 600 seconds (10 minutes).
-	// +kubebuilder:validation:Minimum=1
-	// +kubebuilder:validation:Maximum=600
+	// Former marker: kubebuilder:validation:Minimum=1
+	// Former marker: kubebuilder:validation:Maximum=600
+	// Former marker: optional
+	// TimeoutSeconds int32 `json:"timeoutSeconds,omitempty"`
+
+	// timeoutMilliseconds defines the timeout in milliseconds for requests to Alertmanager.
+	// When omitted, this means no opinion and the platform is left to choose a reasonable default, which is subject to change over time.
+	// Currently the default is 10000 milliseconds (10 seconds).
+	// Minimum value is 100 milliseconds.
+	// Maximum value is 600000 milliseconds (10 minutes).
+	// +kubebuilder:validation:Minimum=100
+	// +kubebuilder:validation:Maximum=600000
 	// +optional
-	TimeoutSeconds int32 `json:"timeoutSeconds,omitempty"`
+	TimeoutMilliseconds int32 `json:"timeoutMilliseconds,omitempty"`
+
 	// tlsConfig defines the TLS settings to use for Alertmanager connections.
 	// When omitted, this means no opinion and the platform is left to choose a reasonable default, which is subject to change over time.
 	// +optional

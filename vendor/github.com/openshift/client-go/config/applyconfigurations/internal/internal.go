@@ -4401,7 +4401,7 @@ var schemaYAML = typed.YAMLObject(`types:
           elementType:
             scalar: string
           elementRelationship: associative
-    - name: timeoutSeconds
+    - name: timeoutMilliseconds
       type:
         scalar: numeric
     - name: tlsConfig
