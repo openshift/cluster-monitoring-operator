@@ -505,13 +505,10 @@ function(params)
             ],
           },
           {
+            // Restrict the gossip mesh to Alertmanager pods in this namespace.
             from: [{
               podSelector: {
-                matchLabels: {
-                  'app.kubernetes.io/name': 'alertmanager',
-                  'app.kubernetes.io/part-of': 'openshift-monitoring',
-                  'app.kubernetes.io/instance': 'main',
-                },
+                matchLabels: $.service.spec.selector,
               },
             }],
             ports: [
