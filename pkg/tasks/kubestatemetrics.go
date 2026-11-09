@@ -80,9 +80,9 @@ func (t *KubeStateMetricsTask) Run(ctx context.Context) error {
 		return fmt.Errorf("initializing kube-state-metrics RBAC proxy Secret failed: %w", err)
 	}
 
-	err = t.client.CreateIfNotExistSecret(ctx, rs)
+	err = t.client.CreateOrUpdateSecret(ctx, rs)
 	if err != nil {
-		return fmt.Errorf("creating kube-state-metrics RBAC proxy Secret failed: %w", err)
+		return fmt.Errorf("reconciling kube-state-metrics RBAC proxy Secret failed: %w", err)
 	}
 
 	svc, err := t.factory.KubeStateMetricsService()

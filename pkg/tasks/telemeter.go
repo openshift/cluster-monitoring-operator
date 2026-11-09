@@ -66,9 +66,9 @@ func (t *TelemeterClientTask) create(ctx context.Context) error {
 		return fmt.Errorf("initializing Telemeter Client serving certs CA Bundle ConfigMap failed: %w", err)
 	}
 
-	_, err = t.client.CreateIfNotExistConfigMap(ctx, cacm)
+	err = t.client.CreateOrUpdateConfigMap(ctx, cacm)
 	if err != nil {
-		return fmt.Errorf("creating Telemeter Client serving certs CA Bundle ConfigMap failed: %w", err)
+		return fmt.Errorf("reconciling Telemeter Client serving certs CA Bundle ConfigMap failed: %w", err)
 	}
 
 	sa, err := t.factory.TelemeterClientServiceAccount()
