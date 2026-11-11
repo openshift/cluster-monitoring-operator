@@ -1124,6 +1124,30 @@ data:
     # running with kata containers on the cluster
     - '{__name__="cluster:kata_monitor_running_shim_count:sum"}'
     #
+    # owners: (@openshift/sandboxed-containers-operator)
+    #
+    # cluster:osc_setup_info:max indicates the OpenShift Sandboxed Containers
+    # setup type (peer pods vs baremetal, confidential vs not) and the
+    # confidential computing silicon in use.
+    # Expected labels:
+    # - setup_type: "baremetal", "confidential_baremetal", "confidential_peerpods" or "peerpods"
+    # - tee_type: "none", "se", "snp", "tdx" or "unknown"
+    - '{__name__="cluster:osc_setup_info:max", setup_type=~"baremetal|confidential_baremetal|confidential_peerpods|peerpods", tee_type=~"none|se|snp|tdx|unknown"}'
+    #
+    # owners: (@openshift/sandboxed-containers-operator)
+    #
+    # cluster:osc_kata_pods:sum provides the number of pods running with each
+    # kata RuntimeClass on the cluster.
+    # Expected labels:
+    # - runtimeclass: "kata", "kata-cc", "kata-cc-nvidia-gpu", "kata-nvidia-gpu" or "kata-remote"
+    - '{__name__="cluster:osc_kata_pods:sum", runtimeclass=~"kata|kata-cc|kata-cc-nvidia-gpu|kata-nvidia-gpu|kata-remote"}'
+    #
+    # owners: (@openshift/sandboxed-containers-operator)
+    #
+    # cluster:osc_active:max signals that OpenShift Sandboxed Containers is
+    # installed and its operator is running.
+    - '{__name__="cluster:osc_active:max"}'
+    #
     # owners: (@openshift/team-hypershift-maintainers)
     #
     # platform:hypershift_hostedclusters:max is the total number of clusters managed by the hypershift operator by cluster platform
