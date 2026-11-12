@@ -33,7 +33,7 @@ func clusterMonitoringPrometheusSpecEmpty(pc configv1alpha1.PrometheusConfig) bo
 	if len(pc.AdditionalAlertmanagerConfigs) > 0 {
 		return false
 	}
-	if pc.EnforcedBodySizeLimitBytes != 0 {
+	if pc.BodySizeEnforcement.Mode != "" {
 		return false
 	}
 	if len(pc.ExternalLabels) > 0 {
@@ -536,8 +536,19 @@ func (c *Config) mergePrometheusK8sConfiguration(pc configv1alpha1.PrometheusCon
 	}
 	cfg.RemoteWrite = remoteWrite
 
-	if pc.EnforcedBodySizeLimitBytes > 0 {
-		cfg.EnforcedBodySizeLimit = fmt.Sprintf("%dB", pc.EnforcedBodySizeLimitBytes)
+	switch pc.BodySizeEnforcement.Mode {
+	case "":
+	case configv1alpha1.BodySizeEnforcementModeAutomatic:
+		cfg.EnforcedBodySizeLimit = automaticBodySizeLimit
+	case configv1alpha1.BodySizeEnforcementModeNone:
+		cfg.EnforcedBodySizeLimit = ""
+	case configv1alpha1.BodySizeEnforcementModeCustom:
+		if pc.BodySizeEnforcement.Custom.MaxSizeBytes <= 0 {
+			return fmt.Errorf("bodySizeEnforcement.custom.maxSizeBytes must be set when mode is %s", configv1alpha1.BodySizeEnforcementModeCustom)
+		}
+		cfg.EnforcedBodySizeLimit = fmt.Sprintf("%dB", pc.BodySizeEnforcement.Custom.MaxSizeBytes)
+	default:
+		return fmt.Errorf("unsupported bodySizeEnforcement mode %q", pc.BodySizeEnforcement.Mode)
 	}
 	if pc.CollectionProfile != "" {
 		cp, err := collectionProfileCRDToManifest(pc.CollectionProfile)
