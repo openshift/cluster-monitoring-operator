@@ -2,15 +2,31 @@
 
 package v1alpha1
 
+import (
+	operatorv1alpha1 "github.com/openshift/api/operator/v1alpha1"
+)
+
 // EtcdBackupSpecApplyConfiguration represents a declarative configuration of the EtcdBackupSpec type for use
 // with apply.
 type EtcdBackupSpecApplyConfiguration struct {
-	// pvcName specifies the name of the PersistentVolumeClaim (PVC) which binds a PersistentVolume where the
-	// etcd backup file would be saved
-	// The PVC itself must always be created in the "openshift-etcd" namespace
-	// If the PVC is left unspecified "" then the platform will choose a reasonable default location to save the backup.
-	// In the future this would be backups saved across the control-plane master nodes.
-	PVCName *string `json:"pvcName,omitempty"`
+	// assets specifies the type of files to be backed up.
+	// If Snapshot is present, the etcd database will be snapshotted and saved to the storage backend.
+	// If StaticKubeResources is present, static pod manifests for the control plane will be bundled and saved to the storage backend. If etcd is encrypted, this will include the encryption keys.
+	// When specified, must contain between 1 and 2 entries, with at most 1 of each type.
+	// When omitted, all assets types will be backed up.
+	// This field is optional.
+	Assets []operatorv1alpha1.EtcdBackupAssetType `json:"assets,omitempty"`
+	// nodeSelector specifies which control plane nodes to select from for running the backup job. Only one backup job is run per EtcdBackup.
+	// The default node-role.kubernetes.io/control-plane label will always be added on top of any labels set on nodeSelector.
+	// If no nodes are matched, then the backup will be marked failed.
+	// For Local storage type, this may be used to target a specific node to take and store the backup.
+	// For PVC storage type, this may be used to control where the backup is taken from. If multiple nodes are selected, the scheduler is responsible for placing the backup job based on volume topology and any other scheduling constraints.
+	// When specified, must contain between 1 and 10 entries.
+	// This field is optional.
+	NodeSelector map[string]string `json:"nodeSelector,omitempty"`
+	// storage specifies the location where etcd backup files will be saved.
+	// This field is required.
+	Storage *EtcdBackupStorageApplyConfiguration `json:"storage,omitempty"`
 }
 
 // EtcdBackupSpecApplyConfiguration constructs a declarative configuration of the EtcdBackupSpec type for use with
@@ -19,10 +35,34 @@ func EtcdBackupSpec() *EtcdBackupSpecApplyConfiguration {
 	return &EtcdBackupSpecApplyConfiguration{}
 }
 
-// WithPVCName sets the PVCName field in the declarative configuration to the given value
+// WithAssets adds the given value to the Assets field in the declarative configuration
+// and returns the receiver, so that objects can be build by chaining "With" function invocations.
+// If called multiple times, values provided by each call will be appended to the Assets field.
+func (b *EtcdBackupSpecApplyConfiguration) WithAssets(values ...operatorv1alpha1.EtcdBackupAssetType) *EtcdBackupSpecApplyConfiguration {
+	for i := range values {
+		b.Assets = append(b.Assets, values[i])
+	}
+	return b
+}
+
+// WithNodeSelector puts the entries into the NodeSelector field in the declarative configuration
+// and returns the receiver, so that objects can be build by chaining "With" function invocations.
+// If called multiple times, the entries provided by each call will be put on the NodeSelector field,
+// overwriting an existing map entries in NodeSelector field with the same key.
+func (b *EtcdBackupSpecApplyConfiguration) WithNodeSelector(entries map[string]string) *EtcdBackupSpecApplyConfiguration {
+	if b.NodeSelector == nil && len(entries) > 0 {
+		b.NodeSelector = make(map[string]string, len(entries))
+	}
+	for k, v := range entries {
+		b.NodeSelector[k] = v
+	}
+	return b
+}
+
+// WithStorage sets the Storage field in the declarative configuration to the given value
 // and returns the receiver, so that objects can be built by chaining "With" function invocations.
-// If called multiple times, the PVCName field is set to the value of the last call.
-func (b *EtcdBackupSpecApplyConfiguration) WithPVCName(value string) *EtcdBackupSpecApplyConfiguration {
-	b.PVCName = &value
+// If called multiple times, the Storage field is set to the value of the last call.
+func (b *EtcdBackupSpecApplyConfiguration) WithStorage(value *EtcdBackupStorageApplyConfiguration) *EtcdBackupSpecApplyConfiguration {
+	b.Storage = value
 	return b
 }

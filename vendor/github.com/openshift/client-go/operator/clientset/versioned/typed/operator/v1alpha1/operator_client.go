@@ -15,7 +15,9 @@ type OperatorV1alpha1Interface interface {
 	ClusterAPIsGetter
 	ClusterVersionOperatorsGetter
 	EtcdBackupsGetter
+	EtcdBackupPoliciesGetter
 	ImageContentSourcePoliciesGetter
+	IngressesGetter
 	OLMsGetter
 }
 
@@ -36,8 +38,16 @@ func (c *OperatorV1alpha1Client) EtcdBackups() EtcdBackupInterface {
 	return newEtcdBackups(c)
 }
 
+func (c *OperatorV1alpha1Client) EtcdBackupPolicies() EtcdBackupPolicyInterface {
+	return newEtcdBackupPolicies(c)
+}
+
 func (c *OperatorV1alpha1Client) ImageContentSourcePolicies() ImageContentSourcePolicyInterface {
 	return newImageContentSourcePolicies(c)
+}
+
+func (c *OperatorV1alpha1Client) Ingresses() IngressInterface {
+	return newIngresses(c)
 }
 
 func (c *OperatorV1alpha1Client) OLMs() OLMInterface {

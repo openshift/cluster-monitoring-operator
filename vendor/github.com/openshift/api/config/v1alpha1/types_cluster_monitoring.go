@@ -1388,6 +1388,55 @@ type PrometheusOperatorAdmissionWebhookConfig struct {
 	TopologySpreadConstraints []v1.TopologySpreadConstraint `json:"topologySpreadConstraints,omitempty"`
 }
 
+// BodySizeEnforcementMode selects how the scrape response size limit is determined.
+// +kubebuilder:validation:Enum=Automatic;Custom;None
+type BodySizeEnforcementMode string
+
+const (
+	// BodySizeEnforcementModeAutomatic calculates the limit from cluster pod capacity.
+	BodySizeEnforcementModeAutomatic BodySizeEnforcementMode = "Automatic"
+	// BodySizeEnforcementModeCustom uses the limit configured in the custom field.
+	BodySizeEnforcementModeCustom BodySizeEnforcementMode = "Custom"
+	// BodySizeEnforcementModeNone configures no limit.
+	BodySizeEnforcementModeNone BodySizeEnforcementMode = "None"
+)
+
+// BodySizeEnforcement configures the maximum size of the response body accepted from a scraped target.
+// When mode is Custom, the custom field must be set, and it is forbidden otherwise.
+// +kubebuilder:validation:XValidation:rule="self.mode == 'Custom' ? has(self.custom) : !has(self.custom)",message="custom is required when mode is Custom, and forbidden otherwise"
+// +union
+type BodySizeEnforcement struct {
+	// mode selects how the scrape response size limit is determined.
+	// This field is required.
+	// Valid values are Automatic, Custom and None.
+	// When set to Automatic, the Cluster Monitoring Operator calculates an appropriate limit based on cluster pod capacity.
+	// When set to Custom, the limit is taken from the custom field.
+	// When set to None, no limit is configured.
+	// +unionDiscriminator
+	// +required
+	Mode BodySizeEnforcementMode `json:"mode,omitempty"`
+	// custom defines a fixed scrape response size limit.
+	// Required when mode is Custom, and forbidden otherwise.
+	// +unionMember
+	// +optional
+	Custom BodySizeEnforcementCustomConfig `json:"custom,omitzero,omitempty"`
+}
+
+// BodySizeEnforcementCustomConfig defines a fixed scrape response size limit.
+type BodySizeEnforcementCustomConfig struct {
+	// maxSizeBytes defines the maximum size in bytes of the response body accepted from a scraped target.
+	// If a scraped target's body response is larger than the limit, the scrape will fail.
+	// This helps protect Prometheus from targets that return excessively large responses.
+	// The value is specified in bytes (e.g., 4194304 for 4MB, 1073741824 for 1GB).
+	// Minimum value is 1048576 (1MiB).
+	// Maximum value is 1073741824 (1GB).
+	// This field is required.
+	// +kubebuilder:validation:Minimum=1048576
+	// +kubebuilder:validation:Maximum=1073741824
+	// +required
+	MaxSizeBytes int64 `json:"maxSizeBytes,omitempty"`
+}
+
 // PrometheusConfig provides configuration options for the Prometheus instance.
 // Use this configuration to control
 // Prometheus deployment, pod scheduling, resource allocation, retention policies, and external integrations.
@@ -1408,6 +1457,8 @@ type PrometheusConfig struct {
 	// +listType=map
 	// +listMapKey=name
 	AdditionalAlertmanagerConfigs []AdditionalAlertmanagerConfig `json:"additionalAlertmanagerConfigs,omitempty"`
+	// TOMBSTONE: This field has been tombstoned in favor of the `bodySizeEnforcement` field. This tombstone will be dropped when promoting this API to v1.
+	// ---
 	// enforcedBodySizeLimitBytes enforces a body size limit (in bytes) for Prometheus scraped metrics.
 	// If a scraped target's body response is larger than the limit, the scrape will fail.
 	// This helps protect Prometheus from targets that return excessively large responses.
@@ -1416,10 +1467,20 @@ type PrometheusConfig struct {
 	// limit based on cluster capacity. Set an explicit value to override the automatic calculation.
 	// Minimum value is 10240 (10kB).
 	// Maximum value is 1073741824 (1GB).
-	// +kubebuilder:validation:Minimum=10240
-	// +kubebuilder:validation:Maximum=1073741824
+	// Former marker: kubebuilder:validation:Minimum=10240
+	// Former marker: kubebuilder:validation:Maximum=1073741824
+	// Former marker: optional
+	// EnforcedBodySizeLimitBytes int64 `json:"enforcedBodySizeLimitBytes,omitempty"`
+
+	// bodySizeEnforcement configures the maximum size of the response body accepted from a scraped target.
+	// If a scraped target's body response is larger than the limit, the scrape will fail.
+	// This helps protect Prometheus from targets that return excessively large responses.
+	// When omitted, this means no opinion and the platform is left to choose a reasonable default,
+	// which is subject to change over time. The current default is to calculate the limit automatically
+	// based on cluster capacity.
+	// An existing prometheusK8s section in the ConfigMap takes precedence over this setting.
 	// +optional
-	EnforcedBodySizeLimitBytes int64 `json:"enforcedBodySizeLimitBytes,omitempty"`
+	BodySizeEnforcement BodySizeEnforcement `json:"bodySizeEnforcement,omitempty,omitzero"`
 	// externalLabels defines labels to be attached to time series and alerts
 	// when communicating with external systems such as federation, remote storage,
 	// and Alertmanager. These labels are not stored with metrics on disk; they are
@@ -1616,17 +1677,19 @@ type AdditionalAlertmanagerConfig struct {
 	// The current default value is `HTTP`.
 	// +optional
 	Scheme AlertmanagerScheme `json:"scheme,omitempty"`
-	// staticConfigs is a list of statically configured Alertmanager endpoints in the form
-	// of `<host>:<port>`. Each entry must be a valid hostname, IPv4 address, or IPv6 address
-	// (in brackets) followed by a colon and a valid port number (1-65535).
-	// Examples: "alertmanager.example.com:9093", "192.168.1.100:9093", "[::1]:9093"
+	// staticConfigs is a list of statically configured Alertmanager endpoints.
+	// Each entry must be a valid hostname, IPv4 address, or IPv6 address (in brackets),
+	// optionally followed by a colon and a port number (1-65535).
+	// When the port is omitted, Prometheus uses the default port for the configured scheme
+	// (80 for HTTP, 443 for HTTPS).
+	// Examples: "alertmanager.example.com", "alertmanager.example.com:9093", "192.168.1.100:9093", "[::1]:9093"
 	// At least one endpoint must be specified (minimum 1, maximum 10 endpoints).
 	// Each entry must be unique and non-empty (empty string is invalid).
 	// +kubebuilder:validation:MinItems=1
 	// +kubebuilder:validation:MaxItems=10
 	// +kubebuilder:validation:items:MinLength=1
 	// +kubebuilder:validation:items:MaxLength=255
-	// +kubebuilder:validation:items:XValidation:rule="isURL('http://' + self) && size(url('http://' + self).getHostname()) > 0 && size(url('http://' + self).getPort()) > 0 && int(url('http://' + self).getPort()) >= 1 && int(url('http://' + self).getPort()) <= 65535",message="must be a valid 'host:port' where host is a DNS name, IPv4, or IPv6 address (in brackets), and port is 1-65535"
+	// +kubebuilder:validation:items:XValidation:rule="isURL('http://' + self) && size(url('http://' + self).getHostname()) > 0 && (size(url('http://' + self).getPort()) == 0 || (int(url('http://' + self).getPort()) >= 1 && int(url('http://' + self).getPort()) <= 65535))",message="must be a valid host or host:port where host is a DNS name, IPv4, or IPv6 address (in brackets), and port (if specified) is 1-65535"
 	// +listType=set
 	// +required
 	StaticConfigs []string `json:"staticConfigs,omitempty"`
@@ -1666,7 +1729,7 @@ type Label struct {
 type RemoteWriteSpec struct {
 	// url is the URL of the remote write endpoint.
 	// Must be a valid URL with http or https scheme and a non-empty hostname.
-	// Query parameters, fragments, and user information (e.g. user:password@host) are not allowed.
+	// Query parameters are allowed. Fragments and user information (e.g. user:password@host) are not allowed.
 	// Empty string is invalid. Must be between 1 and 2048 characters in length.
 	// +required
 	// +kubebuilder:validation:MaxLength=2048
@@ -1674,9 +1737,8 @@ type RemoteWriteSpec struct {
 	// +kubebuilder:validation:XValidation:rule="isURL(self)",message="must be a valid URL"
 	// +kubebuilder:validation:XValidation:rule="!isURL(self) || url(self).getScheme() == 'http' || url(self).getScheme() == 'https'",message="must use http or https scheme"
 	// +kubebuilder:validation:XValidation:rule="!isURL(self) || size(url(self).getHostname()) > 0",message="must have a non-empty hostname"
-	// +kubebuilder:validation:XValidation:rule="!isURL(self) || url(self).getQuery().size() == 0",message="query parameters are not allowed"
 	// +kubebuilder:validation:XValidation:rule="!self.matches('.*#.*')",message="fragments are not allowed"
-	// +kubebuilder:validation:XValidation:rule="!self.matches('.*@.*')",message="user information (e.g. user:password@host) is not allowed"
+	// +kubebuilder:validation:XValidation:rule="!self.matches('^[^:]+://[^/?#]*@')",message="user information (e.g. user:password@host) is not allowed"
 	URL string `json:"url,omitempty"`
 	// name is a required identifier for this remote write configuration (name is the list key for the remoteWrite list).
 	// This name is used in metrics and logging to differentiate remote write queues.
@@ -2126,7 +2188,10 @@ type RelabelConfig struct {
 	// When omitted, the rule operates without extracting source labels (useful for actions like labelmap).
 	// Minimum of 1 and maximum of 10 source labels can be specified, each between 1 and 128 characters.
 	// Each entry must be unique.
-	// Label names beginning with "__" (two underscores) are reserved for internal Prometheus use and are not allowed.
+	// Labels beginning with "__" (two underscores) are Prometheus internal/meta labels
+	// (e.g., __name__, __address__) and are valid in sourceLabels because relabeling reads
+	// from them before they are stripped. Using __name__ in sourceLabels is the standard way
+	// to filter metrics by name in writeRelabelConfigs.
 	// Label names SHOULD start with a letter (a-z, A-Z) or underscore (_), followed by zero or more letters, digits (0-9), or underscores for best compatibility.
 	// While Prometheus supports UTF-8 characters in label names (since v3.0.0), using the recommended character set
 	// ensures better compatibility with the wider ecosystem (tooling, third-party instrumentation, etc.).
@@ -2135,7 +2200,6 @@ type RelabelConfig struct {
 	// +kubebuilder:validation:MaxItems=10
 	// +kubebuilder:validation:items:MinLength=1
 	// +kubebuilder:validation:items:MaxLength=128
-	// +kubebuilder:validation:items:XValidation:rule="!self.startsWith('__')",message="label names beginning with '__' (two underscores) are reserved for internal Prometheus use and are not allowed"
 	// +listType=set
 	SourceLabels []string `json:"sourceLabels,omitempty"`
 
@@ -2153,10 +2217,10 @@ type RelabelConfig struct {
 	// Must be a valid RE2 regular expression (https://github.com/google/re2/wiki/Syntax).
 	// When omitted, this means no opinion and the platform is left to choose a reasonable default, which is subject to change over time.
 	// The default value is "(.*)" to match everything.
-	// Must be between 1 and 1000 characters in length when specified.
+	// Must be between 1 and 8192 characters in length when specified.
 	// +optional
 	// +kubebuilder:validation:MinLength=1
-	// +kubebuilder:validation:MaxLength=1000
+	// +kubebuilder:validation:MaxLength=8192
 	Regex string `json:"regex,omitempty"`
 
 	// action defines the action to perform on the matched labels and its configuration.
