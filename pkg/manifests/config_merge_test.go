@@ -1146,6 +1146,45 @@ func TestConfig_MergeClusterMonitoringCRD_PrometheusK8sConfigPhase1(t *testing.T
 			})
 		}
 	})
+	t.Run("CR maps additionalAlertmanagerConfigs timeout milliseconds", func(t *testing.T) {
+		for _, tc := range []struct {
+			name         string
+			milliseconds int32
+			expected     string
+		}{
+			{name: "omitted"},
+			{name: "minimum", milliseconds: 100, expected: "100ms"},
+			{name: "sub-second", milliseconds: 500, expected: "500ms"},
+			{name: "whole seconds", milliseconds: 30000, expected: "30000ms"},
+			{name: "maximum", milliseconds: 600000, expected: "600000ms"},
+		} {
+			t.Run(tc.name, func(t *testing.T) {
+				cm := &configv1alpha1.ClusterMonitoring{
+					Spec: configv1alpha1.ClusterMonitoringSpec{
+						PrometheusConfig: configv1alpha1.PrometheusConfig{
+							AdditionalAlertmanagerConfigs: []configv1alpha1.AdditionalAlertmanagerConfig{
+								{
+									Name:                "am",
+									TimeoutMilliseconds: tc.milliseconds,
+									StaticConfigs:       []string{"alertmanager.example.com:9093"},
+								},
+							},
+						},
+					},
+				}
+				c, err := NewConfigFromStringAndClusterMonitoringResource("{}", cm)
+				require.NoError(t, err)
+				configs := c.ClusterMonitoringConfiguration.PrometheusK8sConfig.AlertmanagerConfigs
+				require.Len(t, configs, 1)
+				if tc.expected == "" {
+					require.Nil(t, configs[0].Timeout)
+					return
+				}
+				require.NotNil(t, configs[0].Timeout)
+				require.Equal(t, tc.expected, *configs[0].Timeout)
+			})
+		}
+	})
 	t.Run("CR returns error for unsupported collection profile", func(t *testing.T) {
 		cm := &configv1alpha1.ClusterMonitoring{
 			Spec: configv1alpha1.ClusterMonitoringSpec{

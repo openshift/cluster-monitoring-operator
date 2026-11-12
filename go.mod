@@ -13,8 +13,8 @@ require (
 	github.com/onsi/ginkgo/v2 v2.32.0
 	github.com/onsi/gomega v1.42.1
 	github.com/openshift-eng/openshift-tests-extension v0.0.0-20260707142426-572a3e9deb7a
-	github.com/openshift/api v0.0.0-20260813212709-d4bb0b443cb8
-	github.com/openshift/client-go v0.0.0-20260723174158-ae2315de9d73
+	github.com/openshift/api v0.0.0-20261107000926-248dd91956ce
+	github.com/openshift/client-go v0.0.0-20261027103500-48133ed95dad
 	github.com/openshift/library-go v0.0.0-20260727154952-0aacacf2673e
 	github.com/prometheus-operator/prometheus-operator/pkg/apis/monitoring v0.94.1
 	github.com/prometheus-operator/prometheus-operator/pkg/client v0.94.1
@@ -29,12 +29,12 @@ require (
 	golang.org/x/text v0.41.0
 	gopkg.in/yaml.v2 v2.4.0
 	gopkg.in/yaml.v3 v3.0.1
-	k8s.io/api v0.37.0
+	k8s.io/api v0.37.1
 	k8s.io/apiextensions-apiserver v0.37.0
-	k8s.io/apimachinery v0.37.0
+	k8s.io/apimachinery v0.37.1
 	k8s.io/apiserver v0.37.0
 	k8s.io/autoscaler/vertical-pod-autoscaler v1.7.1
-	k8s.io/client-go v0.37.0
+	k8s.io/client-go v0.37.1
 	k8s.io/component-base v0.37.0
 	k8s.io/klog/v2 v2.140.0
 	k8s.io/kube-aggregator v0.36.3
@@ -176,7 +176,7 @@ require (
 	gopkg.in/natefinch/lumberjack.v2 v2.2.1 // indirect
 	k8s.io/kms v0.37.0 // indirect
 	k8s.io/kube-openapi v0.0.0-20260821135717-be32def86098 // indirect
-	k8s.io/streaming v0.37.0 // indirect
+	k8s.io/streaming v0.37.1 // indirect
 	sigs.k8s.io/apiserver-network-proxy/konnectivity-client v0.36.0 // indirect
 	sigs.k8s.io/kube-storage-version-migrator v0.0.6-0.20230721195810-5c8923c5ff96 // indirect
 	sigs.k8s.io/randfill v1.0.0 // indirect
@@ -185,3 +185,5 @@ require (
 
 // Some utils are only available in the fork https://github.com/openshift-eng/openshift-tests-extension/blob/8ef37c67e666954f9b95e52320c9c20d6b53d241/go.mod#L37
 replace github.com/onsi/ginkgo/v2 => github.com/openshift/onsi-ginkgo/v2 v2.6.1-0.20260424201627-4d4cc33d669d
+
+replace github.com/openshift/api => github.com/marioferh/api v0.0.0-20261105163627-635b39c67403

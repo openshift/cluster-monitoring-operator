@@ -3,95 +3,88 @@
 package v1alpha1
 
 import (
-	configv1alpha1 "github.com/openshift/api/config/v1alpha1"
-	internal "github.com/openshift/client-go/config/applyconfigurations/internal"
+	operatorv1alpha1 "github.com/openshift/api/operator/v1alpha1"
+	internal "github.com/openshift/client-go/operator/applyconfigurations/internal"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	types "k8s.io/apimachinery/pkg/types"
 	managedfields "k8s.io/apimachinery/pkg/util/managedfields"
 	v1 "k8s.io/client-go/applyconfigurations/meta/v1"
 )
 
-// CRIOCredentialProviderConfigApplyConfiguration represents a declarative configuration of the CRIOCredentialProviderConfig type for use
+// IngressApplyConfiguration represents a declarative configuration of the Ingress type for use
 // with apply.
 //
-// CRIOCredentialProviderConfig holds cluster-wide singleton resource configurations for CRI-O credential provider, the name of this instance is "cluster". CRI-O credential provider is a binary shipped with CRI-O that provides a way to obtain container image pull credentials from external sources.
-// For example, it can be used to fetch mirror registry credentials from secrets resources in the cluster within the same namespace the pod will be running in.
-// CRIOCredentialProviderConfig configuration specifies the pod image sources registries that should trigger the CRI-O credential provider execution, which will resolve the CRI-O mirror configurations and obtain the necessary credentials for pod creation.
-// Note: Configuration changes will only take effect after the kubelet restarts, which is automatically managed by the cluster during rollout.
-//
-// The resource is a singleton named "cluster".
+// Ingress contains configuration options specific to the Ingress Operator itself,
+// including how it manages Gateway API integration.
 //
 // Compatibility level 4: No compatibility is provided, the API can change at any point for any reason. These capabilities should not be used by applications needing long term support.
-type CRIOCredentialProviderConfigApplyConfiguration struct {
-	v1.TypeMetaApplyConfiguration `json:",inline"`
+type IngressApplyConfiguration struct {
+	v1.TypeMetaApplyConfiguration `json:""`
 	// metadata is the standard object's metadata.
 	// More info: https://git.k8s.io/community/contributors/devel/sig-architecture/api-conventions.md#metadata
 	*v1.ObjectMetaApplyConfiguration `json:"metadata,omitempty"`
-	// spec defines the desired configuration of the CRI-O Credential Provider.
-	// This field is required and must be provided when creating the resource.
-	Spec *CRIOCredentialProviderConfigSpecApplyConfiguration `json:"spec,omitempty"`
-	// status represents the current state of the CRIOCredentialProviderConfig.
-	// When omitted or nil, it indicates that the status has not yet been set by the controller.
-	// The controller will populate this field with validation conditions and operational state.
-	Status *CRIOCredentialProviderConfigStatusApplyConfiguration `json:"status,omitempty"`
+	// spec holds user settable values for configuration.
+	Spec *IngressSpecApplyConfiguration `json:"spec,omitempty"`
+	// status holds observed values from the cluster.
+	Status *IngressStatusApplyConfiguration `json:"status,omitempty"`
 }
 
-// CRIOCredentialProviderConfig constructs a declarative configuration of the CRIOCredentialProviderConfig type for use with
+// Ingress constructs a declarative configuration of the Ingress type for use with
 // apply.
-func CRIOCredentialProviderConfig(name string) *CRIOCredentialProviderConfigApplyConfiguration {
-	b := &CRIOCredentialProviderConfigApplyConfiguration{}
+func Ingress(name string) *IngressApplyConfiguration {
+	b := &IngressApplyConfiguration{}
 	b.WithName(name)
-	b.WithKind("CRIOCredentialProviderConfig")
-	b.WithAPIVersion("config.openshift.io/v1alpha1")
+	b.WithKind("Ingress")
+	b.WithAPIVersion("operator.openshift.io/v1alpha1")
 	return b
 }
 
-// ExtractCRIOCredentialProviderConfigFrom extracts the applied configuration owned by fieldManager from
-// cRIOCredentialProviderConfig for the specified subresource. Pass an empty string for subresource to extract
+// ExtractIngressFrom extracts the applied configuration owned by fieldManager from
+// ingress for the specified subresource. Pass an empty string for subresource to extract
 // the main resource. Common subresources include "status", "scale", etc.
-// cRIOCredentialProviderConfig must be a unmodified CRIOCredentialProviderConfig API object that was retrieved from the Kubernetes API.
-// ExtractCRIOCredentialProviderConfigFrom provides a way to perform a extract/modify-in-place/apply workflow.
+// ingress must be a unmodified Ingress API object that was retrieved from the Kubernetes API.
+// ExtractIngressFrom provides a way to perform a extract/modify-in-place/apply workflow.
 // Note that an extracted apply configuration will contain fewer fields than what the fieldManager previously
 // applied if another fieldManager has updated or force applied any of the previously applied fields.
-func ExtractCRIOCredentialProviderConfigFrom(cRIOCredentialProviderConfig *configv1alpha1.CRIOCredentialProviderConfig, fieldManager string, subresource string) (*CRIOCredentialProviderConfigApplyConfiguration, error) {
-	b := &CRIOCredentialProviderConfigApplyConfiguration{}
-	err := managedfields.ExtractInto(cRIOCredentialProviderConfig, internal.Parser().Type("com.github.openshift.api.config.v1alpha1.CRIOCredentialProviderConfig"), fieldManager, b, subresource)
+func ExtractIngressFrom(ingress *operatorv1alpha1.Ingress, fieldManager string, subresource string) (*IngressApplyConfiguration, error) {
+	b := &IngressApplyConfiguration{}
+	err := managedfields.ExtractInto(ingress, internal.Parser().Type("com.github.openshift.api.operator.v1alpha1.Ingress"), fieldManager, b, subresource)
 	if err != nil {
 		return nil, err
 	}
-	b.WithName(cRIOCredentialProviderConfig.Name)
+	b.WithName(ingress.Name)
 
-	b.WithKind("CRIOCredentialProviderConfig")
-	b.WithAPIVersion("config.openshift.io/v1alpha1")
+	b.WithKind("Ingress")
+	b.WithAPIVersion("operator.openshift.io/v1alpha1")
 	return b, nil
 }
 
-// ExtractCRIOCredentialProviderConfig extracts the applied configuration owned by fieldManager from
-// cRIOCredentialProviderConfig. If no managedFields are found in cRIOCredentialProviderConfig for fieldManager, a
-// CRIOCredentialProviderConfigApplyConfiguration is returned with only the Name, Namespace (if applicable),
+// ExtractIngress extracts the applied configuration owned by fieldManager from
+// ingress. If no managedFields are found in ingress for fieldManager, a
+// IngressApplyConfiguration is returned with only the Name, Namespace (if applicable),
 // APIVersion and Kind populated. It is possible that no managed fields were found for because other
 // field managers have taken ownership of all the fields previously owned by fieldManager, or because
 // the fieldManager never owned fields any fields.
-// cRIOCredentialProviderConfig must be a unmodified CRIOCredentialProviderConfig API object that was retrieved from the Kubernetes API.
-// ExtractCRIOCredentialProviderConfig provides a way to perform a extract/modify-in-place/apply workflow.
+// ingress must be a unmodified Ingress API object that was retrieved from the Kubernetes API.
+// ExtractIngress provides a way to perform a extract/modify-in-place/apply workflow.
 // Note that an extracted apply configuration will contain fewer fields than what the fieldManager previously
 // applied if another fieldManager has updated or force applied any of the previously applied fields.
-func ExtractCRIOCredentialProviderConfig(cRIOCredentialProviderConfig *configv1alpha1.CRIOCredentialProviderConfig, fieldManager string) (*CRIOCredentialProviderConfigApplyConfiguration, error) {
-	return ExtractCRIOCredentialProviderConfigFrom(cRIOCredentialProviderConfig, fieldManager, "")
+func ExtractIngress(ingress *operatorv1alpha1.Ingress, fieldManager string) (*IngressApplyConfiguration, error) {
+	return ExtractIngressFrom(ingress, fieldManager, "")
 }
 
-// ExtractCRIOCredentialProviderConfigStatus extracts the applied configuration owned by fieldManager from
-// cRIOCredentialProviderConfig for the status subresource.
-func ExtractCRIOCredentialProviderConfigStatus(cRIOCredentialProviderConfig *configv1alpha1.CRIOCredentialProviderConfig, fieldManager string) (*CRIOCredentialProviderConfigApplyConfiguration, error) {
-	return ExtractCRIOCredentialProviderConfigFrom(cRIOCredentialProviderConfig, fieldManager, "status")
+// ExtractIngressStatus extracts the applied configuration owned by fieldManager from
+// ingress for the status subresource.
+func ExtractIngressStatus(ingress *operatorv1alpha1.Ingress, fieldManager string) (*IngressApplyConfiguration, error) {
+	return ExtractIngressFrom(ingress, fieldManager, "status")
 }
 
-func (b CRIOCredentialProviderConfigApplyConfiguration) IsApplyConfiguration() {}
+func (b IngressApplyConfiguration) IsApplyConfiguration() {}
 
 // WithKind sets the Kind field in the declarative configuration to the given value
 // and returns the receiver, so that objects can be built by chaining "With" function invocations.
 // If called multiple times, the Kind field is set to the value of the last call.
-func (b *CRIOCredentialProviderConfigApplyConfiguration) WithKind(value string) *CRIOCredentialProviderConfigApplyConfiguration {
+func (b *IngressApplyConfiguration) WithKind(value string) *IngressApplyConfiguration {
 	b.TypeMetaApplyConfiguration.Kind = &value
 	return b
 }
@@ -99,7 +92,7 @@ func (b *CRIOCredentialProviderConfigApplyConfiguration) WithKind(value string) 
 // WithAPIVersion sets the APIVersion field in the declarative configuration to the given value
 // and returns the receiver, so that objects can be built by chaining "With" function invocations.
 // If called multiple times, the APIVersion field is set to the value of the last call.
-func (b *CRIOCredentialProviderConfigApplyConfiguration) WithAPIVersion(value string) *CRIOCredentialProviderConfigApplyConfiguration {
+func (b *IngressApplyConfiguration) WithAPIVersion(value string) *IngressApplyConfiguration {
 	b.TypeMetaApplyConfiguration.APIVersion = &value
 	return b
 }
@@ -107,7 +100,7 @@ func (b *CRIOCredentialProviderConfigApplyConfiguration) WithAPIVersion(value st
 // WithName sets the Name field in the declarative configuration to the given value
 // and returns the receiver, so that objects can be built by chaining "With" function invocations.
 // If called multiple times, the Name field is set to the value of the last call.
-func (b *CRIOCredentialProviderConfigApplyConfiguration) WithName(value string) *CRIOCredentialProviderConfigApplyConfiguration {
+func (b *IngressApplyConfiguration) WithName(value string) *IngressApplyConfiguration {
 	b.ensureObjectMetaApplyConfigurationExists()
 	b.ObjectMetaApplyConfiguration.Name = &value
 	return b
@@ -116,7 +109,7 @@ func (b *CRIOCredentialProviderConfigApplyConfiguration) WithName(value string) 
 // WithGenerateName sets the GenerateName field in the declarative configuration to the given value
 // and returns the receiver, so that objects can be built by chaining "With" function invocations.
 // If called multiple times, the GenerateName field is set to the value of the last call.
-func (b *CRIOCredentialProviderConfigApplyConfiguration) WithGenerateName(value string) *CRIOCredentialProviderConfigApplyConfiguration {
+func (b *IngressApplyConfiguration) WithGenerateName(value string) *IngressApplyConfiguration {
 	b.ensureObjectMetaApplyConfigurationExists()
 	b.ObjectMetaApplyConfiguration.GenerateName = &value
 	return b
@@ -125,7 +118,7 @@ func (b *CRIOCredentialProviderConfigApplyConfiguration) WithGenerateName(value 
 // WithNamespace sets the Namespace field in the declarative configuration to the given value
 // and returns the receiver, so that objects can be built by chaining "With" function invocations.
 // If called multiple times, the Namespace field is set to the value of the last call.
-func (b *CRIOCredentialProviderConfigApplyConfiguration) WithNamespace(value string) *CRIOCredentialProviderConfigApplyConfiguration {
+func (b *IngressApplyConfiguration) WithNamespace(value string) *IngressApplyConfiguration {
 	b.ensureObjectMetaApplyConfigurationExists()
 	b.ObjectMetaApplyConfiguration.Namespace = &value
 	return b
@@ -134,7 +127,7 @@ func (b *CRIOCredentialProviderConfigApplyConfiguration) WithNamespace(value str
 // WithUID sets the UID field in the declarative configuration to the given value
 // and returns the receiver, so that objects can be built by chaining "With" function invocations.
 // If called multiple times, the UID field is set to the value of the last call.
-func (b *CRIOCredentialProviderConfigApplyConfiguration) WithUID(value types.UID) *CRIOCredentialProviderConfigApplyConfiguration {
+func (b *IngressApplyConfiguration) WithUID(value types.UID) *IngressApplyConfiguration {
 	b.ensureObjectMetaApplyConfigurationExists()
 	b.ObjectMetaApplyConfiguration.UID = &value
 	return b
@@ -143,7 +136,7 @@ func (b *CRIOCredentialProviderConfigApplyConfiguration) WithUID(value types.UID
 // WithResourceVersion sets the ResourceVersion field in the declarative configuration to the given value
 // and returns the receiver, so that objects can be built by chaining "With" function invocations.
 // If called multiple times, the ResourceVersion field is set to the value of the last call.
-func (b *CRIOCredentialProviderConfigApplyConfiguration) WithResourceVersion(value string) *CRIOCredentialProviderConfigApplyConfiguration {
+func (b *IngressApplyConfiguration) WithResourceVersion(value string) *IngressApplyConfiguration {
 	b.ensureObjectMetaApplyConfigurationExists()
 	b.ObjectMetaApplyConfiguration.ResourceVersion = &value
 	return b
@@ -152,7 +145,7 @@ func (b *CRIOCredentialProviderConfigApplyConfiguration) WithResourceVersion(val
 // WithGeneration sets the Generation field in the declarative configuration to the given value
 // and returns the receiver, so that objects can be built by chaining "With" function invocations.
 // If called multiple times, the Generation field is set to the value of the last call.
-func (b *CRIOCredentialProviderConfigApplyConfiguration) WithGeneration(value int64) *CRIOCredentialProviderConfigApplyConfiguration {
+func (b *IngressApplyConfiguration) WithGeneration(value int64) *IngressApplyConfiguration {
 	b.ensureObjectMetaApplyConfigurationExists()
 	b.ObjectMetaApplyConfiguration.Generation = &value
 	return b
@@ -161,7 +154,7 @@ func (b *CRIOCredentialProviderConfigApplyConfiguration) WithGeneration(value in
 // WithCreationTimestamp sets the CreationTimestamp field in the declarative configuration to the given value
 // and returns the receiver, so that objects can be built by chaining "With" function invocations.
 // If called multiple times, the CreationTimestamp field is set to the value of the last call.
-func (b *CRIOCredentialProviderConfigApplyConfiguration) WithCreationTimestamp(value metav1.Time) *CRIOCredentialProviderConfigApplyConfiguration {
+func (b *IngressApplyConfiguration) WithCreationTimestamp(value metav1.Time) *IngressApplyConfiguration {
 	b.ensureObjectMetaApplyConfigurationExists()
 	b.ObjectMetaApplyConfiguration.CreationTimestamp = &value
 	return b
@@ -170,7 +163,7 @@ func (b *CRIOCredentialProviderConfigApplyConfiguration) WithCreationTimestamp(v
 // WithDeletionTimestamp sets the DeletionTimestamp field in the declarative configuration to the given value
 // and returns the receiver, so that objects can be built by chaining "With" function invocations.
 // If called multiple times, the DeletionTimestamp field is set to the value of the last call.
-func (b *CRIOCredentialProviderConfigApplyConfiguration) WithDeletionTimestamp(value metav1.Time) *CRIOCredentialProviderConfigApplyConfiguration {
+func (b *IngressApplyConfiguration) WithDeletionTimestamp(value metav1.Time) *IngressApplyConfiguration {
 	b.ensureObjectMetaApplyConfigurationExists()
 	b.ObjectMetaApplyConfiguration.DeletionTimestamp = &value
 	return b
@@ -179,7 +172,7 @@ func (b *CRIOCredentialProviderConfigApplyConfiguration) WithDeletionTimestamp(v
 // WithDeletionGracePeriodSeconds sets the DeletionGracePeriodSeconds field in the declarative configuration to the given value
 // and returns the receiver, so that objects can be built by chaining "With" function invocations.
 // If called multiple times, the DeletionGracePeriodSeconds field is set to the value of the last call.
-func (b *CRIOCredentialProviderConfigApplyConfiguration) WithDeletionGracePeriodSeconds(value int64) *CRIOCredentialProviderConfigApplyConfiguration {
+func (b *IngressApplyConfiguration) WithDeletionGracePeriodSeconds(value int64) *IngressApplyConfiguration {
 	b.ensureObjectMetaApplyConfigurationExists()
 	b.ObjectMetaApplyConfiguration.DeletionGracePeriodSeconds = &value
 	return b
@@ -189,7 +182,7 @@ func (b *CRIOCredentialProviderConfigApplyConfiguration) WithDeletionGracePeriod
 // and returns the receiver, so that objects can be build by chaining "With" function invocations.
 // If called multiple times, the entries provided by each call will be put on the Labels field,
 // overwriting an existing map entries in Labels field with the same key.
-func (b *CRIOCredentialProviderConfigApplyConfiguration) WithLabels(entries map[string]string) *CRIOCredentialProviderConfigApplyConfiguration {
+func (b *IngressApplyConfiguration) WithLabels(entries map[string]string) *IngressApplyConfiguration {
 	b.ensureObjectMetaApplyConfigurationExists()
 	if b.ObjectMetaApplyConfiguration.Labels == nil && len(entries) > 0 {
 		b.ObjectMetaApplyConfiguration.Labels = make(map[string]string, len(entries))
@@ -204,7 +197,7 @@ func (b *CRIOCredentialProviderConfigApplyConfiguration) WithLabels(entries map[
 // and returns the receiver, so that objects can be build by chaining "With" function invocations.
 // If called multiple times, the entries provided by each call will be put on the Annotations field,
 // overwriting an existing map entries in Annotations field with the same key.
-func (b *CRIOCredentialProviderConfigApplyConfiguration) WithAnnotations(entries map[string]string) *CRIOCredentialProviderConfigApplyConfiguration {
+func (b *IngressApplyConfiguration) WithAnnotations(entries map[string]string) *IngressApplyConfiguration {
 	b.ensureObjectMetaApplyConfigurationExists()
 	if b.ObjectMetaApplyConfiguration.Annotations == nil && len(entries) > 0 {
 		b.ObjectMetaApplyConfiguration.Annotations = make(map[string]string, len(entries))
@@ -218,7 +211,7 @@ func (b *CRIOCredentialProviderConfigApplyConfiguration) WithAnnotations(entries
 // WithOwnerReferences adds the given value to the OwnerReferences field in the declarative configuration
 // and returns the receiver, so that objects can be build by chaining "With" function invocations.
 // If called multiple times, values provided by each call will be appended to the OwnerReferences field.
-func (b *CRIOCredentialProviderConfigApplyConfiguration) WithOwnerReferences(values ...*v1.OwnerReferenceApplyConfiguration) *CRIOCredentialProviderConfigApplyConfiguration {
+func (b *IngressApplyConfiguration) WithOwnerReferences(values ...*v1.OwnerReferenceApplyConfiguration) *IngressApplyConfiguration {
 	b.ensureObjectMetaApplyConfigurationExists()
 	for i := range values {
 		if values[i] == nil {
@@ -232,7 +225,7 @@ func (b *CRIOCredentialProviderConfigApplyConfiguration) WithOwnerReferences(val
 // WithFinalizers adds the given value to the Finalizers field in the declarative configuration
 // and returns the receiver, so that objects can be build by chaining "With" function invocations.
 // If called multiple times, values provided by each call will be appended to the Finalizers field.
-func (b *CRIOCredentialProviderConfigApplyConfiguration) WithFinalizers(values ...string) *CRIOCredentialProviderConfigApplyConfiguration {
+func (b *IngressApplyConfiguration) WithFinalizers(values ...string) *IngressApplyConfiguration {
 	b.ensureObjectMetaApplyConfigurationExists()
 	for i := range values {
 		b.ObjectMetaApplyConfiguration.Finalizers = append(b.ObjectMetaApplyConfiguration.Finalizers, values[i])
@@ -240,7 +233,7 @@ func (b *CRIOCredentialProviderConfigApplyConfiguration) WithFinalizers(values .
 	return b
 }
 
-func (b *CRIOCredentialProviderConfigApplyConfiguration) ensureObjectMetaApplyConfigurationExists() {
+func (b *IngressApplyConfiguration) ensureObjectMetaApplyConfigurationExists() {
 	if b.ObjectMetaApplyConfiguration == nil {
 		b.ObjectMetaApplyConfiguration = &v1.ObjectMetaApplyConfiguration{}
 	}
@@ -249,7 +242,7 @@ func (b *CRIOCredentialProviderConfigApplyConfiguration) ensureObjectMetaApplyCo
 // WithSpec sets the Spec field in the declarative configuration to the given value
 // and returns the receiver, so that objects can be built by chaining "With" function invocations.
 // If called multiple times, the Spec field is set to the value of the last call.
-func (b *CRIOCredentialProviderConfigApplyConfiguration) WithSpec(value *CRIOCredentialProviderConfigSpecApplyConfiguration) *CRIOCredentialProviderConfigApplyConfiguration {
+func (b *IngressApplyConfiguration) WithSpec(value *IngressSpecApplyConfiguration) *IngressApplyConfiguration {
 	b.Spec = value
 	return b
 }
@@ -257,29 +250,29 @@ func (b *CRIOCredentialProviderConfigApplyConfiguration) WithSpec(value *CRIOCre
 // WithStatus sets the Status field in the declarative configuration to the given value
 // and returns the receiver, so that objects can be built by chaining "With" function invocations.
 // If called multiple times, the Status field is set to the value of the last call.
-func (b *CRIOCredentialProviderConfigApplyConfiguration) WithStatus(value *CRIOCredentialProviderConfigStatusApplyConfiguration) *CRIOCredentialProviderConfigApplyConfiguration {
+func (b *IngressApplyConfiguration) WithStatus(value *IngressStatusApplyConfiguration) *IngressApplyConfiguration {
 	b.Status = value
 	return b
 }
 
 // GetKind retrieves the value of the Kind field in the declarative configuration.
-func (b *CRIOCredentialProviderConfigApplyConfiguration) GetKind() *string {
+func (b *IngressApplyConfiguration) GetKind() *string {
 	return b.TypeMetaApplyConfiguration.Kind
 }
 
 // GetAPIVersion retrieves the value of the APIVersion field in the declarative configuration.
-func (b *CRIOCredentialProviderConfigApplyConfiguration) GetAPIVersion() *string {
+func (b *IngressApplyConfiguration) GetAPIVersion() *string {
 	return b.TypeMetaApplyConfiguration.APIVersion
 }
 
 // GetName retrieves the value of the Name field in the declarative configuration.
-func (b *CRIOCredentialProviderConfigApplyConfiguration) GetName() *string {
+func (b *IngressApplyConfiguration) GetName() *string {
 	b.ensureObjectMetaApplyConfigurationExists()
 	return b.ObjectMetaApplyConfiguration.Name
 }
 
 // GetNamespace retrieves the value of the Namespace field in the declarative configuration.
-func (b *CRIOCredentialProviderConfigApplyConfiguration) GetNamespace() *string {
+func (b *IngressApplyConfiguration) GetNamespace() *string {
 	b.ensureObjectMetaApplyConfigurationExists()
 	return b.ObjectMetaApplyConfiguration.Namespace
 }
