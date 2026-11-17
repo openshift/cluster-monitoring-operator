@@ -111,12 +111,12 @@ Collect the following information from the user. Use the spec template in
 
 | Field | Description |
 |-------|-------------|
-| `component_repo` | GitHub `org/repo` exposing the metric (e.g. `openshift/prometheus` or `grafana/loki`) |
+| `component_repo` | GitHub `org/repo` exposing the metric (e.g. `openshift/prometheus` or `openshift/loki`) |
 | `component_namespace` | Namespace where the component runs |
 | `owning_team` | GitHub team handle (e.g. `@openshift/openshift-team-monitoring`) |
 | `consuming_teams` | Teams that will query this metric in Telemetry (optional) |
 | `justification` | Why these metrics need to be in Telemetry |
-| `ocp_version` | Target OCP version (e.g. `4.19`) |
+| `ocp_version` | Target OCP version (e.g. `4.19`), typically a lower bound, all newer versions are included |
 
 ### Ask the user
 
@@ -160,10 +160,6 @@ Run these checks before proceeding. **Stop and fix** any failures.
 
 ### Recording rule expression
 
-- **Must** use explicit label matchers to bound label values. The default
-  and preferred approach is to enumerate all possible values:
-  - Good: `sum by (type) (my_metric{type=~"a|b|c"})`
-  - Bad: `sum by (type) (my_metric)` -- allows future type values to leak
 - **Regex matchers are allowed as an exception** when exact values cannot
   be enumerated upfront (e.g. dynamically generated names that follow a
   known pattern). In this case:
@@ -177,7 +173,7 @@ Run these checks before proceeding. **Stop and fix** any failures.
     is acceptable if the set of `openshift-*` namespaces is bounded but
     not statically known
 - **Must** aggregate away volatile labels (`instance`, `pod`, `container`,
-  `endpoint`, `service`). These must not appear in the `by` clause.
+  `endpoint`). These must not appear in the `by` clause.
 - Should not use `irate()` (use `rate()` instead).
 - Should not be defined in CMO itself -- the rule belongs in the
   component's operator.
@@ -361,7 +357,7 @@ config PR are in separate repositories. Coordinate them:
 apiVersion: monitoring.coreos.com/v1
 kind: PrometheusRule
 metadata:
-  name: <component>-prometheus-rules
+  name: <component>-telemetry
   namespace: <component_namespace>
 spec:
   groups:
@@ -446,8 +442,11 @@ the new metric selector.
 
    If there are no specific consumers, omit the `consumers:` line.
 
-4. If the recording rule output has labels that should be matched in the
-   selector (to further restrict what is shipped), add label matchers:
+4. If the recording rule output has labels use explicit label matchers to
+   bound label values where possible to avoid leaking future label values
+   unintenionally. The default and preferred approach is to enumerate all
+   possible values. `sum by (type) (my_metric{type=~"a|b|c"})` is preferrred
+   over `sum by (type) (my_metric)`.
 
 ```yaml
     - '{__name__="<recording_rule_name>",type=~"a|b|c"}'
@@ -480,7 +479,7 @@ The telemetry report tool validates proposed selectors against a live cluster.
 
 ### Prerequisites
 
-The user needs a running cluster with the relevant metrics present.
+	The user needs a running cluster with the relevant metrics present.
 Set up port-forwarding to Prometheus:
 
 ```bash
@@ -567,7 +566,7 @@ Use the PR template. Paste the telemetry report output in the
 ### Commit message
 
 ```
-telemetry: add <recording_rule_name> to telemetry config
+telemetry: add <recording_rule_name>
 
 Adds the <recording_rule_name> metric to the Telemeter client's
 allowed metric list. This metric tracks <metric_description>.
@@ -589,15 +588,15 @@ After the CMO pull request is merged:
    metrics allow-list on the `#forum-observatorium` Slack channel.
 2. **Rollout**: The updated config is typically rolled out to production
    within a few days.
-3. **Verification**: Clusters running the next OCP version (e.g. `master`)
+3. **Verification**: Clusters running the next OCP version (e.g. `main`)
    will start sending the new metric.
 
 ### Backports
 
-If the target OCP version is not `master` (i.e. the user needs the metric
+If the target OCP version is not `main` (i.e. the user needs the metric
 in an already-released version):
 
-1. Land the change on `master` first.
+1. Land the change on `main` first.
 2. Create OCPBUGS tickets for each target release branch (assigned to the
    monitoring component).
 3. Open cherry-pick PRs against the desired `release-4.x` branches.
@@ -605,6 +604,7 @@ in an already-released version):
 
 Plan the backport chain early -- mention the target versions in the
 initial JIRA ticket and PR description so reviewers are aware.
+Typically a telemetry signal is added to all versions between `main` and `<target version>`.
 
 ---
 
@@ -641,9 +641,11 @@ changing from `sum` to `max`):
 
 ### Removing a telemetry metric
 
-1. Remove the entry from the CMO telemetry config.
+1. Remove the entry from the CMO telemetry config, either for a specific OCP
+   version or across all release that ship this metric. See [backport process](#backport).
 2. Run `make --always-make docs`.
-3. Request Telemeter server sync on `#forum-observatorium`.
+3. [Optional] Request Telemeter server sync on `#forum-observatorium`. With this
+   Telemeter server stop accepting this metric, i.e. the signal is dropped for all OCP Versions.
 4. The recording rule can be kept for in-cluster use or removed separately.
 
 ---
