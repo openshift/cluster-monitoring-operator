@@ -62,7 +62,7 @@ spec:
         resources:
           requests:
             cpu: 2m
-            memory: 80Mi
+            memory: 180Mi
         securityContext:
           readOnlyRootFilesystem: true
         terminationMessagePolicy: FallbackToLogsOnError

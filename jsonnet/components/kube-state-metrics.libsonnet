@@ -260,7 +260,7 @@ function(params)
                       securityContext: {},
                       resources: {
                         requests: {
-                          memory: '80Mi',
+                          memory: '180Mi',
                           cpu: '2m',
                         },
                       },
