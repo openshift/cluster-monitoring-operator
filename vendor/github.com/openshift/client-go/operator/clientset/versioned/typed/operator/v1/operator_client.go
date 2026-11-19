@@ -15,11 +15,13 @@ type OperatorV1Interface interface {
 	AuthenticationsGetter
 	CSISnapshotControllersGetter
 	CloudCredentialsGetter
+	ClusterAPIsGetter
 	ClusterCSIDriversGetter
 	ConfigsGetter
 	ConsolesGetter
 	DNSesGetter
 	EtcdsGetter
+	IngressesGetter
 	IngressControllersGetter
 	InsightsOperatorsGetter
 	KubeAPIServersGetter
@@ -54,6 +56,10 @@ func (c *OperatorV1Client) CloudCredentials() CloudCredentialInterface {
 	return newCloudCredentials(c)
 }
 
+func (c *OperatorV1Client) ClusterAPIs() ClusterAPIInterface {
+	return newClusterAPIs(c)
+}
+
 func (c *OperatorV1Client) ClusterCSIDrivers() ClusterCSIDriverInterface {
 	return newClusterCSIDrivers(c)
 }
@@ -72,6 +78,10 @@ func (c *OperatorV1Client) DNSes() DNSInterface {
 
 func (c *OperatorV1Client) Etcds() EtcdInterface {
 	return newEtcds(c)
+}
+
+func (c *OperatorV1Client) Ingresses() IngressInterface {
+	return newIngresses(c)
 }
 
 func (c *OperatorV1Client) IngressControllers(namespace string) IngressControllerInterface {
