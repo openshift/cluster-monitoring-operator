@@ -14,11 +14,14 @@ import (
 // EtcdBackupApplyConfiguration represents a declarative configuration of the EtcdBackup type for use
 // with apply.
 //
-// # EtcdBackup provides configuration options and status for a one-time backup attempt of the etcd cluster
+// # EtcdBackup provides configuration options and status for a one-time backup attempt of the etcd cluster.
+// # When an EtcdBackup is deleted the files created by it will be deleted as well, as long as the storage backend is still accessible.
 //
 // Compatibility level 4: No compatibility is provided, the API can change at any point for any reason. These capabilities should not be used by applications needing long term support.
 type EtcdBackupApplyConfiguration struct {
-	v1.TypeMetaApplyConfiguration    `json:",inline"`
+	v1.TypeMetaApplyConfiguration `json:""`
+	// metadata is the standard object's metadata.
+	// More info: https://git.k8s.io/community/contributors/devel/sig-architecture/api-conventions.md#metadata
 	*v1.ObjectMetaApplyConfiguration `json:"metadata,omitempty"`
 	// spec holds user settable values for configuration
 	Spec *EtcdBackupSpecApplyConfiguration `json:"spec,omitempty"`
