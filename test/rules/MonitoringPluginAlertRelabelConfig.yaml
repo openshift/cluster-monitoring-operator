@@ -1,0 +1,78 @@
+rule_files:
+  - rules.yaml
+
+evaluation_interval: 1m
+
+tests:
+  - interval: 1m
+    input_series:
+      - series: 'monitoring_plugin_alert_relabel_config_gc_list_errors_total{job="monitoring-plugin"}'
+        values: '0x40'
+      - series: 'monitoring_plugin_alert_relabel_config_gc_delete_errors_total{job="monitoring-plugin"}'
+        values: '0x40'
+      - series: 'monitoring_plugin_alert_relabel_config_gitops_orphans{job="monitoring-plugin"}'
+        values: '0x40'
+    alert_rule_test:
+      - eval_time: 40m
+        alertname: MonitoringPluginAlertRelabelConfigGCListFailed
+        exp_alerts:
+      - eval_time: 40m
+        alertname: MonitoringPluginAlertRelabelConfigGCDeleteFailed
+        exp_alerts:
+      - eval_time: 40m
+        alertname: MonitoringPluginAlertRelabelConfigGitOpsOrphan
+        exp_alerts:
+
+  - interval: 1m
+    input_series:
+      - series: 'monitoring_plugin_alert_relabel_config_gitops_orphans{job="monitoring-plugin"}'
+        values: '1x40'
+    alert_rule_test:
+      - eval_time: 14m
+        alertname: MonitoringPluginAlertRelabelConfigGitOpsOrphan
+        exp_alerts:
+      - eval_time: 15m
+        alertname: MonitoringPluginAlertRelabelConfigGitOpsOrphan
+        exp_alerts:
+        - exp_labels:
+            severity: warning
+            namespace: openshift-monitoring
+          exp_annotations:
+            description: The monitoring plugin found GitOps-managed AlertRelabelConfigs whose alert rules no longer exist. These are not deleted automatically. Remove or update them in GitOps.
+            summary: GitOps-managed orphaned AlertRelabelConfig was not deleted
+
+  - interval: 1m
+    input_series:
+      - series: 'monitoring_plugin_alert_relabel_config_gc_list_errors_total{job="monitoring-plugin"}'
+        values: '0+1x40'
+    alert_rule_test:
+      - eval_time: 14m
+        alertname: MonitoringPluginAlertRelabelConfigGCListFailed
+        exp_alerts:
+      - eval_time: 16m
+        alertname: MonitoringPluginAlertRelabelConfigGCListFailed
+        exp_alerts:
+        - exp_labels:
+            severity: warning
+            namespace: openshift-monitoring
+          exp_annotations:
+            description: The monitoring plugin failed to list AlertRelabelConfigs while removing orphans. Stale relabel configs may remain. Check the monitoring-plugin logs and Kubernetes API access.
+            summary: AlertRelabelConfig orphan cleanup failed to list configs
+
+  - interval: 1m
+    input_series:
+      - series: 'monitoring_plugin_alert_relabel_config_gc_delete_errors_total{job="monitoring-plugin"}'
+        values: '0+1x40'
+    alert_rule_test:
+      - eval_time: 14m
+        alertname: MonitoringPluginAlertRelabelConfigGCDeleteFailed
+        exp_alerts:
+      - eval_time: 16m
+        alertname: MonitoringPluginAlertRelabelConfigGCDeleteFailed
+        exp_alerts:
+        - exp_labels:
+            severity: warning
+            namespace: openshift-monitoring
+          exp_annotations:
+            description: The monitoring plugin failed to delete an orphaned AlertRelabelConfig. Stale relabel configs may remain. Check the monitoring-plugin logs and Kubernetes API access.
+            summary: AlertRelabelConfig orphan cleanup failed to delete a config
