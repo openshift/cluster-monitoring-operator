@@ -474,6 +474,7 @@ spec:
         > 0
       for: 0s
       labels:
+        namespace: kube-system
         severity: info
     - alert: KubeletPlegDurationHigh
       annotations:
