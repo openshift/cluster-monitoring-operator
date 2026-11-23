@@ -172,6 +172,7 @@ spec:
         - --error-on-replace
         - --rules-with-active-alerts
         - --enable-label-matchers-for-rules-api
+        - --query-param-only
         image: ""
         name: prom-label-proxy
         resources:
