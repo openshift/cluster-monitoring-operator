@@ -18,6 +18,7 @@ spec:
     - alert: MetricsServerKubeletScrapeFailures
       annotations:
         description: metrics-server in namespace {{ $labels.namespace }} (pod {{ $labels.pod }}) is failing {{ $value | humanizePercentage }} of the requests to kubelet. Check metrics-server logs for "Failed to scrape node".
+        runbook_url: https://github.com/openshift/runbooks/blob/master/alerts/cluster-monitoring-operator/MetricsServerKubeletScrapeFailures.md
         summary: metrics-server fails to scrape nodes.
       expr: |
         sum by (pod, namespace) (

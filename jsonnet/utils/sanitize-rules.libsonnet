@@ -544,6 +544,7 @@ local includeRunbooks = {
   KubePersistentVolumeInodesFillingUp: openShiftRunbookCMO('KubePersistentVolumeInodesFillingUp.md'),
   KubePodNotReady: openShiftRunbookCMO('KubePodNotReady.md'),
   KubeletDown: openShiftRunbookCMO('KubeletDown.md'),
+  MetricsServerKubeletScrapeFailures: openShiftRunbookCMO('MetricsServerKubeletScrapeFailures.md'),
   NodeFileDescriptorLimit: openShiftRunbookCMO('NodeFileDescriptorLimit.md'),
   NodeFilesystemAlmostOutOfFiles: openShiftRunbookCMO('NodeFilesystemAlmostOutOfFiles.md'),
   NodeFilesystemAlmostOutOfSpace: openShiftRunbookCMO('NodeFilesystemAlmostOutOfSpace.md'),
