@@ -125,6 +125,147 @@ function(params)
       metadata: $.metadata(),
     },
 
+    // Read-only access required by the alerts management API. The plugin
+    // serves the API with its service account but performs all mutations
+    // with the requesting user's token.
+    clusterRole: {
+      apiVersion: 'rbac.authorization.k8s.io/v1',
+      kind: 'ClusterRole',
+      metadata: $.metadata(noNamespace=true),
+      rules: [
+        {
+          apiGroups: ['monitoring.coreos.com'],
+          resources: ['prometheusrules'],
+          verbs: ['get', 'list', 'watch'],
+        },
+        {
+          apiGroups: [''],
+          resources: ['namespaces'],
+          verbs: ['get', 'list', 'watch'],
+        },
+      ],
+    },
+
+    clusterRoleBinding: {
+      apiVersion: 'rbac.authorization.k8s.io/v1',
+      kind: 'ClusterRoleBinding',
+      metadata: $.metadata(noNamespace=true),
+      roleRef: {
+        apiGroup: 'rbac.authorization.k8s.io',
+        kind: 'ClusterRole',
+        name: $._config.name,
+      },
+      subjects: [
+        {
+          kind: 'ServiceAccount',
+          name: $._config.name,
+          namespace: $._config.namespace,
+        },
+      ],
+    },
+
+    role: {
+      apiVersion: 'rbac.authorization.k8s.io/v1',
+      kind: 'Role',
+      metadata: $.metadata(),
+      rules: [
+        {
+          apiGroups: ['monitoring.openshift.io'],
+          resources: ['alertingrules', 'alertrelabelconfigs'],
+          verbs: ['get', 'list', 'watch'],
+        },
+        {
+          apiGroups: [''],
+          resources: ['configmaps'],
+          verbs: ['get', 'list', 'watch'],
+        },
+        {
+          apiGroups: [''],
+          resources: ['secrets'],
+          resourceNames: ['alert-relabel-configs'],
+          verbs: ['get'],
+        },
+        {
+          apiGroups: [''],
+          resources: ['secrets'],
+          verbs: ['list', 'watch'],
+        },
+        {
+          apiGroups: ['coordination.k8s.io'],
+          resources: ['leases'],
+          verbs: ['create'],
+        },
+        {
+          apiGroups: ['coordination.k8s.io'],
+          resources: ['leases'],
+          resourceNames: ['monitoring-plugin-metrics'],
+          verbs: ['get', 'update'],
+        },
+        {
+          apiGroups: ['route.openshift.io'],
+          resources: ['routes'],
+          resourceNames: ['alertmanager-main', 'prometheus-k8s'],
+          verbs: ['get'],
+        },
+      ],
+    },
+
+    roleBinding: {
+      apiVersion: 'rbac.authorization.k8s.io/v1',
+      kind: 'RoleBinding',
+      metadata: $.metadata(),
+      roleRef: {
+        apiGroup: 'rbac.authorization.k8s.io',
+        kind: 'Role',
+        name: $._config.name,
+      },
+      subjects: [
+        {
+          kind: 'ServiceAccount',
+          name: $._config.name,
+          namespace: $._config.namespace,
+        },
+      ],
+    },
+
+    // Read-only access to the user workload monitoring alertmanager route
+    // required by the alerts management API.
+    userWorkloadRole: {
+      apiVersion: 'rbac.authorization.k8s.io/v1',
+      kind: 'Role',
+      metadata: $.metadata() + {
+        namespace: cfg.namespaceUserWorkload,
+      },
+      rules: [
+        {
+          apiGroups: ['route.openshift.io'],
+          resources: ['routes'],
+          resourceNames: ['alertmanager-user-workload'],
+          verbs: ['get'],
+        },
+      ],
+    },
+
+    userWorkloadRoleBinding: {
+      apiVersion: 'rbac.authorization.k8s.io/v1',
+      kind: 'RoleBinding',
+      metadata: $.metadata() + {
+        namespace: cfg.namespaceUserWorkload,
+      },
+      roleRef: {
+        apiGroup: 'rbac.authorization.k8s.io',
+        kind: 'Role',
+        name: $._config.name,
+      },
+      subjects: [
+        {
+          kind: 'ServiceAccount',
+          name: $._config.name,
+          namespace: $._config.namespace,
+        },
+      ],
+    },
+
     servicePort(name, port, targetPort):: {
       name: name,
       port: port,

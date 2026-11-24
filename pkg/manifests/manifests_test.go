@@ -33,6 +33,7 @@ import (
 	"github.com/stretchr/testify/require"
 	v1 "k8s.io/api/core/v1"
 	policyv1 "k8s.io/api/policy/v1"
+	rbacv1 "k8s.io/api/rbac/v1"
 	"k8s.io/apimachinery/pkg/api/resource"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	auditv1 "k8s.io/apiserver/pkg/apis/audit/v1"
@@ -799,6 +800,85 @@ func TestMonitoringPluginDeploymentFeatures(t *testing.T) {
 			require.Equal(t, MonitoringPluginFeaturesFlag+tc.expected, got)
 		})
 	}
+}
+
+func TestMonitoringPluginRBAC(t *testing.T) {
+	c, err := NewConfigFromString("")
+	require.NoError(t, err)
+	f := NewFactory("openshift-monitoring", "openshift-user-workload-monitoring", c, defaultInfrastructureReader(), &fakeProxyReader{}, NewAssets(assetsPath), &APIServerConfig{}, &configv1.Console{})
+
+	formatRules := func(rules []rbacv1.PolicyRule) []string {
+		formatted := make([]string, 0, len(rules))
+		for _, rule := range rules {
+			formatted = append(formatted, fmt.Sprintf("%s|%s|%s|%s",
+				strings.Join(rule.APIGroups, ","),
+				strings.Join(rule.Resources, ","),
+				strings.Join(rule.ResourceNames, ","),
+				strings.Join(rule.Verbs, ","),
+			))
+		}
+		return formatted
+	}
+
+	cr, err := f.MonitoringPluginClusterRole()
+	require.NoError(t, err)
+	require.Equal(t, "monitoring-plugin", cr.Name)
+	require.Empty(t, cr.Namespace)
+	require.ElementsMatch(t, []string{
+		"monitoring.coreos.com|prometheusrules||get,list,watch",
+		"|namespaces||get,list,watch",
+	}, formatRules(cr.Rules))
+
+	crb, err := f.MonitoringPluginClusterRoleBinding()
+	require.NoError(t, err)
+	require.Equal(t, "monitoring-plugin", crb.RoleRef.Name)
+	require.Equal(t, "ClusterRole", crb.RoleRef.Kind)
+	require.Len(t, crb.Subjects, 1)
+	require.Equal(t, rbacv1.ServiceAccountKind, crb.Subjects[0].Kind)
+	require.Equal(t, "monitoring-plugin", crb.Subjects[0].Name)
+	require.Equal(t, "openshift-monitoring", crb.Subjects[0].Namespace)
+
+	role, err := f.MonitoringPluginRole()
+	require.NoError(t, err)
+	require.Equal(t, "monitoring-plugin", role.Name)
+	require.Equal(t, "openshift-monitoring", role.Namespace)
+	require.ElementsMatch(t, []string{
+		"monitoring.openshift.io|alertingrules,alertrelabelconfigs||get,list,watch",
+		"|configmaps||get,list,watch",
+		"|secrets|alert-relabel-configs|get",
+		"|secrets||list,watch",
+		"coordination.k8s.io|leases||create",
+		"coordination.k8s.io|leases|monitoring-plugin-metrics|get,update",
+		"route.openshift.io|routes|alertmanager-main,prometheus-k8s|get",
+	}, formatRules(role.Rules))
+
+	rb, err := f.MonitoringPluginRoleBinding()
+	require.NoError(t, err)
+	require.Equal(t, "openshift-monitoring", rb.Namespace)
+	require.Equal(t, "monitoring-plugin", rb.RoleRef.Name)
+	require.Equal(t, "Role", rb.RoleRef.Kind)
+	require.Len(t, rb.Subjects, 1)
+	require.Equal(t, rbacv1.ServiceAccountKind, rb.Subjects[0].Kind)
+	require.Equal(t, "monitoring-plugin", rb.Subjects[0].Name)
+	require.Equal(t, "openshift-monitoring", rb.Subjects[0].Namespace)
+
+	uwmRole, err := f.MonitoringPluginUserWorkloadRole()
+	require.NoError(t, err)
+	require.Equal(t, "monitoring-plugin", uwmRole.Name)
+	require.Equal(t, "openshift-user-workload-monitoring", uwmRole.Namespace)
+	require.ElementsMatch(t, []string{
+		"route.openshift.io|routes|alertmanager-user-workload|get",
+	}, formatRules(uwmRole.Rules))
+
+	uwmRb, err := f.MonitoringPluginUserWorkloadRoleBinding()
+	require.NoError(t, err)
+	require.Equal(t, "openshift-user-workload-monitoring", uwmRb.Namespace)
+	require.Equal(t, "monitoring-plugin", uwmRb.RoleRef.Name)
+	require.Equal(t, "Role", uwmRb.RoleRef.Kind)
+	require.Len(t, uwmRb.Subjects, 1)
+	require.Equal(t, rbacv1.ServiceAccountKind, uwmRb.Subjects[0].Kind)
+	require.Equal(t, "monitoring-plugin", uwmRb.Subjects[0].Name)
+	require.Equal(t, "openshift-monitoring", uwmRb.Subjects[0].Namespace)
 }
 
 func TestPrometheusOperatorAdmissionWebhookConfiguration(t *testing.T) {
