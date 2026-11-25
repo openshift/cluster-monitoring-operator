@@ -7,7 +7,7 @@ package v1
 type KMSEncryptionStatusApplyConfiguration struct {
 	// healthReports contains all KMS plugin health reports.
 	// When omitted, no health reports are available.
-	// Each entry must have a unique combination of nodeName and keyId.
+	// Each entry must have a unique combination of nodeName and keyID.
 	HealthReports []KMSPluginHealthReportApplyConfiguration `json:"healthReports,omitempty"`
 	// preflight contains the state of KMS preflight validation for this operator.
 	// The preflight validates the KMS provider configuration before it is used
