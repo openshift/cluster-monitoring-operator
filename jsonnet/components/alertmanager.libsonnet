@@ -224,7 +224,6 @@ function(params)
         },
       },
       spec+: {
-        serviceDiscoveryRole: 'EndpointSlice',
         endpoints: [
           {
             port: 'metrics',

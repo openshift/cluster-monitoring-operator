@@ -1,5 +1,17 @@
 {
-  configureAuthenticationForMonitors(o): {
+  // configureMonitoringTargets enforces common settings to all
+  // ServiceMonitor/PodMonitor resources:
+  // - Enable mTLS authentication + disable usage of bearer token
+  // (https://issues.redhat.com/browse/OCPBUGS-4184 for details).
+  // - Enable EndpointSlice service discovery role for ServiceMonitors
+  // (https://redhat.atlassian.net/browse/OCPBUGS-144925).
+  configureMonitoringTargets(o): {
+    local configureServiceDiscoveryRole(o) = o {
+      [if o.kind == 'ServiceMonitor' then 'spec']+: {
+        serviceDiscoveryRole: 'EndpointSlice',
+      },
+    },
+
     local configureAuthentication(o) = o {
       [if o.kind == 'ServiceMonitor' || o.kind == 'PodMonitor' then 'spec']+: {
         scrapeClass: 'tls-client-certificate-auth',
@@ -46,7 +58,7 @@
         ],
       },
     },
-    [k]: configureAuthentication(o[k])
+    [k]: configureServiceDiscoveryRole(configureAuthentication(o[k]))
     for k in std.objectFieldsAll(o)
   },
 }

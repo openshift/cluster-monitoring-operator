@@ -4,7 +4,7 @@ local addLabels = (import './utils/add-labels.libsonnet').addLabels;
 local sanitizeAlertRules = (import './utils/sanitize-rules.libsonnet').sanitizeAlertRules;
 local removeImageLocations = (import './utils/remove-images.libsonnet').removeImageLocations;
 local removeNetworkPolicy = (import './utils/remove-network-policy.libsonnet').removeNetworkPolicy;
-local configureAuthenticationForMonitors = (import './utils/configure-authentication-for-monitors.libsonnet').configureAuthenticationForMonitors;
+local configureMonitoringTargets = (import './utils/configure-monitoring-targets.libsonnet').configureMonitoringTargets;
 local enableReadOnlyRootFilesystem = (import './utils/security-context.libsonnet').enableReadOnlyRootFilesystem;
 local setTerminationMessagePolicy = (import './utils/set-terminationMessagePolicy.libsonnet').setTerminationMessagePolicy;
 local setUnhealthyPodEvictionPolicy = (import './utils/set-unhealthyPodEvictionPolicy.libsonnet').setUnhealthyPodEvictionPolicy;
@@ -521,9 +521,7 @@ setUnhealthyPodEvictionPolicy(
             removeImageLocations(
               removeLimits(
                 removeNetworkPolicy(
-                  // Enforce mTLS authentication + disable usage of bearer token for all service/pod monitors.
-                  // See https://issues.redhat.com/browse/OCPBUGS-4184 for details.
-                  configureAuthenticationForMonitors(
+                  configureMonitoringTargets(
                     { ['alertmanager/' + name]: inCluster.alertmanager[name] for name in std.objectFields(inCluster.alertmanager) } +
                     { ['alertmanager-user-workload/' + name]: userWorkload.alertmanager[name] for name in std.objectFields(userWorkload.alertmanager) } +
                     { ['cluster-monitoring-operator/' + name]: inCluster.clusterMonitoringOperator[name] for name in std.objectFields(inCluster.clusterMonitoringOperator) } +

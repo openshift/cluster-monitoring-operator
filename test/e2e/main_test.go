@@ -25,6 +25,7 @@ import (
 	"testing"
 	"time"
 
+	monitoringv1 "github.com/prometheus-operator/prometheus-operator/pkg/apis/monitoring/v1"
 	"github.com/stretchr/testify/require"
 
 	configv1 "github.com/openshift/api/config/v1"
@@ -285,6 +286,50 @@ func TestPodInvariants(t *testing.T) {
 			f.AssertPodConfigurationFunc(ns, "", []framework.PodAssertion{
 				expectReadOnlyRootFilesystem(),
 			})(t)
+		})
+	}
+}
+
+// TestMonitoringTargetsServiceDiscoveryRole validates that all ServiceMonitor
+// resources deployed in the platform and user-workload monitoring namespaces
+// discover their targets from EndpointSlice objects instead of Endpoints
+// objects.
+func TestMonitoringTargetsServiceDiscoveryRole(t *testing.T) {
+	// Enable all the components including the user-defined Alertmanager.
+	setupUserWorkloadAssetsWithTeardownHook(t, f)
+
+	uwmCM := f.BuildUserWorkloadConfigMap(t, `alertmanager:
+  enabled: true
+`)
+
+	f.MustCreateOrUpdateConfigMap(t, uwmCM)
+	t.Cleanup(func() { f.MustDeleteConfigMap(t, uwmCM) })
+	f.AssertStatefulSetExistsAndRolloutFunc("alertmanager-user-workload", f.UserWorkloadMonitoringNs)(t)
+	f.AssertServiceMonitorExistsFunc("alertmanager-user-workload", f.UserWorkloadMonitoringNs)(t)
+
+	for _, ns := range []string{f.Ns, f.UserWorkloadMonitoringNs} {
+		t.Run(ns, func(t *testing.T) {
+			sms, err := f.MonitoringClient.ServiceMonitors(ns).List(context.Background(), metav1.ListOptions{})
+			require.NoError(t, err)
+			require.NotEmptyf(t, sms.Items, "no ServiceMonitor found in the %s namespace", ns)
+
+			for _, sm := range sms.Items {
+				t.Run(sm.Name, func(t *testing.T) {
+					// CI clusters may have 3rd-party service monitors (e.g.
+					// promtail) deployed in the monitoring namespaces which
+					// should be skipped.
+					if partOf := sm.Labels["app.kubernetes.io/part-of"]; partOf != "openshift-monitoring" {
+						if partOf == "" {
+							t.Log("skipping service monitor with missing 'app.kubernetes.io/part-of' label")
+						} else {
+							t.Logf("skipped service monitor with unexpected label 'app.kubernetes.io/part-of=%s'", partOf)
+						}
+						return
+					}
+					require.NotNilf(t, sm.Spec.ServiceDiscoveryRole, "ServiceMonitor %s/%s: spec.serviceDiscoveryRole isn't set", sm.Namespace, sm.Name)
+					require.Equalf(t, monitoringv1.EndpointSliceRole, *sm.Spec.ServiceDiscoveryRole, "ServiceMonitor %s/%s: unexpected spec.serviceDiscoveryRole", sm.Namespace, sm.Name)
+				})
+			}
 		})
 	}
 }

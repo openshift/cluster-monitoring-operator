@@ -22,3 +22,4 @@ spec:
   selector:
     matchLabels:
       k8s-app: telemeter-client
+  serviceDiscoveryRole: EndpointSlice
