@@ -1074,7 +1074,10 @@ func TestConfig_MergeClusterMonitoringCRD_PrometheusK8sConfigPhase1(t *testing.T
 		cm := &configv1alpha1.ClusterMonitoring{
 			Spec: configv1alpha1.ClusterMonitoringSpec{
 				PrometheusConfig: configv1alpha1.PrometheusConfig{
-					EnforcedBodySizeLimitBytes: 4194304,
+					BodySizeEnforcement: configv1alpha1.BodySizeEnforcement{
+						Mode:   configv1alpha1.BodySizeEnforcementModeCustom,
+						Custom: configv1alpha1.BodySizeEnforcementCustomConfig{MaxSizeBytes: 4194304},
+					},
 					ExternalLabels: []configv1alpha1.Label{
 						{Key: "region", Value: "us-east"},
 					},
