@@ -1188,6 +1188,43 @@ func TestConfig_MergeClusterMonitoringCRD_PrometheusK8sConfigPhase1(t *testing.T
 			})
 		}
 	})
+	// CMO only passes regex through. An empty regex still does not round-trip
+	// end to end: prometheus-operator drops it and falls back to "(.*)", see
+	// https://github.com/prometheus-operator/prometheus-operator/issues/8869.
+	t.Run("CMO doesn't mutate writeRelabelConfigs regex during merge", func(t *testing.T) {
+		cm := &configv1alpha1.ClusterMonitoring{
+			Spec: configv1alpha1.ClusterMonitoringSpec{
+				PrometheusConfig: configv1alpha1.PrometheusConfig{
+					RemoteWrite: []configv1alpha1.RemoteWriteSpec{
+						{
+							Name: "rw",
+							URL:  "https://remote.example.com/write",
+							WriteRelabelConfigs: []configv1alpha1.RelabelConfig{
+								{
+									SourceLabels: []string{"job"},
+									Regex:        "",
+									Action: configv1alpha1.RelabelActionConfig{
+										Type: configv1alpha1.RelabelActionKeep,
+									},
+								},
+							},
+						},
+					},
+				},
+			},
+		}
+		c, err := NewConfigFromStringAndClusterMonitoringResource("{}", cm)
+		require.NoError(t, err)
+		pk := c.ClusterMonitoringConfiguration.PrometheusK8sConfig
+		require.NotNil(t, pk)
+		require.Len(t, pk.RemoteWrite, 1)
+		require.Len(t, pk.RemoteWrite[0].WriteRelabelConfigs, 1)
+		rule := pk.RemoteWrite[0].WriteRelabelConfigs[0]
+		require.Empty(t, rule.Regex)
+		require.Equal(t, string(configv1alpha1.RelabelActionKeep), rule.Action)
+		require.Len(t, rule.SourceLabels, 1)
+		require.EqualValues(t, "job", rule.SourceLabels[0])
+	})
 	t.Run("CR returns error for unsupported collection profile", func(t *testing.T) {
 		cm := &configv1alpha1.ClusterMonitoring{
 			Spec: configv1alpha1.ClusterMonitoringSpec{
