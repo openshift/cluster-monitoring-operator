@@ -192,6 +192,7 @@ func testTargetsUp(t *testing.T) {
 		"openshift-state-metrics",
 		"telemeter-client",
 		"thanos-querier",
+		"monitoring-plugin",
 	}
 
 	for _, target := range targets {
