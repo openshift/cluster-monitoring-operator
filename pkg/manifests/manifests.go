@@ -319,13 +319,19 @@ var (
 	ControlPlaneKubeletServiceMonitor        = "control-plane/service-monitor-kubelet.yaml"
 	ControlPlaneKubeletMinimalServiceMonitor = "control-plane/minimal-service-monitor-kubelet.yaml"
 
-	MonitoringPlugin                    = "monitoring-plugin/console-plugin.yaml"
-	MonitoringPluginDeployment          = "monitoring-plugin/deployment.yaml"
-	MonitoringPluginDeploymentContainer = "monitoring-plugin"
-	MonitoringPluginServiceAccount      = "monitoring-plugin/service-account.yaml"
-	MonitoringPluginService             = "monitoring-plugin/service.yaml"
-	MonitoringPluginPodDisruptionBudget = "monitoring-plugin/pod-disruption-budget.yaml"
-	MonitoringPluginNetworkPolicy       = "monitoring-plugin/network-policy-downstream.yaml"
+	MonitoringPlugin                        = "monitoring-plugin/console-plugin.yaml"
+	MonitoringPluginDeployment              = "monitoring-plugin/deployment.yaml"
+	MonitoringPluginDeploymentContainer     = "monitoring-plugin"
+	MonitoringPluginServiceAccount          = "monitoring-plugin/service-account.yaml"
+	MonitoringPluginService                 = "monitoring-plugin/service.yaml"
+	MonitoringPluginPodDisruptionBudget     = "monitoring-plugin/pod-disruption-budget.yaml"
+	MonitoringPluginNetworkPolicy           = "monitoring-plugin/network-policy-downstream.yaml"
+	MonitoringPluginClusterRole             = "monitoring-plugin/cluster-role.yaml"
+	MonitoringPluginClusterRoleBinding      = "monitoring-plugin/cluster-role-binding.yaml"
+	MonitoringPluginRole                    = "monitoring-plugin/role.yaml"
+	MonitoringPluginRoleBinding             = "monitoring-plugin/role-binding.yaml"
+	MonitoringPluginUserWorkloadRole        = "monitoring-plugin/user-workload-role.yaml"
+	MonitoringPluginUserWorkloadRoleBinding = "monitoring-plugin/user-workload-role-binding.yaml"
 
 	UserWorkloadMonitoringDenyAllTraffic = "cluster-monitoring-operator/network-policy-default-deny-user-workload.yaml"
 )
@@ -343,6 +349,9 @@ var (
 	MonitoringPluginTLSCipherSuitesFlag                  = "--tls-cipher-suites="
 	MonitoringPluginTLSMinTLSVersionFlag                 = "--tls-min-version="
 	MonitoringPluginFeaturesFlag                         = "--features="
+	// MonitoringPluginAlertManagementAPIFeature is the name of the
+	// monitoring plugin feature enabling the alerts management API.
+	MonitoringPluginAlertManagementAPIFeature = "alert-management-api"
 
 	AuthProxyExternalURLFlag  = "-external-url="
 	AuthProxyCookieDomainFlag = "-cookie-domain="
@@ -3040,6 +3049,30 @@ func (f *Factory) MonitoringPluginNetworkPolicy() (*networkingv1.NetworkPolicy, 
 
 func (f *Factory) MonitoringPluginServiceAccount() (*v1.ServiceAccount, error) {
 	return f.NewServiceAccount(f.assets.MustNewAssetSlice(MonitoringPluginServiceAccount))
+}
+
+func (f *Factory) MonitoringPluginClusterRole() (*rbacv1.ClusterRole, error) {
+	return f.NewClusterRole(f.assets.MustNewAssetSlice(MonitoringPluginClusterRole))
+}
+
+func (f *Factory) MonitoringPluginClusterRoleBinding() (*rbacv1.ClusterRoleBinding, error) {
+	return f.NewClusterRoleBinding(f.assets.MustNewAssetSlice(MonitoringPluginClusterRoleBinding))
+}
+
+func (f *Factory) MonitoringPluginRole() (*rbacv1.Role, error) {
+	return f.NewRole(f.assets.MustNewAssetSlice(MonitoringPluginRole))
+}
+
+func (f *Factory) MonitoringPluginRoleBinding() (*rbacv1.RoleBinding, error) {
+	return f.NewRoleBinding(f.assets.MustNewAssetSlice(MonitoringPluginRoleBinding))
+}
+
+func (f *Factory) MonitoringPluginUserWorkloadRole() (*rbacv1.Role, error) {
+	return f.NewRole(f.assets.MustNewAssetSlice(MonitoringPluginUserWorkloadRole))
+}
+
+func (f *Factory) MonitoringPluginUserWorkloadRoleBinding() (*rbacv1.RoleBinding, error) {
+	return f.NewRoleBinding(f.assets.MustNewAssetSlice(MonitoringPluginUserWorkloadRoleBinding))
 }
 
 func (f *Factory) MonitoringPluginService() (*v1.Service, error) {

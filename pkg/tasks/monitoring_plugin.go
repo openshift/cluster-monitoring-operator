@@ -17,6 +17,7 @@ package tasks
 import (
 	"context"
 	"fmt"
+	"slices"
 
 	"k8s.io/klog/v2"
 
@@ -94,6 +95,12 @@ func (t *MonitoringPluginTask) Run(ctx context.Context) error {
 		}
 	}
 
+	{ // role-based access control for the alerts management API
+		if err := t.reconcileAlertsManagementRBAC(ctx); err != nil {
+			return err
+		}
+	}
+
 	{
 		svc, err := t.factory.MonitoringPluginService()
 		if err != nil {
@@ -125,6 +132,144 @@ func (t *MonitoringPluginTask) Run(ctx context.Context) error {
 				return fmt.Errorf("reconciling Console Plugin PDB failed: %w", err)
 			}
 		}
+	}
+
+	return nil
+}
+
+// alertsManagementAPIEnabled reports whether the alert-management-api
+// feature is enabled for the monitoring plugin. The feature grants the
+// plugin's service account the read-only RBAC it needs to serve the
+// alerts management API.
+func (t *MonitoringPluginTask) alertsManagementAPIEnabled() bool {
+	pluginConfig := t.config.ClusterMonitoringConfiguration.MonitoringPluginConfig
+	if pluginConfig == nil {
+		return false
+	}
+
+	return slices.Contains(pluginConfig.Features, manifests.MonitoringPluginAlertManagementAPIFeature)
+}
+
+// userWorkloadMonitoringEnabled reports whether user workload monitoring
+// is enabled. The user workload monitoring alertmanager and its route only
+// exist when it is.
+func (t *MonitoringPluginTask) userWorkloadMonitoringEnabled() bool {
+	c := t.config.ClusterMonitoringConfiguration
+	return c != nil && c.UserWorkloadEnabled != nil && *c.UserWorkloadEnabled
+}
+
+// reconcileAlertsManagementRBAC ensures that the plugin's service account
+// holds the read-only permissions required by the alerts management API
+// when the feature is enabled, and that they are removed otherwise.
+func (t *MonitoringPluginTask) reconcileAlertsManagementRBAC(ctx context.Context) error {
+	if err := t.reconcileAlertsManagementClusterRBAC(ctx); err != nil {
+		return err
+	}
+
+	if err := t.reconcileAlertsManagementNamespacedRBAC(ctx); err != nil {
+		return err
+	}
+
+	return t.reconcileAlertsManagementUserWorkloadRBAC(ctx)
+}
+
+func (t *MonitoringPluginTask) reconcileAlertsManagementClusterRBAC(ctx context.Context) error {
+	cr, err := t.factory.MonitoringPluginClusterRole()
+	if err != nil {
+		return fmt.Errorf("initializing Console Plugin ClusterRole failed: %w", err)
+	}
+
+	crb, err := t.factory.MonitoringPluginClusterRoleBinding()
+	if err != nil {
+		return fmt.Errorf("initializing Console Plugin ClusterRoleBinding failed: %w", err)
+	}
+
+	if t.alertsManagementAPIEnabled() {
+		if err := t.client.CreateOrUpdateClusterRole(ctx, cr); err != nil {
+			return fmt.Errorf("reconciling Console Plugin ClusterRole failed: %w", err)
+		}
+
+		if err := t.client.CreateOrUpdateClusterRoleBinding(ctx, crb); err != nil {
+			return fmt.Errorf("reconciling Console Plugin ClusterRoleBinding failed: %w", err)
+		}
+
+		return nil
+	}
+
+	if err := t.client.DeleteClusterRole(ctx, cr); err != nil {
+		return fmt.Errorf("deleting Console Plugin ClusterRole failed: %w", err)
+	}
+
+	if err := t.client.DeleteClusterRoleBinding(ctx, crb); err != nil {
+		return fmt.Errorf("deleting Console Plugin ClusterRoleBinding failed: %w", err)
+	}
+
+	return nil
+}
+
+func (t *MonitoringPluginTask) reconcileAlertsManagementNamespacedRBAC(ctx context.Context) error {
+	role, err := t.factory.MonitoringPluginRole()
+	if err != nil {
+		return fmt.Errorf("initializing Console Plugin Role failed: %w", err)
+	}
+
+	rb, err := t.factory.MonitoringPluginRoleBinding()
+	if err != nil {
+		return fmt.Errorf("initializing Console Plugin RoleBinding failed: %w", err)
+	}
+
+	if t.alertsManagementAPIEnabled() {
+		if err := t.client.CreateOrUpdateRole(ctx, role); err != nil {
+			return fmt.Errorf("reconciling Console Plugin Role failed: %w", err)
+		}
+
+		if err := t.client.CreateOrUpdateRoleBinding(ctx, rb); err != nil {
+			return fmt.Errorf("reconciling Console Plugin RoleBinding failed: %w", err)
+		}
+
+		return nil
+	}
+
+	if err := t.client.DeleteRole(ctx, role); err != nil {
+		return fmt.Errorf("deleting Console Plugin Role failed: %w", err)
+	}
+
+	if err := t.client.DeleteRoleBinding(ctx, rb); err != nil {
+		return fmt.Errorf("deleting Console Plugin RoleBinding failed: %w", err)
+	}
+
+	return nil
+}
+
+func (t *MonitoringPluginTask) reconcileAlertsManagementUserWorkloadRBAC(ctx context.Context) error {
+	role, err := t.factory.MonitoringPluginUserWorkloadRole()
+	if err != nil {
+		return fmt.Errorf("initializing Console Plugin user workload Role failed: %w", err)
+	}
+
+	rb, err := t.factory.MonitoringPluginUserWorkloadRoleBinding()
+	if err != nil {
+		return fmt.Errorf("initializing Console Plugin user workload RoleBinding failed: %w", err)
+	}
+
+	if t.alertsManagementAPIEnabled() && t.userWorkloadMonitoringEnabled() {
+		if err := t.client.CreateOrUpdateRole(ctx, role); err != nil {
+			return fmt.Errorf("reconciling Console Plugin user workload Role failed: %w", err)
+		}
+
+		if err := t.client.CreateOrUpdateRoleBinding(ctx, rb); err != nil {
+			return fmt.Errorf("reconciling Console Plugin user workload RoleBinding failed: %w", err)
+		}
+
+		return nil
+	}
+
+	if err := t.client.DeleteRole(ctx, role); err != nil {
+		return fmt.Errorf("deleting Console Plugin user workload Role failed: %w", err)
+	}
+
+	if err := t.client.DeleteRoleBinding(ctx, rb); err != nil {
+		return fmt.Errorf("deleting Console Plugin user workload RoleBinding failed: %w", err)
 	}
 
 	return nil

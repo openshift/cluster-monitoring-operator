@@ -346,6 +346,7 @@ local inCluster =
       },
       monitoringPlugin: {
         namespace: $.values.common.namespace,
+        namespaceUserWorkload: $.values.common.namespaceUserWorkload,
         commonLabels+: $.values.common.commonLabels,
         image: $.values.common.images.monitoringPlugin,
         tlsCipherSuites: $.values.common.tlsCipherSuites,

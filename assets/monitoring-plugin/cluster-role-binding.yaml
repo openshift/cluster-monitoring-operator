@@ -1,0 +1,17 @@
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRoleBinding
+metadata:
+  labels:
+    app.kubernetes.io/component: monitoring-plugin
+    app.kubernetes.io/managed-by: cluster-monitoring-operator
+    app.kubernetes.io/name: monitoring-plugin
+    app.kubernetes.io/part-of: openshift-monitoring
+  name: monitoring-plugin
+roleRef:
+  apiGroup: rbac.authorization.k8s.io
+  kind: ClusterRole
+  name: monitoring-plugin
+subjects:
+- kind: ServiceAccount
+  name: monitoring-plugin
+  namespace: openshift-monitoring
