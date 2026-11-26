@@ -25,3 +25,4 @@ spec:
   selector:
     matchLabels:
       app.kubernetes.io/name: cluster-monitoring-operator
+  serviceDiscoveryRole: EndpointSlice
