@@ -62,6 +62,7 @@ local vpaMetric(name, help, type, statesetScope='') = if name == '' || help == '
       [if type == 'stateSet' && statesetScope != null then 'list']: statesetScope,
       // valueFrom is only used by non-StateSets.
       [if type != 'stateSet' then 'valueFrom']: resolvedValueFrom,
+      [if type == 'gauge' then 'nilIsZero']: true,
     },
   },
   labelsFromPath: commonLabelsFromPath,
