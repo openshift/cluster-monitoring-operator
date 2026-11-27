@@ -20,6 +20,7 @@ spec:
   - from:
     - podSelector:
         matchLabels:
+          app.kubernetes.io/component: alert-router
           app.kubernetes.io/instance: user-workload
           app.kubernetes.io/name: alertmanager
           app.kubernetes.io/part-of: openshift-monitoring
