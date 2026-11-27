@@ -523,6 +523,7 @@ function(params)
                   '--error-on-replace',
                   '--rules-with-active-alerts',
                   '--enable-label-matchers-for-rules-api',
+                  '--query-param-only',
                 ],
                 resources: {
                   requests: {

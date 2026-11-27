@@ -430,6 +430,7 @@ function(params)
               '--upstream=http://127.0.0.1:9093',
               '--label=namespace',
               '--error-on-replace',
+              '--query-param-only',
             ],
             resources: {
               requests: {
