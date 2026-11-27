@@ -347,6 +347,12 @@ local patchedRules = [
           namespace: 'kube-system',
         },
       },
+      {
+        alert: 'KubeNodeEviction',
+        labels: {
+          namespace: 'kube-system',
+        },
+      },
     ],
   },
   {
